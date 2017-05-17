@@ -2,6 +2,7 @@ package de.soderer.utilities.json;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.junit.Assert;
@@ -106,7 +107,7 @@ public class Json5Test {
 					+ "\t1.3,\n"
 					+ "\t3.0E-6,\n"
 					+ "\t\"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
-					+ "\t\"" + DateUtilities.ISO_8601_DATETIME_FORMAT.format(testDate) + "\"\n"
+					+ "\t\"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format(testDate) + "\"\n"
 				+ "]\n",
 				result);
 			jsonReader = new Json5Reader(new ByteArrayInputStream(result.getBytes("UTF-8")));
@@ -213,7 +214,7 @@ public class Json5Test {
 					+ "\t1.3,\n"
 					+ "\t3.0E-6,\n"
 					+ "\t\"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
-					+ "\t\"" + DateUtilities.ISO_8601_DATETIME_FORMAT.format(testDate) + "\"\n"
+					+ "\t\"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format(testDate) + "\"\n"
 				+ "]\n",
 				result);
 			jsonReader = new Json5Reader(new ByteArrayInputStream(result.getBytes("UTF-8")));
@@ -324,7 +325,7 @@ public class Json5Test {
 					+ "\t\"test_double\": 1.3,\n"
 					+ "\t\"test_doubleE\": 3.0E-6,\n"
 					+ "\t\"test_äÄ\": \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
-					+ "\t\"test_date\": \"" + DateUtilities.ISO_8601_DATETIME_FORMAT.format(testDate) + "\"\n"
+					+ "\t\"test_date\": \"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format(testDate) + "\"\n"
 				+ "}\n",
 				result);
 			jsonReader = new Json5Reader(new ByteArrayInputStream(result.getBytes("UTF-8")));
@@ -382,7 +383,7 @@ public class Json5Test {
 					+ "\t\"test_double\": 1.3,\n"
 					+ "\t\"test_doubleE\": 3.0E-6,\n"
 					+ "\t\"test_äÄ\": \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
-					+ "\t\"test_date\": \"" + DateUtilities.ISO_8601_DATETIME_FORMAT.format(testDate) + "\",\n"
+					+ "\t\"test_date\": \"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format(testDate) + "\",\n"
 					+ "\t\"minInteger\": " + Integer.MIN_VALUE + ",\n"
 					+ "\t\"maxInteger\": " + Integer.MAX_VALUE + "\n"
 				+ "}\n",
@@ -1062,6 +1063,36 @@ public class Json5Test {
 			JsonUtilities.readUpToJsonPath(jsonReader, "$[0].item3.item32");
 			jsonReader.readNextToken();
 			Assert.assertEquals(JsonToken.JsonArray_Open, jsonReader.getCurrentToken());
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		} finally {
+			Utilities.closeQuietly(jsonReader);
+		}
+	}
+	
+	@Test
+	public void testKomplexExampleJson() {
+		JsonReader jsonReader = null;
+		try {
+			jsonReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/KomplexExample.json"));
+			JsonNode jsonNode = jsonReader.read();
+			Assert.assertNotNull(jsonNode);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		} finally {
+			Utilities.closeQuietly(jsonReader);
+		}
+	}
+	
+	@Test
+	public void testKomplexExampleJsonV5() {
+		JsonReader jsonReader = null;
+		try {
+			jsonReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/KomplexExampleV5.json"));
+			JsonNode jsonNode = jsonReader.read();
+			Assert.assertNotNull(jsonNode);
 		} catch (Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());

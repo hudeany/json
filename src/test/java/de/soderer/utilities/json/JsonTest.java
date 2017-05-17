@@ -2,6 +2,7 @@ package de.soderer.utilities.json;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.junit.Assert;
@@ -15,9 +16,9 @@ import de.soderer.utilities.json.JsonArray;
 import de.soderer.utilities.json.JsonNode;
 import de.soderer.utilities.json.JsonObject;
 import de.soderer.utilities.json.JsonReader;
-import de.soderer.utilities.json.JsonReader.JsonToken;
 import de.soderer.utilities.json.JsonUtilities;
 import de.soderer.utilities.json.JsonWriter;
+import de.soderer.utilities.json.JsonReader.JsonToken;
 
 public class JsonTest {
 	@Test
@@ -106,7 +107,7 @@ public class JsonTest {
 					+ "\t1.3,\n"
 					+ "\t3.0E-6,\n"
 					+ "\t\"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
-					+ "\t\"" + DateUtilities.ISO_8601_DATETIME_FORMAT.format(testDate) + "\"\n"
+					+ "\t\"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format(testDate) + "\"\n"
 				+ "]\n",
 				result);
 			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
@@ -213,7 +214,7 @@ public class JsonTest {
 					+ "\t1.3,\n"
 					+ "\t3.0E-6,\n"
 					+ "\t\"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
-					+ "\t\"" + DateUtilities.ISO_8601_DATETIME_FORMAT.format(testDate) + "\"\n"
+					+ "\t\"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format(testDate) + "\"\n"
 				+ "]\n",
 				result);
 			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
@@ -324,7 +325,7 @@ public class JsonTest {
 					+ "\t\"test_double\": 1.3,\n"
 					+ "\t\"test_doubleE\": 3.0E-6,\n"
 					+ "\t\"test_äÄ\": \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
-					+ "\t\"test_date\": \"" + DateUtilities.ISO_8601_DATETIME_FORMAT.format(testDate) + "\"\n"
+					+ "\t\"test_date\": \"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format(testDate) + "\"\n"
 				+ "}\n",
 				result);
 			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
@@ -382,7 +383,7 @@ public class JsonTest {
 					+ "\t\"test_double\": 1.3,\n"
 					+ "\t\"test_doubleE\": 3.0E-6,\n"
 					+ "\t\"test_äÄ\": \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
-					+ "\t\"test_date\": \"" + DateUtilities.ISO_8601_DATETIME_FORMAT.format(testDate) + "\",\n"
+					+ "\t\"test_date\": \"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format(testDate) + "\",\n"
 					+ "\t\"minInteger\": " + Integer.MIN_VALUE + ",\n"
 					+ "\t\"maxInteger\": " + Integer.MAX_VALUE + "\n"
 				+ "}\n",
