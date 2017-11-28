@@ -27,6 +27,8 @@ public class JsonWriter implements Closeable {
 
 	/** Output writer. */
 	private BufferedWriter outputWriter = null;
+
+	private long writtenCharacters = 0;
 	
 	private Stack<JsonStackItem> openJsonStackItems = new Stack<JsonStackItem>();
 	
@@ -73,6 +75,10 @@ public class JsonWriter implements Closeable {
 
 	public void setSeparator(String separator) {
 		this.separator = separator;
+	}
+
+	public long getWrittenCharacters() {
+		return writtenCharacters;
 	}
 
 	public void setUglify(boolean value) {
@@ -128,7 +134,7 @@ public class JsonWriter implements Closeable {
 				write(linebreak, false);
 			}
 			openJsonStackItems.push(JsonStackItem.Object);
-			write("\"" + propertyName.replace("\"", "\\\"") + "\":", true);
+			write("\"" + formatStringOutput(propertyName) + "\":", true);
 			openJsonStackItems.push(JsonStackItem.Object_Value);
 		}
 	}
@@ -148,7 +154,7 @@ public class JsonWriter implements Closeable {
 			} else if (propertyValue instanceof Number) {
 				write(separator + ((Number) propertyValue).toString(), false);
 			} else {
-				write(separator + "\"" + propertyValue.toString().replace("\"", "\\\"") + "\"", false);
+				write(separator + "\"" + formatStringOutput(propertyValue.toString()) + "\"", false);
 			}
 		}
 	}
@@ -222,7 +228,25 @@ public class JsonWriter implements Closeable {
 			} else if (arrayValue instanceof Number) {
 				write(((Number) arrayValue).toString(), true);
 			} else {
-				write("\"" + arrayValue.toString().replace("\"", "\\\"") + "\"", true);
+				write("\"" + formatStringOutput(arrayValue.toString()) + "\"", true);
+			}
+		}
+	}
+	
+	public void addSimpleValue(Object value) throws Exception {
+		if (writtenCharacters > 0 || openJsonStackItems.size() != 0) {
+			throw new Exception("Not matching empty Json output for adding simple value");
+		} else {
+			if (value == null) {
+				write("null", true);
+			} else if (value instanceof Boolean) {
+				write(Boolean.toString((Boolean) value), true);
+			} else if (value instanceof Date) {
+				write("\"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format((Date) value) + "\"", true);
+			} else if (value instanceof Number) {
+				write(((Number) value).toString(), true);
+			} else {
+				write("\"" + value.toString().replace("\"", "\\\"") + "\"", true);
 			}
 		}
 	}
@@ -317,10 +341,6 @@ public class JsonWriter implements Closeable {
 	 */
 	@Override
 	public void close() throws IOException {
-		if (outputWriter != null) {
-			outputWriter.write(linebreak);
-		}
-		
 		closeQuietly(outputWriter);
 		outputWriter = null;
 		closeQuietly(outputStream);
@@ -343,7 +363,9 @@ public class JsonWriter implements Closeable {
 			outputWriter = new BufferedWriter(new OutputStreamWriter(outputStream, encoding));
 		}
 		
-		outputWriter.write((indent ? Utilities.repeat(indention, openJsonStackItems.size()) : "") + text);
+		String dataToWrite = (indent ? Utilities.repeat(indention, openJsonStackItems.size()) : "") + text;
+		writtenCharacters += dataToWrite.length();
+		outputWriter.write(dataToWrite);
 	}
 
 	/**
@@ -468,5 +490,17 @@ public class JsonWriter implements Closeable {
 		} else {
 			return jsonNode.getValue().toString();
 		}
+	}
+	
+	public String formatStringOutput(String value) {
+		return value
+			.replace("\\", "\\\\")
+			.replace("\"", "\\\"")
+			.replace("/", "\\/")
+			.replace("\b", "\\b")
+			.replace("\f", "\\f")
+			.replace("\r", "\\r")
+			.replace("\n", "\\n")
+			.replace("\t", "\\t");
 	}
 }

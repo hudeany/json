@@ -275,7 +275,11 @@ public class JsonReader extends BasicReader {
 	}
 
 	private Object readSimpleJsonValue(String valueString) throws Exception {
-		if (valueString.equalsIgnoreCase("null")) {
+		if (valueString == null) {
+			throw new Exception("Invalid empty json data");
+		} else if (valueString.startsWith("\"")) {
+			return readQuotedText('"', '\\');
+		} else if (valueString.equalsIgnoreCase("null")) {
 			return null;
 		} else if (valueString.equalsIgnoreCase("true")) {
 			return true;
