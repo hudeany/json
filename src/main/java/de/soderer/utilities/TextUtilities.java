@@ -28,6 +28,11 @@ public class TextUtilities {
 	public static final String GERMAN_TEST_STRING = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\<>(){}[]'\"´`^°¹²³*#.,;:=+-~_|½¼¬";
 
 	/**
+	 * A simple string for testing, which includes all special characters
+	 */
+	public static final String SPECIAL_TEST_STRING = "\n\r\t\b\f\u00c4\u00e4\u00d6\u00f6\u00dc\u00fc\u00df";
+
+	/**
 	 * Enum to represent a linebreak type of an text
 	 */
 	public enum LineBreakType {
