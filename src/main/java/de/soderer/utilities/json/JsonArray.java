@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import de.soderer.utilities.Utilities;
-
 public class JsonArray implements Iterable<Object> {
 	private List<Object> items = new ArrayList<Object>();
 
@@ -33,20 +31,13 @@ public class JsonArray implements Iterable<Object> {
 
 	@Override
 	public String toString() {
-		JsonWriter writer = null;
-		ByteArrayOutputStream output = null;
-		try {
-			output = new ByteArrayOutputStream();
-			writer = new JsonWriter(output, "UTF-8");
+		try (ByteArrayOutputStream output = new ByteArrayOutputStream();
+			JsonWriter writer = new JsonWriter(output, "UTF-8");) {
 			writer.add(this);
-			writer.close();
+			writer.flush();
 			return new String(output.toByteArray(), "UTF-8");
 		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		} finally {
-			Utilities.closeQuietly(output);
-			Utilities.closeQuietly(writer);
+			throw new RuntimeException(e);
 		}
 	}
 

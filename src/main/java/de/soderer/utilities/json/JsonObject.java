@@ -7,8 +7,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import de.soderer.utilities.Utilities;
-
 public class JsonObject implements Iterable<Map.Entry<String, Object>> {
 	private Map<String, Object> properties = new LinkedHashMap<String, Object>();
 
@@ -53,20 +51,12 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>> {
 
 	@Override
 	public String toString() {
-		JsonWriter writer = null;
-		ByteArrayOutputStream output = null;
-		try {
-			output = new ByteArrayOutputStream();
-			writer = new JsonWriter(output, "UTF-8");
+		try (ByteArrayOutputStream output = new ByteArrayOutputStream(); JsonWriter writer = new JsonWriter(output, "UTF-8");) {
 			writer.add(this);
-			writer.close();
+			writer.flush();
 			return new String(output.toByteArray(), "UTF-8");
 		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		} finally {
-			Utilities.closeQuietly(output);
-			Utilities.closeQuietly(writer);
+			throw new RuntimeException(e);
 		}
 	}
 

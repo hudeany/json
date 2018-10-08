@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.LineNumberReader;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +28,7 @@ public class TextUtilities {
 	 * A simple string for testing, which includes all german characters
 	 */
 	public static final String GERMAN_TEST_STRING = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\<>(){}[]'\"´`^°¹²³*#.,;:=+-~_|½¼¬";
-
+	
 	/**
 	 * A simple string for testing, which includes all special characters
 	 */
@@ -148,6 +150,42 @@ public class TextUtilities {
 		}
 
 		return returnList;
+	}
+
+	/**
+	 * Reduce a text to a maximum number of lines. The type of linebreaks in the result string will not be changed. If the text has less lines then maximum it will be returned unchanged.
+	 *
+	 * @param value
+	 * @param maxLines
+	 * @return
+	 */
+	public static String trimToMaxNumberOfLines(String value, int maxLines) {
+		String normalizedValue = normalizeLineBreaks(value, LineBreakType.Unix);
+		int count = 0;
+		int nextLinebreak = 0;
+		while (nextLinebreak != -1 && count < maxLines) {
+			nextLinebreak = normalizedValue.indexOf(LinebreakUnix, nextLinebreak + 1);
+			count++;
+		}
+
+		if (nextLinebreak != -1) {
+			LineBreakType originalLineBreakType = detectLinebreakType(value);
+			return normalizeLineBreaks(normalizedValue.substring(0, nextLinebreak + 1), originalLineBreakType) + "...";
+		} else {
+			return value;
+		}
+	}
+
+	/**
+	 * Detect the type of linebreaks in a text.
+	 *
+	 * @param value
+	 * @return
+	 */
+	public static LineBreakType detectLinebreakType(String value) {
+		TextPropertiesReader textPropertiesReader = new TextPropertiesReader(value);
+		textPropertiesReader.readProperties();
+		return textPropertiesReader.getLinebreakType();
 	}
 
 	/**
@@ -347,6 +385,86 @@ public class TextUtilities {
 	}
 
 	/**
+	 * Searching the next position of a string or searchPattern beginning at a startIndex. Searched text can be a simple string or a regex pattern, switching this with the flag
+	 * searchTextIsRegularExpression. Search can be done caseinsensitive or caseinsensitive by the flag searchCaseSensitive. Search can be done from end to start, backwards by the flag
+	 * searchReversely.
+	 *
+	 *
+	 * @param text
+	 * @param startPosition
+	 * @param searchTextOrPattern
+	 * @param searchTextIsRegularExpression
+	 * @param searchCaseSensitive
+	 * @param searchReversely
+	 * @return Tuple First = Startindex, Second = Length of found substring
+	 */
+	public static Tuple<Integer, Integer> searchNextPosition(String text, int startPosition, String searchTextOrPattern, boolean searchTextIsRegularExpression, boolean searchCaseSensitive,
+			boolean searchReversely) {
+		if (Utilities.isBlank(text) || startPosition < 0 || text.length() < startPosition || Utilities.isEmpty(searchTextOrPattern)) {
+			return null;
+		} else {
+			String fullText = text;
+			int nextPosition = -1;
+			int length = -1;
+
+			Pattern searchPattern;
+			if (searchTextIsRegularExpression) {
+				if (searchCaseSensitive) {
+					searchPattern = Pattern.compile(searchTextOrPattern, Pattern.MULTILINE);
+				} else {
+					searchPattern = Pattern.compile(searchTextOrPattern, Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+				}
+			} else {
+				if (searchCaseSensitive) {
+					searchPattern = Pattern.compile(searchTextOrPattern, Pattern.LITERAL | Pattern.MULTILINE);
+				} else {
+					searchPattern = Pattern.compile(searchTextOrPattern, Pattern.CASE_INSENSITIVE | Pattern.LITERAL | Pattern.MULTILINE);
+				}
+			}
+
+			Matcher matcher = searchPattern.matcher(fullText);
+
+			if (searchReversely) {
+				while (matcher.find()) {
+					if (matcher.start() < startPosition) {
+						nextPosition = matcher.start();
+						length = matcher.end() - nextPosition;
+					} else {
+						break;
+					}
+				}
+				if (nextPosition < 0) {
+					if (matcher.start() > 0) {
+						nextPosition = matcher.start();
+						length = matcher.end() - nextPosition;
+					}
+					while (matcher.find()) {
+						nextPosition = matcher.start();
+						length = matcher.end() - nextPosition;
+					}
+				}
+			} else {
+				if (matcher.find(startPosition)) {
+					nextPosition = matcher.start();
+					length = matcher.end() - nextPosition;
+				}
+				if (startPosition > 0 && nextPosition < 0) {
+					if (matcher.find(0)) {
+						nextPosition = matcher.start();
+						length = matcher.end() - nextPosition;
+					}
+				}
+			}
+
+			if (nextPosition < 0) {
+				return null;
+			} else {
+				return new Tuple<Integer, Integer>(nextPosition, length);
+			}
+		}
+	}
+
+	/**
 	 * Count the occurences of a string or pattern within a text
 	 *
 	 * @param text
@@ -495,6 +613,72 @@ public class TextUtilities {
 			return dataBuilder.toString();
 		} else {
 			return dataString;
+		}
+	}
+
+	/**
+	 * Try to detect the encoding of a byte array xml data.
+	 *
+	 *
+	 * @param data
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 */
+	public static Tuple<String, Boolean> detectEncoding(byte[] data) throws UnsupportedEncodingException {
+		if (data.length > 2 && data[0] == Utilities.BOM_UTF_16_BIG_ENDIAN[0] && data[1] == Utilities.BOM_UTF_16_BIG_ENDIAN[1]) {
+			return new Tuple<String, Boolean>("UTF-16BE", true);
+		} else if (data.length > 2 && data[0] == Utilities.BOM_UTF_16_LOW_ENDIAN[0] && data[1] == Utilities.BOM_UTF_16_LOW_ENDIAN[1]) {
+			return new Tuple<String, Boolean>("UTF-16LE", true);
+		} else if (data.length > 3 && data[0] == Utilities.BOM_UTF_8[0] && data[1] == Utilities.BOM_UTF_8[1] && data[2] == Utilities.BOM_UTF_8[2]) {
+			return new Tuple<String, Boolean>("UTF-8", true);
+		} else {
+			// Detect Xml Encoding
+			try {
+				// Use first data part only to speed up
+				String interimString = new String(data, 0, Math.min(data.length, 100), "UTF-8").toLowerCase();
+				String reducedInterimString = interimString.replace("\u0000", "");
+				int encodingStart = reducedInterimString.indexOf("encoding");
+				if (encodingStart >= 0) {
+					encodingStart = reducedInterimString.indexOf("=", encodingStart);
+					if (encodingStart >= 0) {
+						encodingStart++;
+						while (reducedInterimString.charAt(encodingStart) == ' ') {
+							encodingStart++;
+						}
+						if (reducedInterimString.charAt(encodingStart) == '"' || reducedInterimString.charAt(encodingStart) == '\'') {
+							encodingStart++;
+						}
+						StringBuilder encodingString = new StringBuilder();
+						while (Character.isLetter(reducedInterimString.charAt(encodingStart)) || Character.isDigit(reducedInterimString.charAt(encodingStart))
+								|| reducedInterimString.charAt(encodingStart) == '-') {
+							encodingString.append(reducedInterimString.charAt(encodingStart));
+							encodingStart++;
+						}
+						Charset.forName(encodingString.toString());
+						if (encodingString.toString().startsWith("utf-16") && data[0] == 0) {
+							return new Tuple<String, Boolean>("UTF-16BE", false);
+						} else if (encodingString.toString().startsWith("utf-16") && data[1] == 0) {
+							return new Tuple<String, Boolean>("UTF-16LE", false);
+						} else {
+							return new Tuple<String, Boolean>(encodingString.toString().toUpperCase(), false);
+						}
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			String interimString = new String(data, "UTF-8").toLowerCase();
+			int zeroIndex = interimString.indexOf('\u0000');
+			if (zeroIndex >= 0 && zeroIndex <= 100) {
+				if (zeroIndex % 2 == 0) {
+					return new Tuple<String, Boolean>("UTF-16BE", false);
+				} else {
+					return new Tuple<String, Boolean>("UTF-16LE", false);
+				}
+			}
+
+			return null;
 		}
 	}
 
@@ -875,5 +1059,28 @@ public class TextUtilities {
 
 	public static boolean isValidBase64(String value) {
 		return Pattern.matches("^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$", value);
+	}
+
+	public static String getLineStartingWith(String text, String starter) throws Exception {
+		for (String line : TextUtilities.getLines(text)) {
+			if (line.startsWith(starter)) {
+				return line;
+			}
+		}
+		return null;
+	}
+
+	public static String getProsaParameter(String text, String parameterName) throws Exception {
+		if (Utilities.isBlank(text)) {
+			return null;
+		} else {
+			Pattern parameterPattern = Pattern.compile("^\\s*" + parameterName + "\\s*:(.*)$", Pattern.MULTILINE);
+			Matcher parameterMatcher = parameterPattern.matcher(text);
+			if (parameterMatcher.find()) {
+				return parameterMatcher.group(1).trim();
+			} else {
+				return null;
+			}
+		}
 	}
 }

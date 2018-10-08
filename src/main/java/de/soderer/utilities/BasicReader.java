@@ -29,6 +29,7 @@ public abstract class BasicReader implements Closeable {
 	private Character currentChar;
 	private Character reuseChar = null;
 	private long readCharacters = 0;
+	private long readLines = 0;
 
 	public BasicReader(InputStream inputStream) throws Exception {
 		this(inputStream, (String) null);
@@ -48,6 +49,10 @@ public abstract class BasicReader implements Closeable {
 	
 	public long getReadCharacters() {
 		return readCharacters;
+	}
+	
+	public long getReadLines() {
+		return readLines;
 	}
 	
 	public void reuseCurrentChar() {
@@ -77,8 +82,12 @@ public abstract class BasicReader implements Closeable {
 				} else if (readCharacters == 0 && currentCharInt == BOM_UTF_8_CHAR_ISO_8859 && encoding.displayName().toUpperCase().startsWith("ISO-8859-")) {
 					throw new IOException("Data encoding \"" + encoding + "\" is invalid: UTF-8 BOM detected");
 				} else {
-					currentChar = (char) currentCharInt;
+					char nextChar = (char) currentCharInt;
 					readCharacters++;
+					if (nextChar == '\r' || (nextChar == '\n' && currentCharInt != '\r')) {
+						readLines++;
+					}
+					currentChar = nextChar;
 				}
 			} else {
 				currentChar = null;

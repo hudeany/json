@@ -1290,7 +1290,9 @@ public class Utilities {
 			List<String> returnList = new ArrayList<String>();
 			String[] parts = stringList.split(",|;|\\|| |\\n|\\r|\\t");
 			for (String part : parts) {
-				returnList.add(part.trim());
+				if (isNotEmpty(part)) {
+					returnList.add(part.trim());
+				}
 			}
 			return returnList;
 		}
@@ -1303,7 +1305,9 @@ public class Utilities {
 			List<String> returnList = new ArrayList<String>();
 			String[] parts = stringList.split(join(separatorChars, "|").replace("\n", "\\n").replace("\t", "\\t").replace("\r", "\\r"));
 			for (String part : parts) {
-				returnList.add(part.trim());
+				if (isNotEmpty(part)) {
+					returnList.add(part.trim());
+				}
 			}
 			return returnList;
 		}

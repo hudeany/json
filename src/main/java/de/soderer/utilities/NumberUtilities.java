@@ -1,6 +1,5 @@
 package de.soderer.utilities;
 
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DecimalFormat;
@@ -76,15 +75,38 @@ public class NumberUtilities {
 		return Pattern.matches("[+|-]?[0-9]*(\\.[0-9]*)?([e|E][+|-]?[0-9]*)?", numberString);
 	}
 	
+	/**
+	 * Parse a number of unknown type in english notation like "1,234,567.90E-12".
+	 * Resulting type may be Integer, Long, Float, Double, BigDecimal. Byte and Short are returned as Integer.
+	 * The resulting type is the smallest type able to contain the given number without loss of accuracy.
+	 * 
+	 * @param numberString
+	 * @return
+	 * @throws NumberFormatException
+	 */
 	public static Number parseNumber(String numberString) throws NumberFormatException {
 		if (!isNumber(numberString)) {
 			throw new NumberFormatException("Not a number: '" + numberString + "'");
+		} else if (numberString.contains("e") || numberString.contains("E")) {
+			String exponentString = numberString.substring(numberString.toLowerCase().indexOf("e") + 1);
+			int exponent;
+			if (exponentString.length() == 0) {
+				exponent = 0;
+			} else {
+				exponent = Integer.parseInt(exponentString);
+			}
+			if (Float.MIN_EXPONENT < exponent && exponent < Float.MAX_EXPONENT) {
+				return new Float(numberString);
+			} else {
+				return new Double(numberString);
+			}
 		} else if (numberString.contains(".")) {
 			if (numberString.length() < 10) {
 				return new Float(numberString);
 			} else {
 				BigDecimal value = new BigDecimal(numberString);
-				boolean isFloat = new BigDecimal(Float.MIN_VALUE).compareTo(value) == -1 && value.compareTo(new BigDecimal(Float.MAX_VALUE)) == -1;
+				int numberOfDecimalPoints = numberString.substring(numberString.indexOf(".") + 1).replace(",", "").length();
+				boolean isFloat = numberOfDecimalPoints <= 7 && new BigDecimal(Float.MIN_VALUE).compareTo(value) == -1 && value.compareTo(new BigDecimal(Float.MAX_VALUE)) == -1;
 				if (isFloat) {
 					return new Float(numberString);
 				} else {

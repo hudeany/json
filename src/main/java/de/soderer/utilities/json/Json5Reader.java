@@ -66,7 +66,7 @@ public class Json5Reader extends JsonReader {
 				break;
 			case '}': // Close JsonObject
 				if (openJsonItems.pop() != JsonToken.JsonObject_Open) {
-					throw new Exception("Invalid json data '" + currentChar + "' at index " + getReadCharacters());
+					throw new Exception("Invalid json data '" + currentChar + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
 				} else {
 					jsonToken = JsonToken.JsonObject_Close;
 				}
@@ -80,7 +80,7 @@ public class Json5Reader extends JsonReader {
 				break;
 			case ']': // Close JsonArray
 				if (openJsonItems.pop() != JsonToken.JsonArray_Open) {
-					throw new Exception("Invalid json data '" + currentChar + "' at index " + getReadCharacters());
+					throw new Exception("Invalid json data '" + currentChar + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
 				} else {
 					jsonToken = JsonToken.JsonArray_Close;
 				}
@@ -99,7 +99,7 @@ public class Json5Reader extends JsonReader {
 						readUpToNext(true, null, '*');
 					}
 				} else {
-					throw new Exception("Invalid json data '" + currentChar + "' at index " + getReadCharacters());
+					throw new Exception("Invalid json data '" + currentChar + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
 				}
 				jsonToken = readNextTokenInternal();
 				break;
@@ -115,7 +115,7 @@ public class Json5Reader extends JsonReader {
 					currentObject = readQuotedText(currentChar, '\\');
 					currentChar = readNextNonWhitespace();
 					if (currentChar != ':') {
-						throw new Exception("Invalid json data '" + currentChar + "' at index " + getReadCharacters());
+						throw new Exception("Invalid json data '" + currentChar + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
 					}
 					openJsonItems.push(JsonToken.JsonObject_PropertyKey);
 					jsonToken = JsonToken.JsonObject_PropertyKey;
@@ -126,11 +126,11 @@ public class Json5Reader extends JsonReader {
 					if (currentChar == '}') {
 						reuseCurrentChar();
 					} else if (currentChar != ',') {
-						throw new Exception("Invalid json data '" + currentChar + "' at index " + getReadCharacters());
+						throw new Exception("Invalid json data '" + currentChar + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
 					}
 					jsonToken = JsonToken.JsonSimpleValue;
 				} else {
-					throw new Exception("Invalid json data '" + currentChar + "' at index " + getReadCharacters());
+					throw new Exception("Invalid json data '" + currentChar + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
 				}
 				break;
 			default: // Start JsonObject propertykey or propertyvalue or JsonArray item
@@ -158,7 +158,7 @@ public class Json5Reader extends JsonReader {
 					}
 					jsonToken = JsonToken.JsonSimpleValue;
 				} else {
-					throw new Exception("Invalid json data '" + currentChar + "' at index " + getReadCharacters());
+					throw new Exception("Invalid json data '" + currentChar + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
 				}
 				break;
 		}
@@ -186,7 +186,7 @@ public class Json5Reader extends JsonReader {
 		} else if (NumberUtilities.isNumber(valueString)) {
 			return NumberUtilities.parseNumber(valueString);
 		} else {
-			throw new Exception("Invalid json data '" + Utilities.shortenStringToMaxLengthCutLeft(valueString, 20) + "' at index " + getReadCharacters());
+			throw new Exception("Invalid json data '" + Utilities.shortenStringToMaxLengthCutLeft(valueString, 20) + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
 		}
 	}
 
@@ -203,7 +203,7 @@ public class Json5Reader extends JsonReader {
 		if (Pattern.matches("[A-Za-z_$]+[A-Za-z_$0-9]*", identifierString)) {
 			return identifierString;
 		} else {
-			throw new Exception("Invalid json identifier '" + Utilities.shortenStringToMaxLengthCutLeft(identifierString, 20) + "' at index " + getReadCharacters());
+			throw new Exception("Invalid json identifier '" + Utilities.shortenStringToMaxLengthCutLeft(identifierString, 20) + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
 		}
 	}
 	
