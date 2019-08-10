@@ -14,8 +14,8 @@ import de.soderer.utilities.Utilities;
 public class JsonReader extends BasicReader {
 	protected Object currentObject = null;
 	
-	protected Stack<JsonToken> openJsonItems = new Stack<JsonToken>();
-	protected Stack<String> currentJsonPath = new Stack<String>();
+	protected Stack<JsonToken> openJsonItems = new Stack<>();
+	protected Stack<String> currentJsonPath = new Stack<>();
 	
 	public enum JsonToken {
 		JsonObject_Open,
@@ -308,7 +308,7 @@ public class JsonReader extends BasicReader {
 		}
 	}
 	
-	protected void updateJsonPath(JsonToken jsonToken) {
+	protected void updateJsonPath(JsonToken jsonToken) throws Exception {
 		if (jsonToken != null) {
 			switch(jsonToken) {
 				case JsonArray_Open:
@@ -347,6 +347,8 @@ public class JsonReader extends BasicReader {
 						currentJsonPath.pop();
 					}
 					break;
+				default:
+					throw new Exception("Invalid jsonToken");
 			}
 		}
 	}

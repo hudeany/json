@@ -30,7 +30,7 @@ public class MaxLengthValidator extends BaseJsonSchemaValidator {
 			}
 		} else {
 			if (((String) jsonNode.getValue()).length() > ((Integer) validatorData)) {
-				throw new JsonSchemaDataValidationError("String maxLength is '" + ((Integer) validatorData) + "' but was '" + ((String) jsonNode.getValue()).length()  + "'", jsonPath);
+				throw new JsonSchemaDataValidationError("String maxLength is '" + validatorData + "' but was '" + ((String) jsonNode.getValue()).length()  + "'", jsonPath);
 			}
 		}
     }

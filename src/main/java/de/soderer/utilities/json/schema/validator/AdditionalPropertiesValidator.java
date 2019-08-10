@@ -31,7 +31,7 @@ public class AdditionalPropertiesValidator extends ExtendedBaseJsonSchemaValidat
 				throw new JsonSchemaDataValidationError("Expected data type 'object' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {		
-			List<String> additionalPropertyNames = new ArrayList<String>();
+			List<String> additionalPropertyNames = new ArrayList<>();
 			
 			for (String checkPropertyKey : ((JsonObject) jsonNode.getValue()).keySet()) {
 				if (parentValidatorData.containsPropertyKey("properties")) {
@@ -39,7 +39,7 @@ public class AdditionalPropertiesValidator extends ExtendedBaseJsonSchemaValidat
 						throw new JsonSchemaDefinitionError("Properties data is 'null'", jsonSchemaPath);
 			    	} else if (!(parentValidatorData.get("properties") instanceof JsonObject)) {
 						throw new JsonSchemaDefinitionError("Properties data is not a JsonObject", jsonSchemaPath);
-			    	} else if (((JsonObject) ((JsonObject) parentValidatorData).get("properties")).containsPropertyKey(checkPropertyKey)) {
+			    	} else if (((JsonObject) (parentValidatorData).get("properties")).containsPropertyKey(checkPropertyKey)) {
 			    		continue;
 			    	}
 				}

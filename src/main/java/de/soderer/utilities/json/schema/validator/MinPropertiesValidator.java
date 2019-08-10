@@ -31,7 +31,7 @@ public class MinPropertiesValidator extends BaseJsonSchemaValidator {
 			}
 		} else {
 			if (((JsonObject) jsonNode.getValue()).keySet().size() < ((Integer) validatorData)) {
-				throw new JsonSchemaDataValidationError("Required minimum number of properties is '" + ((Integer) validatorData) + "' but was '" + ((JsonObject) jsonNode.getValue()).keySet().size()  + "'", jsonPath);
+				throw new JsonSchemaDataValidationError("Required minimum number of properties is '" + validatorData + "' but was '" + ((JsonObject) jsonNode.getValue()).keySet().size()  + "'", jsonPath);
 			}
 		}
     }

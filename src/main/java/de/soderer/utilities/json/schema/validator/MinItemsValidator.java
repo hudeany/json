@@ -33,7 +33,7 @@ public class MinItemsValidator extends BaseJsonSchemaValidator {
 			}
 		} else {
 			if (((JsonArray) jsonNode.getValue()).size() < ((Integer) validatorData)) {
-				throw new JsonSchemaDataValidationError("Required minimum number of items is '" + ((Integer) validatorData) + "' but was '" + ((JsonArray) jsonNode.getValue()).size()  + "'", jsonPath);
+				throw new JsonSchemaDataValidationError("Required minimum number of items is '" + validatorData + "' but was '" + ((JsonArray) jsonNode.getValue()).size()  + "'", jsonPath);
 			}
 		}
     }

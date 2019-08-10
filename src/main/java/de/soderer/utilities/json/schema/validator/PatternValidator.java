@@ -22,13 +22,13 @@ public class PatternValidator extends BaseJsonSchemaValidator {
 		if (jsonNode.isNumber()) {
 			if (!jsonSchemaDependencyResolver.isUseDraftV4Mode()) {
 				if (!pattern.matcher(((Number) jsonNode.getValue()).toString()).find()) {
-					throw new JsonSchemaDataValidationError("RegEx pattern '" + (String) validatorData + "' is not matched by data number '" + (Number) jsonNode.getValue() + "'", jsonPath);
+					throw new JsonSchemaDataValidationError("RegEx pattern '" + (String) validatorData + "' is not matched by data number '" + jsonNode.getValue() + "'", jsonPath);
 				}
 			}
 		} else if (jsonNode.isBoolean()) {
 			if (!jsonSchemaDependencyResolver.isUseDraftV4Mode()) {
 				if (!pattern.matcher(((Boolean) jsonNode.getValue()).toString()).find()) {
-					throw new JsonSchemaDataValidationError("RegEx pattern '" + (String) validatorData + "' is not matched by data boolean '" + (Boolean) jsonNode.getValue() + "'", jsonPath);
+					throw new JsonSchemaDataValidationError("RegEx pattern '" + (String) validatorData + "' is not matched by data boolean '" + jsonNode.getValue() + "'", jsonPath);
 				}
 			}
 		} else if (jsonNode.isString()) {

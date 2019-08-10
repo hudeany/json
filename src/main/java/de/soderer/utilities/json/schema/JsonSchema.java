@@ -268,7 +268,7 @@ public class JsonSchema {
 	}
 	
 	public static List<BaseJsonSchemaValidator> createValidators(JsonObject jsonSchemaDefinitionObject, JsonSchemaDependencyResolver jsonSchemaDependencyResolver, String currentJsonSchemaPath, JsonNode jsonNode, String currentJsonPath) throws JsonSchemaDefinitionError {
-		List<BaseJsonSchemaValidator> validators = new ArrayList<BaseJsonSchemaValidator>();
+		List<BaseJsonSchemaValidator> validators = new ArrayList<>();
 		for (Entry<String, Object> entry : jsonSchemaDefinitionObject.entrySet()) {
 			switch (entry.getKey()) {
 				case "type":

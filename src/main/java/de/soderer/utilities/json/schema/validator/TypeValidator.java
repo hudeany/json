@@ -29,7 +29,7 @@ public class TypeValidator extends BaseJsonSchemaValidator {
     			if (typeData == null) {
     	    		throw new JsonSchemaDefinitionError("Type data array contains a 'null' item", jsonSchemaPath);
     			} else if (typeData instanceof String) {
-	    	    	if ("any".equals((String) typeData)) {
+	    	    	if ("any".equals(typeData)) {
 	    	    		return;
 	    			} else {
 	    	    		JsonDataType jsonDataType;
@@ -59,7 +59,7 @@ public class TypeValidator extends BaseJsonSchemaValidator {
     		}
     		throw new JsonSchemaDataValidationError("Invalid data type '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
     	} else {
-			if ("any".equals((String) validatorData)) {
+			if ("any".equals(validatorData)) {
 				return;
 			} else {
 				JsonDataType jsonDataType;

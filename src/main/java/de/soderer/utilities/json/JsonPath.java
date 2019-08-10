@@ -7,7 +7,7 @@ import java.util.Stack;
 import de.soderer.utilities.BasicReader;
 
 public class JsonPath {
-	private Stack<Object> pathParts = new Stack<Object>();
+	private Stack<Object> pathParts = new Stack<>();
 
 	/**
 	 * Allowed syntax for JSON path:
@@ -27,6 +27,7 @@ public class JsonPath {
 	 */
 	public JsonPath(String jsonPathString) throws Exception {
 		try (JsonPathReader jsonPathReader = new JsonPathReader(jsonPathString)) {
+			// Do nothing
 		}
 	}
 	
@@ -83,7 +84,7 @@ public class JsonPath {
 		public JsonPathReader(String jsonPathString) throws Exception {
 			super(new ByteArrayInputStream(jsonPathString.getBytes("UTF-8")));
 			
-			pathParts = new Stack<Object>();
+			pathParts = new Stack<>();
 			
 			Character nextChar = readNextNonWhitespace();
 			if (nextChar == null) {

@@ -20,7 +20,7 @@ public class AllOfValidator extends BaseJsonSchemaValidator {
     	if (validatorData == null) {
     		throw new JsonSchemaDefinitionError("AllOf array is 'null'", jsonSchemaPath);
     	} else if (validatorData instanceof JsonArray) {
-    		subValidatorPackages = new ArrayList<List<BaseJsonSchemaValidator>>();
+    		subValidatorPackages = new ArrayList<>();
     		for (int i = 0; i < ((JsonArray) validatorData).size(); i++) {
     			Object subValidationData = ((JsonArray) validatorData).get(i);
     			if (subValidationData instanceof JsonObject) {

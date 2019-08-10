@@ -121,7 +121,7 @@ public class JsonUtilities {
 	}
 
 	public static List<Node> convertToXmlNodes(JsonObject jsonObject, Document xmlDocument, boolean useAttributes) {
-		List<Node> list = new ArrayList<Node>();
+		List<Node> list = new ArrayList<>();
 
 		for (String key : jsonObject.keySet()) {
 			Object subItem = jsonObject.get(key);
@@ -154,7 +154,7 @@ public class JsonUtilities {
 	}
 
 	public static List<Node> convertToXmlNodes(JsonArray jsonArray, String nodeName, Document xmlDocument, boolean useAttributes) {
-		List<Node> list = new ArrayList<Node>();
+		List<Node> list = new ArrayList<>();
 
 		if (jsonArray.size() > 0) {
 			for (Object subItem : jsonArray) {
@@ -211,6 +211,7 @@ public class JsonUtilities {
 		jsonPath = "$" + jsonPath.replace("/", ".");
 		
 		while (jsonReader.readNextToken() != null && !jsonReader.getCurrentJsonPath().equals(jsonPath)) {
+			// Do nothing
 		}
 
 		if (!jsonReader.getCurrentJsonPath().equals(jsonPath)) {

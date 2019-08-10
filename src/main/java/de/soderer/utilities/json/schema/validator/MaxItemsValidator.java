@@ -33,7 +33,7 @@ public class MaxItemsValidator extends BaseJsonSchemaValidator {
 			}
 		} else {
 			if (((JsonArray) jsonNode.getValue()).size() > ((Integer) validatorData)) {
-				throw new JsonSchemaDataValidationError("Required maximum number of items is '" + ((Integer) validatorData) + "' but was '" + ((JsonArray) jsonNode.getValue()).size()  + "'", jsonPath);
+				throw new JsonSchemaDataValidationError("Required maximum number of items is '" + validatorData + "' but was '" + ((JsonArray) jsonNode.getValue()).size()  + "'", jsonPath);
 			}
 		}
     }

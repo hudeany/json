@@ -8,7 +8,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 public class JsonObject implements Iterable<Map.Entry<String, Object>> {
-	private Map<String, Object> properties = new LinkedHashMap<String, Object>();
+	private Map<String, Object> properties = new LinkedHashMap<>();
 
 	/**
 	 * When using the same key multiple times only the last value will be stored
@@ -82,5 +82,13 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>> {
 		} else {
 			return false;
 		}
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((properties == null) ? 0 : properties.hashCode());
+		return result;
 	}
 }

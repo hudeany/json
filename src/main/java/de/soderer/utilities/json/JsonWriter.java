@@ -30,7 +30,7 @@ public class JsonWriter implements Closeable {
 
 	private long writtenCharacters = 0;
 	
-	private Stack<JsonStackItem> openJsonStackItems = new Stack<JsonStackItem>();
+	private Stack<JsonStackItem> openJsonStackItems = new Stack<>();
 	
 	private String linebreak = "\n";
 	private String indention = "\t";
@@ -320,6 +320,8 @@ public class JsonWriter implements Closeable {
 					break;
 				case Object_Value:
 					break;
+				default:
+					throw new Exception("Invalid open json item");
 			}
 		}
 	}

@@ -18,7 +18,7 @@ import de.soderer.utilities.json.JsonPath;
 
 public class JsonSchemaDependencyResolver {
 	private JsonObject schemaDocumentNode = null;
-	private Map<String, JsonObject> additionalSchemaDocumentNodes = new HashMap<String, JsonObject>();
+	private Map<String, JsonObject> additionalSchemaDocumentNodes = new HashMap<>();
 	
 	/**
 	 * Draft V4 mode is NOT default mode<br />
@@ -160,12 +160,12 @@ public class JsonSchemaDependencyResolver {
 	public void checkCyclicDependency(String jsonPath, String validatorData, String jsonSchemaPath) throws JsonSchemaDefinitionError {
 		if (latestJsonPath == null || !latestJsonPath.equals(jsonPath)) {
 			latestJsonPath = jsonPath;
-			latestDependencies = new HashSet<String>();
+			latestDependencies = new HashSet<>();
 		}
-		if (latestDependencies.contains((String) validatorData)) {
+		if (latestDependencies.contains(validatorData)) {
 			throw new JsonSchemaDefinitionError("Cyclic dependency detected: '" + Utilities.join(latestDependencies, "', ") + "'", jsonSchemaPath);
 		} else{
-			latestDependencies.add((String) validatorData);
+			latestDependencies.add(validatorData);
 		}
 	}
 	
