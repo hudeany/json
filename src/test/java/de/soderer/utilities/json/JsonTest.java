@@ -2,6 +2,7 @@ package de.soderer.utilities.json;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -21,14 +22,14 @@ public class JsonTest {
 		JsonReader jsonReader = null;
 		try {
 			output = new ByteArrayOutputStream();
-			writer = new JsonWriter(output, "UTF-8");
+			writer = new JsonWriter(output, StandardCharsets.UTF_8);
 			writer.openJsonArray();
 			writer.closeJsonArray();
 			writer.close();
 			output.close();
-			final String result = new String(output.toByteArray(), "UTF-8");
+			final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 			Assert.assertEquals("[]", result);
-			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 			Assert.assertNotNull(jsonReader.read());
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -47,13 +48,13 @@ public class JsonTest {
 		JsonReader jsonReader = null;
 		try {
 			output = new ByteArrayOutputStream();
-			writer = new JsonWriter(output, "UTF-8");
+			writer = new JsonWriter(output, StandardCharsets.UTF_8);
 			writer.add(new JsonArray());
 			writer.close();
 			output.close();
-			final String result = new String(output.toByteArray(), "UTF-8");
+			final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 			Assert.assertEquals("[]", result);
-			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 			Assert.assertNotNull(jsonReader.read());
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -73,7 +74,7 @@ public class JsonTest {
 		try {
 			final Date testDate = new Date();
 			output = new ByteArrayOutputStream();
-			writer = new JsonWriter(output, "UTF-8");
+			writer = new JsonWriter(output, StandardCharsets.UTF_8);
 			writer.openJsonArray();
 			writer.addSimpleJsonArrayValue(null);
 			writer.addSimpleJsonArrayValue(true);
@@ -88,7 +89,7 @@ public class JsonTest {
 			writer.closeJsonArray();
 			writer.close();
 			output.close();
-			final String result = new String(output.toByteArray(), "UTF-8");
+			final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 			Assert.assertEquals(
 					"[\n"
 							+ "\tnull,\n"
@@ -103,7 +104,7 @@ public class JsonTest {
 							+ "\t\"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format(testDate) + "\"\n"
 							+ "]",
 							result);
-			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 			Assert.assertNotNull(jsonReader.read());
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -126,7 +127,7 @@ public class JsonTest {
 							+ "\t1,\r"
 							+ "\t2\r"
 							+ "]\r";
-			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
@@ -153,7 +154,7 @@ public class JsonTest {
 							+ "\t1,\r\n"
 							+ "\t2\r\n"
 							+ "]\r\n";
-			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
@@ -190,11 +191,11 @@ public class JsonTest {
 			jsonArray.add(TextUtilities.GERMAN_TEST_STRING);
 			jsonArray.add(testDate);
 
-			writer = new JsonWriter(output, "UTF-8");
+			writer = new JsonWriter(output, StandardCharsets.UTF_8);
 			writer.add(jsonArray);
 			writer.close();
 			output.close();
-			final String result = new String(output.toByteArray(), "UTF-8");
+			final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 			Assert.assertEquals(jsonArray.toString(), result);
 			Assert.assertEquals(
 					"[\n"
@@ -210,7 +211,7 @@ public class JsonTest {
 							+ "\t\"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format(testDate) + "\"\n"
 							+ "]",
 							result);
-			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 			Assert.assertNotNull(jsonReader.read());
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -229,14 +230,14 @@ public class JsonTest {
 		JsonReader jsonReader = null;
 		try {
 			output = new ByteArrayOutputStream();
-			writer = new JsonWriter(output, "UTF-8");
+			writer = new JsonWriter(output, StandardCharsets.UTF_8);
 			writer.openJsonObject();
 			writer.closeJsonObject();
 			writer.close();
 			output.close();
-			final String result = new String(output.toByteArray(), "UTF-8");
+			final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 			Assert.assertEquals("{}", result);
-			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 			Assert.assertNotNull(jsonReader.read());
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -255,13 +256,13 @@ public class JsonTest {
 		JsonReader jsonReader = null;
 		try {
 			output = new ByteArrayOutputStream();
-			writer = new JsonWriter(output, "UTF-8");
+			writer = new JsonWriter(output, StandardCharsets.UTF_8);
 			writer.add(new JsonObject());
 			writer.close();
 			output.close();
-			final String result = new String(output.toByteArray(), "UTF-8");
+			final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 			Assert.assertEquals("{}", result);
-			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 			Assert.assertNotNull(jsonReader.read());
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -281,7 +282,7 @@ public class JsonTest {
 		try {
 			final Date testDate = new Date();
 			output = new ByteArrayOutputStream();
-			writer = new JsonWriter(output, "UTF-8");
+			writer = new JsonWriter(output, StandardCharsets.UTF_8);
 			writer.openJsonObject();
 			writer.openJsonObjectProperty("test_null");
 			writer.addSimpleJsonObjectPropertyValue(null);
@@ -308,7 +309,7 @@ public class JsonTest {
 			writer.closeJsonObject();
 			writer.close();
 			output.close();
-			final String result = new String(output.toByteArray(), "UTF-8");
+			final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 			Assert.assertEquals(
 					"{\n"
 							+ "\t\"test_null\": null,\n"
@@ -324,7 +325,7 @@ public class JsonTest {
 							+ "\t\"test_date\": \"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format(testDate) + "\"\n"
 							+ "}",
 							result);
-			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonObject());
@@ -361,12 +362,12 @@ public class JsonTest {
 			jsonObject.add("minInteger", Integer.MIN_VALUE);
 			jsonObject.add("maxInteger", Integer.MAX_VALUE);
 
-			writer = new JsonWriter(output, "UTF-8");
+			writer = new JsonWriter(output, StandardCharsets.UTF_8);
 			writer.add(jsonObject);
 			writer.close();
 			output.close();
 
-			final String result = new String(output.toByteArray(), "UTF-8");
+			final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 			Assert.assertEquals(jsonObject.toString(), result);
 			Assert.assertEquals(
 					"{\n"
@@ -384,7 +385,7 @@ public class JsonTest {
 							+ "\t\"maxInteger\": " + Integer.MAX_VALUE + "\n"
 							+ "}",
 							result);
-			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonObject());
@@ -406,7 +407,7 @@ public class JsonTest {
 		try {
 			output = new ByteArrayOutputStream();
 
-			writer = new JsonWriter(output, "UTF-8");
+			writer = new JsonWriter(output, StandardCharsets.UTF_8);
 
 			writer.openJsonArray();
 			for (int i = 0; i < 5; i++) {
@@ -423,8 +424,8 @@ public class JsonTest {
 			writer.close();
 			output.close();
 
-			final String result = new String(output.toByteArray(), "UTF-8");
-			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
+			final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 			Assert.assertEquals(JsonReader.JsonToken.JsonArray_Open, jsonReader.readNextToken());
 
 			for (int i = 0; i < 5; i++) {
@@ -474,15 +475,15 @@ public class JsonTest {
 
 			Assert.assertEquals("{\n\t\"Number\": 2,\n\t\"Text\": \"Abc2\",\n\t\"Array\":\n\t\t[\n\t\t\t1,\n\t\t\t\"Abc\"\n\t\t]\n}", jsonObject.toString());
 
-			writer = new JsonWriter(output, "UTF-8");
+			writer = new JsonWriter(output, StandardCharsets.UTF_8);
 			writer.setUglify(true);
 			writer.add(jsonObject);
 			writer.close();
 			output.close();
 
-			final String result = new String(output.toByteArray(), "UTF-8");
+			final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 			Assert.assertEquals("{\"Number\":2,\"Text\":\"Abc2\",\"Array\":[1,\"Abc\"]}", result);
-			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonObject());
@@ -517,15 +518,15 @@ public class JsonTest {
 
 			Assert.assertEquals("[\n\t1,\n\t{\n\t\t\"Number\": 2,\n\t\t\"Text\": \"Abc2\"\n\t},\n\t\"Abc\"\n]", jsonArray.toString());
 
-			writer = new JsonWriter(output, "UTF-8");
+			writer = new JsonWriter(output, StandardCharsets.UTF_8);
 			writer.setUglify(true);
 			writer.add(jsonArray);
 			writer.close();
 			output.close();
 
-			final String result = new String(output.toByteArray(), "UTF-8");
+			final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 			Assert.assertEquals("[1,{\"Number\":2,\"Text\":\"Abc2\"},\"Abc\"]", result);
-			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
@@ -545,7 +546,7 @@ public class JsonTest {
 	public void testReadToken() {
 		JsonReader jsonReader = null;
 		try {
-			jsonReader = new JsonReader(new ByteArrayInputStream("{\"Number\":1,\"Text\":\"Abc2\",\"Array\":[1,\"Abc\"],\"Number2\":2}".getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream("{\"Number\":1,\"Text\":\"Abc2\",\"Array\":[1,\"Abc\"],\"Number2\":2}".getBytes(StandardCharsets.UTF_8)));
 
 			final String[] tokenValues = new String[]{
 					"JsonObject_Open: null",
@@ -576,7 +577,7 @@ public class JsonTest {
 	public void testInvalidData() {
 		JsonReader jsonReader = null;
 		try {
-			jsonReader = new JsonReader(new ByteArrayInputStream("{".getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream("{".getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing an expected exception");
 		} catch (final Exception e) {
@@ -610,15 +611,15 @@ public class JsonTest {
 
 			Assert.assertEquals("{\n\t\"Text\": \"Abc\",\n\t\"Object1\":\n\t\t{\n\t\t\t\"Number\": 1,\n\t\t\t\"Text\": \"Abc1\"\n\t\t},\n\t\"Object2\":\n\t\t{\n\t\t\t\"Number\": 2,\n\t\t\t\"Text\": \"Abc2\"\n\t\t}\n}", jsonObjectOfObjects.toString());
 
-			writer = new JsonWriter(output, "UTF-8");
+			writer = new JsonWriter(output, StandardCharsets.UTF_8);
 			writer.setUglify(true);
 			writer.add(jsonObjectOfObjects);
 			writer.close();
 			output.close();
 
-			final String result = new String(output.toByteArray(), "UTF-8");
+			final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 			Assert.assertEquals("{\"Text\":\"Abc\",\"Object1\":{\"Number\":1,\"Text\":\"Abc1\"},\"Object2\":{\"Number\":2,\"Text\":\"Abc2\"}}", result);
-			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonObject());
@@ -657,15 +658,15 @@ public class JsonTest {
 
 			Assert.assertEquals("[\n\t\"Abc\",\n\t[\n\t\t1,\n\t\t\"Abc1\"\n\t],\n\t[\n\t\t2,\n\t\t\"Abc2\"\n\t]\n]", jsonArrayOfArrays.toString());
 
-			writer = new JsonWriter(output, "UTF-8");
+			writer = new JsonWriter(output, StandardCharsets.UTF_8);
 			writer.setUglify(true);
 			writer.add(jsonArrayOfArrays);
 			writer.close();
 			output.close();
 
-			final String result = new String(output.toByteArray(), "UTF-8");
+			final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 			Assert.assertEquals("[\"Abc\",[1,\"Abc1\"],[2,\"Abc2\"]]", result);
-			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
@@ -689,7 +690,7 @@ public class JsonTest {
 					"{\n"
 							+ "\ttest : 1\n"
 							+ "}\n";
-			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
 		} catch (final Exception e) {
@@ -707,7 +708,7 @@ public class JsonTest {
 					"{\n"
 							+ "\t'test': 1\n"
 							+ "}\n";
-			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
 		} catch (final Exception e) {
@@ -725,7 +726,7 @@ public class JsonTest {
 					"{\n"
 							+ "\t\"test\": 1,\n"
 							+ "}\n";
-			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
 		} catch (final Exception e) {
@@ -743,7 +744,7 @@ public class JsonTest {
 					"[\n"
 							+ "'Abc'"
 							+ "]\n";
-			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
 		} catch (final Exception e) {
@@ -761,7 +762,7 @@ public class JsonTest {
 					"[\n"
 							+ "\"Abc\","
 							+ "]\n";
-			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
 		} catch (final Exception e) {
@@ -779,7 +780,7 @@ public class JsonTest {
 					"[\n"
 							+ "\t\"Abc \\n Abc\"\n"
 							+ "]\n";
-			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
@@ -801,7 +802,7 @@ public class JsonTest {
 					"[\n"
 							+ "\t'Abc \\\n Abc'\n"
 							+ "]\n";
-			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
 		} catch (final Exception e) {
@@ -819,7 +820,7 @@ public class JsonTest {
 					"[\n"
 							+ "0x1a2B3c4D5e6F\n"
 							+ "]\n";
-			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
 		} catch (final Exception e) {
@@ -838,7 +839,7 @@ public class JsonTest {
 							+ "123.,\n"
 							+ ".123\n"
 							+ "]\n";
-			jsonReader = new Json5Reader(new ByteArrayInputStream(data.getBytes("UTF-8")));
+			jsonReader = new Json5Reader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
@@ -864,7 +865,7 @@ public class JsonTest {
 							+ "NaN,\n"
 							+ "-NaN\n"
 							+ "]\n";
-			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
 		} catch (final Exception e) {
@@ -882,7 +883,7 @@ public class JsonTest {
 					"[\n"
 							+ "+123\n"
 							+ "]\n";
-			jsonReader = new Json5Reader(new ByteArrayInputStream(data.getBytes("UTF-8")));
+			jsonReader = new Json5Reader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
@@ -905,7 +906,7 @@ public class JsonTest {
 							+ "// comment in single line\n"
 							+ "123\n"
 							+ "]\n";
-			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
 		} catch (final Exception e) {
@@ -925,7 +926,7 @@ public class JsonTest {
 							+ " multiline*/\n"
 							+ "123\n"
 							+ "]\n";
-			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes("UTF-8")));
+			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
 		} catch (final Exception e) {
@@ -970,7 +971,7 @@ public class JsonTest {
 							+ "}\n"
 							+ "}\n"
 							+ "]\n";
-			jsonReader = new Json5Reader(new ByteArrayInputStream(data.getBytes("UTF-8")));
+			jsonReader = new Json5Reader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			JsonUtilities.readUpToJsonPath(jsonReader, "$[0].item3.item32");
 			jsonReader.readNextToken();
 			Assert.assertEquals(JsonToken.JsonArray_Open, jsonReader.getCurrentToken());
@@ -1013,7 +1014,7 @@ public class JsonTest {
 	public void testSpecialCharacters2() {
 		try {
 			final String testString = "\"\\n\\r\\t\\b\\f\\u00c4\\u00e4\\u00d6\\u00f6\\u00dc\\u00fc\\u00df\"";
-			final ByteArrayInputStream input = new ByteArrayInputStream(testString.getBytes("UTF-8"));
+			final ByteArrayInputStream input = new ByteArrayInputStream(testString.getBytes(StandardCharsets.UTF_8));
 			JsonNode jsonNode;
 			try (JsonReader jsonReader = new JsonReader(input)) {
 				jsonNode = jsonReader.read();
@@ -1030,7 +1031,7 @@ public class JsonTest {
 	public void testSpecialCharacters2_Error1() throws Exception {
 		try {
 			final String testString = "\"\\u0c\"";
-			final ByteArrayInputStream input = new ByteArrayInputStream(testString.getBytes("UTF-8"));
+			final ByteArrayInputStream input = new ByteArrayInputStream(testString.getBytes(StandardCharsets.UTF_8));
 			try (JsonReader jsonReader = new JsonReader(input)) {
 				jsonReader.read();
 			}
@@ -1045,7 +1046,7 @@ public class JsonTest {
 	public void testSpecialCharacters2_Error2() throws Exception {
 		try {
 			final String testString = "\"\\u0";
-			final ByteArrayInputStream input = new ByteArrayInputStream(testString.getBytes("UTF-8"));
+			final ByteArrayInputStream input = new ByteArrayInputStream(testString.getBytes(StandardCharsets.UTF_8));
 			try (JsonReader jsonReader = new JsonReader(input)) {
 				jsonReader.read();
 			}
@@ -1060,7 +1061,7 @@ public class JsonTest {
 	public void testSpecialCharacters2_Error3() throws Exception {
 		try {
 			final String testString = "\"\\u00FG\"";
-			final ByteArrayInputStream input = new ByteArrayInputStream(testString.getBytes("UTF-8"));
+			final ByteArrayInputStream input = new ByteArrayInputStream(testString.getBytes(StandardCharsets.UTF_8));
 			try (JsonReader jsonReader = new JsonReader(input)) {
 				jsonReader.read();
 			}

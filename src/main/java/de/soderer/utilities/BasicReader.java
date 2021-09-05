@@ -6,55 +6,52 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
-public abstract class BasicReader implements Closeable {
+public class BasicReader implements Closeable {
 	/** UTF-8 BOM (Byte Order Mark) character for readers. */
 	public static final char BOM_UTF_8_CHAR = (char) 65279;
-	
+
 	/** UTF-8 BOM (Byte Order Mark) first character for wrong encoding ISO-8859. */
 	public static final char BOM_UTF_8_CHAR_ISO_8859 = (char) 239;
-	
+
 	/** Default input encoding. */
-	public static final String DEFAULT_ENCODING = "UTF-8";
-	
+	public static final Charset DEFAULT_ENCODING = StandardCharsets.UTF_8;
+
 	/** Input stream. */
 	private InputStream inputStream;
 
 	/** Input encoding. */
-	private Charset encoding;
+	private final Charset encoding;
 
 	/** Input reader. */
 	private BufferedReader inputReader = null;
-	
+
 	private Character currentChar;
 	private Character reuseChar = null;
 	private long readCharacters = 0;
 	private long readLines = 0;
 
-	public BasicReader(InputStream inputStream) throws Exception {
-		this(inputStream, (String) null);
+	public BasicReader(final InputStream inputStream) throws Exception {
+		this(inputStream, null);
 	}
-	
-	public BasicReader(InputStream inputStream, String encoding) throws Exception {
-		this(inputStream, isBlank(encoding) ? Charset.forName(DEFAULT_ENCODING) : Charset.forName(encoding));
-	}
-	
-	public BasicReader(InputStream inputStream, Charset encodingCharset) throws Exception {
+
+	public BasicReader(final InputStream inputStream, final Charset encodingCharset) throws Exception {
 		if (inputStream == null) {
 			throw new Exception("Invalid empty inputStream");
 		}
 		this.inputStream = inputStream;
-		this.encoding = encodingCharset == null ? Charset.forName(DEFAULT_ENCODING) : encodingCharset;
+		encoding = encodingCharset == null ? DEFAULT_ENCODING : encodingCharset;
 	}
-	
+
 	public long getReadCharacters() {
 		return readCharacters;
 	}
-	
+
 	public long getReadLines() {
 		return readLines;
 	}
-	
+
 	public void reuseCurrentChar() {
 		reuseChar = currentChar;
 		readCharacters--;
@@ -67,22 +64,22 @@ public abstract class BasicReader implements Closeable {
 			}
 			inputReader = new BufferedReader(new InputStreamReader(inputStream, encoding));
 		}
-		
+
 		if (reuseChar != null) {
 			currentChar = reuseChar;
 			reuseChar = null;
 			readCharacters++;
 			return currentChar;
 		} else {
-			int currentCharInt = inputReader.read();
+			final int currentCharInt = inputReader.read();
 			if (currentCharInt != -1) {
 				// Check for UTF-8 BOM at data start
-				if (readCharacters == 0 && currentCharInt == BOM_UTF_8_CHAR && encoding == Charset.forName("UTF-8")) {
+				if (readCharacters == 0 && currentCharInt == BOM_UTF_8_CHAR && encoding == StandardCharsets.UTF_8) {
 					return readNextCharacter();
 				} else if (readCharacters == 0 && currentCharInt == BOM_UTF_8_CHAR_ISO_8859 && encoding.displayName().toUpperCase().startsWith("ISO-8859-")) {
 					throw new IOException("Data encoding \"" + encoding + "\" is invalid: UTF-8 BOM detected");
 				} else {
-					char nextChar = (char) currentCharInt;
+					final char nextChar = (char) currentCharInt;
 					readCharacters++;
 					if (nextChar == '\r' || (nextChar == '\n' && currentCharInt != '\r')) {
 						readLines++;
@@ -92,7 +89,7 @@ public abstract class BasicReader implements Closeable {
 			} else {
 				currentChar = null;
 			}
-			
+
 			return currentChar;
 		}
 	}
@@ -105,26 +102,28 @@ public abstract class BasicReader implements Closeable {
 		return currentChar;
 	}
 
-	protected String readUpToNext(boolean includeLimitChars, Character escapeCharacter, char... endChars) throws Exception {
+	protected String readUpToNext(final boolean includeLimitChars, final Character escapeCharacter, final char... endChars) throws Exception {
 		if (anyCharsAreEqual(endChars)) {
 			throw new Exception("Invalid limit characters");
 		} else if (contains(endChars, escapeCharacter)) {
 			throw new Exception("Invalid escape characters");
 		}
-		
-		StringBuilder returnValue = new StringBuilder();
-		returnValue.append(currentChar);
+
+		final StringBuilder returnValue = new StringBuilder();
+		if (currentChar != null) {
+			returnValue.append(currentChar);
+		}
 		boolean escapeNextCharacter = false;
 		while (true) {
 			readNextCharacter();
 			if (currentChar == null) {
 				return returnValue.toString();
 			} else if (!escapeNextCharacter) {
-				if (escapeCharacter != null && escapeCharacter == currentChar) {
+				if (escapeCharacter != null && equals(escapeCharacter, currentChar)) {
 					escapeNextCharacter = true;
 				} else {
-					for (char endChar : endChars) {
-						if (endChar == currentChar) {
+					for (final char endChar : endChars) {
+						if (equals(endChar, currentChar)) {
 							if (includeLimitChars) {
 								returnValue.append(currentChar);
 							} else {
@@ -137,36 +136,36 @@ public abstract class BasicReader implements Closeable {
 				}
 			} else {
 				escapeNextCharacter = false;
-				if (escapeCharacter == currentChar) {
+				if (equals(escapeCharacter, currentChar)) {
 					currentChar = escapeCharacter;
-				} else if ('"' == currentChar) {
+				} else if (equals('"', currentChar)) {
 					currentChar = '"';
-				} else if ('\'' == currentChar) {
+				} else if (equals('\'', currentChar)) {
 					// Single quotes should not be escaped, but we allow them here for user convenience
 					currentChar = '\'';
-				} else if ('/' == currentChar) {
+				} else if (equals('/', currentChar)) {
 					currentChar = '/';
-				} else if ('b' == currentChar) {
+				} else if (equals('b', currentChar)) {
 					currentChar = '\b';
-				} else if ('f' == currentChar) {
+				} else if (equals('f', currentChar)) {
 					currentChar = '\f';
-				} else if ('n' == currentChar) {
+				} else if (equals('n', currentChar)) {
 					currentChar = '\n';
-				} else if ('r' == currentChar) {
+				} else if (equals('r', currentChar)) {
 					currentChar = '\r';
-				} else if ('t' == currentChar) {
+				} else if (equals('t', currentChar)) {
 					currentChar = '\t';
-				} else if ('u' == currentChar) {
+				} else if (equals('u', currentChar)) {
 					// Java encoded character
-					StringBuilder unicode = new StringBuilder();
+					final StringBuilder unicode = new StringBuilder();
 					for (int i = 0; i < 4; i++) {
-						Character hexDigit = readNextCharacter();
+						final Character hexDigit = readNextCharacter();
 						if (hexDigit == null || Character.digit(hexDigit, 16) == -1) {
 							throw new Exception("Invalid unicode sequence at character: " + getReadCharacters());
 						}
 						unicode.append(hexDigit);
 					}
-					int value = Integer.parseInt(unicode.toString(), 16);
+					final int value = Integer.parseInt(unicode.toString(), 16);
 					currentChar = (char) value;
 				} else {
 					throw new Exception("Invalid escape sequence at character: " + getReadCharacters());
@@ -176,12 +175,12 @@ public abstract class BasicReader implements Closeable {
 		}
 	}
 
-	protected String readQuotedText(char quoteChar, Character escapeCharacter) throws Exception {
+	protected String readQuotedText(final char quoteChar, final Character escapeCharacter) throws Exception {
 		if (currentChar != quoteChar) {
 			throw new Exception("Invalid start of double-quoted text");
 		}
-		
-		String returnValue = readUpToNext(true, escapeCharacter, quoteChar);
+
+		final String returnValue = readUpToNext(true, escapeCharacter, quoteChar);
 		return returnValue.substring(1, returnValue.length() - 1);
 	}
 
@@ -202,7 +201,7 @@ public abstract class BasicReader implements Closeable {
 	 *            the value
 	 * @return true, if is blank
 	 */
-	private static boolean isBlank(String value) {
+	protected static boolean isBlank(final String value) {
 		return value == null || value.trim().length() == 0;
 	}
 
@@ -213,7 +212,7 @@ public abstract class BasicReader implements Closeable {
 	 *            the value
 	 * @return true, if is not empty
 	 */
-	protected static boolean isNotEmpty(String value) {
+	protected static boolean isNotEmpty(final String value) {
 		return value != null && value.length() > 0;
 	}
 
@@ -223,11 +222,11 @@ public abstract class BasicReader implements Closeable {
 	 * @param closeableItem
 	 *            the closeable item
 	 */
-	private static void closeQuietly(Closeable closeableItem) {
+	private static void closeQuietly(final Closeable closeableItem) {
 		if (closeableItem != null) {
 			try {
 				closeableItem.close();
-			} catch (IOException e) {
+			} catch (@SuppressWarnings("unused") final IOException e) {
 				// Do nothing
 			}
 		}
@@ -239,7 +238,7 @@ public abstract class BasicReader implements Closeable {
 	 * @param values
 	 * @return
 	 */
-	private static boolean anyCharsAreEqual(char... values) {
+	private static boolean anyCharsAreEqual(final char... values) {
 		for (int i = 0; i < values.length; i++) {
 			for (int j = i + 1; j < values.length; j++) {
 				if (values[i] == values[j]) {
@@ -256,17 +255,33 @@ public abstract class BasicReader implements Closeable {
 	 * @param searchCharacter
 	 * @return
 	 */
-	private static boolean contains(char[] characterArray, Character searchCharacter) {
+	private static boolean contains(final char[] characterArray, final Character searchCharacter) {
 		if (characterArray == null || searchCharacter == null) {
 			return false;
 		}
-		
-		for (char character : characterArray) {
+
+		for (final char character : characterArray) {
 			if (character == searchCharacter) {
 				return true;
 			}
 		}
-		
+
 		return false;
+	}
+
+	private static boolean equals(final char char1, final Character character2) {
+		if (character2 == null) {
+			return false;
+		} else {
+			return character2.charValue() == char1;
+		}
+	}
+
+	private static boolean equals(final Character character1, final Character character2) {
+		if (character1 == character2) {
+			return true;
+		} else {
+			return character1 != null && character1.equals(character2);
+		}
 	}
 }

@@ -5,6 +5,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,6 +19,7 @@ import java.util.Set;
 
 import de.soderer.utilities.DateUtilities;
 import de.soderer.utilities.Utilities;
+import de.soderer.utilities.code.ClassUtilities;
 
 public class JsonSerializer {
 	/**
@@ -71,6 +73,15 @@ public class JsonSerializer {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", dataObject);
+				return new JsonNode(jsonObjectWithTypeInfo);
+			} else {
+				return new JsonNode(dataObject);
+			}
+		} else if (dataObject instanceof Charset) {
+			if (addObjectTypeInfo) {
+				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
+				jsonObjectWithTypeInfo.add("class", Charset.class.getName());
+				jsonObjectWithTypeInfo.add("value", ((Charset) dataObject).toString());
 				return new JsonNode(jsonObjectWithTypeInfo);
 			} else {
 				return new JsonNode(dataObject);
@@ -194,7 +205,7 @@ public class JsonSerializer {
 
 				final JsonObject dataJsonObject = new JsonObject();
 				final Class<?> dataClass = dataObject.getClass();
-				for (final Field dataField : dataClass.getDeclaredFields()) {
+				for (final Field dataField : ClassUtilities.getAllFields(dataClass)) {
 					boolean serializeField = true;
 					if ((dataField.getModifiers() & Modifier.TRANSIENT) == Modifier.TRANSIENT && !includeTransient) {
 						serializeField = false;
@@ -245,473 +256,484 @@ public class JsonSerializer {
 	}
 
 	public static Object deserialize(final JsonObject jsonObject) throws Exception {
-		if (jsonObject == null) {
-			throw new Exception("JSON object is null");
-		} else {
-			if (!jsonObject.containsPropertyKey("class")) {
-				throw new Exception("JSON object is missing mandatory type information");
-			} else if (jsonObject.get("class") == null) {
-				// Null value that has no class info
-				return null;
-			} else if (!(jsonObject.get("class") instanceof String)) {
-				throw new Exception("JSON object has invalid type information");
-			} else if (!jsonObject.containsPropertyKey("value")) {
-				throw new Exception("JSON object is missing mandatory value information");
-			}
-
-			final Object value = jsonObject.get("value");
-			final Class<?> clazz = Class.forName((String) jsonObject.get("class"));
-			if (value == null) {
-				return null;
-			} else if (clazz == Boolean.TYPE || clazz == Boolean.class) {
-				return value;
-			} else if (clazz == Byte.TYPE || clazz == Byte.class) {
-				return ((Number) value).byteValue();
-			} else if (clazz == Short.TYPE || clazz == Short.class) {
-				return ((Number) value).shortValue();
-			} else if (clazz == Integer.TYPE || clazz == Integer.class) {
-				return ((Number) value).intValue();
-			} else if (clazz == Long.TYPE || clazz == Long.class) {
-				return ((Number) value).longValue();
-			} else if (clazz == Float.TYPE || clazz == Float.class) {
-				return ((Number) value).floatValue();
-			} else if (clazz == Double.TYPE || clazz == Double.class) {
-				if (value.getClass() == Float.class) {
-					return new Double(Float.toString((Float) value));
-				} else {
-					return ((Number) value).doubleValue();
-				}
-			} else if (clazz == BigDecimal.class) {
-				return value;
-			} else if (clazz == Character.TYPE || clazz == Character.class) {
-				if (value instanceof Character) {
-					return value;
-				} else {
-					return ((String) value).charAt(0);
-				}
-			} else if (clazz == String.class) {
-				return value;
-			} else if (clazz.isEnum()) {
-				final String enumName = (String) value;
-				for (final Object enumConstant : clazz.getEnumConstants()) {
-					if (enumName.equals(enumConstant.toString())) {
-						return enumConstant;
-					}
-				}
-				throw new Exception("Invalid enum name '" + enumName + "' for type '" + clazz.getName() + "'");
-			} else if (Date.class.isAssignableFrom(clazz)) {
-				return DateUtilities.parseIso8601DateTimeString((String) value);
-			} else if (value instanceof JsonObject) {
-				Object object;
-				@SuppressWarnings("unchecked")
-				final
-				Constructor<Object> constructor = (Constructor<Object>) clazz.getDeclaredConstructor();
-				if (!constructor.isAccessible()) {
-					constructor.setAccessible(true);
-				}
-				object = constructor.newInstance();
-
-				for (final Entry<String, Object> entry : ((JsonObject) value).entrySet()) {
-					if (!(entry.getValue() instanceof JsonObject)) {
-						throw new Exception("Invalid value type serialization value");
-					}
-
-					Field field;
-					try {
-						field = clazz.getDeclaredField(entry.getKey());
-					} catch (final Exception e) {
-						throw new Exception("Invalid field name serialization value");
-					}
-					field.setAccessible(true);
-					field.set(object, deserialize((JsonObject) entry.getValue()));
-				}
-				return object;
-			} else if (value instanceof JsonArray) {
-				final JsonArray jsonArray = (JsonArray) value;
-				if (clazz.isArray()) {
-					if (clazz.getComponentType() == Boolean.TYPE) {
-						final boolean[] arrayValue = new boolean[jsonArray.size()];
-						for (int i = 0; i < arrayValue.length; i++) {
-							arrayValue[i] = (boolean) deserialize((JsonObject) jsonArray.get(i));
-						}
-						return arrayValue;
-					} else if (clazz.getComponentType() == Boolean.class) {
-						final Boolean[] arrayValue = new Boolean[jsonArray.size()];
-						for (int i = 0; i < arrayValue.length; i++) {
-							arrayValue[i] = (Boolean) deserialize((JsonObject) jsonArray.get(i));
-						}
-						return arrayValue;
-					} else if (clazz.getComponentType() == Byte.TYPE) {
-						final byte[] arrayValue = new byte[jsonArray.size()];
-						for (int i = 0; i < arrayValue.length; i++) {
-							arrayValue[i] = (byte) deserialize((JsonObject) jsonArray.get(i));
-						}
-						return arrayValue;
-					} else if (clazz.getComponentType() == Byte.class) {
-						final Byte[] arrayValue = new Byte[jsonArray.size()];
-						for (int i = 0; i < arrayValue.length; i++) {
-							arrayValue[i] = (Byte) deserialize((JsonObject) jsonArray.get(i));
-						}
-						return arrayValue;
-					} else if (clazz.getComponentType() == Short.TYPE) {
-						final short[] arrayValue = new short[jsonArray.size()];
-						for (int i = 0; i < arrayValue.length; i++) {
-							arrayValue[i] = (short) deserialize((JsonObject) jsonArray.get(i));
-						}
-						return arrayValue;
-					} else if (clazz.getComponentType() == Short.class) {
-						final Short[] arrayValue = new Short[jsonArray.size()];
-						for (int i = 0; i < arrayValue.length; i++) {
-							arrayValue[i] = (Short) deserialize((JsonObject) jsonArray.get(i));
-						}
-						return arrayValue;
-					} else if (clazz.getComponentType() == Integer.TYPE) {
-						final int[] arrayValue = new int[jsonArray.size()];
-						for (int i = 0; i < arrayValue.length; i++) {
-							arrayValue[i] = (int) deserialize((JsonObject) jsonArray.get(i));
-						}
-						return arrayValue;
-					} else if (clazz.getComponentType() == Integer.class) {
-						final Integer[] arrayValue = new Integer[jsonArray.size()];
-						for (int i = 0; i < arrayValue.length; i++) {
-							arrayValue[i] = (Integer) deserialize((JsonObject) jsonArray.get(i));
-						}
-						return arrayValue;
-					} else if (clazz.getComponentType() == Long.TYPE) {
-						final long[] arrayValue = new long[jsonArray.size()];
-						for (int i = 0; i < arrayValue.length; i++) {
-							arrayValue[i] = (long) deserialize((JsonObject) jsonArray.get(i));
-						}
-						return arrayValue;
-					} else if (clazz.getComponentType() == Long.class) {
-						final Long[] arrayValue = new Long[jsonArray.size()];
-						for (int i = 0; i < arrayValue.length; i++) {
-							arrayValue[i] = (Long) deserialize((JsonObject) jsonArray.get(i));
-						}
-						return arrayValue;
-					} else if (clazz.getComponentType() == Float.TYPE) {
-						final float[] arrayValue = new float[jsonArray.size()];
-						for (int i = 0; i < arrayValue.length; i++) {
-							arrayValue[i] = (float) deserialize((JsonObject) jsonArray.get(i));
-						}
-						return arrayValue;
-					} else if (clazz.getComponentType() == Float.class) {
-						final Float[] arrayValue = new Float[jsonArray.size()];
-						for (int i = 0; i < arrayValue.length; i++) {
-							arrayValue[i] = (Float) deserialize((JsonObject) jsonArray.get(i));
-						}
-						return arrayValue;
-					} else if (clazz.getComponentType() == Double.TYPE) {
-						final double[] arrayValue = new double[jsonArray.size()];
-						for (int i = 0; i < arrayValue.length; i++) {
-							arrayValue[i] = (double) deserialize((JsonObject) jsonArray.get(i));
-						}
-						return arrayValue;
-					} else if (clazz.getComponentType() == Double.class) {
-						final Double[] arrayValue = new Double[jsonArray.size()];
-						for (int i = 0; i < arrayValue.length; i++) {
-							arrayValue[i] = (Double) deserialize((JsonObject) jsonArray.get(i));
-						}
-						return arrayValue;
-					} else if (clazz.getComponentType() == Character.TYPE) {
-						final char[] arrayValue = new char[jsonArray.size()];
-						for (int i = 0; i < arrayValue.length; i++) {
-							arrayValue[i] = (char) deserialize((JsonObject) jsonArray.get(i));
-						}
-						return arrayValue;
-					} else if (clazz.getComponentType() == Character.class) {
-						final Character[] arrayValue = new Character[jsonArray.size()];
-						for (int i = 0; i < arrayValue.length; i++) {
-							arrayValue[i] = (Character) deserialize((JsonObject) jsonArray.get(i));
-						}
-						return arrayValue;
-					} else {
-						final Object[] array = (Object[]) Array.newInstance(clazz.getComponentType(), jsonArray.size());
-						for (int i = 0; i < array.length; i++) {
-							array[i] = deserialize((JsonObject) jsonArray.get(i));
-						}
-						return array;
-					}
-				} else if (Map.class.isAssignableFrom(clazz)) {
-					@SuppressWarnings("unchecked")
-					final
-					Map<Object, Object> mapObject = (Map<Object, Object>) clazz.newInstance();
-					for (final Object keyValueObject : (JsonArray) value) {
-						if (!(keyValueObject instanceof JsonObject)) {
-							throw new Exception("Invalid value type serialization value");
-						}
-
-						final JsonObject keyJsonObject = (JsonObject) ((JsonObject) keyValueObject).get("key");
-						final Object keyObject = deserialize(keyJsonObject);
-
-						final JsonObject valueJsonObject = (JsonObject) ((JsonObject) keyValueObject).get("value");
-						final Object valueObject = deserialize(valueJsonObject);
-
-						mapObject.put(keyObject, valueObject);
-					}
-					return mapObject;
-				} else {
-					final List<Object> listOfItems = new ArrayList<>();
-					for (final Object item : (JsonArray) value) {
-						if (!(item instanceof JsonObject)) {
-							throw new Exception("Invalid value type serialization value");
-						}
-
-						listOfItems.add(deserialize((JsonObject) item));
-					}
-
-					final Object object = clazz.newInstance();
-					if (object instanceof Collection) {
-						for (final Object item : listOfItems) {
-							@SuppressWarnings("unchecked")
-							final
-							Collection<Object> collectionObject = (Collection<Object>) object;
-							collectionObject.add(item);
-						}
-						return object;
-					} else {
-						throw new Exception("");
-					}
-				}
+		try {
+			if (jsonObject == null) {
+				throw new Exception("JSON object is null");
 			} else {
-				throw new Exception("Invalid value type for deserialization: " + clazz.getName());
-			}
-		}
-	}
-
-	public static Object deserialize(final Class<?> classType, final JsonObject jsonObject) throws Exception {
-		if (classType == null) {
-			throw new Exception("Invalid class type serialization value");
-		} else if (jsonObject == null) {
-			return null;
-		} else {
-			final Object object = classType.newInstance();
-			for (final Entry<String, Object> entry : jsonObject.entrySet()) {
-				Field field;
-				try {
-					field = classType.getDeclaredField(entry.getKey());
-				} catch (final Exception e) {
-					throw new Exception("Invalid serialization field name '" + entry.getKey() + "' for class '" + classType.toString() + "'");
+				if (!jsonObject.containsPropertyKey("class")) {
+					throw new Exception("JSON object is missing mandatory type information");
+				} else if (jsonObject.get("class") == null) {
+					// Null value that has no class info
+					return null;
+				} else if (!(jsonObject.get("class") instanceof String)) {
+					throw new Exception("JSON object has invalid type information");
+				} else if (!jsonObject.containsPropertyKey("value")) {
+					throw new Exception("JSON object is missing mandatory value information");
 				}
-				field.setAccessible(true);
 
-				final Object value = entry.getValue();
-				try {
-					final Class<?> clazz = field.getType();
-					if (value == null) {
-						field.set(object, null);
-					} else if (clazz == Boolean.TYPE || clazz == Boolean.class) {
-						field.set(object, value);
-					} else if (clazz == Byte.TYPE || clazz == Byte.class) {
-						field.set(object, ((Number) value).byteValue());
-					} else if (clazz == Short.TYPE || clazz == Short.class) {
-						field.set(object, ((Number) value).shortValue());
-					} else if (clazz == Integer.TYPE || clazz == Integer.class) {
-						field.set(object, ((Number) value).intValue());
-					} else if (clazz == Long.TYPE || clazz == Long.class) {
-						field.set(object, ((Number) value).longValue());
-					} else if (clazz == Float.TYPE || clazz == Float.class) {
-						field.set(object, ((Number) value).floatValue());
-					} else if (clazz == Double.TYPE || clazz == Double.class) {
-						if (value.getClass() == Float.class) {
-							field.set(object, new Double(Float.toString((Float) value)));
-						} else {
-							field.set(object, ((Number) value).doubleValue());
+				final Object value = jsonObject.get("value");
+				final Class<?> clazz = Class.forName((String) jsonObject.get("class"));
+				if (value == null) {
+					return null;
+				} else if (clazz == Boolean.TYPE || clazz == Boolean.class) {
+					return value;
+				} else if (clazz == Byte.TYPE || clazz == Byte.class) {
+					return ((Number) value).byteValue();
+				} else if (clazz == Short.TYPE || clazz == Short.class) {
+					return ((Number) value).shortValue();
+				} else if (clazz == Integer.TYPE || clazz == Integer.class) {
+					return ((Number) value).intValue();
+				} else if (clazz == Long.TYPE || clazz == Long.class) {
+					return ((Number) value).longValue();
+				} else if (clazz == Float.TYPE || clazz == Float.class) {
+					return ((Number) value).floatValue();
+				} else if (clazz == Double.TYPE || clazz == Double.class) {
+					if (value.getClass() == Float.class) {
+						return Double.parseDouble(Float.toString((Float) value));
+					} else {
+						return ((Number) value).doubleValue();
+					}
+				} else if (clazz == BigDecimal.class) {
+					return value;
+				} else if (clazz == Character.TYPE || clazz == Character.class) {
+					if (value instanceof Character) {
+						return value;
+					} else {
+						return ((String) value).charAt(0);
+					}
+				} else if (clazz == String.class) {
+					return value;
+				} else if (clazz == Charset.class) {
+					return Charset.forName((String) value);
+				} else if (clazz.isEnum()) {
+					final String enumName = (String) value;
+					for (final Object enumConstant : clazz.getEnumConstants()) {
+						if (enumName.equals(enumConstant.toString())) {
+							return enumConstant;
 						}
-					} else if (clazz == BigDecimal.class) {
-						field.set(object, value);
-					} else if (clazz == Character.TYPE || clazz == Character.class) {
-						field.set(object, ((String) value).charAt(0));
-					} else if (clazz == String.class) {
-						field.set(object, value);
-					} else if (Date.class.isAssignableFrom(clazz)) {
-						field.set(object, DateUtilities.parseIso8601DateTimeString((String) value));
-					} else if (clazz.isEnum()) {
-						final String enumName = (String) value;
-						for (final Object enumConstant : clazz.getEnumConstants()) {
-							if (enumName.equals(enumConstant.toString())) {
-								field.set(object, enumConstant);
-								break;
-							}
+					}
+					throw new Exception("Invalid enum name '" + enumName + "' for type '" + clazz.getName() + "'");
+				} else if (Date.class.isAssignableFrom(clazz)) {
+					return DateUtilities.parseIso8601DateTimeString((String) value);
+				} else if (value instanceof JsonObject) {
+					Object object;
+					final Constructor<?> constructor = ClassUtilities.getConstructor(clazz);
+					constructor.setAccessible(true);
+					object = constructor.newInstance();
+
+					for (final Entry<String, Object> entry : ((JsonObject) value).entrySet()) {
+						if (!(entry.getValue() instanceof JsonObject)) {
+							throw new Exception("Invalid value type serialization value");
 						}
-					} else if (clazz.isArray()) {
-						final JsonArray jsonArray = ((JsonArray) value);
+
+						Field field;
+						try {
+							field = ClassUtilities.getField(clazz, entry.getKey());
+						} catch (@SuppressWarnings("unused") final Exception e) {
+							throw new Exception("Invalid field name serialization value");
+						}
+						field.setAccessible(true);
+						field.set(object, deserialize((JsonObject) entry.getValue()));
+					}
+					return object;
+				} else if (value instanceof JsonArray) {
+					final JsonArray jsonArray = (JsonArray) value;
+					if (clazz.isArray()) {
 						if (clazz.getComponentType() == Boolean.TYPE) {
 							final boolean[] arrayValue = new boolean[jsonArray.size()];
 							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = (boolean) jsonArray.get(i);
+								arrayValue[i] = (boolean) deserialize((JsonObject) jsonArray.get(i));
 							}
-							field.set(object, arrayValue);
+							return arrayValue;
 						} else if (clazz.getComponentType() == Boolean.class) {
 							final Boolean[] arrayValue = new Boolean[jsonArray.size()];
 							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = (Boolean) jsonArray.get(i);
+								arrayValue[i] = (Boolean) deserialize((JsonObject) jsonArray.get(i));
 							}
-							field.set(object, arrayValue);
+							return arrayValue;
 						} else if (clazz.getComponentType() == Byte.TYPE) {
 							final byte[] arrayValue = new byte[jsonArray.size()];
 							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = ((Number) jsonArray.get(i)).byteValue();
+								arrayValue[i] = (byte) deserialize((JsonObject) jsonArray.get(i));
 							}
-							field.set(object, arrayValue);
+							return arrayValue;
 						} else if (clazz.getComponentType() == Byte.class) {
 							final Byte[] arrayValue = new Byte[jsonArray.size()];
 							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = ((Number) jsonArray.get(i)).byteValue();
+								arrayValue[i] = (Byte) deserialize((JsonObject) jsonArray.get(i));
 							}
-							field.set(object, arrayValue);
+							return arrayValue;
 						} else if (clazz.getComponentType() == Short.TYPE) {
 							final short[] arrayValue = new short[jsonArray.size()];
 							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = ((Number) jsonArray.get(i)).shortValue();
+								arrayValue[i] = (short) deserialize((JsonObject) jsonArray.get(i));
 							}
-							field.set(object, arrayValue);
+							return arrayValue;
 						} else if (clazz.getComponentType() == Short.class) {
 							final Short[] arrayValue = new Short[jsonArray.size()];
 							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = ((Number) jsonArray.get(i)).shortValue();
+								arrayValue[i] = (Short) deserialize((JsonObject) jsonArray.get(i));
 							}
-							field.set(object, arrayValue);
+							return arrayValue;
 						} else if (clazz.getComponentType() == Integer.TYPE) {
 							final int[] arrayValue = new int[jsonArray.size()];
 							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = ((Number) jsonArray.get(i)).intValue();
+								arrayValue[i] = (int) deserialize((JsonObject) jsonArray.get(i));
 							}
-							field.set(object, arrayValue);
+							return arrayValue;
 						} else if (clazz.getComponentType() == Integer.class) {
 							final Integer[] arrayValue = new Integer[jsonArray.size()];
 							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = ((Number) jsonArray.get(i)).intValue();
+								arrayValue[i] = (Integer) deserialize((JsonObject) jsonArray.get(i));
 							}
-							field.set(object, arrayValue);
+							return arrayValue;
 						} else if (clazz.getComponentType() == Long.TYPE) {
 							final long[] arrayValue = new long[jsonArray.size()];
 							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = ((Number) jsonArray.get(i)).longValue();
+								arrayValue[i] = (long) deserialize((JsonObject) jsonArray.get(i));
 							}
-							field.set(object, arrayValue);
+							return arrayValue;
 						} else if (clazz.getComponentType() == Long.class) {
 							final Long[] arrayValue = new Long[jsonArray.size()];
 							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = ((Number) jsonArray.get(i)).longValue();
+								arrayValue[i] = (Long) deserialize((JsonObject) jsonArray.get(i));
 							}
-							field.set(object, arrayValue);
+							return arrayValue;
 						} else if (clazz.getComponentType() == Float.TYPE) {
 							final float[] arrayValue = new float[jsonArray.size()];
 							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = (float) jsonArray.get(i);
+								arrayValue[i] = (float) deserialize((JsonObject) jsonArray.get(i));
 							}
-							field.set(object, arrayValue);
+							return arrayValue;
 						} else if (clazz.getComponentType() == Float.class) {
 							final Float[] arrayValue = new Float[jsonArray.size()];
 							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = (float) jsonArray.get(i);
+								arrayValue[i] = (Float) deserialize((JsonObject) jsonArray.get(i));
 							}
-							field.set(object, arrayValue);
+							return arrayValue;
 						} else if (clazz.getComponentType() == Double.TYPE) {
 							final double[] arrayValue = new double[jsonArray.size()];
 							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = (double) jsonArray.get(i);
+								arrayValue[i] = (double) deserialize((JsonObject) jsonArray.get(i));
 							}
-							field.set(object, arrayValue);
+							return arrayValue;
 						} else if (clazz.getComponentType() == Double.class) {
 							final Double[] arrayValue = new Double[jsonArray.size()];
 							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = (double) jsonArray.get(i);
+								arrayValue[i] = (Double) deserialize((JsonObject) jsonArray.get(i));
 							}
-							field.set(object, arrayValue);
+							return arrayValue;
 						} else if (clazz.getComponentType() == Character.TYPE) {
 							final char[] arrayValue = new char[jsonArray.size()];
 							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = ((String) jsonArray.get(i)).charAt(0);
+								arrayValue[i] = (char) deserialize((JsonObject) jsonArray.get(i));
 							}
-							field.set(object, arrayValue);
+							return arrayValue;
 						} else if (clazz.getComponentType() == Character.class) {
 							final Character[] arrayValue = new Character[jsonArray.size()];
 							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = ((String) jsonArray.get(i)).charAt(0);
+								arrayValue[i] = (Character) deserialize((JsonObject) jsonArray.get(i));
 							}
-							field.set(object, arrayValue);
-						} else if (clazz.getComponentType() == String.class) {
-							final String[] arrayValue = new String[jsonArray.size()];
-							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = (String) jsonArray.get(i);
-							}
-							field.set(object, arrayValue);
-						} else if (Date.class.isAssignableFrom(clazz.getComponentType())) {
-							final Date[] arrayValue = new Date[jsonArray.size()];
-							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).parse((String) jsonArray.get(i));
-							}
-							field.set(object, arrayValue);
-						} else if (Enum.class.isAssignableFrom(clazz.getComponentType())) {
-							final Object[] arrayValue = (Object[]) Array.newInstance(clazz.getComponentType(), jsonArray.size());
-							for (int i = 0; i < arrayValue.length; i++) {
-								final String enumName = (String) jsonArray.get(i);
-								boolean enumFound = false;
-								for (final Object enumConstant : clazz.getComponentType().getEnumConstants()) {
-									if (enumName.equals(enumConstant.toString())) {
-										arrayValue[i] = enumConstant;
-										enumFound = true;
-										break;
-									}
-								}
-								if (enumFound == false) {
-									throw new Exception("Invalid enum name '" + enumName + "' for type '" + clazz.getComponentType().getName() + "'");
-								}
-							}
-							field.set(object, arrayValue);
+							return arrayValue;
 						} else {
-							final Object[] arrayValue = (Object[]) Array.newInstance(clazz.getComponentType(), jsonArray.size());
-							for (int i = 0; i < arrayValue.length; i++) {
-								arrayValue[i] = deserialize(Object.class, (JsonObject) jsonArray.get(i));
+							final Object[] array = (Object[]) Array.newInstance(clazz.getComponentType(), jsonArray.size());
+							for (int i = 0; i < array.length; i++) {
+								array[i] = deserialize((JsonObject) jsonArray.get(i));
 							}
-							field.set(object, arrayValue);
+							return array;
 						}
-					} else if (List.class.isAssignableFrom(clazz)) {
-						final List<Object> listOfItems = new ArrayList<>();
-						for (final Object item : (JsonArray) value) {
-							listOfItems.add(item);
-						}
-						field.set(object, listOfItems);
-					} else if (Set.class.isAssignableFrom(clazz)) {
-						final Set<Object> setOfItems = new HashSet<>();
-						for (final Object item : (JsonArray) value) {
-							setOfItems.add(item);
-						}
-						field.set(object, setOfItems);
-					} else if (Collection.class.isAssignableFrom(clazz)) {
-						final Collection<Object> collectionOfItems = new ArrayList<>();
-						for (final Object item : (JsonArray) value) {
-							collectionOfItems.add(item);
-						}
-						field.set(object, collectionOfItems);
 					} else if (Map.class.isAssignableFrom(clazz)) {
-						final Map<Object, Object> mapObject = new HashMap<>();
-						if (!(value instanceof JsonArray)) {
-							throw new Exception("Invalid value type serialization value");
-						}
+						final Constructor<?> constructor = clazz.getConstructor();
+						@SuppressWarnings("unchecked")
+						final Map<Object, Object> mapObject = (Map<Object, Object>) constructor.newInstance();
 						for (final Object keyValueObject : (JsonArray) value) {
 							if (!(keyValueObject instanceof JsonObject)) {
 								throw new Exception("Invalid value type serialization value");
 							}
 
-							final Object keyObject = ((JsonObject) keyValueObject).get("key");
-							final Object valueObject = ((JsonObject) keyValueObject).get("value");
+							final JsonObject keyJsonObject = (JsonObject) ((JsonObject) keyValueObject).get("key");
+							final Object keyObject = deserialize(keyJsonObject);
+
+							final JsonObject valueJsonObject = (JsonObject) ((JsonObject) keyValueObject).get("value");
+							final Object valueObject = deserialize(valueJsonObject);
 
 							mapObject.put(keyObject, valueObject);
 						}
-						field.set(object, mapObject);
-					} else if (value instanceof JsonObject) {
-						field.set(object, deserialize(clazz, (JsonObject) value));
+						return mapObject;
 					} else {
-						field.set(object, deserialize(clazz.getComponentType(), (JsonObject) value));
+						final List<Object> listOfItems = new ArrayList<>();
+						for (final Object item : (JsonArray) value) {
+							if (!(item instanceof JsonObject)) {
+								throw new Exception("Invalid value type serialization value");
+							}
+
+							listOfItems.add(deserialize((JsonObject) item));
+						}
+
+						final Constructor<?> constructor = clazz.getConstructor();
+						final Object object = constructor.newInstance();
+						if (object instanceof Collection) {
+							for (final Object item : listOfItems) {
+								@SuppressWarnings("unchecked")
+								final
+								Collection<Object> collectionObject = (Collection<Object>) object;
+								collectionObject.add(item);
+							}
+							return object;
+						} else {
+							throw new Exception("");
+						}
 					}
-				} catch (final Exception e) {
-					throw new Exception("Invalid value type for field '" + entry.getKey() + "' in class '" + classType.toString() + "': " + e.getMessage(), e);
+				} else {
+					throw new Exception("Invalid value type for deserialization: " + clazz.getName());
 				}
 			}
-			return object;
+		} catch (final Exception e) {
+			throw e;
+		}
+	}
+
+	public static Object deserialize(final Class<?> classType, final JsonObject jsonObject) throws Exception {
+		try {
+			if (classType == null) {
+				throw new Exception("Invalid class type serialization value");
+			} else if (jsonObject == null) {
+				return null;
+			} else {
+				final Constructor<?> constructor = ClassUtilities.getConstructor(classType);
+				constructor.setAccessible(true);
+				final Object object = constructor.newInstance();
+				for (final Entry<String, Object> entry : jsonObject.entrySet()) {
+					Field field;
+					try {
+						field = ClassUtilities.getField(classType, entry.getKey());
+					} catch (@SuppressWarnings("unused") final Exception e) {
+						throw new Exception("Invalid serialization field name '" + entry.getKey() + "' for class '" + classType.toString() + "'");
+					}
+					field.setAccessible(true);
+
+					final Object value = entry.getValue();
+					try {
+						final Class<?> clazz = field.getType();
+						if (value == null) {
+							field.set(object, null);
+						} else if (clazz == Boolean.TYPE || clazz == Boolean.class) {
+							field.set(object, value);
+						} else if (clazz == Byte.TYPE || clazz == Byte.class) {
+							field.set(object, ((Number) value).byteValue());
+						} else if (clazz == Short.TYPE || clazz == Short.class) {
+							field.set(object, ((Number) value).shortValue());
+						} else if (clazz == Integer.TYPE || clazz == Integer.class) {
+							field.set(object, ((Number) value).intValue());
+						} else if (clazz == Long.TYPE || clazz == Long.class) {
+							field.set(object, ((Number) value).longValue());
+						} else if (clazz == Float.TYPE || clazz == Float.class) {
+							field.set(object, ((Number) value).floatValue());
+						} else if (clazz == Double.TYPE || clazz == Double.class) {
+							if (value.getClass() == Float.class) {
+								field.set(object, Double.parseDouble(Float.toString((Float) value)));
+							} else {
+								field.set(object, ((Number) value).doubleValue());
+							}
+						} else if (clazz == BigDecimal.class) {
+							field.set(object, value);
+						} else if (clazz == Character.TYPE || clazz == Character.class) {
+							field.set(object, ((String) value).charAt(0));
+						} else if (clazz == String.class) {
+							field.set(object, value);
+						} else if (clazz == Charset.class) {
+							field.set(object, Charset.forName((String) value));
+						} else if (Date.class.isAssignableFrom(clazz)) {
+							field.set(object, DateUtilities.parseIso8601DateTimeString((String) value));
+						} else if (clazz.isEnum()) {
+							final String enumName = (String) value;
+							for (final Object enumConstant : clazz.getEnumConstants()) {
+								if (enumName.equals(enumConstant.toString())) {
+									field.set(object, enumConstant);
+									break;
+								}
+							}
+						} else if (clazz.isArray()) {
+							final JsonArray jsonArray = ((JsonArray) value);
+							if (clazz.getComponentType() == Boolean.TYPE) {
+								final boolean[] arrayValue = new boolean[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = (boolean) jsonArray.get(i);
+								}
+								field.set(object, arrayValue);
+							} else if (clazz.getComponentType() == Boolean.class) {
+								final Boolean[] arrayValue = new Boolean[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = (Boolean) jsonArray.get(i);
+								}
+								field.set(object, arrayValue);
+							} else if (clazz.getComponentType() == Byte.TYPE) {
+								final byte[] arrayValue = new byte[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = ((Number) jsonArray.get(i)).byteValue();
+								}
+								field.set(object, arrayValue);
+							} else if (clazz.getComponentType() == Byte.class) {
+								final Byte[] arrayValue = new Byte[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = ((Number) jsonArray.get(i)).byteValue();
+								}
+								field.set(object, arrayValue);
+							} else if (clazz.getComponentType() == Short.TYPE) {
+								final short[] arrayValue = new short[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = ((Number) jsonArray.get(i)).shortValue();
+								}
+								field.set(object, arrayValue);
+							} else if (clazz.getComponentType() == Short.class) {
+								final Short[] arrayValue = new Short[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = ((Number) jsonArray.get(i)).shortValue();
+								}
+								field.set(object, arrayValue);
+							} else if (clazz.getComponentType() == Integer.TYPE) {
+								final int[] arrayValue = new int[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = ((Number) jsonArray.get(i)).intValue();
+								}
+								field.set(object, arrayValue);
+							} else if (clazz.getComponentType() == Integer.class) {
+								final Integer[] arrayValue = new Integer[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = ((Number) jsonArray.get(i)).intValue();
+								}
+								field.set(object, arrayValue);
+							} else if (clazz.getComponentType() == Long.TYPE) {
+								final long[] arrayValue = new long[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = ((Number) jsonArray.get(i)).longValue();
+								}
+								field.set(object, arrayValue);
+							} else if (clazz.getComponentType() == Long.class) {
+								final Long[] arrayValue = new Long[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = ((Number) jsonArray.get(i)).longValue();
+								}
+								field.set(object, arrayValue);
+							} else if (clazz.getComponentType() == Float.TYPE) {
+								final float[] arrayValue = new float[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = (float) jsonArray.get(i);
+								}
+								field.set(object, arrayValue);
+							} else if (clazz.getComponentType() == Float.class) {
+								final Float[] arrayValue = new Float[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = (float) jsonArray.get(i);
+								}
+								field.set(object, arrayValue);
+							} else if (clazz.getComponentType() == Double.TYPE) {
+								final double[] arrayValue = new double[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = (double) jsonArray.get(i);
+								}
+								field.set(object, arrayValue);
+							} else if (clazz.getComponentType() == Double.class) {
+								final Double[] arrayValue = new Double[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = (double) jsonArray.get(i);
+								}
+								field.set(object, arrayValue);
+							} else if (clazz.getComponentType() == Character.TYPE) {
+								final char[] arrayValue = new char[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = ((String) jsonArray.get(i)).charAt(0);
+								}
+								field.set(object, arrayValue);
+							} else if (clazz.getComponentType() == Character.class) {
+								final Character[] arrayValue = new Character[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = ((String) jsonArray.get(i)).charAt(0);
+								}
+								field.set(object, arrayValue);
+							} else if (clazz.getComponentType() == String.class) {
+								final String[] arrayValue = new String[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = (String) jsonArray.get(i);
+								}
+								field.set(object, arrayValue);
+							} else if (Date.class.isAssignableFrom(clazz.getComponentType())) {
+								final Date[] arrayValue = new Date[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).parse((String) jsonArray.get(i));
+								}
+								field.set(object, arrayValue);
+							} else if (Enum.class.isAssignableFrom(clazz.getComponentType())) {
+								final Object[] arrayValue = (Object[]) Array.newInstance(clazz.getComponentType(), jsonArray.size());
+								for (int i = 0; i < arrayValue.length; i++) {
+									final String enumName = (String) jsonArray.get(i);
+									boolean enumFound = false;
+									for (final Object enumConstant : clazz.getComponentType().getEnumConstants()) {
+										if (enumName.equals(enumConstant.toString())) {
+											arrayValue[i] = enumConstant;
+											enumFound = true;
+											break;
+										}
+									}
+									if (enumFound == false) {
+										throw new Exception("Invalid enum name '" + enumName + "' for type '" + clazz.getComponentType().getName() + "'");
+									}
+								}
+								field.set(object, arrayValue);
+							} else {
+								final Object[] arrayValue = (Object[]) Array.newInstance(clazz.getComponentType(), jsonArray.size());
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = deserialize(Object.class, (JsonObject) jsonArray.get(i));
+								}
+								field.set(object, arrayValue);
+							}
+						} else if (List.class.isAssignableFrom(clazz)) {
+							final List<Object> listOfItems = new ArrayList<>();
+							for (final Object item : (JsonArray) value) {
+								listOfItems.add(item);
+							}
+							field.set(object, listOfItems);
+						} else if (Set.class.isAssignableFrom(clazz)) {
+							final Set<Object> setOfItems = new HashSet<>();
+							for (final Object item : (JsonArray) value) {
+								setOfItems.add(item);
+							}
+							field.set(object, setOfItems);
+						} else if (Collection.class.isAssignableFrom(clazz)) {
+							final Collection<Object> collectionOfItems = new ArrayList<>();
+							for (final Object item : (JsonArray) value) {
+								collectionOfItems.add(item);
+							}
+							field.set(object, collectionOfItems);
+						} else if (Map.class.isAssignableFrom(clazz)) {
+							final Map<Object, Object> mapObject = new HashMap<>();
+							if (!(value instanceof JsonArray)) {
+								throw new Exception("Invalid value type serialization value");
+							}
+							for (final Object keyValueObject : (JsonArray) value) {
+								if (!(keyValueObject instanceof JsonObject)) {
+									throw new Exception("Invalid value type serialization value");
+								}
+
+								final Object keyObject = ((JsonObject) keyValueObject).get("key");
+								final Object valueObject = ((JsonObject) keyValueObject).get("value");
+
+								mapObject.put(keyObject, valueObject);
+							}
+							field.set(object, mapObject);
+						} else if (value instanceof JsonObject) {
+							field.set(object, deserialize(clazz, (JsonObject) value));
+						} else {
+							field.set(object, deserialize(clazz.getComponentType(), (JsonObject) value));
+						}
+					} catch (final Exception e) {
+						throw new Exception("Invalid value type for field '" + entry.getKey() + "' in class '" + classType.toString() + "': " + e.getMessage(), e);
+					}
+				}
+				return object;
+			}
+		} catch (final Exception e) {
+			throw e;
 		}
 	}
 }

@@ -2,6 +2,7 @@ package de.soderer.utilities.json;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -22,12 +23,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "type: \"null\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"null\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -50,12 +51,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "type: \"string\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"\"Text\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -78,12 +79,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "type: [ \"string\", \"integer\" ]\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"\"Text\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -106,12 +107,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "type: \"number\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"1\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -134,12 +135,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "type: \"number\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"1";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -162,12 +163,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "minimum: \"1\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"1";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -190,12 +191,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "minimum: 2\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"1";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -219,12 +220,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "maximum: 1\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"1";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -247,12 +248,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "maximum: 0\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"1";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -277,12 +278,12 @@ public class JsonValidationTest {
 							+ "minimum: 2,\n"
 							+ "exclusiveMinimum: true\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"2";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -307,12 +308,12 @@ public class JsonValidationTest {
 							+ "maximum: 0,\n"
 							+ "exclusiveMaximum: true\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"0";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -336,12 +337,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "multipleOf: 7\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"21\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -364,12 +365,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "multipleOf: 7\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"22\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -422,7 +423,7 @@ public class JsonValidationTest {
 							+ "}\n"
 							+ "]\n";
 
-			jsonReader = new Json5Reader(new ByteArrayInputStream(data.getBytes("UTF-8")));
+			jsonReader = new Json5Reader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			JsonUtilities.readUpToJsonPath(jsonReader, "$[0].item3.item32");
 			jsonReader.readNextToken();
 			Assert.assertEquals(JsonToken.JsonArray_Open, jsonReader.getCurrentToken());
@@ -451,7 +452,7 @@ public class JsonValidationTest {
 							+ "item3: { type: \"number\" }\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -461,7 +462,7 @@ public class JsonValidationTest {
 							+ "item3: 4711,\n"
 							+ "item4: 4712\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -489,7 +490,7 @@ public class JsonValidationTest {
 							+ "item3: { type: \"number\" }\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -498,7 +499,7 @@ public class JsonValidationTest {
 							+ "item2: 34,\n"
 							+ "item3: 4711\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -522,7 +523,7 @@ public class JsonValidationTest {
 					"{\n"
 							+ "type: \"array\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -532,7 +533,7 @@ public class JsonValidationTest {
 							+ "4711,\n"
 							+ "null\n"
 							+ "]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -560,7 +561,7 @@ public class JsonValidationTest {
 							+ "item3: { enum: [ \"Text1\", \"Text2\", 3 ] }\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -569,7 +570,7 @@ public class JsonValidationTest {
 							+ "item2: \"Text2\",\n"
 							+ "item3: 3\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -597,7 +598,7 @@ public class JsonValidationTest {
 							+ "item3: { enum: [ \"Text1\", \"Text2\", 2 ] }\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -606,7 +607,7 @@ public class JsonValidationTest {
 							+ "item2: \"Text2\",\n"
 							+ "item3: 3\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -638,7 +639,7 @@ public class JsonValidationTest {
 							+ "minProperties: 0,\n"
 							+ "maxProperties: 4\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -648,7 +649,7 @@ public class JsonValidationTest {
 							+ "item3: 3,\n"
 							+ "item4: 4\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -678,7 +679,7 @@ public class JsonValidationTest {
 							+ "},"
 							+ "additionalProperties: { type: \"string\" }\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -688,7 +689,7 @@ public class JsonValidationTest {
 							+ "item3: 3,\n"
 							+ "item4: 4\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -718,7 +719,7 @@ public class JsonValidationTest {
 							+ "},"
 							+ "additionalProperties: { type: \"string\" }\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -728,7 +729,7 @@ public class JsonValidationTest {
 							+ "item3: 3,\n"
 							+ "item4: \"Text4\"\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -757,7 +758,7 @@ public class JsonValidationTest {
 							+ "},"
 							+ "required: [ \"item1\", \"item2\" ]\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -765,7 +766,7 @@ public class JsonValidationTest {
 							+ "item1: \"Text1\",\n"
 							+ "item2: \"Text2\"\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -794,7 +795,7 @@ public class JsonValidationTest {
 							+ "},"
 							+ "required: [ \"item1\", \"item3\" ]\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -802,7 +803,7 @@ public class JsonValidationTest {
 							+ "item1: \"Text1\",\n"
 							+ "item2: \"Text2\"\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -833,7 +834,7 @@ public class JsonValidationTest {
 							+ "minProperties: 5,\n"
 							+ "maxProperties: 4\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -843,7 +844,7 @@ public class JsonValidationTest {
 							+ "item3: 3,\n"
 							+ "item4: 4\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -874,7 +875,7 @@ public class JsonValidationTest {
 							+ "minProperties: 0,\n"
 							+ "maxProperties: 3\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -884,7 +885,7 @@ public class JsonValidationTest {
 							+ "item3: 3,\n"
 							+ "item4: 4\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -908,7 +909,7 @@ public class JsonValidationTest {
 					"{\n"
 							+ "minItems: 2\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -917,7 +918,7 @@ public class JsonValidationTest {
 							+ "2,\n"
 							+ "3\n"
 							+ "]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -940,7 +941,7 @@ public class JsonValidationTest {
 					"{\n"
 							+ "maxItems: 4\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -949,7 +950,7 @@ public class JsonValidationTest {
 							+ "2,\n"
 							+ "3\n"
 							+ "]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -972,7 +973,7 @@ public class JsonValidationTest {
 					"{\n"
 							+ "minItems: 4\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -981,7 +982,7 @@ public class JsonValidationTest {
 							+ "2,\n"
 							+ "3\n"
 							+ "]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1005,7 +1006,7 @@ public class JsonValidationTest {
 					"{\n"
 							+ "maxItems: 2\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -1014,7 +1015,7 @@ public class JsonValidationTest {
 							+ "2,\n"
 							+ "3\n"
 							+ "]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1038,12 +1039,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "minLength: 4\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"\"Text\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -1066,12 +1067,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "maxLength: 4\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"\"Text\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -1094,12 +1095,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "minLength: 5\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"\"Text\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1123,12 +1124,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "maxLength: 3\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"\"Text\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1152,12 +1153,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "pattern: \"^Text$\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"\"Text\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -1180,12 +1181,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "pattern: \"^123$\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"123\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -1208,12 +1209,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "pattern: \"^false$\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"false\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -1236,12 +1237,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "pattern: \"^Text$\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"\" Text\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1269,12 +1270,12 @@ public class JsonValidationTest {
 							+ "{ enum: [ 2 ] }\n"
 							+ "]\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"7\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -1301,12 +1302,12 @@ public class JsonValidationTest {
 							+ "{ enum: [ 3 ] }\n"
 							+ "]\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"7\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1334,12 +1335,12 @@ public class JsonValidationTest {
 							+ "{ enum: [ 2, 7 ] }\n"
 							+ "]\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"7\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -1366,12 +1367,12 @@ public class JsonValidationTest {
 							+ "{ enum: [ 3 ] }\n"
 							+ "]\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"7\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1399,12 +1400,12 @@ public class JsonValidationTest {
 							+ "{ enum: [ 2, 8 ] }\n"
 							+ "]\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"7\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -1431,12 +1432,12 @@ public class JsonValidationTest {
 							+ "{ enum: [ 3 ] }\n"
 							+ "]\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"7\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1460,12 +1461,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "not: { enum: [ 1, 8 ] }\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"3\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -1488,12 +1489,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "not: { enum: [ 1, 7 ] }\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"7\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1517,12 +1518,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "uniqueItems: true\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"[ 1, 2, 3, null, \"Text\" ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -1545,12 +1546,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "uniqueItems: true\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"[ 1, 2, 3, 1 ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1574,12 +1575,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "uniqueItems: true\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"[ 1, \"Text\", 2, 3, null, \"Text\" ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1603,12 +1604,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "uniqueItems: true\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"[ 1, null, 2, 3, null, \"Text\" ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1632,12 +1633,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "uniqueItems: true\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"[ [1, 2], [1, 2] ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1661,12 +1662,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "uniqueItems: true\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"[ { a: 1, b: 2 }, { b: 2, a: 1 } ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1690,12 +1691,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "format: \"email\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"\"tester@example.com\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -1718,12 +1719,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "format: \"email\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"\"tester@@example.com\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1747,12 +1748,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "format: \"ipv4\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"\"192.168.1.70\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -1775,12 +1776,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "format: \"ipv4\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"\"192.168.1.707\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1804,12 +1805,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "format: \"ipv6\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"\"2001:0db8:1234::0000\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -1832,12 +1833,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "format: \"ipv6\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"\"2001:0db8:1234:ffff:ffff:ffff:ffff:fffx\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1861,12 +1862,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "format: \"date-time\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"\"2017-02-28T17:30:00+01\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -1889,12 +1890,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "format: \"date-time\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"\"2017-02-28T17:30:00\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1918,12 +1919,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "format: \"base64\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
-					"\"" + Utilities.encodeBase64("Text".getBytes("UTF-8")) + "\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+					"\"" + Utilities.encodeBase64("Text".getBytes(StandardCharsets.UTF_8)) + "\"\n";
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -1946,12 +1947,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "format: \"base64\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
-					"\"" + Utilities.encodeBase64("Text".getBytes("UTF-8")) + "x\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+					"\"" + Utilities.encodeBase64("Text".getBytes(StandardCharsets.UTF_8)) + "x\"\n";
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -1975,12 +1976,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "items: { type: \"number\" }\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"[1, 2, 3]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -2003,12 +2004,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "items: { type: \"number\" }\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"[1, \"a\", 3]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -2033,12 +2034,12 @@ public class JsonValidationTest {
 							+ "items: { type: \"number\" },\n"
 							+ "additionalItems: false\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"[1, 2, 3 ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDefinitionError e) {
@@ -2062,12 +2063,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "items: [ { type: \"number\" }, { type: \"number\" } ]\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"[1, 2, 3]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -2090,12 +2091,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "items: [ { type: \"number\" }, { type: \"number\" } ]\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"[1, true ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -2120,12 +2121,12 @@ public class JsonValidationTest {
 							+ "items: [ { type: \"number\" }, { type: \"number\" } ]\n"
 							+ "additionalItems: false\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"[1, 2, 3 ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -2153,7 +2154,7 @@ public class JsonValidationTest {
 							+ "}\n"
 							+ "additionalProperties: { type: \"string\" }\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -2163,7 +2164,7 @@ public class JsonValidationTest {
 							+ "Num_2: 1,"
 							+ "StringProp: \"Text\""
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -2190,7 +2191,7 @@ public class JsonValidationTest {
 							+ "}\n"
 							+ "additionalProperties: { type: \"string\" }\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -2200,7 +2201,7 @@ public class JsonValidationTest {
 							+ "Num_2: 1,"
 							+ "StringProp: 7"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -2228,7 +2229,7 @@ public class JsonValidationTest {
 							+ "}\n"
 							+ "additionalProperties: false\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -2238,7 +2239,7 @@ public class JsonValidationTest {
 							+ "Num_2: 1,"
 							+ "StringProp: \"Text\""
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -2262,12 +2263,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "title: \"My JSON schema\"\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"null\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -2290,12 +2291,12 @@ public class JsonValidationTest {
 					"{\n"
 							+ "title: null\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"null\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDefinitionError e) {
@@ -2325,14 +2326,14 @@ public class JsonValidationTest {
 							+ "predefType: { type: \"string\" }\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"{\n"
 							+ "item1: \"Text1\"\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -2359,7 +2360,7 @@ public class JsonValidationTest {
 							+ "item1: { $ref: \"otherSchema.json#/definitions/predefType\" }\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String indirectSchema =
@@ -2368,14 +2369,14 @@ public class JsonValidationTest {
 							+ "predefType: { type: \"string\" }\n"
 							+ "}\n"
 							+ "}\n";
-			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes("UTF-8"));
+			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream);
 
 			final String data =
 					"{\n"
 							+ "item1: \"Text1\"\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -2404,7 +2405,7 @@ public class JsonValidationTest {
 							+ "item1: { $ref: \"otherSchema.json#/definitions/predefType1\" }\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String indirectSchema1 =
@@ -2413,7 +2414,7 @@ public class JsonValidationTest {
 							+ "predefType1: { $ref: \"someOtherSchema.json#/definitions/predefType2\" }\n"
 							+ "}\n"
 							+ "}\n";
-			indirectSchemaInputStream1 = new ByteArrayInputStream(indirectSchema1.getBytes("UTF-8"));
+			indirectSchemaInputStream1 = new ByteArrayInputStream(indirectSchema1.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream1);
 
 			final String indirectSchema2 =
@@ -2422,14 +2423,14 @@ public class JsonValidationTest {
 							+ "predefType2: { type: \"string\" }\n"
 							+ "}\n"
 							+ "}\n";
-			indirectSchemaInputStream2 = new ByteArrayInputStream(indirectSchema2.getBytes("UTF-8"));
+			indirectSchemaInputStream2 = new ByteArrayInputStream(indirectSchema2.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.addJsonSchemaDefinition("someOtherSchema.json", indirectSchemaInputStream2);
 
 			final String data =
 					"{\n"
 							+ "item1: \"Text1\"\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -2458,7 +2459,7 @@ public class JsonValidationTest {
 							+ "item1: { $ref: \"otherSchema.json#/definitions/predefType1\" }\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String indirectSchema =
@@ -2468,14 +2469,14 @@ public class JsonValidationTest {
 							+ "predefType2: { type: \"string\" }\n"
 							+ "}\n"
 							+ "}\n";
-			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes("UTF-8"));
+			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream);
 
 			final String data =
 					"{\n"
 							+ "item1: \"Text1\"\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -2503,7 +2504,7 @@ public class JsonValidationTest {
 							+ "item1: { $ref: \"predefType\" }\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String indirectSchema =
@@ -2512,14 +2513,14 @@ public class JsonValidationTest {
 							+ "predefType: { type: \"string\" }\n"
 							+ "}\n"
 							+ "}\n";
-			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes("UTF-8"));
+			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream);
 
 			final String data =
 					"{\n"
 							+ "item1: \"Text1\"\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -2549,14 +2550,14 @@ public class JsonValidationTest {
 							+ "predefType: { type: \"string\" }\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"{\n"
 							+ "item1: \"Text1\"\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDefinitionError e) {
@@ -2584,14 +2585,14 @@ public class JsonValidationTest {
 							+ "},\n"
 							+ "definitions: 3\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"{\n"
 							+ "item1: \"Text1\"\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDefinitionError e) {
@@ -2621,14 +2622,14 @@ public class JsonValidationTest {
 							+ "predefType: { type: \"string\" }\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"{\n"
 							+ "item1: true\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -2656,14 +2657,14 @@ public class JsonValidationTest {
 							+ "item1: { $ref: \"#/definitions/predefType\" }\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"{\n"
 							+ "item1: \"Text1\"\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDefinitionError e) {
@@ -2692,7 +2693,7 @@ public class JsonValidationTest {
 							+ "item1: { $ref: \"otherSchema.json#/definitions/unknownPredefType\" }\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String indirectSchema =
@@ -2701,14 +2702,14 @@ public class JsonValidationTest {
 							+ "predefType: { type: \"string\" }\n"
 							+ "}\n"
 							+ "}\n";
-			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes("UTF-8"));
+			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream);
 
 			final String data =
 					"{\n"
 							+ "item1: \"Text1\"\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDefinitionError e) {
@@ -2737,7 +2738,7 @@ public class JsonValidationTest {
 							+ "item1: { $ref: \"unknownOtherSchema.json#/definitions/unknownPredefType\" }\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String indirectSchema =
@@ -2746,14 +2747,14 @@ public class JsonValidationTest {
 							+ "predefType: { type: \"string\" }\n"
 							+ "}\n"
 							+ "}\n";
-			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes("UTF-8"));
+			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream);
 
 			final String data =
 					"{\n"
 							+ "item1: \"Text1\"\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDefinitionError e) {
@@ -2780,7 +2781,7 @@ public class JsonValidationTest {
 							+ "field1: [ \"field2\" ]\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -2788,7 +2789,7 @@ public class JsonValidationTest {
 							+ "field1: 1,\n"
 							+ "field2: 2\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -2813,14 +2814,14 @@ public class JsonValidationTest {
 							+ "field1: [ \"field2\" ]\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"{\n"
 							+ "field1: 1\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -2851,7 +2852,7 @@ public class JsonValidationTest {
 							+ "}\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
@@ -2859,7 +2860,7 @@ public class JsonValidationTest {
 							+ "field1: 1,\n"
 							+ "field2: 2\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
@@ -2889,14 +2890,14 @@ public class JsonValidationTest {
 							+ "}\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"{\n"
 							+ "field1: 1\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
@@ -2928,14 +2929,14 @@ public class JsonValidationTest {
 							+ "predefType2: { $ref: \"#/definitions/predefType1\" }\n"
 							+ "}\n"
 							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
 			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
 
 			final String data =
 					"{\n"
 							+ "item1: \"Text1\"\n"
 							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
 			Assert.fail("Missing expected exception");
 		} catch (final JsonSchemaDefinitionError e) {

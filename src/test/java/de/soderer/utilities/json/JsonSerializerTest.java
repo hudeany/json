@@ -6,6 +6,8 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
+import de.soderer.utilities.TestObjectComplex;
+
 public class JsonSerializerTest {
 	@Test
 	public void testSimple() throws Exception {

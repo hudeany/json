@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map.Entry;
@@ -17,21 +18,21 @@ import de.soderer.utilities.Utilities;
 
 public class JsonWriter implements Closeable {
 	/** Default output encoding. */
-	public static final String DEFAULT_ENCODING = "UTF-8";
-	
+	public static final Charset DEFAULT_ENCODING = StandardCharsets.UTF_8;
+
 	/** Output stream. */
 	private OutputStream outputStream;
 
 	/** Output encoding. */
-	private Charset encoding;
+	private final Charset encoding;
 
 	/** Output writer. */
 	private BufferedWriter outputWriter = null;
 
 	private long writtenCharacters = 0;
-	
-	private Stack<JsonStackItem> openJsonStackItems = new Stack<>();
-	
+
+	private final Stack<JsonStackItem> openJsonStackItems = new Stack<>();
+
 	private String linebreak = "\n";
 	private String indention = "\t";
 	private String separator = " ";
@@ -43,29 +44,29 @@ public class JsonWriter implements Closeable {
 		Object,
 		Object_Value
 	}
-	
-	public JsonWriter(OutputStream outputStream) {
+
+	public JsonWriter(final OutputStream outputStream) {
 		this(outputStream, null);
 	}
-	
-	public JsonWriter(OutputStream outputStream, String encoding) {
+
+	public JsonWriter(final OutputStream outputStream, final Charset encoding) {
 		this.outputStream = outputStream;
-		this.encoding = isBlank(encoding) ? Charset.forName(DEFAULT_ENCODING) : Charset.forName(encoding);
+		this.encoding = encoding == null ? DEFAULT_ENCODING : encoding;
 	}
-	
-	public void setIndentation(String indentation) {
-		this.indention = indentation;
+
+	public void setIndentation(final String indentation) {
+		indention = indentation;
 	}
-	
-	public void setIndentation(char indentationCharacter) {
-		this.indention = Character.toString(indentationCharacter);
+
+	public void setIndentation(final char indentationCharacter) {
+		indention = Character.toString(indentationCharacter);
 	}
-	
+
 	public String getLinebreak() {
 		return linebreak;
 	}
 
-	public void setLinebreak(String linebreak) {
+	public void setLinebreak(final String linebreak) {
 		this.linebreak = linebreak;
 	}
 
@@ -73,7 +74,7 @@ public class JsonWriter implements Closeable {
 		return separator;
 	}
 
-	public void setSeparator(String separator) {
+	public void setSeparator(final String separator) {
 		this.separator = separator;
 	}
 
@@ -81,7 +82,7 @@ public class JsonWriter implements Closeable {
 		return writtenCharacters;
 	}
 
-	public void setUglify(boolean value) {
+	public void setUglify(final boolean value) {
 		if (value) {
 			linebreak = "";
 			indention = "";
@@ -92,13 +93,13 @@ public class JsonWriter implements Closeable {
 			separator = " ";
 		}
 	}
-	
+
 	public void openJsonObject() throws Exception {
 		if (outputWriter == null) {
 			write("{", true);
 			openJsonStackItems.push(JsonStackItem.Object_Empty);
 		} else {
-			JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+			final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 			if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array && latestOpenJsonItem != JsonStackItem.Object_Value) {
 				openJsonStackItems.push(latestOpenJsonItem);
 				throw new Exception("Not matching open Json item for opening object: " + latestOpenJsonItem);
@@ -111,19 +112,19 @@ public class JsonWriter implements Closeable {
 					openJsonStackItems.push(JsonStackItem.Object_Value);
 					write(linebreak, false);
 				}
-				
+
 				if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 					openJsonStackItems.push(JsonStackItem.Array);
 				}
-				
+
 				write("{", true);
 				openJsonStackItems.push(JsonStackItem.Object_Empty);
 			}
 		}
 	}
-	
-	public void openJsonObjectProperty(String propertyName) throws Exception {
-		JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+
+	public void openJsonObjectProperty(final String propertyName) throws Exception {
+		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Object_Empty && latestOpenJsonItem != JsonStackItem.Object) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new Exception("Not matching open Json item for opening object property: " + latestOpenJsonItem);
@@ -138,9 +139,9 @@ public class JsonWriter implements Closeable {
 			openJsonStackItems.push(JsonStackItem.Object_Value);
 		}
 	}
-	
-	public void addSimpleJsonObjectPropertyValue(Object propertyValue) throws Exception {
-		JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+
+	public void addSimpleJsonObjectPropertyValue(final Object propertyValue) throws Exception {
+		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new Exception("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
@@ -158,9 +159,9 @@ public class JsonWriter implements Closeable {
 			}
 		}
 	}
-	
+
 	public void closeJsonObject() throws Exception {
-		JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Object_Empty && latestOpenJsonItem != JsonStackItem.Object) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new Exception("Not matching open Json item for closing object: " + latestOpenJsonItem);
@@ -170,18 +171,18 @@ public class JsonWriter implements Closeable {
 			write(linebreak, false);
 			write("}", true);
 		}
-		
+
 		if (openJsonStackItems.size() > 0 && openJsonStackItems.peek() == JsonStackItem.Object_Value) {
 			openJsonStackItems.pop();
 		}
 	}
-	
+
 	public void openJsonArray() throws Exception {
 		if (outputWriter == null) {
 			write("[", true);
 			openJsonStackItems.push(JsonStackItem.Array_Empty);
 		} else {
-			JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+			final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 			if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array && latestOpenJsonItem != JsonStackItem.Object_Value) {
 				openJsonStackItems.push(latestOpenJsonItem);
 				throw new Exception("Not matching open Json item for opening array: " + latestOpenJsonItem);
@@ -194,19 +195,19 @@ public class JsonWriter implements Closeable {
 					openJsonStackItems.push(JsonStackItem.Object_Value);
 					write(linebreak, false);
 				}
-				
+
 				if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 					openJsonStackItems.push(JsonStackItem.Array);
 				}
-				
+
 				write("[", true);
 				openJsonStackItems.push(JsonStackItem.Array_Empty);
 			}
 		}
 	}
-	
-	public void addSimpleJsonArrayValue(Object arrayValue) throws Exception {
-		JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+
+	public void addSimpleJsonArrayValue(final Object arrayValue) throws Exception {
+		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new Exception("Not matching open Json item for adding array value: " + latestOpenJsonItem);
@@ -218,7 +219,7 @@ public class JsonWriter implements Closeable {
 			}
 
 			openJsonStackItems.push(JsonStackItem.Array);
-			
+
 			if (arrayValue == null) {
 				write("null", true);
 			} else if (arrayValue instanceof Boolean) {
@@ -232,8 +233,8 @@ public class JsonWriter implements Closeable {
 			}
 		}
 	}
-	
-	public void addSimpleValue(Object value) throws Exception {
+
+	public void addSimpleValue(final Object value) throws Exception {
 		if (writtenCharacters > 0 || openJsonStackItems.size() != 0) {
 			throw new Exception("Not matching empty Json output for adding simple value");
 		} else {
@@ -250,9 +251,9 @@ public class JsonWriter implements Closeable {
 			}
 		}
 	}
-	
+
 	public void closeJsonArray() throws Exception {
-		JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new Exception("Not matching open Json item for closing array: " + latestOpenJsonItem);
@@ -262,20 +263,20 @@ public class JsonWriter implements Closeable {
 			write(linebreak, false);
 			write("]", true);
 		}
-		
+
 		if (openJsonStackItems.size() > 0 && openJsonStackItems.peek() == JsonStackItem.Object_Value) {
 			openJsonStackItems.pop();
 		}
 	}
-	
-	public void add(JsonObject jsonObject) throws Exception {
+
+	public void add(final JsonObject jsonObject) throws Exception {
 		if (jsonObject == null) {
 			throw new Exception("Invalid null value added via 'add'. If done by intention use 'addSimpleJsonArrayValue' or 'addSimpleJsonObjectPropertyValue'");
 		} else {
 			openJsonObject();
-			for (Entry<String, Object> property : jsonObject) {
+			for (final Entry<String, Object> property : jsonObject) {
 				openJsonObjectProperty(property.getKey());
-				Object propertyValue = property.getValue();
+				final Object propertyValue = property.getValue();
 				if (propertyValue instanceof JsonObject) {
 					add((JsonObject) propertyValue);
 				} else if (propertyValue instanceof JsonArray) {
@@ -287,13 +288,13 @@ public class JsonWriter implements Closeable {
 			closeJsonObject();
 		}
 	}
-	
-	public void add(JsonArray jsonArray) throws Exception {
+
+	public void add(final JsonArray jsonArray) throws Exception {
 		if (jsonArray == null) {
 			throw new Exception("Invalid null value added via 'add'. If done by intention use 'addSimpleJsonArrayValue' or 'addSimpleJsonObjectPropertyValue'");
 		} else {
 			openJsonArray();
-			for (Object arrayValue : jsonArray) {
+			for (final Object arrayValue : jsonArray) {
 				if (arrayValue instanceof JsonObject) {
 					add((JsonObject) arrayValue);
 				} else if (arrayValue instanceof JsonArray) {
@@ -305,10 +306,10 @@ public class JsonWriter implements Closeable {
 			closeJsonArray();
 		}
 	}
-	
+
 	public void closeAllOpenJsonItems() throws Exception {
 		while (!openJsonStackItems.isEmpty()) {
-			JsonStackItem openJsonItem = openJsonStackItems.pop();
+			final JsonStackItem openJsonItem = openJsonStackItems.pop();
 			switch(openJsonItem) {
 				case Array:
 				case Array_Empty:
@@ -347,7 +348,7 @@ public class JsonWriter implements Closeable {
 		outputWriter = null;
 		closeQuietly(outputStream);
 		outputStream = null;
-		
+
 		if (!openJsonStackItems.isEmpty()) {
 			String jsonItemsStackString = "";
 			while (!openJsonStackItems.isEmpty()) {
@@ -356,29 +357,18 @@ public class JsonWriter implements Closeable {
 			throw new IOException("There are still Json items open: " + jsonItemsStackString);
 		}
 	}
-	
-	private void write(String text, boolean indent) throws IOException {
+
+	private void write(final String text, final boolean indent) throws IOException {
 		if (outputWriter == null) {
 			if (outputStream == null) {
 				throw new IllegalStateException("JsonWriter is already closed");
 			}
 			outputWriter = new BufferedWriter(new OutputStreamWriter(outputStream, encoding));
 		}
-		
-		String dataToWrite = (indent ? Utilities.repeat(indention, openJsonStackItems.size()) : "") + text;
+
+		final String dataToWrite = (indent ? Utilities.repeat(indention, openJsonStackItems.size()) : "") + text;
 		writtenCharacters += dataToWrite.length();
 		outputWriter.write(dataToWrite);
-	}
-
-	/**
-	 * Check if String value is null or contains only whitespace characters.
-	 *
-	 * @param value
-	 *            the value
-	 * @return true, if is blank
-	 */
-	private static boolean isBlank(String value) {
-		return value == null || value.trim().length() == 0;
 	}
 
 	/**
@@ -387,102 +377,102 @@ public class JsonWriter implements Closeable {
 	 * @param closeableItem
 	 *            the closeable item
 	 */
-	private static void closeQuietly(Closeable closeableItem) {
+	private static void closeQuietly(final Closeable closeableItem) {
 		if (closeableItem != null) {
 			try {
 				closeableItem.close();
-			} catch (IOException e) {
+			} catch (@SuppressWarnings("unused") final IOException e) {
 				// Do nothing
 			}
 		}
 	}
-	
+
 	/**
 	 * This method should only be used to write small Json items
-	 * 
+	 *
 	 * @param jsonItem
 	 * @return
 	 * @throws Exception
 	 */
-	public static String getJsonItemString(JsonObject jsonObject) throws Exception {
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		try (JsonWriter jsonWriter = new JsonWriter(outputStream, "UTF-8")) {
+	public static String getJsonItemString(final JsonObject jsonObject) throws Exception {
+		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		try (JsonWriter jsonWriter = new JsonWriter(outputStream, StandardCharsets.UTF_8)) {
 			jsonWriter.add(jsonObject);
 			jsonWriter.close();
 		}
-		
-		return outputStream.toString("UTF-8");
+
+		return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
 	}
-	
+
 	/**
 	 * This method should only be used to write small Json items
-	 * 
+	 *
 	 * @param jsonItem
 	 * @return
 	 * @throws Exception
 	 */
-	public static String getJsonItemString(JsonArray jsonArray) throws Exception {
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		try (JsonWriter jsonWriter = new JsonWriter(outputStream, "UTF-8")) {
+	public static String getJsonItemString(final JsonArray jsonArray) throws Exception {
+		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		try (JsonWriter jsonWriter = new JsonWriter(outputStream, StandardCharsets.UTF_8)) {
 			jsonWriter.add(jsonArray);
 			jsonWriter.close();
 		}
-		
-		return outputStream.toString("UTF-8");
+
+		return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
 	}
-	
+
 	/**
 	 * This method should only be used to write small Json items
-	 * 
+	 *
 	 * @param jsonItem
 	 * @return
 	 * @throws Exception
 	 */
-	public static String getJsonItemString(JsonObject jsonObject, String linebreak, String indentation, String separator) throws Exception {
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		try (JsonWriter jsonWriter = new JsonWriter(outputStream, "UTF-8")) {
+	public static String getJsonItemString(final JsonObject jsonObject, final String linebreak, final String indentation, final String separator) throws Exception {
+		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		try (JsonWriter jsonWriter = new JsonWriter(outputStream, StandardCharsets.UTF_8)) {
 			jsonWriter.setLinebreak(linebreak);
 			jsonWriter.setIndentation(indentation);
 			jsonWriter.setSeparator(separator);
 			jsonWriter.add(jsonObject);
 			jsonWriter.close();
 		}
-		
-		return outputStream.toString("UTF-8");
+
+		return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
 	}
-	
+
 	/**
 	 * This method should only be used to write small Json items
-	 * 
+	 *
 	 * @param jsonItem
 	 * @return
 	 * @throws Exception
 	 */
-	public static String getJsonItemString(JsonArray jsonArray, String linebreak, String indentation, String separator) throws Exception {
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		try (JsonWriter jsonWriter = new JsonWriter(outputStream, "UTF-8")) {
+	public static String getJsonItemString(final JsonArray jsonArray, final String linebreak, final String indentation, final String separator) throws Exception {
+		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		try (JsonWriter jsonWriter = new JsonWriter(outputStream, StandardCharsets.UTF_8)) {
 			jsonWriter.setLinebreak(linebreak);
 			jsonWriter.setIndentation(indentation);
 			jsonWriter.setSeparator(separator);
 			jsonWriter.add(jsonArray);
 			jsonWriter.close();
 		}
-		
-		return outputStream.toString("UTF-8");
+
+		return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
 	}
-	
-	public static String getJsonItemString(JsonNode jsonNode) throws Exception {
+
+	public static String getJsonItemString(final JsonNode jsonNode) throws Exception {
 		return getJsonItemString(jsonNode, "\n", "\t", " ");
 	}
-	
+
 	/**
 	 * This method should only be used to write small Json items
-	 * 
+	 *
 	 * @param jsonItem
 	 * @return
 	 * @throws Exception
 	 */
-	public static String getJsonItemString(JsonNode jsonNode, String linebreak, String indentation, String separator) throws Exception {
+	public static String getJsonItemString(final JsonNode jsonNode, final String linebreak, final String indentation, final String separator) throws Exception {
 		if (jsonNode.isJsonObject()) {
 			return getJsonItemString((JsonObject) jsonNode.getValue(), linebreak, indentation, separator);
 		} else if (jsonNode.isJsonArray()) {
@@ -493,16 +483,16 @@ public class JsonWriter implements Closeable {
 			return jsonNode.getValue().toString();
 		}
 	}
-	
-	public String formatStringOutput(String value) {
+
+	public static String formatStringOutput(final String value) {
 		return value
-			.replace("\\", "\\\\")
-			.replace("\"", "\\\"")
-			.replace("/", "\\/")
-			.replace("\b", "\\b")
-			.replace("\f", "\\f")
-			.replace("\r", "\\r")
-			.replace("\n", "\\n")
-			.replace("\t", "\\t");
+				.replace("\\", "\\\\")
+				.replace("\"", "\\\"")
+				.replace("/", "\\/")
+				.replace("\b", "\\b")
+				.replace("\f", "\\f")
+				.replace("\r", "\\r")
+				.replace("\n", "\\n")
+				.replace("\t", "\\t");
 	}
 }

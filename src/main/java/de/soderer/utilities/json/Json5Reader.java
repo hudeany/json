@@ -1,10 +1,9 @@
 package de.soderer.utilities.json;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 
 import de.soderer.utilities.NumberUtilities;
@@ -31,15 +30,11 @@ import de.soderer.utilities.Utilities;
  * 	Block comment (multi-line)<br />
  */
 public class Json5Reader extends JsonReader {
-	public Json5Reader(InputStream inputStream) throws Exception {
-		this(inputStream, (String) null);
+	public Json5Reader(final InputStream inputStream) throws Exception {
+		this(inputStream, null);
 	}
-	
-	public Json5Reader(InputStream inputStream, String encoding) throws Exception {
-		super(inputStream, encoding);
-	}
-	
-	public Json5Reader(InputStream inputStream, Charset encodingCharset) throws Exception {
+
+	public Json5Reader(final InputStream inputStream, final Charset encodingCharset) throws Exception {
 		super(inputStream, encodingCharset);
 	}
 
@@ -54,7 +49,7 @@ public class Json5Reader extends JsonReader {
 				return null;
 			}
 		}
-		
+
 		JsonToken jsonToken;
 		switch (currentChar) {
 			case '{': // Open JsonObject
@@ -145,14 +140,14 @@ public class Json5Reader extends JsonReader {
 				} else if (openJsonItems.peek() == JsonToken.JsonObject_PropertyKey) {
 					openJsonItems.pop();
 					currentObject = readSimpleJsonValue(readUpToNext(false, null, ',', '}').trim());
-					char nextCharAfterSimpleValue = readNextNonWhitespace();
+					final char nextCharAfterSimpleValue = readNextNonWhitespace();
 					if (nextCharAfterSimpleValue == '}') {
 						reuseCurrentChar();
 					}
 					jsonToken = JsonToken.JsonSimpleValue;
 				} else if (openJsonItems.peek() == JsonToken.JsonArray_Open) {
 					currentObject = readSimpleJsonValue(readUpToNext(false, null, ',', ']').trim());
-					char nextCharAfterSimpleValue = readNextNonWhitespace();
+					final char nextCharAfterSimpleValue = readNextNonWhitespace();
 					if (nextCharAfterSimpleValue == ']') {
 						reuseCurrentChar();
 					}
@@ -162,24 +157,24 @@ public class Json5Reader extends JsonReader {
 				}
 				break;
 		}
-		
+
 		return jsonToken;
 	}
 
-	private Object readSimpleJsonValue(String valueString) throws Exception {
-		if (valueString.equalsIgnoreCase("null")) {
+	private Object readSimpleJsonValue(final String valueString) throws Exception {
+		if ("null".equalsIgnoreCase(valueString)) {
 			return null;
-		} else if (valueString.equalsIgnoreCase("true")) {
+		} else if ("true".equalsIgnoreCase(valueString)) {
 			return true;
-		} else if (valueString.equalsIgnoreCase("false")) {
+		} else if ("false".equalsIgnoreCase(valueString)) {
 			return false;
-		} else if (valueString.equalsIgnoreCase("Infinity")) {
+		} else if ("Infinity".equalsIgnoreCase(valueString)) {
 			return Double.POSITIVE_INFINITY;
-		} else if (valueString.equalsIgnoreCase("-Infinity")) {
+		} else if ("-Infinity".equalsIgnoreCase(valueString)) {
 			return Double.NEGATIVE_INFINITY;
-		} else if (valueString.equalsIgnoreCase("NaN")) {
+		} else if ("NaN".equalsIgnoreCase(valueString)) {
 			return Double.NaN;
-		} else if (valueString.equalsIgnoreCase("-NaN")) {
+		} else if ("-NaN".equalsIgnoreCase(valueString)) {
 			return Double.NaN;
 		} else if (NumberUtilities.isHexNumber(valueString)) {
 			return NumberUtilities.parseHexNumber(valueString);
@@ -194,29 +189,28 @@ public class Json5Reader extends JsonReader {
 	 * A valid identifier must
 	 * 	start with a letter (A-Za-z), underscore (_) or dollar sign ($)
 	 * 	subsequent characters can also be digits (0-9)
-	 * 
+	 *
 	 * @param identifierString
 	 * @return
 	 * @throws Exception
 	 */
-	private String readJsonIdentifier(String identifierString) throws Exception {
+	private String readJsonIdentifier(final String identifierString) throws Exception {
 		if (Pattern.matches("[A-Za-z_$]+[A-Za-z_$0-9]*", identifierString)) {
 			return identifierString;
 		} else {
 			throw new Exception("Invalid json identifier '" + Utilities.shortenStringToMaxLengthCutLeft(identifierString, 20) + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
 		}
 	}
-	
+
 	/**
 	 * This method should only be used to read small Json items
-	 * 
+	 *
 	 * @param data
 	 * @return
-	 * @throws IOException 
-	 * @throws UnsupportedEncodingException 
+	 * @throws Exception
 	 */
-	public static JsonNode readJsonItemString(String data) throws Exception {
-		try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data.getBytes("UTF-8"))) {
+	public static JsonNode readJsonItemString(final String data) throws Exception {
+		try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8))) {
 			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
 				return jsonReader.read();
 			}
