@@ -432,7 +432,7 @@ public class JsonTest {
 				Assert.assertTrue(jsonReader.readNextJsonNode());
 				final Object nextJsonNode = jsonReader.getCurrentObject();
 				if (nextJsonNode instanceof JsonObject) {
-					Assert.assertEquals(new Integer(i), ((JsonObject) nextJsonNode).get("number"));
+					Assert.assertEquals(Integer.valueOf(i), ((JsonObject) nextJsonNode).get("number"));
 				} else {
 					Assert.fail();
 				}

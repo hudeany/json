@@ -34,7 +34,7 @@ public class JsonWriter implements Closeable {
 	private final Stack<JsonStackItem> openJsonStackItems = new Stack<>();
 
 	private String linebreak = "\n";
-	private String indention = "\t";
+	private String indentation = "\t";
 	private String separator = " ";
 
 	private enum JsonStackItem {
@@ -55,11 +55,15 @@ public class JsonWriter implements Closeable {
 	}
 
 	public void setIndentation(final String indentation) {
-		indention = indentation;
+		if (indentation == null) {
+			this.indentation = "";
+		} else {
+			this.indentation = indentation;
+		}
 	}
 
 	public void setIndentation(final char indentationCharacter) {
-		indention = Character.toString(indentationCharacter);
+		indentation = Character.toString(indentationCharacter);
 	}
 
 	public String getLinebreak() {
@@ -67,7 +71,11 @@ public class JsonWriter implements Closeable {
 	}
 
 	public void setLinebreak(final String linebreak) {
-		this.linebreak = linebreak;
+		if (linebreak == null) {
+			this.linebreak = "";
+		} else {
+			this.linebreak = linebreak;
+		}
 	}
 
 	public String getSeparator() {
@@ -75,7 +83,11 @@ public class JsonWriter implements Closeable {
 	}
 
 	public void setSeparator(final String separator) {
-		this.separator = separator;
+		if (separator == null) {
+			this.separator = "";
+		} else {
+			this.separator = separator;
+		}
 	}
 
 	public long getWrittenCharacters() {
@@ -85,11 +97,11 @@ public class JsonWriter implements Closeable {
 	public void setUglify(final boolean value) {
 		if (value) {
 			linebreak = "";
-			indention = "";
+			indentation = "";
 			separator = "";
 		} else {
 			linebreak = "\n";
-			indention = "\t";
+			indentation = "\t";
 			separator = " ";
 		}
 	}
@@ -366,7 +378,7 @@ public class JsonWriter implements Closeable {
 			outputWriter = new BufferedWriter(new OutputStreamWriter(outputStream, encoding));
 		}
 
-		final String dataToWrite = (indent ? Utilities.repeat(indention, openJsonStackItems.size()) : "") + text;
+		final String dataToWrite = (indent ? Utilities.repeat(indentation, openJsonStackItems.size()) : "") + text;
 		writtenCharacters += dataToWrite.length();
 		outputWriter.write(dataToWrite);
 	}
@@ -435,7 +447,6 @@ public class JsonWriter implements Closeable {
 			jsonWriter.setIndentation(indentation);
 			jsonWriter.setSeparator(separator);
 			jsonWriter.add(jsonObject);
-			jsonWriter.close();
 		}
 
 		return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
@@ -455,7 +466,6 @@ public class JsonWriter implements Closeable {
 			jsonWriter.setIndentation(indentation);
 			jsonWriter.setSeparator(separator);
 			jsonWriter.add(jsonArray);
-			jsonWriter.close();
 		}
 
 		return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);

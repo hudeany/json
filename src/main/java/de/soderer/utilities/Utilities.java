@@ -23,18 +23,15 @@ import java.net.URLClassLoader;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -83,8 +80,8 @@ public class Utilities {
 	 * @param value
 	 * @return
 	 */
-	public static UUID getUUIDFromString(String value) {
-		StringBuilder uuidString = new StringBuilder(value);
+	public static UUID getUUIDFromString(final String value) {
+		final StringBuilder uuidString = new StringBuilder(value);
 		uuidString.insert(20, '-');
 		uuidString.insert(16, '-');
 		uuidString.insert(12, '-');
@@ -98,7 +95,7 @@ public class Utilities {
 	 * @param resourceName
 	 * @return
 	 */
-	public static InputStream getResourceAsStream(String resourceName) {
+	public static InputStream getResourceAsStream(final String resourceName) {
 		return Utilities.class.getResourceAsStream("/" + resourceName);
 	}
 
@@ -108,15 +105,15 @@ public class Utilities {
 	 * @param clearData
 	 * @return
 	 */
-	public static byte[] gzipByteArray(byte[] clearData) {
+	public static byte[] gzipByteArray(final byte[] clearData) {
 		GZIPOutputStream gzipCompresser = null;
 		try {
-			ByteArrayOutputStream encoded = new ByteArrayOutputStream();
+			final ByteArrayOutputStream encoded = new ByteArrayOutputStream();
 			gzipCompresser = new GZIPOutputStream(encoded);
 			gzipCompresser.write(clearData);
 			gzipCompresser.close();
 			return encoded.toByteArray();
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			return null;
 		} finally {
 			closeQuietly(gzipCompresser);
@@ -130,13 +127,13 @@ public class Utilities {
 	 * @return
 	 * @throws Exception
 	 */
-	public static byte[] gunzipByteArray(byte[] zippedData) throws Exception {
+	public static byte[] gunzipByteArray(final byte[] zippedData) throws Exception {
 		try {
-			ByteArrayOutputStream decoded = new ByteArrayOutputStream();
-			ByteArrayInputStream encoded = new ByteArrayInputStream(zippedData);
+			final ByteArrayOutputStream decoded = new ByteArrayOutputStream();
+			final ByteArrayInputStream encoded = new ByteArrayInputStream(zippedData);
 			copy(new GZIPInputStream(encoded), decoded);
 			return decoded.toByteArray();
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			return null;
 		}
 	}
@@ -147,7 +144,7 @@ public class Utilities {
 	 * @param clearData
 	 * @return
 	 */
-	public static String encodeBase64(byte[] clearData) {
+	public static String encodeBase64(final byte[] clearData) {
 		return Base64.getEncoder().encodeToString(clearData);
 	}
 
@@ -157,10 +154,10 @@ public class Utilities {
 	 * @param base64String
 	 * @return
 	 */
-	public static byte[] decodeBase64(String base64String) {
+	public static byte[] decodeBase64(final String base64String) {
 		try {
 			return Base64.getDecoder().decode(base64String.getBytes("UTF-8"));
-		} catch (UnsupportedEncodingException e) {
+		} catch (final UnsupportedEncodingException e) {
 			return null;
 		}
 	}
@@ -171,7 +168,7 @@ public class Utilities {
 	 * @param value
 	 * @return
 	 */
-	public static boolean checkForValidUserName(String value) {
+	public static boolean checkForValidUserName(final String value) {
 		return value != null && value.matches("[A-Za-z0-9_-]*");
 	}
 
@@ -181,8 +178,8 @@ public class Utilities {
 	 * @param pArrayListOfStrings
 	 * @return
 	 */
-	public static String[] convertArrayListOfStringsToStringArray(ArrayList<String> pArrayListOfStrings) {
-		String[] arrayofStrings = new String[0];
+	public static String[] convertArrayListOfStringsToStringArray(final ArrayList<String> pArrayListOfStrings) {
+		final String[] arrayofStrings = new String[0];
 		return pArrayListOfStrings.toArray(arrayofStrings);
 	}
 
@@ -193,7 +190,7 @@ public class Utilities {
 	 * @param intArray
 	 * @return
 	 */
-	public static int getIndex(int searchInt, int[] intArray) {
+	public static int getIndex(final int searchInt, final int[] intArray) {
 		for (int i = 0; i < intArray.length; i++) {
 			if (intArray[i] == searchInt) {
 				return i;
@@ -209,8 +206,8 @@ public class Utilities {
 	 * @return
 	 * @throws IOException
 	 */
-	public static byte[] readStreamUntilEndOrLinefeed(InputStream inStream) throws IOException {
-		ByteArrayOutputStream returnData = new ByteArrayOutputStream();
+	public static byte[] readStreamUntilEndOrLinefeed(final InputStream inStream) throws IOException {
+		final ByteArrayOutputStream returnData = new ByteArrayOutputStream();
 		int nextByte;
 		while (true) {
 			nextByte = inStream.read();
@@ -232,9 +229,9 @@ public class Utilities {
 	 * @param cert
 	 * @return
 	 */
-	public static String getEmailFromCertificate(X509Certificate cert) {
-		String[] nameParts = cert.getSubjectX500Principal().toString().split(",");
-		for (String namePart : nameParts) {
+	public static String getEmailFromCertificate(final X509Certificate cert) {
+		final String[] nameParts = cert.getSubjectX500Principal().toString().split(",");
+		for (final String namePart : nameParts) {
 			if (namePart.matches("^[ \\t]*EMAILADDRESS=.*")) {
 				return namePart.substring(namePart.indexOf("=") + 1).trim();
 			}
@@ -249,9 +246,9 @@ public class Utilities {
 	 * @param cert
 	 * @return
 	 */
-	public static String getCnFromCertificate(X509Certificate cert) {
-		String[] nameParts = cert.getSubjectX500Principal().toString().split(",");
-		for (String namePart : nameParts) {
+	public static String getCnFromCertificate(final X509Certificate cert) {
+		final String[] nameParts = cert.getSubjectX500Principal().toString().split(",");
+		for (final String namePart : nameParts) {
 			if (namePart.matches("^[ \\t]*CN=.*")) {
 				return namePart.substring(namePart.indexOf("=") + 1).trim();
 			}
@@ -267,16 +264,16 @@ public class Utilities {
 	 * @param chunkSize
 	 * @return
 	 */
-	public static <E> List<List<E>> chopListToChunks(List<E> originalList, int chunkSize) {
+	public static <E> List<List<E>> chopListToChunks(final List<E> originalList, final int chunkSize) {
 		if (originalList == null || originalList.size() <= 0 || chunkSize <= 0) {
 			return null;
 		}
 
-		List<List<E>> returnList = new ArrayList<List<E>>();
+		final List<List<E>> returnList = new ArrayList<>();
 		int endIndex = 0;
 
 		while (endIndex < originalList.size()) {
-			int startIndex = endIndex;
+			final int startIndex = endIndex;
 			if (chunkSize < originalList.size() - endIndex) {
 				endIndex += chunkSize;
 			} else {
@@ -310,7 +307,7 @@ public class Utilities {
 	 * @param excludedMaximum
 	 * @return
 	 */
-	public static int getRandomNumber(int excludedMaximum) {
+	public static int getRandomNumber(final int excludedMaximum) {
 		return random.nextInt(excludedMaximum);
 	}
 
@@ -320,8 +317,8 @@ public class Utilities {
 	 * @param length
 	 * @return
 	 */
-	public static String getRandomString(int length) {
-		StringBuilder sb = new StringBuilder(length);
+	public static String getRandomString(final int length) {
+		final StringBuilder sb = new StringBuilder(length);
 		for (int i = 0; i < length; i++) {
 			sb.append(randomCharacters[random.nextInt(randomCharacters.length)]);
 		}
@@ -334,8 +331,8 @@ public class Utilities {
 	 * @param length
 	 * @return
 	 */
-	public static String getRandomAlphanumericString(int length) {
-		StringBuilder sb = new StringBuilder(length);
+	public static String getRandomAlphanumericString(final int length) {
+		final StringBuilder sb = new StringBuilder(length);
 		for (int i = 0; i < length; i++) {
 			sb.append(randomAlphaNumericCharacters[random.nextInt(randomAlphaNumericCharacters.length)]);
 		}
@@ -348,8 +345,8 @@ public class Utilities {
 	 * @param length
 	 * @return
 	 */
-	public static String getRandomNumberString(int length) {
-		StringBuilder sb = new StringBuilder(length);
+	public static String getRandomNumberString(final int length) {
+		final StringBuilder sb = new StringBuilder(length);
 		for (int i = 0; i < length; i++) {
 			sb.append(random.nextInt(10));
 		}
@@ -362,7 +359,7 @@ public class Utilities {
 	 * @return
 	 */
 	public static byte getRandomByte() {
-		byte[] result = new byte[1];
+		final byte[] result = new byte[1];
 		random.nextBytes(result);
 		return result[0];
 	}
@@ -373,7 +370,7 @@ public class Utilities {
 	 * @param arrayToFill
 	 * @return
 	 */
-	public static byte[] getRandomByteArray(byte[] arrayToFill) {
+	public static byte[] getRandomByteArray(final byte[] arrayToFill) {
 		random.nextBytes(arrayToFill);
 		return arrayToFill;
 	}
@@ -385,23 +382,23 @@ public class Utilities {
 	 * @param item
 	 * @return
 	 */
-	public static boolean checkForIntervalContainment(String intervals, int item) {
+	public static boolean checkForIntervalContainment(final String intervals, final int item) {
 		if (intervals != null && intervals.length() > 0) {
-			String[] blockStrings = intervals.split(";");
-			for (String blockString : blockStrings) {
+			final String[] blockStrings = intervals.split(";");
+			for (final String blockString : blockStrings) {
 				if (blockString.endsWith("+")) {
 					if (Integer.parseInt(blockString.substring(0, blockString.length() - 1)) <= item) {
 						return true;
 					}
 				} else if (blockString.matches("\\d+-\\d+")) {
-					int plusIndex = blockString.indexOf("-");
-					int startVersion = Integer.parseInt(blockString.substring(0, plusIndex));
-					int endeVersion = Integer.parseInt(blockString.substring(plusIndex + 1));
+					final int plusIndex = blockString.indexOf("-");
+					final int startVersion = Integer.parseInt(blockString.substring(0, plusIndex));
+					final int endeVersion = Integer.parseInt(blockString.substring(plusIndex + 1));
 					if (startVersion <= item && endeVersion >= item) {
 						return true;
 					}
 				} else if (blockString.matches("-\\d+")) {
-					int endeVersion = Integer.parseInt(blockString.substring(1));
+					final int endeVersion = Integer.parseInt(blockString.substring(1));
 					if (endeVersion >= item) {
 						return true;
 					}
@@ -423,10 +420,10 @@ public class Utilities {
 	 * @param values
 	 * @return
 	 */
-	public static int getMinimumOfAllowedValues(int allowedValueMinimum, int... values) {
+	public static int getMinimumOfAllowedValues(final int allowedValueMinimum, final int... values) {
 		int returnValue = Integer.MAX_VALUE;
 		if (values != null) {
-			for (int value : values) {
+			for (final int value : values) {
 				if (value >= allowedValueMinimum) {
 					returnValue = Math.min(returnValue, value);
 				}
@@ -457,7 +454,7 @@ public class Utilities {
 	 * @param values
 	 * @return
 	 */
-	public static boolean anyCharsAreEqual(char... values) {
+	public static boolean anyCharsAreEqual(final char... values) {
 		for (int i = 0; i < values.length; i++) {
 			for (int j = i + 1; j < values.length; j++) {
 				if (values[i] == values[j]) {
@@ -468,17 +465,17 @@ public class Utilities {
 		return false;
 	}
 
-	public static boolean contains(char[] characterArray, Character searchCharacter) {
+	public static boolean contains(final char[] characterArray, final Character searchCharacter) {
 		if (characterArray == null || searchCharacter == null) {
 			return false;
 		}
-		
-		for (char character : characterArray) {
+
+		for (final char character : characterArray) {
 			if (character == searchCharacter) {
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
 
@@ -488,7 +485,7 @@ public class Utilities {
 	 * @param value
 	 * @return
 	 */
-	public static int square(int value) {
+	public static int square(final int value) {
 		return value * value;
 	}
 
@@ -499,7 +496,7 @@ public class Utilities {
 	 * @param exp
 	 * @return
 	 */
-	public static int pow(int base, int exp) {
+	public static int pow(final int base, final int exp) {
 		if (exp < 0) {
 			throw new IllegalArgumentException("Invalid negative exponent");
 		} else if (exp == 0) {
@@ -511,16 +508,16 @@ public class Utilities {
 
 	/**
 	 * Get a collection like a set as a ordered list
-	 * 
+	 *
 	 * @param c
 	 * @return
 	 */
-	public static <T extends Comparable<? super T>> List<T> asSortedList(Collection<T> c) {
-		List<T> list = new ArrayList<T>(c);
+	public static <T extends Comparable<? super T>> List<T> asSortedList(final Collection<T> c) {
+		final List<T> list = new ArrayList<>(c);
 		Collections.sort(list);
 		return list;
 	}
-	
+
 	/**
 	 * Sort a map by a Comparator for the keytype
 	 *
@@ -528,16 +525,16 @@ public class Utilities {
 	 * @param comparator
 	 * @return
 	 */
-	public static <Key, Value> Map<Key, Value> sortMap(Map<Key, Value> mapToSort, Comparator<Key> comparator) {
-		List<Key> keys = new ArrayList<Key>(mapToSort.keySet());
+	public static <Key, Value> Map<Key, Value> sortMap(final Map<Key, Value> mapToSort, final Comparator<Key> comparator) {
+		final List<Key> keys = new ArrayList<>(mapToSort.keySet());
 		Collections.sort(keys, comparator);
-		LinkedHashMap<Key, Value> sortedContent = new LinkedHashMap<Key, Value>();
-		for (Key key : keys) {
+		final LinkedHashMap<Key, Value> sortedContent = new LinkedHashMap<>();
+		for (final Key key : keys) {
 			sortedContent.put(key, mapToSort.get(key));
 		}
 		return sortedContent;
 	}
-	
+
 	/**
 	 * Sort a map by the String keytype
 	 *
@@ -545,11 +542,11 @@ public class Utilities {
 	 * @param comparator
 	 * @return
 	 */
-	public static <Value> Map<String, Value> sortMap(Map<String, Value> mapToSort) {
-		List<String> keys = new ArrayList<String>(mapToSort.keySet());
+	public static <Value> Map<String, Value> sortMap(final Map<String, Value> mapToSort) {
+		final List<String> keys = new ArrayList<>(mapToSort.keySet());
 		Collections.sort(keys);
-		LinkedHashMap<String, Value> sortedContent = new LinkedHashMap<String, Value>();
-		for (String key : keys) {
+		final LinkedHashMap<String, Value> sortedContent = new LinkedHashMap<>();
+		for (final String key : keys) {
 			sortedContent.put(key, mapToSort.get(key));
 		}
 		return sortedContent;
@@ -561,11 +558,11 @@ public class Utilities {
 	 * @return
 	 */
 	public static String getClassPath() {
-		ClassLoader sysClassLoader = ClassLoader.getSystemClassLoader();
-		URL[] urls = ((URLClassLoader) sysClassLoader).getURLs();
+		final ClassLoader sysClassLoader = ClassLoader.getSystemClassLoader();
+		final URL[] urls = ((URLClassLoader) sysClassLoader).getURLs();
 
-		StringBuilder classpath = new StringBuilder();
-		for (URL url : urls) {
+		final StringBuilder classpath = new StringBuilder();
+		for (final URL url : urls) {
 			classpath.append(url.getFile() + "\n");
 		}
 		return classpath.toString();
@@ -578,7 +575,7 @@ public class Utilities {
 	 * @param array2
 	 * @return
 	 */
-	public static <T> boolean compare(T[] array1, T[] array2) {
+	public static <T> boolean compare(final T[] array1, final T[] array2) {
 		if (array1 == array2) {
 			return true;
 		} else if (array1 == null || array2 == null || array1.length != array2.length) {
@@ -599,8 +596,8 @@ public class Utilities {
 	 * @return
 	 */
 	public static Map<String, String> getSystemPropertiesMap() {
-		Map<String, String> propertiesMap = new HashMap<String, String>();
-		for (Object key : System.getProperties().keySet()) {
+		final Map<String, String> propertiesMap = new HashMap<>();
+		for (final Object key : System.getProperties().keySet()) {
 			propertiesMap.put((String) key, System.getProperties().getProperty((String) key));
 		}
 		return propertiesMap;
@@ -615,20 +612,20 @@ public class Utilities {
 	 * @param sort
 	 * @return
 	 */
-	public static String getStringFromMap(Map<String, ? extends Object> map, String entrySeparator, String keySeparator, boolean sort) {
-		List<String> keyList = new ArrayList<String>(map.keySet());
+	public static String getStringFromMap(final Map<String, ? extends Object> map, final String entrySeparator, final String keySeparator, final boolean sort) {
+		final List<String> keyList = new ArrayList<>(map.keySet());
 		if (sort) {
 			Collections.sort(keyList);
 		}
 
-		StringBuilder builder = new StringBuilder();
-		for (Object key : keyList) {
+		final StringBuilder builder = new StringBuilder();
+		for (final Object key : keyList) {
 			if (builder.length() > 0) {
 				builder.append(entrySeparator);
 			}
 			builder.append(key == null ? "" : key);
 			builder.append(keySeparator);
-			Object value = map.get(key);
+			final Object value = map.get(key);
 			builder.append(value == null ? "" : value.toString());
 		}
 		return builder.toString();
@@ -640,7 +637,7 @@ public class Utilities {
 	 * @param value
 	 * @return
 	 */
-	public static String getHumanReadableNumber(Number value) {
+	public static String getHumanReadableNumber(final Number value) {
 		return getHumanReadableNumber(value, null, true);
 	}
 
@@ -651,7 +648,7 @@ public class Utilities {
 	 * @param unitTypeSign
 	 * @return
 	 */
-	public static String getHumanReadableNumber(Number value, String unitTypeSign) {
+	public static String getHumanReadableNumber(final Number value, final String unitTypeSign) {
 		return getHumanReadableNumber(value, unitTypeSign, true);
 	}
 
@@ -663,8 +660,8 @@ public class Utilities {
 	 * @param siUnits
 	 * @return
 	 */
-	public static String getHumanReadableNumber(Number value, String unitTypeSign, boolean siUnits) {
-		int unit = siUnits ? 1000 : 1024;
+	public static String getHumanReadableNumber(final Number value, final String unitTypeSign, final boolean siUnits) {
+		final int unit = siUnits ? 1000 : 1024;
 		double interimValue = value.doubleValue();
 		String unitExtension = "";
 		if (interimValue < unit) {
@@ -676,7 +673,7 @@ public class Utilities {
 				return value + unitExtension;
 			}
 		} else {
-			int exp = (int) (Math.log(interimValue) / Math.log(unit));
+			final int exp = (int) (Math.log(interimValue) / Math.log(unit));
 			unitExtension = " " + (siUnits ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (siUnits ? "" : "i");
 			if (isNotBlank(unitTypeSign)) {
 				unitExtension += unitTypeSign;
@@ -707,10 +704,10 @@ public class Utilities {
 	 * @return
 	 * @throws Exception
 	 */
-	public static byte[] getMD5Hash(String data) throws Exception {
+	public static byte[] getMD5Hash(final String data) throws Exception {
 		try {
 			return MessageDigest.getInstance("MD5").digest(data.getBytes("UTF-8"));
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			throw new Exception("Error while MD5 hashing", e);
 		}
 	}
@@ -722,10 +719,10 @@ public class Utilities {
 	 * @return
 	 * @throws Exception
 	 */
-	public static byte[] getSHA1Hash(String data) throws Exception {
+	public static byte[] getSHA1Hash(final String data) throws Exception {
 		try {
 			return MessageDigest.getInstance("SHA-1").digest(data.getBytes("UTF-8"));
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			throw new Exception("Error while SHA-1 hashing", e);
 		}
 	}
@@ -737,10 +734,10 @@ public class Utilities {
 	 * @return
 	 * @throws Exception
 	 */
-	public static byte[] getSHA512Hash(String data) throws Exception {
+	public static byte[] getSHA512Hash(final String data) throws Exception {
 		try {
 			return MessageDigest.getInstance("SHA-512").digest(data.getBytes("UTF-8"));
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			throw new Exception("Error while SHA-512 hashing", e);
 		}
 	}
@@ -751,8 +748,8 @@ public class Utilities {
 	 * @param data
 	 * @return
 	 */
-	public static byte[] getByteArray(List<Byte> data) {
-		byte[] returnArray = new byte[data.size()];
+	public static byte[] getByteArray(final List<Byte> data) {
+		final byte[] returnArray = new byte[data.size()];
 		for (int i = 0; i < data.size(); i++) {
 			returnArray[i] = data.get(i);
 		}
@@ -765,10 +762,10 @@ public class Utilities {
 	 * @param stackTrace
 	 * @return
 	 */
-	public static String stacktraceToString(StackTraceElement[] stackTrace) {
-		StringBuilder returnBuilder = new StringBuilder();
+	public static String stacktraceToString(final StackTraceElement[] stackTrace) {
+		final StringBuilder returnBuilder = new StringBuilder();
 		if (stackTrace != null) {
-			for (StackTraceElement stackTraceElement : stackTrace) {
+			for (final StackTraceElement stackTraceElement : stackTrace) {
 				returnBuilder.append(stackTraceElement.toString());
 				returnBuilder.append("\n");
 			}
@@ -783,14 +780,14 @@ public class Utilities {
 	 * @param localeDestionationPath
 	 * @throws Exception
 	 */
-	public static void downloadFile(String url, String localeDestionationPath) throws Exception {
+	public static void downloadFile(final String url, final String localeDestionationPath) throws Exception {
 		BufferedInputStream bufferedInputStream = null;
 		FileOutputStream fileOutputStream = null;
 		try {
 			bufferedInputStream = new BufferedInputStream(new URL(url).openStream());
 			fileOutputStream = new FileOutputStream(localeDestionationPath);
 			copy(bufferedInputStream, fileOutputStream);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			throw new Exception("Cannot download file", e);
 		} finally {
 			closeQuietly(fileOutputStream);
@@ -805,9 +802,9 @@ public class Utilities {
 	 * @param ignoreNullValues
 	 * @return
 	 */
-	public static boolean checkForDuplicates(String[] inputArray, boolean ignoreNullValues) {
-		Set<String> tempSet = new HashSet<String>();
-		for (String stringItem : inputArray) {
+	public static boolean checkForDuplicates(final String[] inputArray, final boolean ignoreNullValues) {
+		final Set<String> tempSet = new HashSet<>();
+		for (final String stringItem : inputArray) {
 			if (!ignoreNullValues || stringItem != null) {
 				if (!tempSet.add(stringItem)) {
 					return true;
@@ -825,9 +822,9 @@ public class Utilities {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> List<T> selectItems(Collection<?> collection, Class<T> classToSelect) {
-		List<T> list = new ArrayList<T>();
-		for (Object item : collection) {
+	public static <T> List<T> selectItems(final Collection<?> collection, final Class<T> classToSelect) {
+		final List<T> list = new ArrayList<>();
+		for (final Object item : collection) {
 			if (classToSelect.isInstance(item)) {
 				list.add((T) item);
 			}
@@ -843,9 +840,9 @@ public class Utilities {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> List<T> selectItems(Object[] array, Class<T> classToSelect) {
-		List<T> list = new ArrayList<T>();
-		for (Object item : array) {
+	public static <T> List<T> selectItems(final Object[] array, final Class<T> classToSelect) {
+		final List<T> list = new ArrayList<>();
+		for (final Object item : array) {
 			if (classToSelect.isInstance(item)) {
 				list.add((T) item);
 			}
@@ -853,8 +850,9 @@ public class Utilities {
 		return list;
 	}
 
-	public static <T> T[] revertArray(T[] array) {
+	public static <T> T[] revertArray(final T[] array) {
 		@SuppressWarnings("unchecked")
+		final
 		T[] returnValue = (T[]) new Object[array.length];
 		for (int i = 0; i < array.length; i++) {
 			returnValue[i] = array[array.length - 1 - i];
@@ -862,49 +860,49 @@ public class Utilities {
 		return returnValue;
 	}
 
-	public static String getDomainFromUrl(String url) throws Exception {
-		URI uri = new URI(url);
-		String domain = uri.getHost();
+	public static String getDomainFromUrl(final String url) throws Exception {
+		final URI uri = new URI(url);
+		final String domain = uri.getHost();
 		return domain.startsWith("www.") ? domain.substring(4) : domain;
 	}
 
-	public static boolean isEmpty(String value) {
+	public static boolean isEmpty(final String value) {
 		return value == null || value.length() == 0;
 	}
 
-	public static boolean isNotEmpty(String value) {
+	public static boolean isNotEmpty(final String value) {
 		return !isEmpty(value);
 	}
 
-	public static boolean isEmpty(Collection<?> collection) {
+	public static boolean isEmpty(final Collection<?> collection) {
 		return collection == null || collection.isEmpty();
 	}
 
-	public static boolean isNotEmpty(Collection<?> collection) {
+	public static boolean isNotEmpty(final Collection<?> collection) {
 		return !isEmpty(collection);
 	}
 
-	public static boolean isBlank(String value) {
+	public static boolean isBlank(final String value) {
 		return value == null || value.length() == 0 || value.trim().length() == 0;
 	}
 
-	public static boolean isNotBlank(String value) {
+	public static boolean isNotBlank(final String value) {
 		return !isBlank(value);
 	}
 
-	public static boolean isEmpty(char[] value) {
+	public static boolean isEmpty(final char[] value) {
 		return value == null || value.length == 0;
 	}
 
-	public static boolean isNotEmpty(char[] value) {
+	public static boolean isNotEmpty(final char[] value) {
 		return !isEmpty(value);
 	}
 
-	public static boolean isBlank(char[] value) {
+	public static boolean isBlank(final char[] value) {
 		if (value == null || value.length == 0) {
 			return true;
 		} else {
-			for (char character : value) {
+			for (final char character : value) {
 				if (!Character.isWhitespace(character)) {
 					return false;
 				}
@@ -913,15 +911,15 @@ public class Utilities {
 		}
 	}
 
-	public static boolean isNotBlank(char[] value) {
+	public static boolean isNotBlank(final char[] value) {
 		return !isBlank(value);
 	}
 
-	public static void closeQuietly(Closeable closeable) {
+	public static void closeQuietly(final Closeable closeable) {
 		if (closeable != null) {
 			try {
 				closeable.close();
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				// Do nothing
 			}
 		}
@@ -931,18 +929,18 @@ public class Utilities {
 	 * XMLStreamReader.close() doesn't close the underlying stream.
 	 * So it must be closed separately.
 	 */
-	public static void closeQuietly(XMLStreamReader closeable, InputStream inputStream) {
+	public static void closeQuietly(final XMLStreamReader closeable, final InputStream inputStream) {
 		if (closeable != null) {
 			try {
 				closeable.close();
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				// Do nothing
 			}
 		}
 		if (inputStream != null) {
 			try {
 				inputStream.close();
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				// Do nothing
 			}
 		}
@@ -952,24 +950,24 @@ public class Utilities {
 		if (xmlWriter != null) {
 			try {
 				xmlWriter.close();
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				e.printStackTrace();
 			}
 			xmlWriter = null;
 		}
 	}
 
-	public static String repeat(String value, int count) {
+	public static String repeat(final String value, final int count) {
 		return repeat(value, count, null);
 	}
 
-	public static String repeat(String value, int count, String separatorString) {
+	public static String repeat(final String value, final int count, final String separatorString) {
 		if (value == null) {
 			return null;
 		} else if (value.length() == 0 || count == 0) {
 			return "";
 		} else {
-			StringBuilder returnValue = new StringBuilder();
+			final StringBuilder returnValue = new StringBuilder();
 			for (int i = 0; i < count; i++) {
 				if (separatorString != null && returnValue.length() > 0) {
 					returnValue.append(separatorString);
@@ -980,7 +978,7 @@ public class Utilities {
 		}
 	}
 
-	public static String join(Object[] array, String glue) {
+	public static String join(final Object[] array, String glue) {
 		if (array == null) {
 			return null;
 		} else if (array.length == 0) {
@@ -990,7 +988,7 @@ public class Utilities {
 				glue = "";
 			}
 
-			StringBuilder returnValue = new StringBuilder();
+			final StringBuilder returnValue = new StringBuilder();
 			boolean isFirst = true;
 			for (Object object : array) {
 				if (!isFirst) {
@@ -1006,7 +1004,7 @@ public class Utilities {
 		}
 	}
 
-	public static String join(Iterable<?> iterableObject, String glue) {
+	public static String join(final Iterable<?> iterableObject, String glue) {
 		if (iterableObject == null) {
 			return null;
 		} else {
@@ -1014,7 +1012,7 @@ public class Utilities {
 				glue = "";
 			}
 
-			StringBuilder returnValue = new StringBuilder();
+			final StringBuilder returnValue = new StringBuilder();
 			boolean isFirst = true;
 			for (Object object : iterableObject) {
 				if (!isFirst) {
@@ -1030,54 +1028,56 @@ public class Utilities {
 		}
 	}
 
-	public static <T> T[] remove(T[] array, T itemToRemove) {
+	public static <T> T[] remove(final T[] array, final T itemToRemove) {
 		int indexToRemove = -1;
 		if (array == null) {
 			return null;
 		} else if (itemToRemove == null) {
-		    for (int i = 0; i < array.length; i++) {
-		        if (array[i] == null) {
-		        	indexToRemove = i;
-		        	break;
-		        }
-		    }
+			for (int i = 0; i < array.length; i++) {
+				if (array[i] == null) {
+					indexToRemove = i;
+					break;
+				}
+			}
 		} else {
-		    for (int i = 0; i < array.length; i++) {
-		        if (itemToRemove.equals(array[i])) {
-		        	indexToRemove = i;
-		        	break;
-		        }
-		    }
+			for (int i = 0; i < array.length; i++) {
+				if (itemToRemove.equals(array[i])) {
+					indexToRemove = i;
+					break;
+				}
+			}
 		}
-		
+
 		if (indexToRemove >= 0) {
 			@SuppressWarnings("unchecked")
+			final
 			T[] result = (T[]) Array.newInstance(array.getClass().getComponentType(), array.length - 1);
 			if (indexToRemove > 0) {
 				System.arraycopy(array, 0, result, 0, indexToRemove);
 			}
 			if (indexToRemove < array.length - 1) {
-			    System.arraycopy(array, indexToRemove + 1, result, indexToRemove, array.length - indexToRemove - 1);
+				System.arraycopy(array, indexToRemove + 1, result, indexToRemove, array.length - indexToRemove - 1);
 			}
 			return result;
 		} else {
 			@SuppressWarnings("unchecked")
+			final
 			T[] result = (T[]) Array.newInstance(array.getClass().getComponentType(), array.length);
 			System.arraycopy(array, 0, result, 0, array.length);
 			return result;
 		}
 	}
 
-	public static byte[] readFileToByteArray(File file) throws FileNotFoundException, IOException {
+	public static byte[] readFileToByteArray(final File file) throws FileNotFoundException, IOException {
 		try (FileInputStream in = new FileInputStream(file)) {
-			byte[] returnArray = new byte[(int) file.length()];
+			final byte[] returnArray = new byte[(int) file.length()];
 			in.read(returnArray);
 			return returnArray;
 		}
 	}
 
-	public static long copy(InputStream inputStream, OutputStream outputStream) throws IOException {
-		byte[] buffer = new byte[4096];
+	public static long copy(final InputStream inputStream, final OutputStream outputStream) throws IOException {
+		final byte[] buffer = new byte[4096];
 		int lengthRead = -1;
 		long bytesCopied = 0;
 		while ((lengthRead = inputStream.read(buffer)) > -1) {
@@ -1088,12 +1088,12 @@ public class Utilities {
 		return bytesCopied;
 	}
 
-	public static long copy(Reader inputReader, OutputStream outputStream, String encoding) throws UnsupportedEncodingException, IOException {
-		char[] buffer = new char[4096];
+	public static long copy(final Reader inputReader, final OutputStream outputStream, final String encoding) throws UnsupportedEncodingException, IOException {
+		final char[] buffer = new char[4096];
 		int lengthRead = -1;
 		long bytesCopied = 0;
 		while ((lengthRead = inputReader.read(buffer)) > -1) {
-			String data = new String(buffer, 0, lengthRead);
+			final String data = new String(buffer, 0, lengthRead);
 			outputStream.write(data.getBytes(encoding));
 			bytesCopied += lengthRead;
 		}
@@ -1101,55 +1101,11 @@ public class Utilities {
 		return bytesCopied;
 	}
 
-	public static byte[] toByteArray(InputStream inputStream) throws IOException {
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+	public static byte[] toByteArray(final InputStream inputStream) throws IOException {
+		final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		copy(inputStream, byteArrayOutputStream);
 		byteArrayOutputStream.close();
 		return byteArrayOutputStream.toByteArray();
-	}
-
-	/**
-	 * Create a progress string for terminal output e.g.: "65% [=================================>                   ] 103.234 200/s eta 5m"
-	 *
-	 * @param start
-	 * @param itemsToDo
-	 * @param itemsDone
-	 * @return
-	 */
-	public static String getConsoleProgressString(int lineLength, Date start, long itemsToDo, long itemsDone) {
-		Date now = new Date();
-		String itemsToDoString = "??";
-		String percentageString = " 0%";
-		String speedString = "???/s";
-		String etaString = "eta ???";
-		int percentageDone = 0;
-		if (itemsToDo > 0 && itemsDone > 0) {
-			itemsToDoString = NumberFormat.getNumberInstance(Locale.getDefault()).format(itemsToDo);
-			percentageDone = (int) (itemsDone * 100 / itemsToDo);
-			percentageString = leftPad(percentageDone + "%", 3);
-			long elapsedSeconds = (now.getTime() - start.getTime()) / 1000;
-			// Prevent division by zero, when start is fast
-			if (elapsedSeconds == 0) {
-				elapsedSeconds = 1;
-			}
-			int speed = (int) (itemsDone / elapsedSeconds);
-			speedString = getHumanReadableNumber(speed, "", true) + "/s";
-			Date estimatedEnd = DateUtilities.calculateETA(start, itemsToDo, itemsDone);
-			etaString = "eta " + DateUtilities.getShortHumanReadableTimespan(estimatedEnd.getTime() - now.getTime(), false);
-		} else if (itemsToDo > 0) {
-			itemsToDoString = NumberFormat.getNumberInstance(Locale.getDefault()).format(itemsToDo);
-		}
-
-		String leftPart = percentageString + " [";
-		String rightPart = "] " + itemsToDoString + " " + speedString + " " + etaString;
-		int barWith = lineLength - (leftPart.length() + rightPart.length());
-		int barDone = barWith * percentageDone / 100;
-		if (barDone < 1) {
-			barDone = 1;
-		} else if (barDone >= barWith) {
-			barDone = barWith;
-		}
-		return leftPart + repeat("=", barDone - 1) + ">" + repeat(" ", barWith - barDone) + rightPart;
 	}
 
 	/**
@@ -1159,10 +1115,10 @@ public class Utilities {
 	 * @param i
 	 * @return
 	 */
-	public static String leftPad(String value, int minimumLength) {
+	public static String leftPad(final String value, final int minimumLength) {
 		try {
 			return String.format("%1$" + minimumLength + "s", value);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			return value;
 		}
 	}
@@ -1174,10 +1130,10 @@ public class Utilities {
 	 * @param i
 	 * @return
 	 */
-	public static String rightPad(String value, int minimumLength) {
+	public static String rightPad(final String value, final int minimumLength) {
 		try {
 			return String.format("%1$-" + minimumLength + "s", value);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			return value;
 		}
 	}
@@ -1188,7 +1144,7 @@ public class Utilities {
 	 * @param prefix
 	 * @return
 	 */
-	public static String trimSimultaneously(String value, String sourrounding) {
+	public static String trimSimultaneously(final String value, final String sourrounding) {
 		if (value == null) {
 			return null;
 		} else if (isEmpty(sourrounding)) {
@@ -1200,7 +1156,7 @@ public class Utilities {
 		}
 	}
 
-	public static String trim(String value) {
+	public static String trim(final String value) {
 		if (value == null) {
 			return null;
 		} else {
@@ -1208,12 +1164,12 @@ public class Utilities {
 		}
 	}
 
-	public static String toString(InputStream inputStream, String encoding) throws UnsupportedEncodingException, IOException {
+	public static String toString(final InputStream inputStream, final String encoding) throws UnsupportedEncodingException, IOException {
 		return new String(toByteArray(inputStream), encoding);
 	}
 
-	public static Object toString(Reader characterStream) throws IOException {
-		StringBuilder returnValue = new StringBuilder();
+	public static Object toString(final Reader characterStream) throws IOException {
+		final StringBuilder returnValue = new StringBuilder();
 		int characterInt;
 		while ((characterInt = characterStream.read()) > -1) {
 			returnValue.append((char) characterInt);
@@ -1221,10 +1177,10 @@ public class Utilities {
 		return returnValue.toString();
 	}
 
-	public static List<String> readLines(InputStream inStream, String encoding) throws IOException {
+	public static List<String> readLines(final InputStream inStream, final String encoding) throws IOException {
 		BufferedReader reader = null;
 		try {
-			List<String> lines = new ArrayList<String>();
+			final List<String> lines = new ArrayList<>();
 			reader = new BufferedReader(new InputStreamReader(inStream, encoding));
 			String nextLine;
 			while ((nextLine = reader.readLine()) != null) {
@@ -1235,26 +1191,26 @@ public class Utilities {
 			closeQuietly(reader);
 		}
 	}
-	
-	public static String trimLeft(String value) {
+
+	public static String trimLeft(final String value) {
 		return value.replaceAll("^\\s+", "");
 	}
-	
-	public static String trimRight(String value) {
+
+	public static String trimRight(final String value) {
 		return value.replaceAll("\\s+$", "");
 	}
-	
-	public static void addFileToClasspath(String filePath) throws IOException {
+
+	public static void addFileToClasspath(final String filePath) throws IOException {
 		try {
-			Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+			final Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
 			method.setAccessible(true);
 			method.invoke(ClassLoader.getSystemClassLoader(), new Object[] { new URL(new File(filePath).toURI().toString()) });
-		} catch (Throwable t) {
+		} catch (final Throwable t) {
 			throw new IOException("Error, could not add file to system classloader: " + t.getMessage(), t);
 		}
 	}
 
-	public static String shortenStringToMaxLengthCutRight(String value, int maxLength, String cutSign) {
+	public static String shortenStringToMaxLengthCutRight(final String value, final int maxLength, final String cutSign) {
 		if (value != null && value.length() > maxLength) {
 			return value.substring(0, maxLength - 4) + cutSign;
 		} else {
@@ -1262,49 +1218,34 @@ public class Utilities {
 		}
 	}
 
-	public static String shortenStringToMaxLengthCutRight(String value, int maxLength) {
+	public static String shortenStringToMaxLengthCutRight(final String value, final int maxLength) {
 		return shortenStringToMaxLengthCutRight(value, maxLength, " ...");
 	}
 
-	public static String shortenStringToMaxLengthCutMiddle(String value, int maxLength) {
+	public static String shortenStringToMaxLengthCutMiddle(final String value, final int maxLength) {
 		if (value != null && value.length() > maxLength) {
-			int leftLength = (maxLength - 5) / 2;
+			final int leftLength = (maxLength - 5) / 2;
 			return value.substring(0, leftLength) + " ... " + value.substring(value.length() - ((maxLength - leftLength) - 5));
 		} else {
 			return value;
 		}
 	}
 
-	public static String shortenStringToMaxLengthCutLeft(String value, int maxLength) {
+	public static String shortenStringToMaxLengthCutLeft(final String value, final int maxLength) {
 		if (value != null && value.length() > maxLength) {
 			return "... " + value.substring((value.length() - maxLength) + 4);
 		} else {
 			return value;
 		}
 	}
-	
-	public static List<String> splitAndTrimList(String stringList) {
+
+	public static List<String> splitAndTrimList(final String stringList) {
 		if (stringList == null) {
 			return null;
 		} else {
-			List<String> returnList = new ArrayList<String>();
-			String[] parts = stringList.split(",|;|\\|| |\\n|\\r|\\t");
-			for (String part : parts) {
-				if (isNotEmpty(part)) {
-					returnList.add(part.trim());
-				}
-			}
-			return returnList;
-		}
-	}
-	
-	public static List<String> splitAndTrimList(String stringList, Character... separatorChars) {
-		if (stringList == null) {
-			return null;
-		} else {
-			List<String> returnList = new ArrayList<String>();
-			String[] parts = stringList.split(join(separatorChars, "|").replace("\n", "\\n").replace("\t", "\\t").replace("\r", "\\r"));
-			for (String part : parts) {
+			final List<String> returnList = new ArrayList<>();
+			final String[] parts = stringList.split(",|;|\\|| |\\n|\\r|\\t");
+			for (final String part : parts) {
 				if (isNotEmpty(part)) {
 					returnList.add(part.trim());
 				}
@@ -1313,7 +1254,22 @@ public class Utilities {
 		}
 	}
 
-	public static boolean endsWithIgnoreCase(String data, String suffix) {
+	public static List<String> splitAndTrimList(final String stringList, final Character... separatorChars) {
+		if (stringList == null) {
+			return null;
+		} else {
+			final List<String> returnList = new ArrayList<>();
+			final String[] parts = stringList.split(join(separatorChars, "|").replace("\n", "\\n").replace("\t", "\\t").replace("\r", "\\r"));
+			for (final String part : parts) {
+				if (isNotEmpty(part)) {
+					returnList.add(part.trim());
+				}
+			}
+			return returnList;
+		}
+	}
+
+	public static boolean endsWithIgnoreCase(final String data, final String suffix) {
 		if (data == suffix) {
 			// both null or same object
 			return true;
@@ -1332,7 +1288,7 @@ public class Utilities {
 		}
 	}
 
-	public static int indexOfIgnoreCase(String data, String part) {
+	public static int indexOfIgnoreCase(final String data, final String part) {
 		if (data == part) {
 			// both null or same object
 			return 0;
@@ -1345,12 +1301,12 @@ public class Utilities {
 		}
 	}
 
-	public static List<String> splitAndTrimListQuoted(String stringList, char... separatorChars) {
-		List<String> returnList = new ArrayList<String>();
+	public static List<String> splitAndTrimListQuoted(final String stringList, final char... separatorChars) {
+		final List<String> returnList = new ArrayList<>();
 		StringBuilder nextLine = new StringBuilder();
 		boolean quotedBySingleQoute = false;
 		boolean quotedByDoubleQoute = false;
-		for (char nextChar : stringList.toCharArray()) {
+		for (final char nextChar : stringList.toCharArray()) {
 			if ('\'' == nextChar) {
 				if (!quotedBySingleQoute && !quotedByDoubleQoute) {
 					quotedBySingleQoute = true;
@@ -1364,11 +1320,11 @@ public class Utilities {
 					quotedByDoubleQoute = false;
 				}
 			}
-			
+
 			boolean splitFound = false;
-			for (char separatorChar : separatorChars) {
+			for (final char separatorChar : separatorChars) {
 				if (separatorChar == nextChar && !quotedBySingleQoute && !quotedByDoubleQoute) {
-					String line = nextLine.toString().trim();
+					final String line = nextLine.toString().trim();
 					if (line.length() > 0) {
 						returnList.add(line);
 						splitFound = true;
@@ -1377,23 +1333,23 @@ public class Utilities {
 					break;
 				}
 			}
-			
+
 			if (!splitFound) {
 				nextLine.append(nextChar);
 			}
 		}
-		String line = nextLine.toString().trim();
+		final String line = nextLine.toString().trim();
 		if (line.length() > 0) {
 			returnList.add(line);
 		}
 		return returnList;
 	}
 
-	public static boolean containsIgnoreCase(Collection<String> list, String item) {
+	public static boolean containsIgnoreCase(final Collection<String> list, final String item) {
 		if (list == null) {
 			return false;
 		} else {
-			for (String listItem : list) {
+			for (final String listItem : list) {
 				if (listItem == item || (listItem != null && listItem.equalsIgnoreCase(item))) {
 					return true;
 				}
@@ -1401,10 +1357,10 @@ public class Utilities {
 			return false;
 		}
 	}
-	
-	public static boolean delete(File file) {
+
+	public static boolean delete(final File file) {
 		if (file.isDirectory()) {
-			for (File subFile : file.listFiles()) {
+			for (final File subFile : file.listFiles()) {
 				if (!delete(subFile)) {
 					return false;
 				}
@@ -1413,7 +1369,7 @@ public class Utilities {
 		return file.delete();
 	}
 
-	public static int limitValue(int minimum, int value, int maximum) {
+	public static int limitValue(final int minimum, final int value, final int maximum) {
 		if (value < minimum) {
 			return minimum;
 		} else if (maximum < value) {
@@ -1423,7 +1379,7 @@ public class Utilities {
 		}
 	}
 
-	public static boolean startsWithCaseinsensitive(String data, String prefix) {
+	public static boolean startsWithCaseinsensitive(final String data, final String prefix) {
 		if (data == null || prefix == null) {
 			return false;
 		} else {
@@ -1431,40 +1387,40 @@ public class Utilities {
 		}
 	}
 
-	public static byte[] readStreamToByteArray(InputStream inputStream) throws IOException {
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+	public static byte[] readStreamToByteArray(final InputStream inputStream) throws IOException {
+		final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		copy(inputStream, byteArrayOutputStream);
 		return byteArrayOutputStream.toByteArray();
 	}
-	
-	public static Map<String, String> createMap(String... data) {
-		Map<String, String> returnMap = new HashMap<String, String>();
+
+	public static Map<String, String> createMap(final String... data) {
+		final Map<String, String> returnMap = new HashMap<>();
 		if (data != null && data.length > 0) {
 			for (int i = 0; i < data.length / 2; i++) {
-				String key = data[i * 2];
-				String value = data[i * 2 + 1];
+				final String key = data[i * 2];
+				final String value = data[i * 2 + 1];
 				returnMap.put(key, value);
 			}
 		}
 		return returnMap;
 	}
-	
+
 	/**
 	 * Replace ~ by user.home
 	 */
-	public static String replaceHomeTilde(String filePath) {
+	public static String replaceHomeTilde(final String filePath) {
 		return filePath.replace("~", System.getProperty("user.home"));
 	}
-	
+
 	/**
 	 * Check whether an iterable collection contains a special object
-	 * 
+	 *
 	 * @param hayshack
 	 * @param needle
 	 * @return
 	 */
-	public static boolean containsObject(Iterable<?> hayshack, Object needle) {
-		for (Object item : hayshack) {
+	public static boolean containsObject(final Iterable<?> hayshack, final Object needle) {
+		for (final Object item : hayshack) {
 			if (item == needle) {
 				return true;
 			}

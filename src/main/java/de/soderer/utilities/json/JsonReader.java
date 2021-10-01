@@ -92,7 +92,7 @@ public class JsonReader extends BasicReader {
 				break;
 			case ',': // Separator of JsonObject properties or JsonArray items
 				currentChar = readNextNonWhitespace();
-				if (currentChar == '}' || currentChar == ']') {
+				if (currentChar == null || currentChar == '}' || currentChar == ']') {
 					throw new Exception("Invalid json data '" + currentChar + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
 				} else {
 					reuseCurrentChar();
@@ -119,7 +119,9 @@ public class JsonReader extends BasicReader {
 					currentObject = readQuotedText('"', '\\');
 					openJsonItems.pop();
 					currentChar = readNextNonWhitespace();
-					if (currentChar == '}') {
+					if (currentChar == null) {
+						throw new Exception("Invalid json data '" + currentChar + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
+					} else if (currentChar == '}') {
 						reuseCurrentChar();
 					} else if (currentChar != ',') {
 						throw new Exception("Invalid json data '" + currentChar + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
@@ -140,11 +142,13 @@ public class JsonReader extends BasicReader {
 					openJsonItems.pop();
 					currentObject = readSimpleJsonValue(readUpToNext(false, null, ',', '}').trim());
 					currentChar = readNextNonWhitespace();
-					if (currentChar == '}') {
+					if (currentChar == null) {
+						throw new Exception("Invalid json data '" + currentChar + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
+					} else if (currentChar == '}') {
 						reuseCurrentChar();
 					} else {
 						currentChar = readNextNonWhitespace();
-						if (currentChar == '}') {
+						if (currentChar == null || currentChar == '}') {
 							throw new Exception("Invalid json data '" + currentChar + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
 						} else {
 							reuseCurrentChar();

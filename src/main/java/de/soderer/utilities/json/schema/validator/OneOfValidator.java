@@ -45,7 +45,7 @@ public class OneOfValidator extends BaseJsonSchemaValidator {
 					subValidator.validate();
 				}
 				applyCount++;
-			} catch (final JsonSchemaDataValidationError e) {
+			} catch (@SuppressWarnings("unused") final JsonSchemaDataValidationError e) {
 				// Do nothing, exactly one subvalidator must have successfully validated
 			}
 		}

@@ -191,6 +191,7 @@ public class BasicReader implements Closeable {
 	public void close() {
 		closeQuietly(inputReader);
 		inputReader = null;
+		closeQuietly(inputStream);
 		inputStream = null;
 	}
 

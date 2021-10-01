@@ -8,22 +8,22 @@ import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 
 public class MultipleOfValidator extends BaseJsonSchemaValidator {
-	public MultipleOfValidator(JsonSchemaDependencyResolver jsonSchemaDependencyResolver, String jsonSchemaPath, Object validatorData, JsonNode jsonNode, String jsonPath) throws JsonSchemaDefinitionError {
+	public MultipleOfValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final String jsonSchemaPath, final Object validatorData, final JsonNode jsonNode, final String jsonPath) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData, jsonNode, jsonPath);
 
 		if (validatorData == null) {
 			throw new JsonSchemaDefinitionError("Data for multipleOf is null", jsonSchemaPath);
-    	} else if (validatorData instanceof String) {
-    		try {
+		} else if (validatorData instanceof String) {
+			try {
 				this.validatorData = new BigDecimal((String) validatorData);
-			} catch (NumberFormatException e) {
-				throw new JsonSchemaDefinitionError("Data for multipleOf '" + validatorData + "' is not a number", jsonSchemaPath);
+			} catch (final NumberFormatException e) {
+				throw new JsonSchemaDefinitionError("Data for multipleOf '" + validatorData + "' is not a number", jsonSchemaPath, e);
 			}
-    	} else if (!(validatorData instanceof Number)) {
+		} else if (!(validatorData instanceof Number)) {
 			throw new JsonSchemaDefinitionError("Data for multipleOf '" + validatorData + "' is not a number", jsonSchemaPath);
-    	}
+		}
 	}
-	
+
 	@Override
 	public void validate() throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
 		if (!(jsonNode.isNumber())) {
@@ -35,5 +35,5 @@ public class MultipleOfValidator extends BaseJsonSchemaValidator {
 				throw new JsonSchemaDataValidationError("Number must be multiple of '" + ((Number) validatorData).toString() + "' but value was '" + jsonNode.getValue()  + "'", jsonPath);
 			}
 		}
-    }
+	}
 }

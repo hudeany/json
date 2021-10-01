@@ -1,4 +1,4 @@
-package de.soderer.utilities.json;
+package de.soderer.utilities;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

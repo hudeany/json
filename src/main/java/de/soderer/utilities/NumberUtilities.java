@@ -120,12 +120,12 @@ public class NumberUtilities {
 			}
 		} else {
 			if (numberString.length() < 10) {
-				return new Integer(numberString);
+				return Integer.valueOf(numberString);
 			} else {
 				BigDecimal value = new BigDecimal(numberString);
 				boolean isInteger = new BigDecimal(Integer.MIN_VALUE).compareTo(value) == -1 && value.compareTo(new BigDecimal(Integer.MAX_VALUE)) == -1;
 				if (isInteger) {
-					return new Integer(numberString);
+					return Integer.valueOf(numberString);
 				} else {
 					boolean isLong = new BigDecimal(Long.MIN_VALUE).compareTo(value) == -1 && value.compareTo(new BigDecimal(Long.MAX_VALUE)) == -1;
 					if (isLong) {

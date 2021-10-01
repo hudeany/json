@@ -85,7 +85,9 @@ public class Json5Reader extends JsonReader {
 				break;
 			case '/': // Start comment
 				currentChar = readNextCharacter();
-				if (currentChar == '/') {
+				if (currentChar == null) {
+					throw new Exception("Invalid json data '" + currentChar + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
+				} else if (currentChar == '/') {
 					// Line comment
 					readUpToNext(false, null, '\n');
 				} else if (currentChar == '*') {
@@ -118,7 +120,9 @@ public class Json5Reader extends JsonReader {
 					currentObject = readQuotedText(currentChar, '\\');
 					openJsonItems.pop();
 					currentChar = readNextNonWhitespace();
-					if (currentChar == '}') {
+					if (currentChar == null) {
+						throw new Exception("Invalid json data '" + currentChar + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
+					} else if (currentChar == '}') {
 						reuseCurrentChar();
 					} else if (currentChar != ',') {
 						throw new Exception("Invalid json data '" + currentChar + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
