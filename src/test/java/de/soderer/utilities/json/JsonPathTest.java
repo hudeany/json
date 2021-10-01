@@ -12,7 +12,7 @@ public class JsonPathTest {
 		try {
 			jsonPath.getReferenceFormattedPath();
 			Assert.fail("Missing expected Exception");
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// Expected Exception
 		}
 	}
@@ -33,7 +33,7 @@ public class JsonPathTest {
 		try {
 			jsonPath.getReferenceFormattedPath();
 			Assert.fail("Missing expected Exception");
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// Expected Exception
 		}
 	}
@@ -62,7 +62,7 @@ public class JsonPathTest {
 		try {
 			jsonPath.getReferenceFormattedPath();
 			Assert.fail("Missing expected Exception");
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// Expected Exception
 		}
 	}
