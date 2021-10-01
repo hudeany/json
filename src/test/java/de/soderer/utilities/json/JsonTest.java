@@ -693,7 +693,7 @@ public class JsonTest {
 			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// Expected Exception
 		} finally {
 			Utilities.closeQuietly(jsonReader);
@@ -711,7 +711,7 @@ public class JsonTest {
 			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// Expected Exception
 		} finally {
 			Utilities.closeQuietly(jsonReader);
@@ -729,7 +729,7 @@ public class JsonTest {
 			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// Expected Exception
 		} finally {
 			Utilities.closeQuietly(jsonReader);
@@ -747,7 +747,7 @@ public class JsonTest {
 			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// Expected Exception
 		} finally {
 			Utilities.closeQuietly(jsonReader);
@@ -765,7 +765,7 @@ public class JsonTest {
 			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// Expected Exception
 		} finally {
 			Utilities.closeQuietly(jsonReader);
@@ -805,7 +805,7 @@ public class JsonTest {
 			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// Expected Exception
 		} finally {
 			Utilities.closeQuietly(jsonReader);
@@ -823,7 +823,7 @@ public class JsonTest {
 			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// Expected Exception
 		} finally {
 			Utilities.closeQuietly(jsonReader);
@@ -868,7 +868,7 @@ public class JsonTest {
 			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// Expected Exception
 		} finally {
 			Utilities.closeQuietly(jsonReader);
@@ -909,7 +909,7 @@ public class JsonTest {
 			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// Expected Exception
 		} finally {
 			Utilities.closeQuietly(jsonReader);
@@ -929,7 +929,7 @@ public class JsonTest {
 			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			jsonReader.read();
 			Assert.fail("Missing expected Exception");
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// Expected Exception
 		} finally {
 			Utilities.closeQuietly(jsonReader);

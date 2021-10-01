@@ -12,17 +12,20 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
@@ -32,10 +35,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -52,18 +58,6 @@ public class Utilities {
 	public static final String STANDARD_HTML = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\">\n\t<head>\n\t\t<meta http-equiv=\"Content-Type\" content=\"text/html; charset=<encoding>\" />\n\t\t<title>HtmlTitle</title>\n\t\t<meta name=\"Title\" content=\"HtmlTitle\" />\n\t</head>\n\t<body>\n\t</body>\n</html>\n";
 	public static final String STANDARD_BASHSCRIPTSTART = "#!/bin/bash\n";
 	public static final String STANDARD_JSON = "{\n\t\"property1\": null,\n\t\"property2\": " + Math.PI + ",\n\t\"property3\": true,\n\t\"property4\": \"Text\",\n\t\"property5\": [\n\t\tnull,\n\t\t" + Math.PI + ",\n\t\ttrue,\n\t\t\"Text\"\n\t]\n}\n";
-
-	/** UTF-8 BOM (Byte Order Mark) character for readers. */
-	public static final char BOM_UTF_8_CHAR = (char) 65279;
-
-	/** UTF-8 BOM (Byte Order Mark) at data start (EF BB BF, "ï»¿"). */
-	public static final byte[] BOM_UTF_8 = new byte[] { (byte) 0xEF, (byte) 0xBB, (byte) 0xBF };
-
-	/** UTF-16 BOM (Byte Order Mark) big endian at data start (FE FF, "þÿ"). */
-	public static final byte[] BOM_UTF_16_BIG_ENDIAN = new byte[] { (byte) 0xFE, (byte) 0xFF };
-
-	/** UTF-16 BOM (Byte Order Mark) low endian at data start (FF FE, "ÿþ"). */
-	public static final byte[] BOM_UTF_16_LOW_ENDIAN = new byte[] { (byte) 0xFF, (byte) 0xFE };
 
 	/**
 	 * Generate a unique ID
@@ -106,17 +100,13 @@ public class Utilities {
 	 * @return
 	 */
 	public static byte[] gzipByteArray(final byte[] clearData) {
-		GZIPOutputStream gzipCompresser = null;
-		try {
-			final ByteArrayOutputStream encoded = new ByteArrayOutputStream();
-			gzipCompresser = new GZIPOutputStream(encoded);
+		try (ByteArrayOutputStream encoded = new ByteArrayOutputStream();
+				GZIPOutputStream gzipCompresser = new GZIPOutputStream(encoded)) {
 			gzipCompresser.write(clearData);
 			gzipCompresser.close();
 			return encoded.toByteArray();
-		} catch (final IOException e) {
+		} catch (@SuppressWarnings("unused") final IOException e) {
 			return null;
-		} finally {
-			closeQuietly(gzipCompresser);
 		}
 	}
 
@@ -131,9 +121,9 @@ public class Utilities {
 		try {
 			final ByteArrayOutputStream decoded = new ByteArrayOutputStream();
 			final ByteArrayInputStream encoded = new ByteArrayInputStream(zippedData);
-			copy(new GZIPInputStream(encoded), decoded);
+			IoUtilities.copy(new GZIPInputStream(encoded), decoded);
 			return decoded.toByteArray();
-		} catch (final IOException e) {
+		} catch (@SuppressWarnings("unused") final IOException e) {
 			return null;
 		}
 	}
@@ -149,17 +139,31 @@ public class Utilities {
 	}
 
 	/**
+	 * Encode a Base64 String
+	 *
+	 * @param clearData
+	 * @return
+	 */
+	public static String encodeBase64(final byte[] clearData, final int maxCharactersPerLine, final String splitCharacters) {
+		final String dataBase64 = Base64.getEncoder().encodeToString(clearData);
+		final StringBuilder returnString = new StringBuilder();
+		final int fullLines = (int) Math.floor(dataBase64.length() / maxCharactersPerLine);
+		for (int i = 0; i < fullLines; i++) {
+			returnString.append(dataBase64.substring(i * maxCharactersPerLine, (i * maxCharactersPerLine) + maxCharactersPerLine));
+			returnString.append(splitCharacters);
+		}
+		returnString.append(dataBase64.substring(fullLines * 64, (fullLines * 64) + (dataBase64.length() % 64)));
+		return returnString.toString();
+	}
+
+	/**
 	 * Decode a Base64 String
 	 *
 	 * @param base64String
 	 * @return
 	 */
 	public static byte[] decodeBase64(final String base64String) {
-		try {
-			return Base64.getDecoder().decode(base64String.getBytes("UTF-8"));
-		} catch (final UnsupportedEncodingException e) {
-			return null;
-		}
+		return Base64.getDecoder().decode(base64String.getBytes(StandardCharsets.UTF_8));
 	}
 
 	/**
@@ -441,8 +445,15 @@ public class Utilities {
 	public static boolean interpretAsBool(String value) {
 		if (isNotEmpty(value)) {
 			value = value.trim();
-			return value.equalsIgnoreCase("true") || value.equalsIgnoreCase("+") || value.equalsIgnoreCase("yes") || value.equalsIgnoreCase("ja") || value.equalsIgnoreCase("ok")
-					|| value.equalsIgnoreCase("on") || value.equalsIgnoreCase("an");
+			return "true".equalsIgnoreCase(value)
+					|| "+".equalsIgnoreCase(value)
+					|| "yes".equalsIgnoreCase(value)
+					|| "y".equalsIgnoreCase(value)
+					|| "ja".equalsIgnoreCase(value)
+					|| "j".equalsIgnoreCase(value)
+					|| "ok".equalsIgnoreCase(value)
+					|| "on".equalsIgnoreCase(value)
+					|| "an".equalsIgnoreCase(value);
 		} else {
 			return false;
 		}
@@ -600,6 +611,33 @@ public class Utilities {
 		for (final Object key : System.getProperties().keySet()) {
 			propertiesMap.put((String) key, System.getProperties().getProperty((String) key));
 		}
+		if (SystemUtilities.isLinuxSystem()) {
+			final File distributionInfoFile = new File("/etc/os-release");
+			if (distributionInfoFile.exists()) {
+				try (FileInputStream inputStream = new FileInputStream(distributionInfoFile)) {
+					final Properties distributionInfoProperties = new Properties();
+					distributionInfoProperties.load(inputStream);
+					final String distributionName = distributionInfoProperties.getProperty("NAME");
+					if (distributionName != null && !"".equals(distributionName.trim())) {
+						propertiesMap.put("os.distribution.name",  Utilities.trimSimultaneously(distributionName, "\""));
+					} else {
+						propertiesMap.put("os.distribution.name", "Unknown");
+					}
+					final String distributionVersion = distributionInfoProperties.getProperty("VERSION");
+					if (distributionVersion != null && !"".equals(distributionVersion.trim())) {
+						propertiesMap.put("os.distribution.version",  Utilities.trimSimultaneously(distributionVersion, "\""));
+					} else {
+						propertiesMap.put("os.distribution.version", "Unknown");
+					}
+				} catch (@SuppressWarnings("unused") final Exception e) {
+					propertiesMap.put("os.distribution.name", "Unknown");
+					propertiesMap.put("os.distribution.version", "Unknown");
+				}
+			} else {
+				propertiesMap.put("os.distribution.name", "Unknown");
+				propertiesMap.put("os.distribution.version", "Unknown");
+			}
+		}
 		return propertiesMap;
 	}
 
@@ -615,11 +653,16 @@ public class Utilities {
 	public static String getStringFromMap(final Map<String, ? extends Object> map, final String entrySeparator, final String keySeparator, final boolean sort) {
 		final List<String> keyList = new ArrayList<>(map.keySet());
 		if (sort) {
-			Collections.sort(keyList);
+			Collections.sort(keyList, new Comparator<String>() {
+				@Override
+				public int compare(final String o1, final String o2) {
+					return Comparator.nullsFirst(String::compareTo).compare(o1, o2);
+				}
+			});
 		}
 
 		final StringBuilder builder = new StringBuilder();
-		for (final Object key : keyList) {
+		for (final String key : keyList) {
 			if (builder.length() > 0) {
 				builder.append(entrySeparator);
 			}
@@ -632,27 +675,6 @@ public class Utilities {
 	}
 
 	/**
-	 * Make a number human readable
-	 *
-	 * @param value
-	 * @return
-	 */
-	public static String getHumanReadableNumber(final Number value) {
-		return getHumanReadableNumber(value, null, true);
-	}
-
-	/**
-	 * Make a number with unitsign human readable
-	 *
-	 * @param value
-	 * @param unitTypeSign
-	 * @return
-	 */
-	public static String getHumanReadableNumber(final Number value, final String unitTypeSign) {
-		return getHumanReadableNumber(value, unitTypeSign, true);
-	}
-
-	/**
 	 * Make a number with unitsign human readable
 	 *
 	 * @param value
@@ -660,7 +682,7 @@ public class Utilities {
 	 * @param siUnits
 	 * @return
 	 */
-	public static String getHumanReadableNumber(final Number value, final String unitTypeSign, final boolean siUnits) {
+	public static String getHumanReadableNumber(final Number value, final String unitTypeSign, final boolean siUnits, final int amountOfSignifiantDigits, final boolean keepTrailingZeros, final Locale locale) {
 		final int unit = siUnits ? 1000 : 1024;
 		double interimValue = value.doubleValue();
 		String unitExtension = "";
@@ -681,20 +703,35 @@ public class Utilities {
 			interimValue = interimValue / Math.pow(unit, exp);
 		}
 
-		String valueString;
-		if (interimValue >= 1000) {
-			valueString = String.format("%.1f", interimValue);
-		} else if (interimValue >= 100) {
-			valueString = String.format("%.2f", interimValue);
-		} else if (interimValue >= 10) {
-			valueString = String.format("%.3f", interimValue);
-		} else if (interimValue >= 1) {
-			valueString = String.format("%.4f", interimValue);
+		final DecimalFormatSymbols decimalFormatSymbols = new DecimalFormatSymbols(locale);
+		DecimalFormat numberFormat;
+		if (keepTrailingZeros) {
+			if (interimValue >= 1000) {
+				numberFormat = new DecimalFormat("#0." + repeat("0", amountOfSignifiantDigits - 4), decimalFormatSymbols);
+			} else if (interimValue >= 100) {
+				numberFormat = new DecimalFormat("#0." + repeat("0", amountOfSignifiantDigits - 3), decimalFormatSymbols);
+			} else if (interimValue >= 10) {
+				numberFormat = new DecimalFormat("#0." + repeat("0", amountOfSignifiantDigits - 2), decimalFormatSymbols);
+			} else if (interimValue >= 1) {
+				numberFormat = new DecimalFormat("#0." + repeat("0", amountOfSignifiantDigits - 1), decimalFormatSymbols);
+			} else {
+				numberFormat = new DecimalFormat("#0." + repeat("0", amountOfSignifiantDigits), decimalFormatSymbols);
+			}
 		} else {
-			valueString = String.format("%.5f", interimValue);
+			if (interimValue >= 1000) {
+				numberFormat = new DecimalFormat("#0.0" + repeat("#", amountOfSignifiantDigits - 5), decimalFormatSymbols);
+			} else if (interimValue >= 100) {
+				numberFormat = new DecimalFormat("#0.0" + repeat("#", amountOfSignifiantDigits - 4), decimalFormatSymbols);
+			} else if (interimValue >= 10) {
+				numberFormat = new DecimalFormat("#0.0" + repeat("#", amountOfSignifiantDigits - 3), decimalFormatSymbols);
+			} else if (interimValue >= 1) {
+				numberFormat = new DecimalFormat("#0.0" + repeat("#", amountOfSignifiantDigits - 2), decimalFormatSymbols);
+			} else {
+				numberFormat = new DecimalFormat("#0.0" + repeat("#", amountOfSignifiantDigits - 1), decimalFormatSymbols);
+			}
 		}
 
-		return valueString + unitExtension;
+		return numberFormat.format(interimValue) + unitExtension;
 	}
 
 	/**
@@ -706,7 +743,7 @@ public class Utilities {
 	 */
 	public static byte[] getMD5Hash(final String data) throws Exception {
 		try {
-			return MessageDigest.getInstance("MD5").digest(data.getBytes("UTF-8"));
+			return MessageDigest.getInstance("MD5").digest(data.getBytes(StandardCharsets.UTF_8));
 		} catch (final Exception e) {
 			throw new Exception("Error while MD5 hashing", e);
 		}
@@ -721,9 +758,24 @@ public class Utilities {
 	 */
 	public static byte[] getSHA1Hash(final String data) throws Exception {
 		try {
-			return MessageDigest.getInstance("SHA-1").digest(data.getBytes("UTF-8"));
+			return MessageDigest.getInstance("SHA-1").digest(data.getBytes(StandardCharsets.UTF_8));
 		} catch (final Exception e) {
 			throw new Exception("Error while SHA-1 hashing", e);
+		}
+	}
+
+	/**
+	 * Generate SHA-256 from string data
+	 *
+	 * @param data
+	 * @return
+	 * @throws Exception
+	 */
+	public static byte[] getSHA256Hash(final String data) throws Exception {
+		try {
+			return MessageDigest.getInstance("SHA-256").digest(data.getBytes(StandardCharsets.UTF_8));
+		} catch (final Exception e) {
+			throw new Exception("Error while SHA-256 hashing", e);
 		}
 	}
 
@@ -736,7 +788,7 @@ public class Utilities {
 	 */
 	public static byte[] getSHA512Hash(final String data) throws Exception {
 		try {
-			return MessageDigest.getInstance("SHA-512").digest(data.getBytes("UTF-8"));
+			return MessageDigest.getInstance("SHA-512").digest(data.getBytes(StandardCharsets.UTF_8));
 		} catch (final Exception e) {
 			throw new Exception("Error while SHA-512 hashing", e);
 		}
@@ -781,17 +833,11 @@ public class Utilities {
 	 * @throws Exception
 	 */
 	public static void downloadFile(final String url, final String localeDestionationPath) throws Exception {
-		BufferedInputStream bufferedInputStream = null;
-		FileOutputStream fileOutputStream = null;
-		try {
-			bufferedInputStream = new BufferedInputStream(new URL(url).openStream());
-			fileOutputStream = new FileOutputStream(localeDestionationPath);
-			copy(bufferedInputStream, fileOutputStream);
+		try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new URL(url).openStream());
+				FileOutputStream fileOutputStream = new FileOutputStream(localeDestionationPath)) {
+			IoUtilities.copy(bufferedInputStream, fileOutputStream);
 		} catch (final Exception e) {
 			throw new Exception("Cannot download file", e);
-		} finally {
-			closeQuietly(fileOutputStream);
-			closeQuietly(bufferedInputStream);
 		}
 	}
 
@@ -852,8 +898,7 @@ public class Utilities {
 
 	public static <T> T[] revertArray(final T[] array) {
 		@SuppressWarnings("unchecked")
-		final
-		T[] returnValue = (T[]) new Object[array.length];
+		final T[] returnValue = (T[]) new Object[array.length];
 		for (int i = 0; i < array.length; i++) {
 			returnValue[i] = array[array.length - 1 - i];
 		}
@@ -894,6 +939,14 @@ public class Utilities {
 		return value == null || value.length == 0;
 	}
 
+	public static void clear(final char[] array) {
+		if (array != null) {
+			for (int i = 0; i < array.length; i++) {
+				array[i] = 0;
+			}
+		}
+	}
+
 	public static boolean isNotEmpty(final char[] value) {
 		return !isEmpty(value);
 	}
@@ -919,7 +972,7 @@ public class Utilities {
 		if (closeable != null) {
 			try {
 				closeable.close();
-			} catch (final IOException e) {
+			} catch (@SuppressWarnings("unused") final IOException e) {
 				// Do nothing
 			}
 		}
@@ -933,14 +986,14 @@ public class Utilities {
 		if (closeable != null) {
 			try {
 				closeable.close();
-			} catch (final Exception e) {
+			} catch (@SuppressWarnings("unused") final Exception e) {
 				// Do nothing
 			}
 		}
 		if (inputStream != null) {
 			try {
 				inputStream.close();
-			} catch (final Exception e) {
+			} catch (@SuppressWarnings("unused") final Exception e) {
 				// Do nothing
 			}
 		}
@@ -955,6 +1008,10 @@ public class Utilities {
 			}
 			xmlWriter = null;
 		}
+	}
+
+	public static String repeat(final char valueChar, final int count) {
+		return repeat(Character.toString(valueChar), count, null);
 	}
 
 	public static String repeat(final String value, final int count) {
@@ -1050,8 +1107,7 @@ public class Utilities {
 
 		if (indexToRemove >= 0) {
 			@SuppressWarnings("unchecked")
-			final
-			T[] result = (T[]) Array.newInstance(array.getClass().getComponentType(), array.length - 1);
+			final T[] result = (T[]) Array.newInstance(array.getClass().getComponentType(), array.length - 1);
 			if (indexToRemove > 0) {
 				System.arraycopy(array, 0, result, 0, indexToRemove);
 			}
@@ -1061,11 +1117,23 @@ public class Utilities {
 			return result;
 		} else {
 			@SuppressWarnings("unchecked")
-			final
-			T[] result = (T[]) Array.newInstance(array.getClass().getComponentType(), array.length);
+			final T[] result = (T[]) Array.newInstance(array.getClass().getComponentType(), array.length);
 			System.arraycopy(array, 0, result, 0, array.length);
 			return result;
 		}
+	}
+
+	public static <T> T[] removeItemAtIndex(final T[] array, final int itemIndexToRemove) {
+		@SuppressWarnings("unchecked")
+		final T[] result = (T[]) Array.newInstance(array.getClass().getComponentType(), array.length - 1);
+		for (int i = 0; i < array.length; i++) {
+			if (i < itemIndexToRemove) {
+				result[i] = array[i];
+			} else if (i > itemIndexToRemove) {
+				result[i - 1] = array[i];
+			}
+		}
+		return result;
 	}
 
 	public static byte[] readFileToByteArray(final File file) throws FileNotFoundException, IOException {
@@ -1074,38 +1142,6 @@ public class Utilities {
 			in.read(returnArray);
 			return returnArray;
 		}
-	}
-
-	public static long copy(final InputStream inputStream, final OutputStream outputStream) throws IOException {
-		final byte[] buffer = new byte[4096];
-		int lengthRead = -1;
-		long bytesCopied = 0;
-		while ((lengthRead = inputStream.read(buffer)) > -1) {
-			outputStream.write(buffer, 0, lengthRead);
-			bytesCopied += lengthRead;
-		}
-		outputStream.flush();
-		return bytesCopied;
-	}
-
-	public static long copy(final Reader inputReader, final OutputStream outputStream, final String encoding) throws UnsupportedEncodingException, IOException {
-		final char[] buffer = new char[4096];
-		int lengthRead = -1;
-		long bytesCopied = 0;
-		while ((lengthRead = inputReader.read(buffer)) > -1) {
-			final String data = new String(buffer, 0, lengthRead);
-			outputStream.write(data.getBytes(encoding));
-			bytesCopied += lengthRead;
-		}
-		outputStream.flush();
-		return bytesCopied;
-	}
-
-	public static byte[] toByteArray(final InputStream inputStream) throws IOException {
-		final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-		copy(inputStream, byteArrayOutputStream);
-		byteArrayOutputStream.close();
-		return byteArrayOutputStream.toByteArray();
 	}
 
 	/**
@@ -1118,7 +1154,7 @@ public class Utilities {
 	public static String leftPad(final String value, final int minimumLength) {
 		try {
 			return String.format("%1$" + minimumLength + "s", value);
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			return value;
 		}
 	}
@@ -1133,7 +1169,7 @@ public class Utilities {
 	public static String rightPad(final String value, final int minimumLength) {
 		try {
 			return String.format("%1$-" + minimumLength + "s", value);
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			return value;
 		}
 	}
@@ -1164,8 +1200,20 @@ public class Utilities {
 		}
 	}
 
-	public static String toString(final InputStream inputStream, final String encoding) throws UnsupportedEncodingException, IOException {
-		return new String(toByteArray(inputStream), encoding);
+	public static String trim(String value, final char trimChar) {
+		while (value != null && value.startsWith(Character.toString(trimChar))) {
+			value = value.substring(1);
+		}
+
+		while (value != null && value.endsWith(Character.toString(trimChar))) {
+			value = value.substring(0, value.length() - 1);
+		}
+
+		return value;
+	}
+
+	public static String toString(final InputStream inputStream, final Charset encoding) throws IOException {
+		return new String(IoUtilities.toByteArray(inputStream), encoding);
 	}
 
 	public static Object toString(final Reader characterStream) throws IOException {
@@ -1177,18 +1225,14 @@ public class Utilities {
 		return returnValue.toString();
 	}
 
-	public static List<String> readLines(final InputStream inStream, final String encoding) throws IOException {
-		BufferedReader reader = null;
-		try {
+	public static List<String> readLines(final InputStream inStream, final Charset encoding) throws IOException {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(inStream, encoding))) {
 			final List<String> lines = new ArrayList<>();
-			reader = new BufferedReader(new InputStreamReader(inStream, encoding));
 			String nextLine;
 			while ((nextLine = reader.readLine()) != null) {
 				lines.add(nextLine);
 			}
 			return lines;
-		} finally {
-			closeQuietly(reader);
 		}
 	}
 
@@ -1387,29 +1431,20 @@ public class Utilities {
 		}
 	}
 
-	public static byte[] readStreamToByteArray(final InputStream inputStream) throws IOException {
-		final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-		copy(inputStream, byteArrayOutputStream);
-		return byteArrayOutputStream.toByteArray();
-	}
-
-	public static Map<String, String> createMap(final String... data) {
+	public static Map<String, String> createMap(final String... data) throws Exception {
 		final Map<String, String> returnMap = new HashMap<>();
 		if (data != null && data.length > 0) {
-			for (int i = 0; i < data.length / 2; i++) {
-				final String key = data[i * 2];
-				final String value = data[i * 2 + 1];
-				returnMap.put(key, value);
+			if (data.length % 2 != 0) {
+				throw new Exception("Invalid map data: odd number of parameters, must be even");
+			} else {
+				for (int i = 0; i < data.length / 2; i++) {
+					final String key = data[i * 2];
+					final String value = data[i * 2 + 1];
+					returnMap.put(key, value);
+				}
 			}
 		}
 		return returnMap;
-	}
-
-	/**
-	 * Replace ~ by user.home
-	 */
-	public static String replaceHomeTilde(final String filePath) {
-		return filePath.replace("~", System.getProperty("user.home"));
 	}
 
 	/**
@@ -1426,5 +1461,217 @@ public class Utilities {
 			}
 		}
 		return false;
+	}
+
+	public static String replaceUsersHome(final String filePath) {
+		if (filePath == null) {
+			return filePath;
+		}
+		final String homePath = System.getProperty("user.home");
+		return filePath
+				.replace("~", homePath)
+				.replace("$HOME", homePath)
+				.replace("${HOME}", homePath);
+	}
+
+	public static String replaceUsersHomeByTilde(final String filePath) {
+		if (filePath == null) {
+			return filePath;
+		}
+		final String homePath = System.getProperty("user.home");
+		return filePath.replace(homePath, "~");
+	}
+
+	public static String substring(final String text, final int startIndex) {
+		if (text == null) {
+			return null;
+		} else {
+			if (text.length() < startIndex) {
+				return "";
+			} else {
+				return text.substring(startIndex);
+			}
+		}
+	}
+
+	public static String substring(final String text, final int startIndex, final int endIndex) {
+		if (text == null) {
+			return null;
+		} else {
+			if (text.length() < startIndex) {
+				return "";
+			} else if (text.length() < endIndex) {
+				return text.substring(startIndex);
+			} else {
+				return text.substring(startIndex, endIndex);
+			}
+		}
+	}
+
+	public static boolean contains(final String text, final String searchText) {
+		if (text == null) {
+			return false;
+		} else {
+			return text.contains(searchText);
+		}
+	}
+
+	public static long skipInputStreamData(final InputStream inputStream, final long bytesToSkip) throws Exception {
+		long bytesSkipped = 0;
+		while (bytesSkipped < bytesToSkip) {
+			final long newBytesSkipped = inputStream.skip(bytesToSkip - bytesSkipped);
+			if (newBytesSkipped == 0) {
+				throw new Exception("Cannot skip data while reading stream");
+			}
+			bytesSkipped += newBytesSkipped;
+		}
+		return bytesSkipped;
+	}
+
+	public static byte[] convertIntToByteArray(final int value) {
+		return new byte[] { (byte) (value >> 24), (byte) (value >> 16), (byte) (value >> 8), (byte) value };
+	}
+
+	public static int convertByteArrayToInt(final byte[] bytes) throws Exception {
+		if (bytes.length > 4) {
+			throw new Exception("ByteArray is too big for int value");
+		} else {
+			return ByteBuffer.wrap(bytes).getInt();
+		}
+	}
+
+	public static String[] split(final String text, final char delimiterChar, final char escapeChar, final int limit) {
+		final String escapeCharString = Character.toString(escapeChar);
+		final String delimiterCharString = Character.toString(delimiterChar);
+		final String splitRegex = "(?<!" + Pattern.quote(escapeCharString) + ")" + Pattern.quote(delimiterCharString);
+		final String[] returnParts = text.split(splitRegex, limit);
+		for (int i = 0; i < returnParts.length; i++) {
+			returnParts[i] = returnParts[i].replace(escapeCharString + delimiterCharString, escapeCharString);
+		}
+		return returnParts;
+	}
+
+	public static String[] split(final String text, final char delimiterChar, final char escapeChar) {
+		final String escapeCharString = Character.toString(escapeChar);
+		final String delimiterCharString = Character.toString(delimiterChar);
+		final String splitRegex = "(?<!" + Pattern.quote(escapeCharString) + ")" + Pattern.quote(delimiterCharString);
+		final String[] returnParts = text.split(splitRegex);
+		for (int i = 0; i < returnParts.length; i++) {
+			returnParts[i] = returnParts[i].replace(escapeCharString + delimiterCharString, escapeCharString);
+		}
+		return returnParts;
+	}
+
+	public static List<String> parseArguments(final String argumentLine) throws Exception {
+		final List<String> returnList = new ArrayList<>();
+		StringBuilder currentArgument = new StringBuilder();
+		Character enclosingChar = null;
+		boolean escapedNextChar = false;
+		for (final char nextChar : argumentLine.replace("\r\n", "\n").replace("\r", "\n").toCharArray()) {
+			if (enclosingChar != null) {
+				if (escapedNextChar) {
+					if (nextChar != enclosingChar) {
+						currentArgument.append("\\");
+					}
+					currentArgument.append(nextChar);
+					escapedNextChar = false;
+				} else if (nextChar == '\\') {
+					escapedNextChar = true;
+				} else if (nextChar == enclosingChar) {
+					returnList.add(currentArgument.toString());
+					enclosingChar = null;
+					currentArgument = new StringBuilder();
+				} else {
+					currentArgument.append(nextChar);
+				}
+			} else {
+				if (nextChar == '\'' || nextChar == '"') {
+					if (currentArgument.length() > 0) {
+						returnList.add(currentArgument.toString());
+						currentArgument = new StringBuilder();
+					}
+					enclosingChar = nextChar;
+				} else if (nextChar == ' ' || nextChar == '\n' || nextChar == '\t') {
+					if (currentArgument.length() > 0) {
+						returnList.add(currentArgument.toString());
+						currentArgument = new StringBuilder();
+					}
+				} else {
+					currentArgument.append(nextChar);
+				}
+			}
+		}
+		if (enclosingChar != null) {
+			throw new Exception("Invalid quotation. Missing closing " + enclosingChar);
+		} else if (currentArgument.length() > 0) {
+			returnList.add(currentArgument.toString());
+			currentArgument = new StringBuilder();
+		}
+		return returnList;
+	}
+
+	public static List<String> parseTokens(final String line, final char... delimiters) throws Exception {
+		final List<String> returnList = new ArrayList<>();
+		StringBuilder currentArgument = new StringBuilder();
+		Character enclosingChar = null;
+		boolean escapedNextChar = false;
+		for (final char nextChar : line.replace("\r\n", "\n").replace("\r", "\n").toCharArray()) {
+			if (enclosingChar != null) {
+				if (escapedNextChar) {
+					if (nextChar != enclosingChar) {
+						currentArgument.append("\\");
+					}
+					currentArgument.append(nextChar);
+					escapedNextChar = false;
+				} else if (nextChar == '\\') {
+					escapedNextChar = true;
+				} else if (nextChar == enclosingChar) {
+					returnList.add(currentArgument.toString());
+					enclosingChar = null;
+					currentArgument = new StringBuilder();
+				} else {
+					currentArgument.append(nextChar);
+				}
+			} else {
+				if (nextChar == '\'' || nextChar == '"') {
+					if (currentArgument.length() > 0) {
+						returnList.add(currentArgument.toString());
+						currentArgument = new StringBuilder();
+					}
+					enclosingChar = nextChar;
+				} else if (equalsAnyChar(nextChar, delimiters)) {
+					if (currentArgument.length() > 0) {
+						returnList.add(currentArgument.toString());
+						currentArgument = new StringBuilder();
+					}
+				} else {
+					currentArgument.append(nextChar);
+				}
+			}
+		}
+		if (enclosingChar != null) {
+			throw new Exception("Invalid quotation. Missing closing " + enclosingChar);
+		} else if (currentArgument.length() > 0) {
+			returnList.add(currentArgument.toString());
+			currentArgument = new StringBuilder();
+		}
+		return returnList;
+	}
+
+	public static boolean equalsAnyChar(final char checkChar, final char... compareChars) {
+		for (final char compareChar : compareChars) {
+			if (checkChar == compareChar) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static List<String> getList(final String... items) {
+		final List<String> returnList = new ArrayList<>();
+		for (final String item : items) {
+			returnList.add(item);
+		}
+		return returnList;
 	}
 }
