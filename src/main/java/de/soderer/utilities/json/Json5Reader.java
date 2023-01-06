@@ -144,8 +144,10 @@ public class Json5Reader extends JsonReader {
 				} else if (openJsonItems.peek() == JsonToken.JsonObject_PropertyKey) {
 					openJsonItems.pop();
 					currentObject = readSimpleJsonValue(readUpToNext(false, null, ',', '}').trim());
-					final char nextCharAfterSimpleValue = readNextNonWhitespace();
-					if (nextCharAfterSimpleValue == '}') {
+					final Character nextCharAfterSimpleValue = readNextNonWhitespace();
+					if (nextCharAfterSimpleValue == null) {
+						throw new Exception("Invalid json data end in line " + (getReadLines() + 1) + " at overall index " + getReadCharacters());
+					} else if (nextCharAfterSimpleValue == '}') {
 						reuseCurrentChar();
 					}
 					jsonToken = JsonToken.JsonSimpleValue;

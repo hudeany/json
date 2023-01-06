@@ -17,8 +17,9 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>> {
 	 * @param key
 	 * @param object
 	 */
-	public void add(final String key, final Object object) {
+	public JsonObject add(final String key, final Object object) {
 		properties.put(key, object);
+		return this;
 	}
 
 	public Object remove(final String key) {

@@ -169,7 +169,7 @@ public class JsonSchemaDependencyResolver {
 		}
 		if (latestDependencies.contains(validatorData)) {
 			throw new JsonSchemaDefinitionError("Cyclic dependency detected: '" + Utilities.join(latestDependencies, "', ") + "'", jsonSchemaPath);
-		} else{
+		} else {
 			latestDependencies.add(validatorData);
 		}
 	}

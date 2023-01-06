@@ -9,8 +9,9 @@ import java.util.List;
 public class JsonArray implements Iterable<Object> {
 	private final List<Object> items = new ArrayList<>();
 
-	public void add(final Object value) {
+	public JsonArray add(final Object value) {
 		items.add(value);
+		return this;
 	}
 
 	public Object remove(final Object value) {

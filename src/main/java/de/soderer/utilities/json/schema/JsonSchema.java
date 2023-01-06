@@ -115,7 +115,7 @@ public class JsonSchema {
 		if (jsonNode == null) {
 			throw new JsonSchemaDefinitionError("Contains null data", null);
 		} else if (jsonNode.isJsonObject()) {
-			readSchemaData((JsonObject)jsonNode.getValue());
+			readSchemaData((JsonObject) jsonNode.getValue());
 			jsonSchemaDependencyResolver.setUseDraftV4Mode(useDraftV4Mode);
 		} else {
 			throw new JsonSchemaDefinitionError("Does not contain JsonObject", "$");

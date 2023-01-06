@@ -6,7 +6,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -93,7 +96,34 @@ public class JsonSerializer {
 				jsonObjectWithTypeInfo.add("value", dataObject);
 				return new JsonNode(jsonObjectWithTypeInfo);
 			} else {
-				return new JsonNode(new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format((Date) dataObject));
+				return new JsonNode(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (Date) dataObject));
+			}
+		} else if (dataObject instanceof LocalDateTime) {
+			if (addObjectTypeInfo) {
+				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
+				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
+				jsonObjectWithTypeInfo.add("value", dataObject);
+				return new JsonNode(jsonObjectWithTypeInfo);
+			} else {
+				return new JsonNode(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT_NO_TIMEZONE, (LocalDateTime) dataObject));
+			}
+		} else if (dataObject instanceof LocalDate) {
+			if (addObjectTypeInfo) {
+				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
+				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
+				jsonObjectWithTypeInfo.add("value", dataObject);
+				return new JsonNode(jsonObjectWithTypeInfo);
+			} else {
+				return new JsonNode(DateUtilities.formatDate(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE, (LocalDate) dataObject));
+			}
+		} else if (dataObject instanceof ZonedDateTime) {
+			if (addObjectTypeInfo) {
+				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
+				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
+				jsonObjectWithTypeInfo.add("value", dataObject);
+				return new JsonNode(jsonObjectWithTypeInfo);
+			} else {
+				return new JsonNode(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (ZonedDateTime) dataObject));
 			}
 		} else if (dataObject instanceof Enum) {
 			if (addObjectTypeInfo) {
@@ -314,6 +344,12 @@ public class JsonSerializer {
 					}
 					throw new Exception("Invalid enum name '" + enumName + "' for type '" + clazz.getName() + "'");
 				} else if (Date.class.isAssignableFrom(clazz)) {
+					return DateUtilities.getDateForZonedDateTime(DateUtilities.parseIso8601DateTimeString((String) value));
+				} else if (LocalDateTime.class.isAssignableFrom(clazz)) {
+					return DateUtilities.parseIso8601DateTimeString((String) value).toLocalDateTime();
+				} else if (LocalDate.class.isAssignableFrom(clazz)) {
+					return DateUtilities.parseIso8601DateTimeString((String) value).toLocalDate();
+				} else if (ZonedDateTime.class.isAssignableFrom(clazz)) {
 					return DateUtilities.parseIso8601DateTimeString((String) value);
 				} else if (value instanceof JsonObject) {
 					Object object;
@@ -544,6 +580,12 @@ public class JsonSerializer {
 						} else if (clazz == Charset.class) {
 							field.set(object, Charset.forName((String) value));
 						} else if (Date.class.isAssignableFrom(clazz)) {
+							field.set(object, DateUtilities.getDateForZonedDateTime(DateUtilities.parseIso8601DateTimeString((String) value)));
+						} else if (LocalDateTime.class.isAssignableFrom(clazz)) {
+							field.set(object, DateUtilities.parseIso8601DateTimeString((String) value).toLocalDateTime());
+						} else if (LocalDate.class.isAssignableFrom(clazz)) {
+							field.set(object, DateUtilities.parseIso8601DateTimeString((String) value).toLocalDate());
+						} else if (ZonedDateTime.class.isAssignableFrom(clazz)) {
 							field.set(object, DateUtilities.parseIso8601DateTimeString((String) value));
 						} else if (clazz.isEnum()) {
 							final String enumName = (String) value;
@@ -660,7 +702,25 @@ public class JsonSerializer {
 							} else if (Date.class.isAssignableFrom(clazz.getComponentType())) {
 								final Date[] arrayValue = new Date[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).parse((String) jsonArray.get(i));
+									arrayValue[i] = DateUtilities.getDateForLocalDateTime(DateUtilities.parseLocalDateTime(DateUtilities.ISO_8601_DATETIME_FORMAT, (String) jsonArray.get(i)));
+								}
+								field.set(object, arrayValue);
+							} else if (LocalDateTime.class.isAssignableFrom(clazz.getComponentType())) {
+								final LocalDateTime[] arrayValue = new LocalDateTime[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = DateUtilities.parseLocalDateTime(DateUtilities.ISO_8601_DATETIME_FORMAT, (String) jsonArray.get(i));
+								}
+								field.set(object, arrayValue);
+							} else if (LocalDate.class.isAssignableFrom(clazz.getComponentType())) {
+								final LocalDate[] arrayValue = new LocalDate[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = DateUtilities.parseLocalDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (String) jsonArray.get(i));
+								}
+								field.set(object, arrayValue);
+							} else if (ZonedDateTime.class.isAssignableFrom(clazz.getComponentType())) {
+								final ZonedDateTime[] arrayValue = new ZonedDateTime[jsonArray.size()];
+								for (int i = 0; i < arrayValue.length; i++) {
+									arrayValue[i] = DateUtilities.parseZonedDateTime(DateUtilities.ISO_8601_DATETIME_FORMAT, (String) jsonArray.get(i), ZoneId.systemDefault());
 								}
 								field.set(object, arrayValue);
 							} else if (Enum.class.isAssignableFrom(clazz.getComponentType())) {

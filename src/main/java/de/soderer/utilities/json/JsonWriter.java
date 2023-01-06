@@ -8,7 +8,9 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Map.Entry;
 import java.util.Stack;
@@ -163,7 +165,21 @@ public class JsonWriter implements Closeable {
 			} else if (propertyValue instanceof Boolean) {
 				write(separator + Boolean.toString((Boolean) propertyValue), false);
 			} else if (propertyValue instanceof Date) {
-				write(separator + "\"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format((Date) propertyValue) + "\"", false);
+				write(separator + "\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (Date) propertyValue) + "\"", false);
+			} else if (propertyValue instanceof LocalDateTime) {
+				if (((LocalDateTime) propertyValue).getNano() > 0) {
+					write(separator + "\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT_NO_TIMEZONE, (LocalDateTime) propertyValue) + "\"", false);
+				} else {
+					write(separator + "\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT_NO_TIMEZONE, (LocalDateTime) propertyValue) + "\"", false);
+				}
+			} else if (propertyValue instanceof LocalDate) {
+				write(separator + "\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE, (LocalDate) propertyValue) + "\"", false);
+			} else if (propertyValue instanceof ZonedDateTime) {
+				if (((ZonedDateTime) propertyValue).getNano() > 0) {
+					write(separator + "\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT, (ZonedDateTime) propertyValue) + "\"", false);
+				} else {
+					write(separator + "\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (ZonedDateTime) propertyValue) + "\"", false);
+				}
 			} else if (propertyValue instanceof Number) {
 				write(separator + ((Number) propertyValue).toString(), false);
 			} else {
@@ -237,7 +253,21 @@ public class JsonWriter implements Closeable {
 			} else if (arrayValue instanceof Boolean) {
 				write(Boolean.toString((Boolean) arrayValue), true);
 			} else if (arrayValue instanceof Date) {
-				write("\"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format((Date) arrayValue) + "\"", true);
+				write("\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (Date) arrayValue) + "\"", true);
+			} else if (arrayValue instanceof LocalDateTime) {
+				if (((LocalDateTime) arrayValue).getNano() > 0) {
+					write("\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT_NO_TIMEZONE, (LocalDateTime) arrayValue) + "\"", true);
+				} else {
+					write("\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT_NO_TIMEZONE, (LocalDateTime) arrayValue) + "\"", true);
+				}
+			} else if (arrayValue instanceof LocalDate) {
+				write("\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE, (LocalDate) arrayValue) + "\"", true);
+			} else if (arrayValue instanceof ZonedDateTime) {
+				if (((ZonedDateTime) arrayValue).getNano() > 0) {
+					write("\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT, (ZonedDateTime) arrayValue) + "\"", true);
+				} else {
+					write("\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (ZonedDateTime) arrayValue) + "\"", true);
+				}
 			} else if (arrayValue instanceof Number) {
 				write(((Number) arrayValue).toString(), true);
 			} else {
@@ -255,7 +285,21 @@ public class JsonWriter implements Closeable {
 			} else if (value instanceof Boolean) {
 				write(Boolean.toString((Boolean) value), true);
 			} else if (value instanceof Date) {
-				write("\"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format((Date) value) + "\"", true);
+				write("\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (Date) value) + "\"", true);
+			} else if (value instanceof LocalDateTime) {
+				if (((LocalDateTime) value).getNano() > 0) {
+					write("\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT_NO_TIMEZONE, (LocalDateTime) value) + "\"", true);
+				} else {
+					write("\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT_NO_TIMEZONE, (LocalDateTime) value) + "\"", true);
+				}
+			} else if (value instanceof LocalDate) {
+				write("\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE, (LocalDate) value) + "\"", true);
+			} else if (value instanceof ZonedDateTime) {
+				if (((ZonedDateTime) value).getNano() > 0) {
+					write("\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT, (ZonedDateTime) value) + "\"", true);
+				} else {
+					write("\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (ZonedDateTime) value) + "\"", true);
+				}
 			} else if (value instanceof Number) {
 				write(((Number) value).toString(), true);
 			} else {

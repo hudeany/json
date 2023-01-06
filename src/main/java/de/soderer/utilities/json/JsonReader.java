@@ -38,7 +38,11 @@ public class JsonReader extends BasicReader {
 	}
 
 	public JsonToken getCurrentToken() {
-		return openJsonItems.peek();
+		if (openJsonItems.empty()) {
+			return null;
+		} else {
+			return openJsonItems.peek();
+		}
 	}
 
 	public JsonToken readNextToken() throws Exception {
@@ -143,7 +147,7 @@ public class JsonReader extends BasicReader {
 					currentObject = readSimpleJsonValue(readUpToNext(false, null, ',', '}').trim());
 					currentChar = readNextNonWhitespace();
 					if (currentChar == null) {
-						throw new Exception("Invalid json data '" + currentChar + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
+						throw new Exception("Invalid json data end in line " + (getReadLines() + 1) + " at overall index " + getReadCharacters());
 					} else if (currentChar == '}') {
 						reuseCurrentChar();
 					} else {
