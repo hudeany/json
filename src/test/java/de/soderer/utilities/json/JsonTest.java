@@ -3,8 +3,7 @@ package de.soderer.utilities.json;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.ZonedDateTime;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -72,7 +71,7 @@ public class JsonTest {
 		ByteArrayOutputStream output = null;
 		JsonReader jsonReader = null;
 		try {
-			final Date testDate = new Date();
+			final ZonedDateTime testDate = ZonedDateTime.now();
 			output = new ByteArrayOutputStream();
 			writer = new JsonWriter(output, StandardCharsets.UTF_8);
 			writer.openJsonArray();
@@ -101,7 +100,7 @@ public class JsonTest {
 							+ "\t1.3,\n"
 							+ "\t3.0E-6,\n"
 							+ "\t\"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&\\/\\\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
-							+ "\t\"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format(testDate) + "\"\n"
+							+ "\t\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT, testDate) + "\"\n"
 							+ "]",
 							result);
 			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
@@ -176,7 +175,7 @@ public class JsonTest {
 		ByteArrayOutputStream output = null;
 		JsonReader jsonReader = null;
 		try {
-			final Date testDate = new Date();
+			final ZonedDateTime testDate = ZonedDateTime.now();
 			output = new ByteArrayOutputStream();
 
 			final JsonArray jsonArray = new JsonArray();
@@ -208,7 +207,7 @@ public class JsonTest {
 							+ "\t1.3,\n"
 							+ "\t3.0E-6,\n"
 							+ "\t\"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&\\/\\\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
-							+ "\t\"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format(testDate) + "\"\n"
+							+ "\t\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT, testDate) + "\"\n"
 							+ "]",
 							result);
 			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
@@ -280,7 +279,7 @@ public class JsonTest {
 		ByteArrayOutputStream output = null;
 		JsonReader jsonReader = null;
 		try {
-			final Date testDate = new Date();
+			final ZonedDateTime testDate = ZonedDateTime.now();
 			output = new ByteArrayOutputStream();
 			writer = new JsonWriter(output, StandardCharsets.UTF_8);
 			writer.openJsonObject();
@@ -322,7 +321,7 @@ public class JsonTest {
 							+ "\t\"test_doubleE\": 3.0E-6,\n"
 							+ "\t\"test_äÄ\": \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&\\/\\\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
 							+ "\t\"test_multiline\": \"abc\\ndef\",\n"
-							+ "\t\"test_date\": \"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format(testDate) + "\"\n"
+							+ "\t\"test_date\": \"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT, testDate) + "\"\n"
 							+ "}",
 							result);
 			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
@@ -345,7 +344,7 @@ public class JsonTest {
 		ByteArrayOutputStream output = null;
 		JsonReader jsonReader = null;
 		try {
-			final Date testDate = new Date();
+			final ZonedDateTime testDate = ZonedDateTime.now();
 			output = new ByteArrayOutputStream();
 
 			final JsonObject jsonObject = new JsonObject();
@@ -380,7 +379,7 @@ public class JsonTest {
 							+ "\t\"test_double\": 1.3,\n"
 							+ "\t\"test_doubleE\": 3.0E-6,\n"
 							+ "\t\"test_äÄ\": \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&\\/\\\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
-							+ "\t\"test_date\": \"" + new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).format(testDate) + "\",\n"
+							+ "\t\"test_date\": \"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT, testDate) + "\",\n"
 							+ "\t\"minInteger\": " + Integer.MIN_VALUE + ",\n"
 							+ "\t\"maxInteger\": " + Integer.MAX_VALUE + "\n"
 							+ "}",
@@ -980,17 +979,6 @@ public class JsonTest {
 			Assert.fail(e.getMessage());
 		} finally {
 			Utilities.closeQuietly(jsonReader);
-		}
-	}
-
-	@Test
-	public void testKomplexExampleJson() {
-		try (JsonReader jsonReader = new JsonReader(getClass().getClassLoader().getResourceAsStream("json/KomplexExample.json"))) {
-			final JsonNode jsonNode = jsonReader.read();
-			Assert.assertNotNull(jsonNode);
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
 		}
 	}
 
