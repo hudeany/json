@@ -428,21 +428,26 @@ public class Json5Test {
 			Assert.assertEquals(Json5Reader.JsonToken.JsonArray_Open, jsonReader.readNextToken());
 
 			for (int i = 0; i < 5; i++) {
-				Assert.assertTrue(jsonReader.readNextJsonNode());
-				final Object nextJsonNode = jsonReader.getCurrentObject();
-				if (nextJsonNode instanceof JsonObject) {
-					Assert.assertEquals(Integer.valueOf(i), ((JsonObject) nextJsonNode).get("number"));
+				final JsonNode nextJsonNode = jsonReader.readNextJsonNode();
+				Assert.assertNotNull(nextJsonNode);
+				if (nextJsonNode.isJsonObject()) {
+					Assert.assertEquals(Integer.valueOf(i), ((JsonObject) nextJsonNode.getValue()).get("number"));
 				} else {
 					Assert.fail();
 				}
 			}
-			Assert.assertTrue(jsonReader.readNextJsonNode());
+			Object nextJsonNode;
+			nextJsonNode = jsonReader.readNextJsonNode();
+			Assert.assertNotNull(nextJsonNode);
 			Assert.assertEquals(null, jsonReader.getCurrentObject());
-			Assert.assertTrue(jsonReader.readNextJsonNode());
+			nextJsonNode = jsonReader.readNextJsonNode();
+			Assert.assertNotNull(nextJsonNode);
 			Assert.assertEquals(true, jsonReader.getCurrentObject());
-			Assert.assertTrue(jsonReader.readNextJsonNode());
+			nextJsonNode = jsonReader.readNextJsonNode();
+			Assert.assertNotNull(nextJsonNode);
 			Assert.assertEquals(false, jsonReader.getCurrentObject());
-			Assert.assertFalse(jsonReader.readNextJsonNode());
+			nextJsonNode = jsonReader.readNextJsonNode();
+			Assert.assertNull(nextJsonNode);
 
 			Assert.assertEquals(Json5Reader.JsonToken.JsonArray_Close, jsonReader.readNextToken());
 		} catch (final Exception e) {
