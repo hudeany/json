@@ -32,7 +32,7 @@ public class FormatValidator extends BaseJsonSchemaValidator {
 			}
 		} else if ("date-time".equalsIgnoreCase((String) validatorData)) {
 			try {
-				DateUtilities.parseLocalDateTime(DateUtilities.ISO_8601_DATETIME_FORMAT,(String) jsonNode.getValue());
+				DateUtilities.parseLocalDateTime(DateUtilities.ISO_8601_DATETIME_FORMAT, (String) jsonNode.getValue());
 			} catch (final DateTimeParseException e) {
 				throw new JsonSchemaDataValidationError("Invalid data for format '" + ((String) validatorData) + "' was '" + jsonNode.getValue() + "'", jsonPath, e);
 			}

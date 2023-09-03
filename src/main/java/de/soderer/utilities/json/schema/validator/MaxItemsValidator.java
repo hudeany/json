@@ -14,7 +14,7 @@ public class MaxItemsValidator extends BaseJsonSchemaValidator {
 			throw new JsonSchemaDefinitionError("Data for maximum items is 'null'", jsonSchemaPath);
 		} else if (validatorData instanceof Integer) {
 			if (((Integer) validatorData) < 0) {
-				throw new JsonSchemaDefinitionError("Data for maximum items amount is  negative", jsonSchemaPath);
+				throw new JsonSchemaDefinitionError("Data for maximum items amount is negative", jsonSchemaPath);
 			}
 		} else if (validatorData instanceof String) {
 			try {
@@ -33,7 +33,7 @@ public class MaxItemsValidator extends BaseJsonSchemaValidator {
 			}
 		} else {
 			if (((JsonArray) jsonNode.getValue()).size() > ((Integer) validatorData)) {
-				throw new JsonSchemaDataValidationError("Required maximum number of items is '" + validatorData + "' but was '" + ((JsonArray) jsonNode.getValue()).size()  + "'", jsonPath);
+				throw new JsonSchemaDataValidationError("Required maximum number of items is '" + validatorData + "' but was '" + ((JsonArray) jsonNode.getValue()).size() + "'", jsonPath);
 			}
 		}
 	}

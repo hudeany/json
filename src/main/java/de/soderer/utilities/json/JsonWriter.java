@@ -13,11 +13,10 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Map.Entry;
+import java.util.Stack;
 
 import de.soderer.utilities.json.utilities.DateUtilities;
 import de.soderer.utilities.json.utilities.Utilities;
-
-import java.util.Stack;
 
 public class JsonWriter implements Closeable {
 	/** Default output encoding. */

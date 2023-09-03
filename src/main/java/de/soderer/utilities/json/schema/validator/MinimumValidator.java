@@ -35,7 +35,7 @@ public class MinimumValidator extends ExtendedBaseJsonSchemaValidator {
 			final Number minimumValue = ((Number) validatorData).doubleValue();
 
 			if (NumberUtilities.compare(dataValue, minimumValue) < 0) {
-				throw new JsonSchemaDataValidationError("Minimum number is '" + validatorData + "' but value was '" + jsonNode.getValue()  + "'", jsonPath);
+				throw new JsonSchemaDataValidationError("Minimum number is '" + validatorData + "' but value was '" + jsonNode.getValue() + "'", jsonPath);
 			}
 
 			if (parentValidatorData.containsPropertyKey("exclusiveMinimum")) {
@@ -45,7 +45,7 @@ public class MinimumValidator extends ExtendedBaseJsonSchemaValidator {
 				} else if (exclusiveMinimumRaw instanceof Boolean) {
 					if ((Boolean) exclusiveMinimumRaw) {
 						if (NumberUtilities.compare(dataValue, minimumValue) == 0) {
-							throw new JsonSchemaDataValidationError("Exclusive minimum number is '" + validatorData + "' but value was '" + jsonNode.getValue()  + "'", jsonPath);
+							throw new JsonSchemaDataValidationError("Exclusive minimum number is '" + validatorData + "' but value was '" + jsonNode.getValue() + "'", jsonPath);
 						}
 					}
 				} else {

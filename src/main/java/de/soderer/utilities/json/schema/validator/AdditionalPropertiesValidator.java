@@ -39,7 +39,7 @@ public class AdditionalPropertiesValidator extends ExtendedBaseJsonSchemaValidat
 						throw new JsonSchemaDefinitionError("Properties data is 'null'", jsonSchemaPath);
 					} else if (!(parentValidatorData.get("properties") instanceof JsonObject)) {
 						throw new JsonSchemaDefinitionError("Properties data is not a JsonObject", jsonSchemaPath);
-					} else if (((JsonObject) (parentValidatorData).get("properties")).containsPropertyKey(checkPropertyKey)) {
+					} else if (((JsonObject) parentValidatorData.get("properties")).containsPropertyKey(checkPropertyKey)) {
 						continue;
 					}
 				}
