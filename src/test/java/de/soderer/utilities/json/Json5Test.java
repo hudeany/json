@@ -8,10 +8,10 @@ import java.time.ZonedDateTime;
 import org.junit.Assert;
 import org.junit.Test;
 
-import de.soderer.utilities.DateUtilities;
-import de.soderer.utilities.TextUtilities;
-import de.soderer.utilities.Utilities;
 import de.soderer.utilities.json.JsonReader.JsonToken;
+import de.soderer.utilities.json.utilities.DateUtilities;
+import de.soderer.utilities.json.utilities.TextUtilities;
+import de.soderer.utilities.json.utilities.Utilities;
 
 public class Json5Test {
 	@Test

@@ -1,4 +1,4 @@
-package de.soderer.utilities;
+package de.soderer.utilities.json.utilities;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

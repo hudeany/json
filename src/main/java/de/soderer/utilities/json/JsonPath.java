@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Stack;
 
-import de.soderer.utilities.BasicReader;
+import de.soderer.utilities.json.utilities.BasicReader;
 
 public class JsonPath {
 	private Stack<Object> pathParts = new Stack<>();

@@ -1,4 +1,4 @@
-package de.soderer.utilities;
+package de.soderer.utilities.json.utilities;
 
 public class Tuple<T1, T2> {
 	private T1 value1;

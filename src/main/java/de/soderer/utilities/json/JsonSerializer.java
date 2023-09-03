@@ -20,9 +20,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import de.soderer.utilities.DateUtilities;
-import de.soderer.utilities.Utilities;
-import de.soderer.utilities.code.ClassUtilities;
+import de.soderer.utilities.json.utilities.ClassUtilities;
+import de.soderer.utilities.json.utilities.DateUtilities;
+import de.soderer.utilities.json.utilities.Utilities;
 
 public class JsonSerializer {
 	/**

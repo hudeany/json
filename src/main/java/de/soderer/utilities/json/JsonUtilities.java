@@ -14,8 +14,8 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
-import de.soderer.utilities.Utilities;
 import de.soderer.utilities.json.schema.JsonSchema;
+import de.soderer.utilities.json.utilities.Utilities;
 
 public class JsonUtilities {
 	public static JsonObject convertXmlDocument(final Document xmlDocument, final boolean throwExceptionOnError) throws Exception {

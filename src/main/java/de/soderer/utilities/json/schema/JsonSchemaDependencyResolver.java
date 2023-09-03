@@ -10,12 +10,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import de.soderer.utilities.Utilities;
 import de.soderer.utilities.json.Json5Reader;
 import de.soderer.utilities.json.JsonArray;
 import de.soderer.utilities.json.JsonNode;
 import de.soderer.utilities.json.JsonObject;
 import de.soderer.utilities.json.JsonPath;
+import de.soderer.utilities.json.utilities.Utilities;
 
 public class JsonSchemaDependencyResolver {
 	private JsonObject schemaDocumentNode = null;

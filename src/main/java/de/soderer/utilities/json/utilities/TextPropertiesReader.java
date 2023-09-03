@@ -1,9 +1,9 @@
-package de.soderer.utilities;
+package de.soderer.utilities.json.utilities;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import de.soderer.utilities.TextUtilities.LineBreak;
+import de.soderer.utilities.json.utilities.TextUtilities.LineBreak;
 
 /**
  * Scanner class for properties describing a text

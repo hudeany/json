@@ -5,13 +5,13 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import de.soderer.utilities.Utilities;
 import de.soderer.utilities.json.JsonNode;
 import de.soderer.utilities.json.JsonObject;
 import de.soderer.utilities.json.schema.JsonSchema;
 import de.soderer.utilities.json.schema.JsonSchemaDataValidationError;
 import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
+import de.soderer.utilities.json.utilities.Utilities;
 
 public class AdditionalPropertiesValidator extends ExtendedBaseJsonSchemaValidator {
 	public AdditionalPropertiesValidator(final JsonObject parentValidatorData, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final String jsonSchemaPath, final Object validatorData, final JsonNode jsonNode, final String jsonPath) throws JsonSchemaDefinitionError {

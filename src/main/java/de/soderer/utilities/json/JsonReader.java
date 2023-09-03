@@ -6,9 +6,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Stack;
 
-import de.soderer.utilities.BasicReader;
-import de.soderer.utilities.NumberUtilities;
-import de.soderer.utilities.Utilities;
+import de.soderer.utilities.json.utilities.BasicReader;
+import de.soderer.utilities.json.utilities.NumberUtilities;
+import de.soderer.utilities.json.utilities.Utilities;
 
 public class JsonReader extends BasicReader {
 	protected Object currentObject = null;

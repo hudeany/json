@@ -1,11 +1,11 @@
 package de.soderer.utilities.json.schema.validator;
 
-import de.soderer.utilities.Utilities;
 import de.soderer.utilities.json.JsonArray;
 import de.soderer.utilities.json.JsonNode;
 import de.soderer.utilities.json.schema.JsonSchemaDataValidationError;
 import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
+import de.soderer.utilities.json.utilities.Utilities;
 
 public class EnumValidator extends BaseJsonSchemaValidator {
     public EnumValidator(JsonSchemaDependencyResolver jsonSchemaDependencyResolver, String jsonSchemaPath, Object validatorData, JsonNode jsonNode, String jsonPath) throws JsonSchemaDefinitionError {

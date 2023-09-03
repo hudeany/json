@@ -1,4 +1,4 @@
-package de.soderer.utilities.code;
+package de.soderer.utilities.json.utilities;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;

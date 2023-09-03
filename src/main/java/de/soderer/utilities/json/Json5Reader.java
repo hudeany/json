@@ -6,8 +6,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 
-import de.soderer.utilities.NumberUtilities;
-import de.soderer.utilities.Utilities;
+import de.soderer.utilities.json.utilities.NumberUtilities;
+import de.soderer.utilities.json.utilities.Utilities;
 
 /**
  * Differences to standard JSON:<br />

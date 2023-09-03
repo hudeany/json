@@ -1,11 +1,11 @@
 package de.soderer.utilities.json.schema.validator;
 
-import de.soderer.utilities.NumberUtilities;
 import de.soderer.utilities.json.JsonNode;
 import de.soderer.utilities.json.JsonObject;
 import de.soderer.utilities.json.schema.JsonSchemaDataValidationError;
 import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
+import de.soderer.utilities.json.utilities.NumberUtilities;
 
 public class MaximumValidator extends ExtendedBaseJsonSchemaValidator {
 	public MaximumValidator(final JsonObject parentValidatorData, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final String jsonSchemaPath, final Object validatorData, final JsonNode jsonNode, final String jsonPath) throws JsonSchemaDefinitionError {

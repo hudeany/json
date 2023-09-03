@@ -7,11 +7,11 @@ import java.nio.charset.StandardCharsets;
 import org.junit.Assert;
 import org.junit.Test;
 
-import de.soderer.utilities.Utilities;
 import de.soderer.utilities.json.JsonReader.JsonToken;
 import de.soderer.utilities.json.schema.JsonSchema;
 import de.soderer.utilities.json.schema.JsonSchemaDataValidationError;
 import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
+import de.soderer.utilities.json.utilities.Utilities;
 
 public class JsonValidationTest {
 	@Test
