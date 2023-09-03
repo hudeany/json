@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="build_jar" name="Create all Jars for Project JsonReader">
+	<property name="version" value="23.0.0" />
+	
+	<property name="projectsPath" value="${user.home}/git" />
+	<echo message="projectsPath: ${projectsPath}" />
+	
+	<property name="buildPath" value="build" />
+	<echo message="buildPath: ${buildPath}" />
+
+	<target name="build_jar" depends="cleanup_before, create_jar, cleanup_after" />
+
+	<target name="cleanup_before">
+		<delete dir="${buildPath}/bin" />
+		<mkdir dir="${buildPath}/bin" />
+	</target>
+	
+	<target name="create_jar">
+		<javac debug="true" nowarn="true" deprecation="false" destdir="${buildPath}/bin" fork="yes" source="1.8" target="1.8" srcdir="src/main/java" includeantruntime="false" encoding="UTF-8" />
+			
+		<jar destfile="${buildPath}/json-${version}.jar">
+			<manifest>
+				<attribute name="Version" value="${version}" />
+			</manifest>
+					
+			<fileset dir="${buildPath}/bin" />
+			
+			<fileset dir="" includes="LICENSE.txt"/>
+		</jar>
+		
+		<jar destfile="${buildPath}/json-${version}_sources.jar">
+			<manifest>
+				<attribute name="Version" value="${version}" />
+			</manifest>
+	
+		    <fileset dir="src/main/java" includes="**/*.java"/>
+			
+			<fileset dir="" includes="LICENSE.txt"/>
+		</jar>
+	</target>
+	
+	<target name="cleanup_after">
+		<delete dir="${buildPath}/bin" />
+	</target>
+</project>
