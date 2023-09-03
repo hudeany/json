@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
+<<<<<<< HEAD
 	<name>JSON</name>
+=======
+	<name>JSON_GitHub</name>
+>>>>>>> branch 'master' of ssh://andreas@homebase/media/data/gitRepository/JSON
 	<comment></comment>
 	<projects>
 	</projects>
