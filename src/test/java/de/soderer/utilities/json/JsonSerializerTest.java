@@ -9,6 +9,7 @@ import org.junit.Test;
 import de.soderer.utilities.TestObjectComplex;
 import de.soderer.utilities.TestObjectSimple;
 
+@SuppressWarnings("static-method")
 public class JsonSerializerTest {
 	@Test
 	public void testSimple() throws Exception {

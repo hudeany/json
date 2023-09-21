@@ -13,6 +13,7 @@ import de.soderer.utilities.json.utilities.DateUtilities;
 import de.soderer.utilities.json.utilities.TextUtilities;
 import de.soderer.utilities.json.utilities.Utilities;
 
+@SuppressWarnings("static-method")
 public class Json5Test {
 	@Test
 	public void testEmptyArray() {

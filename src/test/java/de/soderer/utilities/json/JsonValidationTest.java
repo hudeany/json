@@ -13,6 +13,7 @@ import de.soderer.utilities.json.schema.JsonSchemaDataValidationError;
 import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.utilities.Utilities;
 
+@SuppressWarnings("static-method")
 public class JsonValidationTest {
 	@Test
 	public void testSimpleNull() {
