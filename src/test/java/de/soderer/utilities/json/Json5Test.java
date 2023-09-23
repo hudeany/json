@@ -1074,6 +1074,28 @@ public class Json5Test {
 	}
 
 	@Test
+	public void testKomplexExampleJson() {
+		try (JsonReader jsonReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/KomplexExample.json"))) {
+			final JsonNode jsonNode = jsonReader.read();
+			Assert.assertNotNull(jsonNode);
+		} catch (final Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testKomplexExampleJsonV5() {
+		try (JsonReader jsonReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/KomplexExampleV5.json"))) {
+			final JsonNode jsonNode = jsonReader.read();
+			Assert.assertNotNull(jsonNode);
+		} catch (final Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		}
+	}
+
+	@Test
 	public void testSpecialCharacters() throws Exception {
 		final ByteArrayOutputStream output = new ByteArrayOutputStream();
 		try (JsonWriter writer = new JsonWriter(output)) {
@@ -1148,6 +1170,53 @@ public class Json5Test {
 		} catch (final Exception e) {
 			// Expected Exception
 			Assert.assertEquals("Invalid unicode sequence at character: 7", e.getMessage());
+		}
+	}
+
+	@Test
+	public void testJson5ReadPath() {
+		JsonReader jsonReader = null;
+		try {
+			final String data =
+					"[\n"
+							+ "{\n"
+							+ "item1:\n"
+							+ "{\n"
+							+ "item11: 123,\n"
+							+ "item12:\n"
+							+ "[\n"
+							+ "123,\n"
+							+ "123,\n"
+							+ "123,\n"
+							+ "]\n"
+							+ "},\n"
+							+ "item2: 123,\n"
+							+ "item3:\n"
+							+ "{\n"
+							+ "item31: 123,\n"
+							+ "item32: \n"
+							+ "[\n"
+							+ "123,\n"
+							+ "123,\n"
+							+ "123,\n"
+							+ "]\n"
+							+ "},\n"
+							+ "item4:\n"
+							+ "{\n"
+							+ "item41: 123,\n"
+							+ "item42: 123\n"
+							+ "}\n"
+							+ "}\n"
+							+ "]\n";
+			jsonReader = new Json5Reader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
+			JsonUtilities.readUpToJsonPath(jsonReader, "$[0].item3.item32");
+			jsonReader.readNextToken();
+			Assert.assertEquals(JsonToken.JsonArray_Open, jsonReader.getCurrentToken());
+		} catch (final Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		} finally {
+			Utilities.closeQuietly(jsonReader);
 		}
 	}
 }

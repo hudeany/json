@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -948,35 +950,35 @@ public class JsonTest {
 			final String data =
 					"[\n"
 							+ "{\n"
-							+ "item1:\n"
+							+ "\"item1\":\n"
 							+ "{\n"
-							+ "item11: 123,\n"
-							+ "item12:\n"
+							+ "\"item11\": 123,\n"
+							+ "\"item12\":\n"
 							+ "[\n"
 							+ "123,\n"
 							+ "123,\n"
-							+ "123,\n"
+							+ "123\n"
 							+ "]\n"
 							+ "},\n"
-							+ "item2: 123,\n"
-							+ "item3:\n"
+							+ "\"item2\": 123,\n"
+							+ "\"item3\":\n"
 							+ "{\n"
-							+ "item31: 123,\n"
-							+ "item32: \n"
+							+ "\"item31\": 123,\n"
+							+ "\"item32\": \n"
 							+ "[\n"
 							+ "123,\n"
 							+ "123,\n"
-							+ "123,\n"
+							+ "123\n"
 							+ "]\n"
 							+ "},\n"
-							+ "item4:\n"
+							+ "\"item4\":\n"
 							+ "{\n"
-							+ "item41: 123,\n"
-							+ "item42: 123\n"
+							+ "\"item41\": 123,\n"
+							+ "\"item42\": 123\n"
 							+ "}\n"
 							+ "}\n"
 							+ "]\n";
-			jsonReader = new Json5Reader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
+			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
 			JsonUtilities.readUpToJsonPath(jsonReader, "$[0].item3.item32");
 			jsonReader.readNextToken();
 			Assert.assertEquals(JsonToken.JsonArray_Open, jsonReader.getCurrentToken());
@@ -985,6 +987,78 @@ public class JsonTest {
 			Assert.fail(e.getMessage());
 		} finally {
 			Utilities.closeQuietly(jsonReader);
+		}
+	}
+
+	@Test
+	public void testJsonNodes() {
+		JsonReader jsonReader = null;
+		try {
+			final String data =
+					"["
+							+ "	{"
+							+ "		\"item1\":"
+							+ "			{"
+							+ "				\"item11\": 123,"
+							+ "				\"item12\":"
+							+ "					["
+							+ "						123,"
+							+ "						123,"
+							+ "						123"
+							+ "					]"
+							+ "			},"
+							+ "		\"item2\": 123,"
+							+ "		\"item3\":"
+							+ "			{"
+							+ "				\"item31\": 123,"
+							+ "				\"item32\":"
+							+ "					["
+							+ "						123,"
+							+ "						123,"
+							+ "						123"
+							+ "					]"
+							+ "			},"
+							+ "		\"item4\":"
+							+ "			{"
+							+ "				\"item41\": 123,"
+							+ "				\"item42\": 123"
+							+ "			}"
+							+ "	}"
+							+ "]";
+			jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
+			JsonUtilities.readUpToJsonPath(jsonReader, "$[0].item1");
+			final JsonToken nextToken = jsonReader.readNextToken();
+			Assert.assertTrue(nextToken == JsonToken.JsonObject_Open);
+
+			JsonNode jsonNode = jsonReader.readNextJsonNode();
+			Assert.assertNotNull(jsonNode);
+			Assert.assertEquals("item11", jsonNode.getPropertyName());
+			Assert.assertTrue(jsonNode.isNumber());
+
+			jsonNode = jsonReader.readNextJsonNode();
+			Assert.assertNotNull(jsonNode);
+			Assert.assertEquals("item12", jsonNode.getPropertyName());
+			Assert.assertTrue(jsonNode.isJsonArray());
+			Assert.assertEquals(3, ((JsonArray) jsonNode.getValue()).size());
+
+			jsonNode = jsonReader.readNextJsonNode();
+			Assert.assertNull(jsonNode);
+		} catch (final Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		} finally {
+			Utilities.closeQuietly(jsonReader);
+		}
+	}
+
+	@Test
+	public void testKomplexExampleJson() {
+		try (JsonReader jsonReader = new JsonReader(getClass().getClassLoader().getResourceAsStream("json/KomplexExample.json"))) {
+			final JsonNode jsonNode = jsonReader.read();
+			Assert.assertNotNull(jsonNode);
+		} catch (final Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
 		}
 	}
 
@@ -1063,6 +1137,43 @@ public class JsonTest {
 		} catch (final Exception e) {
 			// Expected Exception
 			Assert.assertEquals("Invalid unicode sequence at character: 7", e.getMessage());
+		}
+	}
+
+	@Test
+	public void testStreaming() throws Exception {
+		try {
+			final String data =
+					"[\n"
+							+ "{\n"
+							+ "\"property\": \"value1\"\n"
+							+ "},\n"
+							+ "{\n"
+							+ "\"property\": \"value2\"\n"
+							+ "},\n"
+							+ "{\n"
+							+ "\"property\": \"value3\"\n"
+							+ "},\n"
+							+ "{\n"
+							+ "\"property\": \"value4\"\n"
+							+ "},\n"
+							+ "{\n"
+							+ "\"otherproperty\": \"othervalue\"\n"
+							+ "},\n"
+							+ "{\n"
+							+ "\"property\": \"value5\"\n"
+							+ "}\n"
+							+ "]\n";
+			try (JsonReader jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)))) {
+				final JsonArray jsonArray = ((JsonArray) jsonReader.read().getValue());
+				final List<String> properties = jsonArray.stream().map(x -> (JsonObject) x).map(x -> x.get("property")).map(x -> (String) x).collect(Collectors.toList());
+				Assert.assertEquals(6, properties.size());
+				Assert.assertEquals("value3", properties.get(2));
+				Assert.assertEquals(null, properties.get(4));
+			}
+		} catch (final Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
 		}
 	}
 }

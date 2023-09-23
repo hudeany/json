@@ -1,0 +1,53 @@
+{
+	"item 1": "Text 1",
+	item2: "Text 2",
+	"item3": 3,
+	item4: 4.123,
+	item5: null,
+	item6: true,
+	item7: false,
+	item8: [,],
+	item9: {,},
+	item12: {
+		"item 1": "Text 1",
+		"item2": "Text 2",
+		"item3": 3,
+		"item4": 4.123,
+		"item5": null,
+		"item6": true,
+		"item7": false,
+		"item8": [
+			{
+				"item 1": "Text 1",
+				"item2": "Text 2",
+				"item3": 3,
+				"item4": 4.123,
+				"item5": null,
+				"item6": true,
+				"item7": false,
+				"item8": [],
+				"item9": {}
+			},
+			{
+				"item 1": "Text 1",
+				"item2": "Text 2",
+				"item3": 3,
+				"item4": 4.123,
+				"item5": null,
+				"item6": true,
+				"item7": false,
+				"item8": [],
+				"item9": {}
+			}
+		],
+		"item9": {}
+	},
+	"item11": [
+		{
+			"item 1": "Text 1",
+			"item1": "Text 1"
+		},
+		[1, 2, 3, 4, 5],
+		[null, null, 1, null, "Text 1"]
+	]
+}

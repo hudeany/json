@@ -2953,6 +2953,93 @@ public class JsonValidationTest {
 		}
 	}
 
+	@Test
+	public void testJsonSchemaForJsonSchemas() {
+		try (InputStream schemaInputStream = JsonSchema.class.getClassLoader().getResourceAsStream("json/JsonSchemaDescriptionDraftV4.json")) {
+			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+			try (InputStream dataInputStream = getClass().getClassLoader().getResourceAsStream("json/JsonSchemaDescriptionDraftV4.json")) {
+				jsonSchema.validate(dataInputStream);
+			}
+		} catch (final JsonSchemaDataValidationError e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		} catch (final Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testSuite() {
+		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testsuite.json"))) {
+			int testCount = 0;
+			final JsonNode testsuiteNode = testsuiteReader.read();
+			for (final Object item : ((JsonArray) testsuiteNode.getValue())) {
+				testCount++;
+				final JsonObject testItem = (JsonObject) item;
+				final String description = (String) testItem.get("desc");
+				final JsonObject schema = (JsonObject) testItem.get("schema");
+				final Object data = testItem.get("data");
+				final Boolean valid = (Boolean) testItem.get("valid");
+
+				try {
+					final JsonSchema jsonSchema = new JsonSchema(schema, true);
+					jsonSchema.validate(data);
+					if (!valid) {
+						Assert.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
+					}
+				} catch (final JsonSchemaDataValidationError e) {
+					if (valid) {
+						e.printStackTrace();
+						Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+					}
+				} catch (final Exception e) {
+					e.printStackTrace();
+					Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+				}
+			}
+		} catch (final Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testSuiteV4() {
+		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/draftv4.json"))) {
+			int testCount = 0;
+			final JsonNode testsuiteNode = testsuiteReader.read();
+			for (final Object item : ((JsonArray) testsuiteNode.getValue())) {
+				testCount++;
+				final JsonObject testItem = (JsonObject) item;
+				final String description = (String) testItem.get("description");
+				final JsonObject schema = (JsonObject) testItem.get("schema");
+				final Object data = testItem.get("data");
+				final Boolean valid = (Boolean) testItem.get("valid");
+
+				try {
+					final JsonSchema jsonSchema = new JsonSchema(schema, true);
+					jsonSchema.setDownloadReferencedSchemas(true);
+					jsonSchema.validate(data);
+					if (!valid) {
+						Assert.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
+					}
+				} catch (final JsonSchemaDataValidationError e) {
+					if (valid) {
+						e.printStackTrace();
+						Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+					}
+				} catch (final Exception e) {
+					e.printStackTrace();
+					Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+				}
+			}
+		} catch (final Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		}
+	}
+
 	private void assertJsonSchemaDataValidationErrorJsonPath(final JsonSchemaDataValidationError e, final String jsonPath) {
 		if (e == null || e.getMessage() == null) {
 			Assert.fail("JsonSchemaDataValidationError json path expected '" + jsonPath + "' but exception was null");
