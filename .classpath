@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry excluding="src/main/java/de/soderer/utilities/|src/main/java/de/soderer/utilities/json/|src/main/java/de/soderer/utilities/json/schema/|src/main/java/de/soderer/utilities/json/schema/validator/|src/test/java/de/soderer/utilities/json/|src/|src/main/java/|src/main/java/|src/test/java/|src/test/java/|build/|src/main/resources/|src/main/resources/|src/test/resources/|src/test/resources/" kind="src" path=""/>
 	<classpathentry kind="src" path="src/main/java"/>
 	<classpathentry kind="src" path="src/test/java"/>
 	<classpathentry kind="src" path="src/main/resources"/>

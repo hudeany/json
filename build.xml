@@ -1,45 +1,108 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project default="build_jar" name="Create all Jars for Project JsonReader">
 	<property name="version" value="23.0.1" />
-	
+
 	<property name="projectsPath" value="${user.home}/git" />
 	<echo message="projectsPath: ${projectsPath}" />
-	
+
 	<property name="buildPath" value="build" />
 	<echo message="buildPath: ${buildPath}" />
 
-	<target name="build_jar" depends="cleanup_before, create_jar, cleanup_after" />
+	<target name="build_jar" depends="cleanup_before, create_jar, test, cleanup_after" />
 
 	<target name="cleanup_before">
-		<delete dir="${buildPath}/bin" />
+		<mkdir dir="${buildPath}" />
+
+		<delete includeEmptyDirs="true">
+			<fileset dir="${buildPath}">
+				<include name="*" />
+			</fileset>
+		</delete>
+
 		<mkdir dir="${buildPath}/bin" />
+		<mkdir dir="${buildPath}/testbin" />
 	</target>
-	
+
 	<target name="create_jar">
 		<javac debug="true" nowarn="true" deprecation="false" destdir="${buildPath}/bin" fork="yes" source="1.8" target="1.8" srcdir="src/main/java" includeantruntime="false" encoding="UTF-8" />
-			
+		
+		<copy todir="${buildPath}/bin">
+			<fileset dir="src/main/resources" />
+		</copy>
+
 		<jar destfile="${buildPath}/json-${version}.jar">
 			<manifest>
 				<attribute name="Version" value="${version}" />
 			</manifest>
-					
+
 			<fileset dir="${buildPath}/bin" />
-			
+
 			<fileset dir="" includes="LICENSE.txt"/>
 		</jar>
-		
+
 		<jar destfile="${buildPath}/json-${version}_sources.jar">
 			<manifest>
 				<attribute name="Version" value="${version}" />
 			</manifest>
-	
-		    <fileset dir="src/main/java" includes="**/*.java"/>
-			
+
+			<fileset dir="src/main/java" includes="**/*.java"/>
+
 			<fileset dir="" includes="LICENSE.txt"/>
 		</jar>
 	</target>
-	
-	<target name="cleanup_after">
+
+	<target name="test" depends="create_jar">
+		<path id="test.build.classpath">
+			<fileset dir="lib_test">
+				<include name="*.jar" />
+			</fileset>
+			<fileset dir="${buildPath}">
+				<include name="*.jar" />
+			</fileset>
+		</path>
+
+		<javac debug="true" nowarn="true" deprecation="false" destdir="${buildPath}/testbin" fork="yes" source="1.8" target="1.8" srcdir="src/test/java" includeantruntime="false" encoding="UTF-8">
+			<classpath refid="test.build.classpath" />
+		</javac>
+
+		<copy todir="${buildPath}/testbin">
+			<fileset dir="src/test/resources" />
+		</copy>
+
+		<path id="test.classpath">
+			<fileset dir="lib_test">
+				<include name="*.jar" />
+			</fileset>
+			<fileset dir="${buildPath}">
+				<include name="*.jar" />
+			</fileset>
+			<dirset dir="${buildPath}">
+				<include name="testbin" />
+			</dirset>
+		</path>
+
+		<pathconvert property="classpathProp" refid="test.classpath"/>
+		<echo>Classpath is ${classpathProp}</echo>
+
+		<junit printsummary="yes" haltonfailure="yes">
+			<classpath refid="test.classpath" />
+			<batchtest todir="build">
+				<formatter type="plain" usefile="true"/>
+				<fileset dir="src/test/java">
+					<include name="**/*Test.java" />
+				</fileset>
+			</batchtest>
+		</junit>
+	</target>
+
+	<target name="cleanup_after" depends="create_jar, test">
 		<delete dir="${buildPath}/bin" />
+		<delete dir="${buildPath}/testbin" />
+
+		<delete includeEmptyDirs="true">
+			<fileset dir="${buildPath}">
+				<include name="TEST-*" />
+			</fileset>
+		</delete>
 	</target>
 </project>
