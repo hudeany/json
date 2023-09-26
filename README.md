@@ -7,7 +7,7 @@ Sequential read of JsonArray items (like SAX parser for XML data).
 For simple examples see test class "de.soderer.utilities.json.JsonTest".  
 
 ## JsonWriter example
-
+```
 JsonWriter writer = null;
 		ByteArrayOutputStream output = null;
 		JsonReader jsonReader = null;
@@ -30,6 +30,7 @@ JsonWriter writer = null;
 			Utilities.closeQuietly(writer);
 			Utilities.closeQuietly(jsonReader);
 		}
+```
   
 ## Maven2 repository
 This library is also available via Maven2 repository
