@@ -22,7 +22,9 @@ try {
 	writer.closeJsonObject();
 	writer.close();
 	output.close();
+
 	final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+
 	jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 	final JsonNode nodevalue = jsonReader.read();
 	System.out.println(nodevalue.getJsonDataType() == JsonDataType.OBJECT);
