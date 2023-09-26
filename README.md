@@ -29,10 +29,10 @@ try {
 	// true
 	final JsonObject jsonObject = (JsonObject) nodevalue.getValue();
 	for (final Map.Entry<String, Object> jsonObjectProperty : jsonObject) {
-		System.out.println(jsonObjectProperty.getKey() + ": " + jsonObjectProperty.getValue());
-		// abc: 1
-		// def: 2
-		// ghi: 3.0
+		System.out.println(jsonObjectProperty.getKey() + ": " + jsonArrayItem.getClass().getSimpleName() + ": " + jsonObjectProperty.getValue());
+		// abc: String: 1
+		// def: Integer: 2
+		// ghi: Float: 3.0
 	}
 } catch (final Exception e) {
 	e.printStackTrace();
