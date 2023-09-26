@@ -4,8 +4,6 @@ Read and write JSON data from and to files or streams.
 Validation by JsonSchema (see http://json-schema.org for specifications).  
 Sequential read of JsonArray items (like SAX parser for XML data).  
 
-For simple examples see test class "de.soderer.utilities.json.JsonTest".  
-
 ## JsonObject with JsonWriter and JsonReader example
 ```
 JsonWriter writer = null;
@@ -82,6 +80,8 @@ try {
 	Utilities.closeQuietly(reader);
 }
 ```
+
+For other simple examples see test class "de.soderer.utilities.json.JsonTest" (https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/utilities/json/JsonTest.java).  
   
 ## Maven2 repository
 This library is also available via Maven2 repository
