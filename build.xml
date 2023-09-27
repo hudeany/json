@@ -23,7 +23,7 @@
 		<mkdir dir="${buildPath}/testbin" />
 	</target>
 
-	<target name="create_jar">
+	<target name="create_jar" depends="cleanup_before">
 		<javac debug="true" nowarn="true" deprecation="false" destdir="${buildPath}/bin" fork="yes" source="1.8" target="1.8" srcdir="src/main/java" includeantruntime="false" encoding="UTF-8" />
 		
 		<copy todir="${buildPath}/bin">
