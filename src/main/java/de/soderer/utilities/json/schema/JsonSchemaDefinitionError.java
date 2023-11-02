@@ -3,21 +3,21 @@ package de.soderer.utilities.json.schema;
 public class JsonSchemaDefinitionError extends Exception {
 	private static final long serialVersionUID = 571902904309032324L;
 
-	private final String jsonSchemaPath;
+	private final JsonSchemaPath jsonSchemaPath;
 
-	public JsonSchemaDefinitionError(final String message, final String jsonSchemaPath) {
+	public JsonSchemaDefinitionError(final String message, final JsonSchemaPath jsonSchemaPath) {
 		super(message);
 
 		this.jsonSchemaPath = jsonSchemaPath;
 	}
 
-	public JsonSchemaDefinitionError(final String message, final String jsonSchemaPath, final Exception e) {
+	public JsonSchemaDefinitionError(final String message, final JsonSchemaPath jsonSchemaPath, final Exception e) {
 		super(message, e);
 
 		this.jsonSchemaPath = jsonSchemaPath;
 	}
 
-	public String getJsonSchemaPath() {
+	public JsonSchemaPath getJsonSchemaPath() {
 		return jsonSchemaPath;
 	}
 

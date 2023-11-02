@@ -171,7 +171,7 @@ public class BasicReader implements Closeable {
 					final int value = Integer.parseInt(unicode.toString(), 16);
 					currentChar = (char) value;
 				} else {
-					throw new Exception("Invalid escape sequence at character: " + getReadCharacters());
+					throw new Exception("Invalid escape sequence at character: " + getReadCharacters() + " ('" + currentChar + "')");
 				}
 				returnValue.append(currentChar);
 			}

@@ -6,13 +6,15 @@ import java.util.Map.Entry;
 import de.soderer.utilities.json.JsonArray;
 import de.soderer.utilities.json.JsonNode;
 import de.soderer.utilities.json.JsonObject;
+import de.soderer.utilities.json.path.JsonPath;
 import de.soderer.utilities.json.schema.JsonSchema;
 import de.soderer.utilities.json.schema.JsonSchemaDataValidationError;
 import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
+import de.soderer.utilities.json.schema.JsonSchemaPath;
 
 public class DependenciesValidator extends BaseJsonSchemaValidator {
-	public DependenciesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final String jsonSchemaPath, final Object validatorData, final JsonNode jsonNode, final String jsonPath) throws JsonSchemaDefinitionError {
+	public DependenciesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData, final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData, jsonNode, jsonPath);
 
 		if (validatorData == null) {
@@ -23,7 +25,7 @@ public class DependenciesValidator extends BaseJsonSchemaValidator {
 	}
 
 	@Override
-	public void validate() throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+	public void validate() throws Exception {
 		if (!jsonNode.isJsonObject()) {
 			if (!jsonSchemaDependencyResolver.isUseDraftV4Mode()) {
 				throw new JsonSchemaDataValidationError("Expected a 'object' value for dependency but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);

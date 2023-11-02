@@ -1,23 +1,25 @@
 package de.soderer.utilities.json.schema;
 
+import de.soderer.utilities.json.path.JsonPath;
+
 public class JsonSchemaDataValidationError extends Exception {
 	private static final long serialVersionUID = -4849599671599546633L;
 
-	private final String jsonDataPath;
+	private final JsonPath jsonDataPath;
 
-	public JsonSchemaDataValidationError(final String message, final String jsonDataPath) {
+	public JsonSchemaDataValidationError(final String message, final JsonPath jsonDataPath) {
 		super(message);
 
 		this.jsonDataPath = jsonDataPath;
 	}
 
-	public JsonSchemaDataValidationError(final String message, final String jsonDataPath, final Exception e) {
+	public JsonSchemaDataValidationError(final String message, final JsonPath jsonDataPath, final Exception e) {
 		super(message, e);
 
 		this.jsonDataPath = jsonDataPath;
 	}
 
-	public String getJsonDataPath() {
+	public JsonPath getJsonDataPath() {
 		return jsonDataPath;
 	}
 

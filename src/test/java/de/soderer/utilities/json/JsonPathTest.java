@@ -3,6 +3,8 @@ package de.soderer.utilities.json;
 import org.junit.Assert;
 import org.junit.Test;
 
+import de.soderer.utilities.json.path.JsonPath;
+
 @SuppressWarnings("static-method")
 public class JsonPathTest {
 	@Test
@@ -57,7 +59,7 @@ public class JsonPathTest {
 
 	@Test
 	public void test6() throws Exception {
-		final JsonPath jsonPath = new JsonPath().appendPropertyKey("abc").appendPropertyKey("def").appendArrayIndex(70);
+		final JsonPath jsonPath = new JsonPath("$").addPropertyKey("abc").addPropertyKey("def").addArrayIndex(70);
 		Assert.assertEquals("$.abc.def[70]", jsonPath.getDotFormattedPath());
 		Assert.assertEquals("$['abc']['def'][70]", jsonPath.getBracketFormattedPath());
 		try {
@@ -70,7 +72,7 @@ public class JsonPathTest {
 
 	@Test
 	public void test7() throws Exception {
-		final JsonPath jsonPath = new JsonPath().appendPropertyKey("abc").appendPropertyKey("def");
+		final JsonPath jsonPath = new JsonPath("$").addPropertyKey("abc").addPropertyKey("def");
 		Assert.assertEquals("$.abc.def", jsonPath.getDotFormattedPath());
 		Assert.assertEquals("$['abc']['def']", jsonPath.getBracketFormattedPath());
 		Assert.assertEquals("#/abc/def", jsonPath.getReferenceFormattedPath());

@@ -6,13 +6,15 @@ import java.util.regex.Pattern;
 
 import de.soderer.utilities.json.JsonNode;
 import de.soderer.utilities.json.JsonObject;
+import de.soderer.utilities.json.path.JsonPath;
 import de.soderer.utilities.json.schema.JsonSchema;
 import de.soderer.utilities.json.schema.JsonSchemaDataValidationError;
 import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
+import de.soderer.utilities.json.schema.JsonSchemaPath;
 
 public class PatternPropertiesValidator extends BaseJsonSchemaValidator {
-	public PatternPropertiesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final String jsonSchemaPath, final Object validatorData, final JsonNode jsonNode, final String jsonPath) throws JsonSchemaDefinitionError {
+	public PatternPropertiesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData, final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData, jsonNode, jsonPath);
 
 		if (validatorData == null) {
@@ -23,7 +25,7 @@ public class PatternPropertiesValidator extends BaseJsonSchemaValidator {
 	}
 
 	@Override
-	public void validate() throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+	public void validate() throws Exception {
 		if (!(jsonNode.isJsonObject())) {
 			if (!jsonSchemaDependencyResolver.isUseDraftV4Mode()) {
 				throw new JsonSchemaDataValidationError("Expected data type 'object' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
@@ -46,9 +48,9 @@ public class PatternPropertiesValidator extends BaseJsonSchemaValidator {
 							try {
 								nextJsonNode = new JsonNode(propertyEntry.getValue());
 							} catch (final Exception e) {
-								throw new JsonSchemaDataValidationError("Invalid property data type was '" + propertyEntry.getValue().getClass().getSimpleName() + "'", jsonPath + "." + propertyEntry.getKey(), e);
+								throw new JsonSchemaDataValidationError("Invalid property data type was '" + propertyEntry.getValue().getClass().getSimpleName() + "'", new JsonPath(jsonPath).addPropertyKey(propertyEntry.getKey()), e);
 							}
-							final List<BaseJsonSchemaValidator> subValidators = JsonSchema.createValidators(((JsonObject) entry.getValue()), jsonSchemaDependencyResolver, jsonSchemaPath + "." + propertyEntry.getKey(), nextJsonNode, jsonPath + "." + propertyEntry.getKey());
+							final List<BaseJsonSchemaValidator> subValidators = JsonSchema.createValidators(((JsonObject) entry.getValue()), jsonSchemaDependencyResolver, new JsonSchemaPath(jsonSchemaPath).addPropertyKey(propertyEntry.getKey()), nextJsonNode, new JsonPath(jsonPath).addPropertyKey(propertyEntry.getKey()));
 							for (final BaseJsonSchemaValidator subValidator : subValidators) {
 								subValidator.validate();
 							}

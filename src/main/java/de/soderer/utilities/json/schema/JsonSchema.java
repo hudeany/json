@@ -11,6 +11,7 @@ import de.soderer.utilities.json.Json5Reader;
 import de.soderer.utilities.json.JsonNode;
 import de.soderer.utilities.json.JsonObject;
 import de.soderer.utilities.json.JsonReader;
+import de.soderer.utilities.json.path.JsonPath;
 import de.soderer.utilities.json.schema.validator.AdditionalPropertiesValidator;
 import de.soderer.utilities.json.schema.validator.AllOfValidator;
 import de.soderer.utilities.json.schema.validator.AnyOfValidator;
@@ -69,9 +70,10 @@ public class JsonSchema {
 	 * <br />
 	 * The default mode uses a slightly more strict JSON schema definition.<br />
 	 * This is useful in detection of schema definition errors.<br />
-	 * Nontheless you can switch to the Draf V4 standard behaviour<br />
+	 * Nontheless you can switch to the Draft V4 standard behaviour<br />
+	 * @throws Exception
 	 */
-	public JsonSchema(final InputStream jsonSchemaInputStream) throws JsonSchemaDefinitionError {
+	public JsonSchema(final InputStream jsonSchemaInputStream) throws Exception {
 		this(jsonSchemaInputStream, StandardCharsets.UTF_8, false);
 	}
 
@@ -80,9 +82,10 @@ public class JsonSchema {
 	 * <br />
 	 * The default mode uses a slightly more strict JSON schema definition.<br />
 	 * This is useful in detection of schema definition errors.<br />
-	 * Nontheless you can switch to the Draf V4 standard behaviour<br />
+	 * Nontheless you can switch to the Draft V4 standard behaviour<br />
+	 * @throws Exception
 	 */
-	public JsonSchema(final InputStream jsonSchemaInputStream, final Charset encoding) throws JsonSchemaDefinitionError {
+	public JsonSchema(final InputStream jsonSchemaInputStream, final Charset encoding) throws Exception {
 		this(jsonSchemaInputStream, encoding, false);
 	}
 
@@ -91,9 +94,10 @@ public class JsonSchema {
 	 * <br />
 	 * The default mode uses a slightly more strict JSON schema definition.<br />
 	 * This is useful in detection of schema definition errors.<br />
-	 * Nontheless you can switch to the Draf V4 standard behaviour<br />
+	 * Nontheless you can switch to the Draft V4 standard behaviour<br />
+	 * @throws Exception
 	 */
-	public JsonSchema(final InputStream jsonSchemaInputStream, final boolean useDraftV4Mode) throws JsonSchemaDefinitionError {
+	public JsonSchema(final InputStream jsonSchemaInputStream, final boolean useDraftV4Mode) throws Exception {
 		this(jsonSchemaInputStream, StandardCharsets.UTF_8, useDraftV4Mode);
 	}
 
@@ -102,9 +106,10 @@ public class JsonSchema {
 	 * <br />
 	 * The default mode uses a slightly more strict JSON schema definition.<br />
 	 * This is useful in detection of schema definition errors.<br />
-	 * Nontheless you can switch to the Draf V4 standard behaviour<br />
+	 * Nontheless you can switch to the Draft V4 standard behaviour<br />
+	 * @throws Exception
 	 */
-	public JsonSchema(final InputStream jsonSchemaInputStream, final Charset encoding, final boolean useDraftV4Mode) throws JsonSchemaDefinitionError {
+	public JsonSchema(final InputStream jsonSchemaInputStream, final Charset encoding, final boolean useDraftV4Mode) throws Exception {
 		JsonNode jsonNode;
 		try (JsonReader jsonReader = new Json5Reader(jsonSchemaInputStream, encoding)) {
 			jsonNode = jsonReader.read();
@@ -118,7 +123,7 @@ public class JsonSchema {
 			readSchemaData((JsonObject) jsonNode.getValue());
 			jsonSchemaDependencyResolver.setUseDraftV4Mode(useDraftV4Mode);
 		} else {
-			throw new JsonSchemaDefinitionError("Does not contain JsonObject", "$");
+			throw new JsonSchemaDefinitionError("Does not contain JsonObject", new JsonSchemaPath());
 		}
 	}
 
@@ -127,9 +132,10 @@ public class JsonSchema {
 	 * <br />
 	 * The default mode uses a slightly more strict JSON schema definition.<br />
 	 * This is useful in detection of schema definition errors.<br />
-	 * Nontheless you can switch to the Draf V4 standard behaviour<br />
+	 * Nontheless you can switch to the Draft V4 standard behaviour<br />
+	 * @throws Exception
 	 */
-	public JsonSchema(final JsonObject jsonSchemaDefinition) throws JsonSchemaDefinitionError {
+	public JsonSchema(final JsonObject jsonSchemaDefinition) throws Exception {
 		this(jsonSchemaDefinition, false);
 	}
 
@@ -138,14 +144,15 @@ public class JsonSchema {
 	 * <br />
 	 * The default mode uses a slightly more strict JSON schema definition.<br />
 	 * This is useful in detection of schema definition errors.<br />
-	 * Nontheless you can switch to the Draf V4 standard behaviour<br />
+	 * Nontheless you can switch to the Draft V4 standard behaviour<br />
+	 * @throws Exception
 	 */
-	public JsonSchema(final JsonObject jsonSchemaDefinition, final boolean useDraftV4Mode) throws JsonSchemaDefinitionError {
+	public JsonSchema(final JsonObject jsonSchemaDefinition, final boolean useDraftV4Mode) throws Exception {
 		readSchemaData(jsonSchemaDefinition);
 		jsonSchemaDependencyResolver.setUseDraftV4Mode(useDraftV4Mode);
 	}
 
-	private void readSchemaData(final JsonObject jsonSchemaDefinitionObject) throws JsonSchemaDefinitionError {
+	private void readSchemaData(final JsonObject jsonSchemaDefinitionObject) throws Exception {
 		if (jsonSchemaDefinitionObject == null) {
 			throw new JsonSchemaDefinitionError("Contains null data", null);
 		} else {
@@ -154,9 +161,9 @@ public class JsonSchema {
 
 		if (jsonSchemaDefinitionObject.containsPropertyKey("id")) {
 			if (jsonSchemaDefinitionObject.get("id") == null) {
-				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key 'id'", "$");
+				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key 'id'", new JsonSchemaPath());
 			} else if (!(jsonSchemaDefinitionObject.get("id") instanceof String)) {
-				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("id").getClass().getSimpleName() + "' for key 'id'", "$");
+				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("id").getClass().getSimpleName() + "' for key 'id'", new JsonSchemaPath());
 			} else {
 				id = (String) jsonSchemaDefinitionObject.get("id");
 			}
@@ -164,9 +171,9 @@ public class JsonSchema {
 
 		if (jsonSchemaDefinitionObject.containsPropertyKey("$schema")) {
 			if (jsonSchemaDefinitionObject.get("$schema") == null) {
-				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key '$schema'", "$");
+				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key '$schema'", new JsonSchemaPath());
 			} else if (!(jsonSchemaDefinitionObject.get("$schema") instanceof String)) {
-				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("$schema").getClass().getSimpleName() + "' for key '$schema'", "$");
+				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("$schema").getClass().getSimpleName() + "' for key '$schema'", new JsonSchemaPath());
 			} else {
 				schemaVersionUrl = (String) jsonSchemaDefinitionObject.get("$schema");
 			}
@@ -174,9 +181,9 @@ public class JsonSchema {
 
 		if (jsonSchemaDefinitionObject.containsPropertyKey("title")) {
 			if (jsonSchemaDefinitionObject.get("title") == null) {
-				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key 'title'", "$");
+				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key 'title'", new JsonSchemaPath());
 			} else if (!(jsonSchemaDefinitionObject.get("title") instanceof String)) {
-				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("title").getClass().getSimpleName() + "' for key 'title'", "$");
+				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("title").getClass().getSimpleName() + "' for key 'title'", new JsonSchemaPath());
 			} else {
 				title = (String) jsonSchemaDefinitionObject.get("title");
 			}
@@ -184,9 +191,9 @@ public class JsonSchema {
 
 		if (jsonSchemaDefinitionObject.containsPropertyKey("description")) {
 			if (jsonSchemaDefinitionObject.get("description") == null) {
-				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key 'description'", "$");
+				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key 'description'", new JsonSchemaPath());
 			} else if (!(jsonSchemaDefinitionObject.get("description") instanceof String)) {
-				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("title").getClass().getSimpleName() + "' for key 'description'", "$");
+				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("title").getClass().getSimpleName() + "' for key 'description'", new JsonSchemaPath());
 			} else {
 				description = (String) jsonSchemaDefinitionObject.get("description");
 			}
@@ -230,30 +237,30 @@ public class JsonSchema {
 		return description;
 	}
 
-	public JsonNode validate(final InputStream jsonDataInputStream, final Charset encoding) throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+	public JsonNode validate(final InputStream jsonDataInputStream, final Charset encoding) throws Exception {
 		JsonNode jsonDataNode;
 		try (JsonReader jsonReader = new Json5Reader(jsonDataInputStream, encoding)) {
 			jsonDataNode = jsonReader.read();
 		} catch (final Exception e) {
-			throw new JsonSchemaDataValidationError("Cannot read JSON data: " + e.getMessage(), "");
+			throw new JsonSchemaDataValidationError("Cannot read JSON data: " + e.getMessage(), new JsonPath());
 		}
 
-		final List<BaseJsonSchemaValidator> validators = createValidators(jsonSchemaDefinition, jsonSchemaDependencyResolver, "$", jsonDataNode, "$");
+		final List<BaseJsonSchemaValidator> validators = createValidators(jsonSchemaDefinition, jsonSchemaDependencyResolver, new JsonSchemaPath(), jsonDataNode, new JsonPath());
 		for (final BaseJsonSchemaValidator validator : validators) {
 			validator.validate();
 		}
 		return jsonDataNode;
 	}
 
-	public JsonNode validate(final InputStream jsonDataInputStream) throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+	public JsonNode validate(final InputStream jsonDataInputStream) throws Exception {
 		JsonNode jsonDataNode;
 		try (JsonReader jsonReader = new Json5Reader(jsonDataInputStream)) {
 			jsonDataNode = jsonReader.read();
 		} catch (final Exception e) {
-			throw new JsonSchemaDataValidationError("Cannot read JSON data: " + e.getMessage(), "");
+			throw new JsonSchemaDataValidationError("Cannot read JSON data: " + e.getMessage(), new JsonPath());
 		}
 
-		final List<BaseJsonSchemaValidator> validators = createValidators(jsonSchemaDefinition, jsonSchemaDependencyResolver, "$", jsonDataNode, "$");
+		final List<BaseJsonSchemaValidator> validators = createValidators(jsonSchemaDefinition, jsonSchemaDependencyResolver, new JsonSchemaPath(), jsonDataNode, new JsonPath());
 		for (final BaseJsonSchemaValidator validator : validators) {
 			validator.validate();
 		}
@@ -263,87 +270,87 @@ public class JsonSchema {
 	public void validate(final Object jsonData) throws Exception {
 		final JsonNode jsonDataNode = new JsonNode(jsonData);
 
-		final List<BaseJsonSchemaValidator> validators = createValidators(jsonSchemaDefinition, jsonSchemaDependencyResolver, "$", jsonDataNode, "$");
+		final List<BaseJsonSchemaValidator> validators = createValidators(jsonSchemaDefinition, jsonSchemaDependencyResolver, new JsonSchemaPath(), jsonDataNode, new JsonPath());
 		for (final BaseJsonSchemaValidator validator : validators) {
 			validator.validate();
 		}
 	}
 
-	public static List<BaseJsonSchemaValidator> createValidators(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final String currentJsonSchemaPath, final JsonNode jsonNode, final String currentJsonPath) throws JsonSchemaDefinitionError {
+	public static List<BaseJsonSchemaValidator> createValidators(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath currentJsonSchemaPath, final JsonNode jsonNode, final JsonPath currentJsonPath) throws Exception {
 		final List<BaseJsonSchemaValidator> validators = new ArrayList<>();
 		for (final Entry<String, Object> entry : jsonSchemaDefinitionObject.entrySet()) {
 			switch (entry.getKey()) {
 				case "type":
-					validators.add(new TypeValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new TypeValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "properties":
-					validators.add(new PropertiesValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new PropertiesValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "patternProperties":
-					validators.add(new PatternPropertiesValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new PatternPropertiesValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "additionalProperties":
-					validators.add(new AdditionalPropertiesValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new AdditionalPropertiesValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "required":
-					validators.add(new RequiredValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new RequiredValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "minProperties":
-					validators.add(new MinPropertiesValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new MinPropertiesValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "maxProperties":
-					validators.add(new MaxPropertiesValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new MaxPropertiesValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "items":
-					validators.add(new ItemsValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new ItemsValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "minItems":
-					validators.add(new MinItemsValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new MinItemsValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "maxItems":
-					validators.add(new MaxItemsValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new MaxItemsValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "minLength":
-					validators.add(new MinLengthValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new MinLengthValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "maxLength":
-					validators.add(new MaxLengthValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new MaxLengthValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "uniqueItems":
-					validators.add(new UniqueItemsValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new UniqueItemsValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "minimum":
-					validators.add(new MinimumValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new MinimumValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "maximum":
-					validators.add(new MaximumValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new MaximumValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "multipleOf":
-					validators.add(new MultipleOfValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new MultipleOfValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "anyOf":
-					validators.add(new AnyOfValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new AnyOfValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "allOf":
-					validators.add(new AllOfValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new AllOfValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "oneOf":
-					validators.add(new OneOfValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new OneOfValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "not":
-					validators.add(new NotValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new NotValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "enum":
-					validators.add(new EnumValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new EnumValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "format":
-					validators.add(new FormatValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new FormatValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "pattern":
-					validators.add(new PatternValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new PatternValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "dependencies":
-					validators.add(new DependenciesValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new DependenciesValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 
 				case "exclusiveMinimum":
@@ -366,24 +373,24 @@ public class JsonSchema {
 					break;
 
 				case "$ref":
-					validators.add(new ReferenceValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath + "." + entry.getKey(), entry.getValue(), jsonNode, currentJsonPath));
+					validators.add(new ReferenceValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(parseJsonSchemaReference(jsonSchemaDependencyResolver, (String) entry.getValue(), currentJsonSchemaPath).toString()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 
 				case "id":
 					// id should be a descriptive url
-					if (!"$".equals(currentJsonSchemaPath) && !currentJsonSchemaPath.endsWith("#")) {
+					if (!currentJsonSchemaPath.isRoot()) {
 						throw new JsonSchemaDefinitionError("JSON schema 'id' must be defined on top level of JSON schema", currentJsonSchemaPath);
 					}
 					break;
 				case "$schema":
 					// $schema should be a descriptive url
-					if (!"$".equals(currentJsonSchemaPath) && !currentJsonSchemaPath.endsWith("#")) {
+					if (!currentJsonSchemaPath.isRoot()) {
 						throw new JsonSchemaDefinitionError("JSON schema '$schema' must be defined on top level of JSON schema", currentJsonSchemaPath);
 					}
 					break;
 				case "definitions":
 					// Defined JSON schema definitions
-					if (!"$".equals(currentJsonSchemaPath) && !currentJsonSchemaPath.endsWith("#")) {
+					if (!currentJsonSchemaPath.isRoot()) {
 						throw new JsonSchemaDefinitionError("JSON schema 'definitions' must be defined on top level of JSON schema", currentJsonSchemaPath);
 					}
 					break;
@@ -410,5 +417,28 @@ public class JsonSchema {
 			}
 		}
 		return validators;
+	}
+
+	private static JsonSchemaPathElement parseJsonSchemaReference(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final String referenceValue, final JsonSchemaPath jsonSchemaPath) throws Exception {
+		if (referenceValue.startsWith("#")) {
+			return new JsonSchemaPathInternalReference(referenceValue);
+		} else if (referenceValue.contains("#")) {
+			final String schemaLocation = referenceValue.substring(0, referenceValue.indexOf("#"));
+			final String referenceString = referenceValue.substring(referenceValue.indexOf("#"));
+			return new JsonSchemaPathExternalReference(schemaLocation, referenceString);
+		} else {
+			if (jsonSchemaDependencyResolver != null) {
+				final String schemaName = jsonSchemaDependencyResolver.getSchemaContainingReference(referenceValue, jsonSchemaPath);
+				if (schemaName == null) {
+					throw new JsonSchemaDefinitionError("Invalid schema reference: " + referenceValue, jsonSchemaPath);
+				} else if ("#".equals(schemaName)) {
+					return new JsonSchemaPathInternalReference(referenceValue);
+				} else {
+					return new JsonSchemaPathExternalReference(schemaName, referenceValue);
+				}
+			} else {
+				throw new JsonSchemaDefinitionError("Invalid schema reference: " + referenceValue, jsonSchemaPath);
+			}
+		}
 	}
 }
