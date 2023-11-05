@@ -15,6 +15,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 import de.soderer.utilities.json.schema.JsonSchema;
+import de.soderer.utilities.json.schema.JsonSchemaVersion;
 import de.soderer.utilities.json.utilities.Utilities;
 
 public class JsonUtilities {
@@ -228,12 +229,32 @@ public class JsonUtilities {
 		return jsonSchema.validate(new ByteArrayInputStream(jsonData), encoding);
 	}
 
-	public static JsonNode validateJsonSchema(final byte[] jsonData, final Charset encoding) throws Exception {
+	/**
+	 * Check for a valid JSON schema definition.
+	 *
+	 * @param jsonSchemaData
+	 * @param encoding
+	 * @return
+	 * @throws Exception
+	 */
+	public static JsonNode validateJsonSchema(final byte[] jsonSchemaData, final Charset encoding) throws Exception {
+		return validateJsonSchema(jsonSchemaData, encoding, JsonSchemaVersion.draftV7);
+	}
+
+	/**
+	 * Check for a valid JSON schema definition.
+	 *
+	 * @param jsonSchemaData
+	 * @param encoding
+	 * @return
+	 * @throws Exception
+	 */
+	public static JsonNode validateJsonSchema(final byte[] jsonSchemaData, final Charset encoding, final JsonSchemaVersion jsonSchemaVersion) throws Exception {
 		JsonSchema jsonSchema;
-		try (InputStream jsonSchemaInputStream = JsonSchema.class.getClassLoader().getResourceAsStream("json/JsonSchemaDescriptionDraftV4.json");) {
+		try (InputStream jsonSchemaInputStream = JsonSchema.class.getClassLoader().getResourceAsStream(jsonSchemaVersion.getLocalFile());) {
 			jsonSchema = new JsonSchema(jsonSchemaInputStream, encoding);
 		}
-		return jsonSchema.validate(new ByteArrayInputStream(jsonData), encoding);
+		return jsonSchema.validate(new ByteArrayInputStream(jsonSchemaData), encoding);
 	}
 
 	public static JsonNode validateJson(final byte[] jsonData, final Charset encoding) throws Exception {

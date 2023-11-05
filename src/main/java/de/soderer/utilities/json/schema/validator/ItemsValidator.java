@@ -24,7 +24,7 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 	@Override
 	public void validate() throws Exception {
 		if (!(jsonNode.isJsonArray())) {
-			if (!jsonSchemaDependencyResolver.isUseDraftV4Mode()) {
+			if (jsonSchemaDependencyResolver.isSimpleMode()) {
 				throw new JsonSchemaDataValidationError("Expected data type 'array' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {
@@ -44,7 +44,7 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 					}
 				}
 
-				if (parentValidatorData.containsPropertyKey("additionalItems") && !jsonSchemaDependencyResolver.isUseDraftV4Mode()) {
+				if (parentValidatorData.containsPropertyKey("additionalItems") && jsonSchemaDependencyResolver.isSimpleMode()) {
 					throw new JsonSchemaDefinitionError("'additionalItems' is only allowed for 'items' with 'array' data value", jsonSchemaPath);
 				}
 			} else if (validatorData instanceof JsonArray) {

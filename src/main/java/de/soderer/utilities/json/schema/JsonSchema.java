@@ -18,6 +18,8 @@ import de.soderer.utilities.json.schema.validator.AnyOfValidator;
 import de.soderer.utilities.json.schema.validator.BaseJsonSchemaValidator;
 import de.soderer.utilities.json.schema.validator.DependenciesValidator;
 import de.soderer.utilities.json.schema.validator.EnumValidator;
+import de.soderer.utilities.json.schema.validator.ExclusiveMaximumValidator;
+import de.soderer.utilities.json.schema.validator.ExclusiveMinimumValidator;
 import de.soderer.utilities.json.schema.validator.FormatValidator;
 import de.soderer.utilities.json.schema.validator.ItemsValidator;
 import de.soderer.utilities.json.schema.validator.MaxItemsValidator;
@@ -40,16 +42,20 @@ import de.soderer.utilities.json.schema.validator.TypeValidator;
 import de.soderer.utilities.json.schema.validator.UniqueItemsValidator;
 
 /**
- * JSON Schema Validator vor Draft Version v4<br />
+ * JSON Schema Validator vor Draft Version v4 / v6 / v7<br />
  * https://json-schema.org/draft-04/schema#<br />
+ * https://json-schema.org/draft-06/schema#<br />
+ * https://json-schema.org/draft-07/schema#<br />
  * <br />
- * For Validation of JSON schemas you may use the included file resource "JsonSchemaDescriptionDraftV4.json":<br />
+ * For Validation of JSON schemas you may use the included file resource "JsonSchemaDescriptionDraftVx.json":<br />
  * JsonSchema.class.getClassLoader().getResourceAsStream("json/JsonSchemaDescriptionDraftV4.json")<br />
+ * JsonSchema.class.getClassLoader().getResourceAsStream("json/JsonSchemaDescriptionDraftV6.json")<br />
+ * JsonSchema.class.getClassLoader().getResourceAsStream("json/JsonSchemaDescriptionDraftV7.json")<br />
  * <br />
  * For the JSON schema standard definition see:<br />
  * https://json-schema.org<br />
  * <br />
- * For examples and help an JSON schema creation see:<br />
+ * For examples and help on JSON schema creation see:<br />
  * https://spacetelescope.github.io<br />
  */
 public class JsonSchema {
@@ -57,59 +63,39 @@ public class JsonSchema {
 	 * Url describing the JSON schema standard and version a JSON schema was written for in compliance<br />
 	 * Example: "https://json-schema.org/schema#"
 	 */
-	private String schemaVersionUrl;
+	private String schemaVersionUrl = null;
 
-	private String id;
+	private String id = null;
 	private String title;
 	private String description;
 	private JsonObject jsonSchemaDefinition;
 	private JsonSchemaDependencyResolver jsonSchemaDependencyResolver;
 
 	/**
-	 * Draft V4 mode is NOT default mode<br />
-	 * <br />
-	 * The default mode uses a slightly more strict JSON schema definition.<br />
-	 * This is useful in detection of schema definition errors.<br />
-	 * Nontheless you can switch to the Draft V4 standard behaviour<br />
-	 * @throws Exception
+	 * Draft V7 mode is the default mode<br />
 	 */
 	public JsonSchema(final InputStream jsonSchemaInputStream) throws Exception {
-		this(jsonSchemaInputStream, StandardCharsets.UTF_8, false);
+		this(jsonSchemaInputStream, StandardCharsets.UTF_8, JsonSchemaVersion.draftV7);
 	}
 
 	/**
-	 * Draft V4 mode is NOT default mode<br />
-	 * <br />
-	 * The default mode uses a slightly more strict JSON schema definition.<br />
-	 * This is useful in detection of schema definition errors.<br />
-	 * Nontheless you can switch to the Draft V4 standard behaviour<br />
-	 * @throws Exception
+	 * Draft V7 mode is the default mode<br />
 	 */
 	public JsonSchema(final InputStream jsonSchemaInputStream, final Charset encoding) throws Exception {
-		this(jsonSchemaInputStream, encoding, false);
+		this(jsonSchemaInputStream, encoding, JsonSchemaVersion.draftV7);
 	}
 
 	/**
-	 * Draft V4 mode is NOT default mode<br />
-	 * <br />
-	 * The default mode uses a slightly more strict JSON schema definition.<br />
-	 * This is useful in detection of schema definition errors.<br />
-	 * Nontheless you can switch to the Draft V4 standard behaviour<br />
-	 * @throws Exception
+	 * Draft V7 mode is the default mode<br />
 	 */
-	public JsonSchema(final InputStream jsonSchemaInputStream, final boolean useDraftV4Mode) throws Exception {
-		this(jsonSchemaInputStream, StandardCharsets.UTF_8, useDraftV4Mode);
+	public JsonSchema(final InputStream jsonSchemaInputStream, final JsonSchemaVersion jsonSchemaVersion) throws Exception {
+		this(jsonSchemaInputStream, StandardCharsets.UTF_8, jsonSchemaVersion);
 	}
 
 	/**
-	 * Draft V4 mode is NOT default mode<br />
-	 * <br />
-	 * The default mode uses a slightly more strict JSON schema definition.<br />
-	 * This is useful in detection of schema definition errors.<br />
-	 * Nontheless you can switch to the Draft V4 standard behaviour<br />
-	 * @throws Exception
+	 * Draft V7 mode is the default mode<br />
 	 */
-	public JsonSchema(final InputStream jsonSchemaInputStream, final Charset encoding, final boolean useDraftV4Mode) throws Exception {
+	public JsonSchema(final InputStream jsonSchemaInputStream, final Charset encoding, final JsonSchemaVersion jsonSchemaVersion) throws Exception {
 		JsonNode jsonNode;
 		try (JsonReader jsonReader = new Json5Reader(jsonSchemaInputStream, encoding)) {
 			jsonNode = jsonReader.read();
@@ -121,35 +107,25 @@ public class JsonSchema {
 			throw new JsonSchemaDefinitionError("Contains null data", null);
 		} else if (jsonNode.isJsonObject()) {
 			readSchemaData((JsonObject) jsonNode.getValue());
-			jsonSchemaDependencyResolver.setUseDraftV4Mode(useDraftV4Mode);
+			jsonSchemaDependencyResolver.setJsonSchemaVersion(jsonSchemaVersion);
 		} else {
 			throw new JsonSchemaDefinitionError("Does not contain JsonObject", new JsonSchemaPath());
 		}
 	}
 
 	/**
-	 * Draft V4 mode is NOT default mode<br />
-	 * <br />
-	 * The default mode uses a slightly more strict JSON schema definition.<br />
-	 * This is useful in detection of schema definition errors.<br />
-	 * Nontheless you can switch to the Draft V4 standard behaviour<br />
-	 * @throws Exception
+	 * Draft V7 mode is the default mode<br />
 	 */
 	public JsonSchema(final JsonObject jsonSchemaDefinition) throws Exception {
-		this(jsonSchemaDefinition, false);
+		this(jsonSchemaDefinition, JsonSchemaVersion.draftV7);
 	}
 
 	/**
-	 * Draft V4 mode is NOT default mode<br />
-	 * <br />
-	 * The default mode uses a slightly more strict JSON schema definition.<br />
-	 * This is useful in detection of schema definition errors.<br />
-	 * Nontheless you can switch to the Draft V4 standard behaviour<br />
-	 * @throws Exception
+	 * Draft V7 mode is the default mode<br />
 	 */
-	public JsonSchema(final JsonObject jsonSchemaDefinition, final boolean useDraftV4Mode) throws Exception {
+	public JsonSchema(final JsonObject jsonSchemaDefinition, final JsonSchemaVersion jsonSchemaVersion) throws Exception {
 		readSchemaData(jsonSchemaDefinition);
-		jsonSchemaDependencyResolver.setUseDraftV4Mode(useDraftV4Mode);
+		jsonSchemaDependencyResolver.setJsonSchemaVersion(jsonSchemaVersion);
 	}
 
 	private void readSchemaData(final JsonObject jsonSchemaDefinitionObject) throws Exception {
@@ -164,8 +140,22 @@ public class JsonSchema {
 				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key 'id'", new JsonSchemaPath());
 			} else if (!(jsonSchemaDefinitionObject.get("id") instanceof String)) {
 				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("id").getClass().getSimpleName() + "' for key 'id'", new JsonSchemaPath());
+			} else if (id != null) {
+				throw new JsonSchemaDefinitionError("Invalid duplicate definition for JSON schema id by key 'id'", new JsonSchemaPath());
 			} else {
 				id = (String) jsonSchemaDefinitionObject.get("id");
+			}
+		}
+
+		if (jsonSchemaDefinitionObject.containsPropertyKey("$id")) {
+			if (jsonSchemaDefinitionObject.get("$id") == null) {
+				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key '$id'", new JsonSchemaPath());
+			} else if (!(jsonSchemaDefinitionObject.get("$id") instanceof String)) {
+				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("$id").getClass().getSimpleName() + "' for key '$id'", new JsonSchemaPath());
+			} else if (id != null) {
+				throw new JsonSchemaDefinitionError("Invalid duplicate definition for JSON schema id by key '$id'", new JsonSchemaPath());
+			} else {
+				id = (String) jsonSchemaDefinitionObject.get("$id");
 			}
 		}
 
@@ -174,6 +164,8 @@ public class JsonSchema {
 				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key '$schema'", new JsonSchemaPath());
 			} else if (!(jsonSchemaDefinitionObject.get("$schema") instanceof String)) {
 				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("$schema").getClass().getSimpleName() + "' for key '$schema'", new JsonSchemaPath());
+			} else if (schemaVersionUrl != null) {
+				throw new JsonSchemaDefinitionError("Invalid duplicate definition for JSON schema version url by key '$schema'", new JsonSchemaPath());
 			} else {
 				schemaVersionUrl = (String) jsonSchemaDefinitionObject.get("$schema");
 			}
@@ -184,6 +176,8 @@ public class JsonSchema {
 				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key 'title'", new JsonSchemaPath());
 			} else if (!(jsonSchemaDefinitionObject.get("title") instanceof String)) {
 				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("title").getClass().getSimpleName() + "' for key 'title'", new JsonSchemaPath());
+			} else if (title != null) {
+				throw new JsonSchemaDefinitionError("Invalid duplicate definition for JSON schema title url by key 'title'", new JsonSchemaPath());
 			} else {
 				title = (String) jsonSchemaDefinitionObject.get("title");
 			}
@@ -193,7 +187,9 @@ public class JsonSchema {
 			if (jsonSchemaDefinitionObject.get("description") == null) {
 				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key 'description'", new JsonSchemaPath());
 			} else if (!(jsonSchemaDefinitionObject.get("description") instanceof String)) {
-				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("title").getClass().getSimpleName() + "' for key 'description'", new JsonSchemaPath());
+				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("description").getClass().getSimpleName() + "' for key 'description'", new JsonSchemaPath());
+			} else if (description != null) {
+				throw new JsonSchemaDefinitionError("Invalid duplicate definition for JSON schema description by key 'description'", new JsonSchemaPath());
 			} else {
 				description = (String) jsonSchemaDefinitionObject.get("description");
 			}
@@ -355,19 +351,27 @@ public class JsonSchema {
 
 				case "exclusiveMinimum":
 					// Do nothing, because this is validated by MinimumValidator, too
-					if (!jsonSchemaDefinitionObject.containsPropertyKey("minimum")) {
+					// Value must be of boolean type and "minimum" value item must exist in simpleMode and draft v4.
+					if ((jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV4Mode())
+							&& !jsonSchemaDefinitionObject.containsPropertyKey("minimum")) {
 						throw new JsonSchemaDefinitionError("Missing 'minimum' rule for 'exclusiveMinimum'", currentJsonSchemaPath);
+					} else if (!jsonSchemaDependencyResolver.isSimpleMode() && !jsonSchemaDependencyResolver.isDraftV4Mode()) {
+						validators.add(new ExclusiveMinimumValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					}
 					break;
 				case "exclusiveMaximum":
 					// Do nothing, because this is validated by MaximumValidator, too
-					if (!jsonSchemaDefinitionObject.containsPropertyKey("maximum")) {
+					// Value must be of boolean type and "maximum" value item must exist in simpleMode and draft v4.
+					if ((jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV4Mode())
+							&& !jsonSchemaDefinitionObject.containsPropertyKey("maximum")) {
 						throw new JsonSchemaDefinitionError("Missing 'maximum' rule for 'exclusiveMaximum'", currentJsonSchemaPath);
+					} else if (!jsonSchemaDependencyResolver.isSimpleMode() && !jsonSchemaDependencyResolver.isDraftV4Mode()) {
+						validators.add(new ExclusiveMaximumValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					}
 					break;
 				case "additionalItems":
 					// Do nothing, because this is validated by ItemsValidator, too
-					if (!jsonSchemaDefinitionObject.containsPropertyKey("items") && !jsonSchemaDependencyResolver.isUseDraftV4Mode()) {
+					if (!jsonSchemaDefinitionObject.containsPropertyKey("items") && jsonSchemaDependencyResolver.isSimpleMode()) {
 						throw new JsonSchemaDefinitionError("Missing 'items' rule for 'additionalItems'", currentJsonSchemaPath);
 					}
 					break;
@@ -377,9 +381,21 @@ public class JsonSchema {
 					break;
 
 				case "id":
-					// id should be a descriptive url
+					if (!jsonSchemaDependencyResolver.isSimpleMode() && !jsonSchemaDependencyResolver.isDraftV4Mode()) {
+						throw new JsonSchemaDefinitionError("JSON schema 'id' on top level of JSON schema is only allowed for JSON schema versions draft v4 and lower", currentJsonSchemaPath);
+					}
+					// $id should be a descriptive url
 					if (!currentJsonSchemaPath.isRoot()) {
 						throw new JsonSchemaDefinitionError("JSON schema 'id' must be defined on top level of JSON schema", currentJsonSchemaPath);
+					}
+					break;
+				case "$id":
+					if (jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV4Mode()) {
+						throw new JsonSchemaDefinitionError("JSON schema '$id' on top level of JSON schema is only allowed for JSON schema versions draft v6 and higher", currentJsonSchemaPath);
+					}
+					// $id should be a descriptive url
+					if (!currentJsonSchemaPath.isRoot()) {
+						throw new JsonSchemaDefinitionError("JSON schema '$id' must be defined on top level of JSON schema", currentJsonSchemaPath);
 					}
 					break;
 				case "$schema":
@@ -398,7 +414,7 @@ public class JsonSchema {
 				case "title":
 					// Descriptive title
 					if (!(entry.getValue() instanceof String)) {
-						throw new JsonSchemaDefinitionError("Invalid data type '" + entry.getValue().getClass().getSimpleName() + "' for key 'description'", currentJsonSchemaPath);
+						throw new JsonSchemaDefinitionError("Invalid data type '" + entry.getValue().getClass().getSimpleName() + "' for key 'title'", currentJsonSchemaPath);
 					}
 					break;
 				case "description":
@@ -411,7 +427,7 @@ public class JsonSchema {
 					// Default value for processing the given JSON data, which is irrelevant for validation
 					break;
 				default:
-					if (!jsonSchemaDependencyResolver.isUseDraftV4Mode()) {
+					if (jsonSchemaDependencyResolver.isSimpleMode()) {
 						throw new JsonSchemaDefinitionError("Unexpected data key '" + entry.getKey() + "'", currentJsonSchemaPath);
 					}
 			}

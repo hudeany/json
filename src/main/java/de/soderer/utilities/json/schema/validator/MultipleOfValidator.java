@@ -29,7 +29,7 @@ public class MultipleOfValidator extends BaseJsonSchemaValidator {
 	@Override
 	public void validate() throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
 		if (!(jsonNode.isNumber())) {
-			if (!jsonSchemaDependencyResolver.isUseDraftV4Mode()) {
+			if (jsonSchemaDependencyResolver.isSimpleMode()) {
 				throw new JsonSchemaDataValidationError("Expected data type 'number' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {

@@ -71,8 +71,28 @@ public class TypeValidator extends BaseJsonSchemaValidator {
 					throw new JsonSchemaDefinitionError("Invalid JSON data type '" + validatorData + "'", jsonSchemaPath, e);
 				}
 
-				if (jsonNode.getJsonDataType() != jsonDataType && !(jsonDataType == JsonDataType.NUMBER && jsonNode.getJsonDataType() == JsonDataType.INTEGER)) {
-					throw new JsonSchemaDataValidationError("Expected data type is '" + (String) validatorData + "' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
+				if (jsonNode.getJsonDataType() != jsonDataType) {
+					if (jsonDataType == JsonDataType.NUMBER) {
+						// Integer datatype is a sub type of number
+						if (jsonNode.getJsonDataType() != JsonDataType.INTEGER) {
+							throw new JsonSchemaDataValidationError("Expected data type is '" + (String) validatorData + "' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
+						}
+					} else if (jsonDataType == JsonDataType.INTEGER && jsonNode.getJsonDataType() == JsonDataType.NUMBER) {
+						// In JSON schema draft v6+ a float value with zero fraction is also allowed as integer, although it is NOT recommended
+						if (jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV4Mode()) {
+							throw new JsonSchemaDataValidationError("Expected data type is '" + (String) validatorData + "' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
+						} else {
+							String stringRepresentation =((Number) jsonNode.getValue()).toString();
+							while (stringRepresentation.contains(".0")) {
+								stringRepresentation = stringRepresentation.replace(".0", ".");
+							}
+							if (stringRepresentation.contains(".") && stringRepresentation.indexOf(".") != stringRepresentation.length() - 1) {
+								throw new JsonSchemaDataValidationError("Expected data type is '" + (String) validatorData + "' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
+							}
+						}
+					} else {
+						throw new JsonSchemaDataValidationError("Expected data type is '" + (String) validatorData + "' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
+					}
 				}
 			}
 		}

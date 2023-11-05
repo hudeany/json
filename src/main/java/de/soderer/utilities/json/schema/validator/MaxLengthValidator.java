@@ -27,7 +27,7 @@ public class MaxLengthValidator extends BaseJsonSchemaValidator {
 	@Override
 	public void validate() throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
 		if (!(jsonNode.isString())) {
-			if (!jsonSchemaDependencyResolver.isUseDraftV4Mode()) {
+			if (jsonSchemaDependencyResolver.isSimpleMode()) {
 				throw new JsonSchemaDataValidationError("Expected data type 'string' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {

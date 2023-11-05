@@ -24,13 +24,9 @@ public class JsonSchemaDependencyResolver {
 	private final Map<String, JsonObject> additionalSchemaDocumentNodes = new HashMap<>();
 
 	/**
-	 * Draft V4 mode is NOT default mode<br />
-	 * <br />
-	 * The default mode uses a slightly more strict JSON schema definition.<br />
-	 * This is useful in detection of schema definition errors.<br />
-	 * Nontheless you can switch to the Draf V4 standard behaviour<br />
+	 * Draft V7 mode is the default mode<br />
 	 */
-	private boolean useDraftV4Mode = false;
+	private JsonSchemaVersion jsonSchemaVersion = JsonSchemaVersion.draftV7;
 
 	private boolean downloadReferencedSchemas = false;
 
@@ -276,12 +272,24 @@ public class JsonSchemaDependencyResolver {
 		}
 	}
 
-	public void setUseDraftV4Mode(final boolean useDraftV4Mode) {
-		this.useDraftV4Mode = useDraftV4Mode;
+	public void setJsonSchemaVersion(final JsonSchemaVersion jsonSchemaVersion) {
+		this.jsonSchemaVersion = jsonSchemaVersion;
 	}
 
-	public boolean isUseDraftV4Mode() {
-		return useDraftV4Mode;
+	public boolean isSimpleMode() {
+		return jsonSchemaVersion == null;
+	}
+
+	public boolean isDraftV4Mode() {
+		return jsonSchemaVersion == JsonSchemaVersion.draftV4;
+	}
+
+	public boolean isDraftV6Mode() {
+		return jsonSchemaVersion == JsonSchemaVersion.draftV6;
+	}
+
+	public boolean isDraftV7Mode() {
+		return jsonSchemaVersion == JsonSchemaVersion.draftV7;
 	}
 
 	public void setDownloadReferencedSchemas(final boolean downloadReferencedSchemas) {

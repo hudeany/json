@@ -162,7 +162,7 @@
         "data": {
             "foo": false
         },
-        "valid": true
+        "valid": false
     },
     {
         "desc": "description: root pointer ref; test: recursive match",
@@ -179,7 +179,7 @@
                 "foo": false
             }
         },
-        "valid": true
+        "valid": false
     },
     {
         "desc": "description: root pointer ref; test: mismatch",
@@ -2366,5 +2366,37 @@
         },
         "data": [ 1, 2, 3, 4, 5 ],
         "valid": true
+    },
+    {
+        "data": {
+          "productId": 1,
+          "productName": "Product",
+          "price": 2
+        },
+        "description": "Draft V6 example schema",
+        "schema": {
+          "$schema": "https://json-schema.org/draft-06/schema",
+          "$id": "https://example.com/product.schema.json",
+          "title": "Example schema",
+          "description": "Draft V6 example schema",
+          "type": "object",
+          "properties": {
+            "productId": {
+              "description": "The unique identifier for a product",
+              "type": "integer"
+            },
+            "productName": {
+              "description": "Name of the product",
+              "type": "string"
+            },
+            "price": {
+              "description": "The price of the product",
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": [ "productId", "productName", "price" ]
+        },
+        "validSchema": false
     }
 ]

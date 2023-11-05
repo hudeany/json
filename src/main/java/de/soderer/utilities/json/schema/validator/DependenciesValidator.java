@@ -27,7 +27,7 @@ public class DependenciesValidator extends BaseJsonSchemaValidator {
 	@Override
 	public void validate() throws Exception {
 		if (!jsonNode.isJsonObject()) {
-			if (!jsonSchemaDependencyResolver.isUseDraftV4Mode()) {
+			if (jsonSchemaDependencyResolver.isSimpleMode()) {
 				throw new JsonSchemaDataValidationError("Expected a 'object' value for dependency but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {
