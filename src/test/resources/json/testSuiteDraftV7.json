@@ -3456,65 +3456,65 @@
     },
     {
         "data": {
-          "productId": 1,
-          "productName": "Product",
-          "price": 2
+            "productId": 1,
+            "productName": "Product",
+            "price": 2
         },
         "description": "Draft V6 example schema",
         "schema": {
-          "$schema": "https://json-schema.org/draft-06/schema",
-          "$id": "https://example.com/product.schema.json",
-          "title": "Example schema",
-          "description": "Draft V6 example schema",
-          "type": "object",
-          "properties": {
-            "productId": {
-              "description": "The unique identifier for a product",
-              "type": "integer"
+            "$schema": "https://json-schema.org/draft-06/schema",
+            "$id": "https://example.com/product.schema.json",
+            "title": "Example schema",
+            "description": "Draft V6 example schema",
+            "type": "object",
+            "properties": {
+                "productId": {
+                    "description": "The unique identifier for a product",
+                    "type": "integer"
+                },
+                "productName": {
+                    "description": "Name of the product",
+                    "type": "string"
+                },
+                "price": {
+                    "description": "The price of the product",
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                }
             },
-            "productName": {
-              "description": "Name of the product",
-              "type": "string"
-            },
-            "price": {
-              "description": "The price of the product",
-              "type": "number",
-              "exclusiveMinimum": 0
-            }
-          },
-          "required": [ "productId", "productName", "price" ]
+            "required": [ "productId", "productName", "price" ]
         },
         "valid": true
     },
     {
         "data": {
-          "productId": 1,
-          "productName": "Product",
-          "price": 0
+            "productId": 1,
+            "productName": "Product",
+            "price": 0
         },
         "description": "Draft V6 exclusiveMinimum error",
         "schema": {
-          "$schema": "https://json-schema.org/draft-06/schema",
-          "$id": "https://example.com/product.schema.json",
-          "title": "Example schema",
-          "description": "Draft V6 example schema",
-          "type": "object",
-          "properties": {
-            "productId": {
-              "description": "The unique identifier for a product",
-              "type": "integer"
+            "$schema": "https://json-schema.org/draft-06/schema",
+            "$id": "https://example.com/product.schema.json",
+            "title": "Example schema",
+            "description": "Draft V6 example schema",
+            "type": "object",
+            "properties": {
+                "productId": {
+                    "description": "The unique identifier for a product",
+                    "type": "integer"
+                },
+                "productName": {
+                    "description": "Name of the product",
+                    "type": "string"
+                },
+                "price": {
+                    "description": "The price of the product",
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                }
             },
-            "productName": {
-              "description": "Name of the product",
-              "type": "string"
-            },
-            "price": {
-              "description": "The price of the product",
-              "type": "number",
-              "exclusiveMinimum": 0
-            }
-          },
-          "required": [ "productId", "productName", "price" ]
+            "required": [ "productId", "productName", "price" ]
         },
         "valid": false
     },
@@ -3525,14 +3525,14 @@
         },
         "description": "$ref properties name is allowed in draft v6+",
         "schema": {
-          "properties": {
-            "reftest": {
-              "type": "string"
-            },
-            "$ref": {
-              "type": "string"
+            "properties": {
+                "reftest": {
+                    "type": "string"
+                },
+                "$ref": {
+                    "type": "string"
+                }
             }
-          }
         },
         "valid": true
     },
@@ -3543,15 +3543,89 @@
         },
         "description": "Nummeric datatypes in draft v6+",
         "schema": {
-          "properties": {
-            "Integer": {
-              "type": "integer"
-            },
-            "Number": {
-              "type": "number"
+            "properties": {
+                "Integer": {
+                    "type": "integer"
+                },
+                "Number": {
+                    "type": "number"
+                }
             }
-          }
         },
         "valid": true
+    },
+    {
+        "data": {
+            "usd": 1,
+            "eur": 0.86815,
+            "gbp": 0.76504,
+            "cad": "1.31004"
+        },
+        "description": "PropertyNames: Invalid property value",
+        "schema": {
+            "type": "object",
+            "propertyNames": { "maxLength": 3, "minLength": 3 },
+            "patternProperties": {
+                "": { "type": "number" }
+            }
+        },
+        "valid": false
+    },
+    {
+        "data": {
+            "usd": 1,
+            "eur": 0.86815,
+            "gbp": 0.76504,
+            "xx": 1.11
+        },
+        "description": "PropertyNames: Invalid property name",
+        "schema": {
+            "type": "object",
+            "propertyNames": { "maxLength": 3, "minLength": 3 },
+            "patternProperties": {
+                "": { "type": "number" }
+            }
+        },
+        "valid": false
+    },
+    {
+        "data": {
+            "usd": 1,
+            "eur": 0.86815,
+            "gbp": 0.76504
+        },
+        "description": "Valid propertyNames",
+        "schema": {
+            "type": "object",
+            "propertyNames": { "maxLength": 3, "minLength": 3 },
+            "patternProperties": {
+                "": { "type": "number" }
+            }
+        },
+        "valid": true
+    },
+    {
+        "data": {
+           "num": 10
+        },
+        "description": "Valid propertyNames enum",
+        "schema": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
+            "propertyNames": {"enum": ["num", "name"]}
+        },
+        "valid": true
+    },
+    {
+        "data": {
+           "other": 10
+        },
+        "description": "Invalid propertyNames enum",
+        "schema": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
+            "propertyNames": {"enum": ["num", "name"]}
+        },
+        "valid": false
     }
 ]

@@ -36,6 +36,7 @@ import de.soderer.utilities.json.schema.validator.OneOfValidator;
 import de.soderer.utilities.json.schema.validator.PatternPropertiesValidator;
 import de.soderer.utilities.json.schema.validator.PatternValidator;
 import de.soderer.utilities.json.schema.validator.PropertiesValidator;
+import de.soderer.utilities.json.schema.validator.PropertyNamesValidator;
 import de.soderer.utilities.json.schema.validator.ReferenceValidator;
 import de.soderer.utilities.json.schema.validator.RequiredValidator;
 import de.soderer.utilities.json.schema.validator.TypeValidator;
@@ -281,6 +282,9 @@ public class JsonSchema {
 					break;
 				case "properties":
 					validators.add(new PropertiesValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
+					break;
+				case "propertyNames":
+					validators.add(new PropertyNamesValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));
 					break;
 				case "patternProperties":
 					validators.add(new PatternPropertiesValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue(), jsonNode, currentJsonPath));

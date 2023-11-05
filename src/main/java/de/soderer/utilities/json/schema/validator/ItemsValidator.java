@@ -88,7 +88,7 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 							} catch (final Exception e) {
 								throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonArray) jsonNode.getValue()).get(i).getClass().getSimpleName() + "'", new JsonPath(jsonPath + "[" + i + "]"), e);
 							}
-							final List<BaseJsonSchemaValidator> subValidators = JsonSchema.createValidators(((JsonObject) additionalItemsRaw), jsonSchemaDependencyResolver, jsonSchemaPath, newJsonNode, new JsonPath(jsonPath + "[" + i + "]"));
+							final List<BaseJsonSchemaValidator> subValidators = JsonSchema.createValidators((JsonObject) additionalItemsRaw, jsonSchemaDependencyResolver, jsonSchemaPath, newJsonNode, new JsonPath(jsonPath + "[" + i + "]"));
 							for (final BaseJsonSchemaValidator subValidator : subValidators) {
 								subValidator.validate();
 							}
