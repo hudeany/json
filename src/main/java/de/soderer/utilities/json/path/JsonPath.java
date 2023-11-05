@@ -76,7 +76,7 @@ public class JsonPath {
 			if (jsonPathElement instanceof JsonPathRoot) {
 				returnValue.append(jsonPathElement.toString());
 			} else if (jsonPathElement instanceof JsonPathPropertyElement) {
-				returnValue.append(jsonPathElement.toString().replace("/", "\\/"));
+				returnValue.append("/").append(jsonPathElement.toString().replace("/", "\\/"));
 			} else if (jsonPathElement instanceof JsonPathArrayElement) {
 				returnValue.append("[").append(jsonPathElement).append("]");
 			}
@@ -137,7 +137,6 @@ public class JsonPath {
 						break;
 					case '[':
 						nextJsonPathPart = readUpToNext(true, '\\', ']');
-						nextJsonPathPart = nextJsonPathPart.substring(1, nextJsonPathPart.length() - 1);
 						if (nextJsonPathPart.startsWith("'") && nextJsonPathPart.endsWith("'")) {
 							readJsonPathElements.push(parseJsonPathElement(nextJsonPathPart.substring(1, nextJsonPathPart.length() - 1)));
 						} else {

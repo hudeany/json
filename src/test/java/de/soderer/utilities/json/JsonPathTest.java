@@ -12,12 +12,7 @@ public class JsonPathTest {
 		final JsonPath jsonPath = new JsonPath("$.abc.def[70]");
 		Assert.assertEquals("$.abc.def[70]", jsonPath.getDotFormattedPath());
 		Assert.assertEquals("$['abc']['def'][70]", jsonPath.getBracketFormattedPath());
-		try {
-			jsonPath.getReferenceFormattedPath();
-			Assert.fail("Missing expected Exception");
-		} catch (@SuppressWarnings("unused") final Exception e) {
-			// Expected Exception
-		}
+		Assert.assertEquals("$/abc/def[70]", jsonPath.getReferenceFormattedPath());
 	}
 
 	@Test
@@ -25,7 +20,7 @@ public class JsonPathTest {
 		final JsonPath jsonPath = new JsonPath("$.abc.def");
 		Assert.assertEquals("$.abc.def", jsonPath.getDotFormattedPath());
 		Assert.assertEquals("$['abc']['def']", jsonPath.getBracketFormattedPath());
-		Assert.assertEquals("#/abc/def", jsonPath.getReferenceFormattedPath());
+		Assert.assertEquals("$/abc/def", jsonPath.getReferenceFormattedPath());
 	}
 
 	@Test
@@ -33,12 +28,7 @@ public class JsonPathTest {
 		final JsonPath jsonPath = new JsonPath("$['abc']['def'][70]");
 		Assert.assertEquals("$.abc.def[70]", jsonPath.getDotFormattedPath());
 		Assert.assertEquals("$['abc']['def'][70]", jsonPath.getBracketFormattedPath());
-		try {
-			jsonPath.getReferenceFormattedPath();
-			Assert.fail("Missing expected Exception");
-		} catch (@SuppressWarnings("unused") final Exception e) {
-			// Expected Exception
-		}
+		Assert.assertEquals("$/abc/def[70]", jsonPath.getReferenceFormattedPath());
 	}
 
 	@Test
@@ -46,14 +36,14 @@ public class JsonPathTest {
 		final JsonPath jsonPath = new JsonPath("$['abc']['def']");
 		Assert.assertEquals("$.abc.def", jsonPath.getDotFormattedPath());
 		Assert.assertEquals("$['abc']['def']", jsonPath.getBracketFormattedPath());
-		Assert.assertEquals("#/abc/def", jsonPath.getReferenceFormattedPath());
+		Assert.assertEquals("$/abc/def", jsonPath.getReferenceFormattedPath());
 	}
 
 	@Test
 	public void test5() throws Exception {
 		final JsonPath jsonPath = new JsonPath("#/abc/def");
-		Assert.assertEquals("$.abc.def", jsonPath.getDotFormattedPath());
-		Assert.assertEquals("$['abc']['def']", jsonPath.getBracketFormattedPath());
+		Assert.assertEquals("#.abc.def", jsonPath.getDotFormattedPath());
+		Assert.assertEquals("#['abc']['def']", jsonPath.getBracketFormattedPath());
 		Assert.assertEquals("#/abc/def", jsonPath.getReferenceFormattedPath());
 	}
 
@@ -62,12 +52,7 @@ public class JsonPathTest {
 		final JsonPath jsonPath = new JsonPath("$").addPropertyKey("abc").addPropertyKey("def").addArrayIndex(70);
 		Assert.assertEquals("$.abc.def[70]", jsonPath.getDotFormattedPath());
 		Assert.assertEquals("$['abc']['def'][70]", jsonPath.getBracketFormattedPath());
-		try {
-			jsonPath.getReferenceFormattedPath();
-			Assert.fail("Missing expected Exception");
-		} catch (@SuppressWarnings("unused") final Exception e) {
-			// Expected Exception
-		}
+		Assert.assertEquals("$/abc/def[70]", jsonPath.getReferenceFormattedPath());
 	}
 
 	@Test
@@ -75,6 +60,6 @@ public class JsonPathTest {
 		final JsonPath jsonPath = new JsonPath("$").addPropertyKey("abc").addPropertyKey("def");
 		Assert.assertEquals("$.abc.def", jsonPath.getDotFormattedPath());
 		Assert.assertEquals("$['abc']['def']", jsonPath.getBracketFormattedPath());
-		Assert.assertEquals("#/abc/def", jsonPath.getReferenceFormattedPath());
+		Assert.assertEquals("$/abc/def", jsonPath.getReferenceFormattedPath());
 	}
 }
