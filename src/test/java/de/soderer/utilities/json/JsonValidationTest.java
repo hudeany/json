@@ -3129,56 +3129,56 @@ public class JsonValidationTest {
 		}
 	}
 
-	//	@Test
-	//	public void testSuiteV6() {
-	//		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteDraftV6.json"))) {
-	//			int testCount = 0;
-	//			final JsonNode testsuiteNode = testsuiteReader.read();
-	//			for (final Object item : ((JsonArray) testsuiteNode.getValue())) {
-	//				testCount++;
-	//				final JsonObject testItem = (JsonObject) item;
-	//				final String description = (String) testItem.get("description");
-	//				final JsonObject schema = (JsonObject) testItem.get("schema");
-	//				final Object data = testItem.get("data");
-	//				final Boolean validSchema;
-	//				if (testItem.containsPropertyKey("validSchema")) {
-	//					validSchema = (Boolean) testItem.get("validSchema");
-	//				} else {
-	//					validSchema = true;
-	//				}
-	//				final Boolean valid = (Boolean) testItem.get("valid");
-	//
-	//				try {
-	//					final JsonSchema jsonSchema = new JsonSchema(schema, JsonSchemaVersion.draftV6);
-	//					jsonSchema.setDownloadReferencedSchemas(true);
-	//					jsonSchema.validate(data);
-	//					if (!validSchema) {
-	//						Assert.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
-	//					}
-	//					if (!valid) {
-	//						Assert.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
-	//					}
-	//				} catch (final JsonSchemaDataValidationError e) {
-	//					if (valid) {
-	//						e.printStackTrace();
-	//						Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
-	//					}
-	//				} catch (final JsonSchemaDefinitionError e) {
-	//					if (validSchema) {
-	//						e.printStackTrace();
-	//						Assert.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
-	//					}
-	//				} catch (final Exception e) {
-	//					e.printStackTrace();
-	//					Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
-	//				}
-	//			}
-	//		} catch (final Exception e) {
-	//			e.printStackTrace();
-	//			Assert.fail(e.getMessage());
-	//		}
-	//	}
-	//
+	@Test
+	public void testSuiteV6() {
+		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteDraftV6.json"))) {
+			int testCount = 0;
+			final JsonNode testsuiteNode = testsuiteReader.read();
+			for (final Object item : ((JsonArray) testsuiteNode.getValue())) {
+				testCount++;
+				final JsonObject testItem = (JsonObject) item;
+				final String description = (String) testItem.get("description");
+				final JsonObject schema = (JsonObject) testItem.get("schema");
+				final Object data = testItem.get("data");
+				final Boolean validSchema;
+				if (testItem.containsPropertyKey("validSchema")) {
+					validSchema = (Boolean) testItem.get("validSchema");
+				} else {
+					validSchema = true;
+				}
+				final Boolean valid = (Boolean) testItem.get("valid");
+
+				try {
+					final JsonSchema jsonSchema = new JsonSchema(schema, JsonSchemaVersion.draftV6);
+					jsonSchema.setDownloadReferencedSchemas(true);
+					jsonSchema.validate(data);
+					if (!validSchema) {
+						Assert.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
+					}
+					if (!valid) {
+						Assert.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
+					}
+				} catch (final JsonSchemaDataValidationError e) {
+					if (valid) {
+						e.printStackTrace();
+						Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+					}
+				} catch (final JsonSchemaDefinitionError e) {
+					if (validSchema) {
+						e.printStackTrace();
+						Assert.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+					}
+				} catch (final Exception e) {
+					e.printStackTrace();
+					Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+				}
+			}
+		} catch (final Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		}
+	}
+
 	//	@Test
 	//	public void testSuiteV7() {
 	//		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteDraftV7.json"))) {
