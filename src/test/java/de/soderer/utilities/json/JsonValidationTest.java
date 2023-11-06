@@ -1542,1692 +1542,1692 @@ public class JsonValidationTest {
 		}
 	}
 
-	@Test
-	public void testNotError() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "not: { enum: [ 1, 7 ] }\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"7\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testUniqueItems() {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "uniqueItems: true\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"[ 1, 2, 3, null, \"Text\" ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testUniqueItemsError1() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "uniqueItems: true\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"[ 1, 2, 3, 1 ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testUniqueItemsError2() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "uniqueItems: true\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"[ 1, \"Text\", 2, 3, null, \"Text\" ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testUniqueItemsError3() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "uniqueItems: true\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"[ 1, null, 2, 3, null, \"Text\" ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testUniqueItemsError4() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "uniqueItems: true\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"[ [1, 2], [1, 2] ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testUniqueItemsError5() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "uniqueItems: true\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"[ { a: 1, b: 2 }, { b: 2, a: 1 } ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testFormatEmail() {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "format: \"email\"\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"\"tester@example.com\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testFormatEmailError() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "format: \"email\"\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"\"tester@@example.com\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testFormatIpv4() {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "format: \"ipv4\"\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"\"192.168.1.70\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testFormatIpv4Error() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "format: \"ipv4\"\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"\"192.168.1.707\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testFormatIpv6() {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "format: \"ipv6\"\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"\"2001:0db8:1234::0000\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testFormatIpv6Error() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "format: \"ipv6\"\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"\"2001:0db8:1234:ffff:ffff:ffff:ffff:fffx\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testFormatDate() {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "format: \"date-time\"\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"\"2017-02-28T17:30:00+01\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testFormatDateError() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "format: \"date-time\"\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"\"2017-02-28T17:30:00\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testFormatBase64() {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "format: \"base64\"\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"\"" + Utilities.encodeBase64("Text".getBytes(StandardCharsets.UTF_8)) + "\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testFormatBase64Error() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "format: \"base64\"\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"\"" + Utilities.encodeBase64("Text".getBytes(StandardCharsets.UTF_8)) + "x\"\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testItems() {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "items: { type: \"number\" }\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"[1, 2, 3]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testItemsError1() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "items: { type: \"number\" }\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"[1, \"a\", 3]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$[1]"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testItemsWithAdditionalItems() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "items: { type: \"number\" },\n"
-							+ "additionalItems: false\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"[1, 2, 3 ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDefinitionError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testItemsArray() {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "items: [ { type: \"number\" }, { type: \"number\" } ]\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"[1, 2, 3]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testItemsArrayError1() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "items: [ { type: \"number\" }, { type: \"number\" } ]\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"[1, true ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$[1]"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testItemsArrayError2() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "items: [ { type: \"number\" }, { type: \"number\" } ]\n"
-							+ "additionalItems: false\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"[1, 2, 3 ]\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testPatternProperties() {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "patternProperties: {"
-							+ "\"^abc$\": { type: \"boolean\" }\n"
-							+ "\"^Num_\": { type: \"number\" }\n"
-							+ "}\n"
-							+ "additionalProperties: { type: \"string\" }\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"{"
-							+ "abc: true,"
-							+ "Num_1: 1,"
-							+ "Num_2: 1,"
-							+ "StringProp: \"Text\""
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testPatternPropertiesError1() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "patternProperties: {"
-							+ "\"^abc$\": { type: \"boolean\" }\n"
-							+ "\"^Num_\": { type: \"number\" }\n"
-							+ "}\n"
-							+ "additionalProperties: { type: \"string\" }\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"{"
-							+ "abc: true,"
-							+ "Num_1: 1,"
-							+ "Num_2: 1,"
-							+ "StringProp: 7"
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$.StringProp"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testPatternPropertiesError2() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "patternProperties: {"
-							+ "\"^abc$\": { type: \"boolean\" }\n"
-							+ "\"^Num_\": { type: \"number\" }\n"
-							+ "}\n"
-							+ "additionalProperties: false\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"{"
-							+ "abc: true,"
-							+ "Num_1: 1,"
-							+ "Num_2: 1,"
-							+ "StringProp: \"Text\""
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testTitle() {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "title: \"My JSON schema\"\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"null\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testTitleError1() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "title: null\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"null\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDefinitionError e) {
-			// Expected exception
-			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("$"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testReference() {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "type: \"object\",\n"
-							+ "properties: {\n"
-							+ "item1: { $ref: \"#/definitions/predefType\" }\n"
-							+ "},\n"
-							+ "definitions: {\n"
-							+ "predefType: { type: \"string\" }\n"
-							+ "}\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"{\n"
-							+ "item1: \"Text1\"\n"
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testReferenceIndirect() {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		InputStream indirectSchemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "type: \"object\",\n"
-							+ "properties: {\n"
-							+ "item1: { $ref: \"otherSchema.json#/definitions/predefType\" }\n"
-							+ "}\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String indirectSchema =
-					"{\n"
-							+ "definitions: {\n"
-							+ "predefType: { type: \"string\" }\n"
-							+ "}\n"
-							+ "}\n";
-			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream);
-
-			final String data =
-					"{\n"
-							+ "item1: \"Text1\"\n"
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-			Utilities.closeQuietly(indirectSchemaInputStream);
-		}
-	}
-
-	@Test
-	public void testReferenceIndirectKomplex1() {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		InputStream indirectSchemaInputStream1 = null;
-		InputStream indirectSchemaInputStream2 = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "type: \"object\",\n"
-							+ "properties: {\n"
-							+ "item1: { $ref: \"otherSchema.json#/definitions/predefType1\" }\n"
-							+ "}\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String indirectSchema1 =
-					"{\n"
-							+ "definitions: {\n"
-							+ "predefType1: { $ref: \"someOtherSchema.json#/definitions/predefType2\" }\n"
-							+ "}\n"
-							+ "}\n";
-			indirectSchemaInputStream1 = new ByteArrayInputStream(indirectSchema1.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream1);
-
-			final String indirectSchema2 =
-					"{\n"
-							+ "definitions: {\n"
-							+ "predefType2: { type: \"string\" }\n"
-							+ "}\n"
-							+ "}\n";
-			indirectSchemaInputStream2 = new ByteArrayInputStream(indirectSchema2.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.addJsonSchemaDefinition("someOtherSchema.json", indirectSchemaInputStream2);
-
-			final String data =
-					"{\n"
-							+ "item1: \"Text1\"\n"
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-			Utilities.closeQuietly(indirectSchemaInputStream1);
-			Utilities.closeQuietly(indirectSchemaInputStream2);
-		}
-	}
-
-	@Test
-	public void testReferenceIndirectKomplex2() {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		InputStream indirectSchemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "type: \"object\",\n"
-							+ "properties: {\n"
-							+ "item1: { $ref: \"otherSchema.json#/definitions/predefType1\" }\n"
-							+ "}\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String indirectSchema =
-					"{\n"
-							+ "definitions: {\n"
-							+ "predefType1: { $ref: \"#/definitions/predefType2\" },\n"
-							+ "predefType2: { type: \"string\" }\n"
-							+ "}\n"
-							+ "}\n";
-			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream);
-
-			final String data =
-					"{\n"
-							+ "item1: \"Text1\"\n"
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-			Utilities.closeQuietly(indirectSchemaInputStream);
-		}
-	}
-
-	@Test
-	public void testReferenceIndirectSimple() {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		InputStream indirectSchemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "type: \"object\",\n"
-							+ "properties: {\n"
-							+ "item1: { $ref: \"predefType\" }\n"
-							+ "}\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String indirectSchema =
-					"{\n"
-							+ "definitions: {\n"
-							+ "predefType: { type: \"string\" }\n"
-							+ "}\n"
-							+ "}\n";
-			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream);
-
-			final String data =
-					"{\n"
-							+ "item1: \"Text1\"\n"
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-			Utilities.closeQuietly(indirectSchemaInputStream);
-		}
-	}
-
-	@Test
-	public void testReferenceError1() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "type: \"object\",\n"
-							+ "properties: {\n"
-							+ "item1: { $ref: \"#/definitions/unknownPredefType\" }\n"
-							+ "},\n"
-							+ "definitions: {\n"
-							+ "predefType: { type: \"string\" }\n"
-							+ "}\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"{\n"
-							+ "item1: \"Text1\"\n"
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDefinitionError e) {
-			// Expected exception
-			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("#/definitions/unknownPredefType"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testReferenceError2() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "type: \"object\",\n"
-							+ "properties: {\n"
-							+ "item1: { $ref: \"#/definitions/predefType\" }\n"
-							+ "},\n"
-							+ "definitions: 3\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"{\n"
-							+ "item1: \"Text1\"\n"
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDefinitionError e) {
-			// Expected exception
-			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("#/definitions/predefType"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testReferenceError3() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "type: \"object\",\n"
-							+ "properties: {\n"
-							+ "item1: { $ref: \"#/definitions/predefType\" }\n"
-							+ "},\n"
-							+ "definitions: {\n"
-							+ "predefType: { type: \"string\" }\n"
-							+ "}\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"{\n"
-							+ "item1: true\n"
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$.item1"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testReferenceIndirectError1() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		final InputStream indirectSchemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "type: \"object\",\n"
-							+ "properties: {\n"
-							+ "item1: { $ref: \"#/definitions/predefType\" }\n"
-							+ "}\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"{\n"
-							+ "item1: \"Text1\"\n"
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDefinitionError e) {
-			// Expected exception
-			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("#/definitions/predefType"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-			Utilities.closeQuietly(indirectSchemaInputStream);
-		}
-	}
-
-	@Test
-	public void testReferenceIndirectError2() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		InputStream indirectSchemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "type: \"object\",\n"
-							+ "properties: {\n"
-							+ "item1: { $ref: \"otherSchema.json#/definitions/unknownPredefType\" }\n"
-							+ "}\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String indirectSchema =
-					"{\n"
-							+ "definitions: {\n"
-							+ "predefType: { type: \"string\" }\n"
-							+ "}\n"
-							+ "}\n";
-			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream);
-
-			final String data =
-					"{\n"
-							+ "item1: \"Text1\"\n"
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDefinitionError e) {
-			// Expected exception
-			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("otherSchema.json#/definitions/unknownPredefType"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-			Utilities.closeQuietly(indirectSchemaInputStream);
-		}
-	}
-
-	@Test
-	public void testReferenceIndirectError3() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		InputStream indirectSchemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "type: \"object\",\n"
-							+ "properties: {\n"
-							+ "item1: { $ref: \"unknownOtherSchema.json#/definitions/unknownPredefType\" }\n"
-							+ "}\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String indirectSchema =
-					"{\n"
-							+ "definitions: {\n"
-							+ "predefType: { type: \"string\" }\n"
-							+ "}\n"
-							+ "}\n";
-			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream);
-
-			final String data =
-					"{\n"
-							+ "item1: \"Text1\"\n"
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDefinitionError e) {
-			// Expected exception
-			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("unknownOtherSchema.json#/definitions/unknownPredefType"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-			Utilities.closeQuietly(indirectSchemaInputStream);
-		}
-	}
-
-	@Test
-	public void testDependenciesArray() {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "dependencies: {\n"
-							+ "field1: [ \"field2\" ]\n"
-							+ "}\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"{\n"
-							+ "field1: 1,\n"
-							+ "field2: 2\n"
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testDependenciesArrayError() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "dependencies: {\n"
-							+ "field1: [ \"field2\" ]\n"
-							+ "}\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"{\n"
-							+ "field1: 1\n"
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testDependenciesObject() {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "dependencies: {\n"
-							+ "field1: {\n"
-							+ "properties: {\n"
-							+ "field2: { type: \"integer\" }\n"
-							+ "},\n"
-							+ "required: [\"field2\"]\n"
-							+ "}\n"
-							+ "}\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"{\n"
-							+ "field1: 1,\n"
-							+ "field2: 2\n"
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testDependenciesObjectError() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "dependencies: {\n"
-							+ "field1: {\n"
-							+ "properties: {\n"
-							+ "field2: { type: \"string\" }\n"
-							+ "},\n"
-							+ "required: [\"billing_address\"]\n"
-							+ "}\n"
-							+ "}\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"{\n"
-							+ "field1: 1\n"
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDataValidationError e) {
-			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-		}
-	}
-
-	@Test
-	public void testReferenceInfiniteCycle() throws Exception {
-		InputStream dataInputStream = null;
-		InputStream schemaInputStream = null;
-		final InputStream indirectSchemaInputStream = null;
-		try {
-			final String schema =
-					"{\n"
-							+ "type: \"object\",\n"
-							+ "properties: {\n"
-							+ "item1: { $ref: \"#/definitions/predefType1\" }\n"
-							+ "},\n"
-							+ "definitions: {\n"
-							+ "predefType1: { $ref: \"#/definitions/predefType2\" },\n"
-							+ "predefType2: { $ref: \"#/definitions/predefType1\" }\n"
-							+ "}\n"
-							+ "}\n";
-			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
-
-			final String data =
-					"{\n"
-							+ "item1: \"Text1\"\n"
-							+ "}\n";
-			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
-			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
-		} catch (final JsonSchemaDefinitionError e) {
-			// Expected exception
-			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("#/definitions/predefType1"));
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} finally {
-			Utilities.closeQuietly(dataInputStream);
-			Utilities.closeQuietly(schemaInputStream);
-			Utilities.closeQuietly(indirectSchemaInputStream);
-		}
-	}
-
-	@Test
-	public void testJsonSchemaForJsonSchemas() {
-		try (InputStream schemaInputStream = JsonSchema.class.getClassLoader().getResourceAsStream("json/JsonSchemaDescriptionDraftV4.json")) {
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream, StandardCharsets.UTF_8, JsonSchemaVersion.draftV4);
-			try (InputStream dataInputStream = getClass().getClassLoader().getResourceAsStream("json/JsonSchemaDescriptionDraftV4.json")) {
-				jsonSchema.validate(dataInputStream);
-			}
-		} catch (final JsonSchemaDataValidationError e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		}
-	}
-
-	@Test
-	public void testSuiteSimpleMode() {
-		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteSimpleMode.json"))) {
-			int testCount = 0;
-			final JsonNode testsuiteNode = testsuiteReader.read();
-			for (final Object item : ((JsonArray) testsuiteNode.getValue())) {
-				testCount++;
-				final JsonObject testItem = (JsonObject) item;
-				final String description = (String) testItem.get("description");
-				final JsonObject schema = (JsonObject) testItem.get("schema");
-				final Object data = testItem.get("data");
-				final Boolean validSchema;
-				if (testItem.containsPropertyKey("validSchema")) {
-					validSchema = (Boolean) testItem.get("validSchema");
-				} else {
-					validSchema = true;
-				}
-				final Boolean valid = (Boolean) testItem.get("valid");
-
-				try {
-					final JsonSchema jsonSchema = new JsonSchema(schema, null);
-					jsonSchema.setDownloadReferencedSchemas(true);
-					jsonSchema.validate(data);
-					if (!validSchema) {
-						Assert.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
-					}
-					if (!valid) {
-						Assert.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
-					}
-				} catch (final JsonSchemaDataValidationError e) {
-					if (valid) {
-						e.printStackTrace();
-						Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
-					}
-				} catch (final JsonSchemaDefinitionError e) {
-					if (validSchema) {
-						e.printStackTrace();
-						Assert.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
-					}
-				} catch (final Exception e) {
-					e.printStackTrace();
-					Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
-				}
-			}
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		}
-	}
-
-	@Test
-	public void testSuiteV4() {
-		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteDraftV4.json"))) {
-			int testCount = 0;
-			final JsonNode testsuiteNode = testsuiteReader.read();
-			for (final Object item : ((JsonArray) testsuiteNode.getValue())) {
-				testCount++;
-				final JsonObject testItem = (JsonObject) item;
-				final String description = (String) testItem.get("description");
-				final JsonObject schema = (JsonObject) testItem.get("schema");
-				final Object data = testItem.get("data");
-				final Boolean validSchema;
-				if (testItem.containsPropertyKey("validSchema")) {
-					validSchema = (Boolean) testItem.get("validSchema");
-				} else {
-					validSchema = true;
-				}
-				final Boolean valid = (Boolean) testItem.get("valid");
-
-				try {
-					final JsonSchema jsonSchema = new JsonSchema(schema, JsonSchemaVersion.draftV4);
-					jsonSchema.setDownloadReferencedSchemas(true);
-					jsonSchema.validate(data);
-					if (!validSchema) {
-						Assert.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
-					}
-					if (!valid) {
-						Assert.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
-					}
-				} catch (final JsonSchemaDataValidationError e) {
-					if (valid) {
-						e.printStackTrace();
-						Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
-					}
-				} catch (final JsonSchemaDefinitionError e) {
-					if (validSchema) {
-						e.printStackTrace();
-						Assert.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
-					}
-				} catch (final Exception e) {
-					e.printStackTrace();
-					Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
-				}
-			}
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		}
-	}
-
-	@Test
-	public void testSuiteV6() {
-		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteDraftV6.json"))) {
-			int testCount = 0;
-			final JsonNode testsuiteNode = testsuiteReader.read();
-			for (final Object item : ((JsonArray) testsuiteNode.getValue())) {
-				testCount++;
-				final JsonObject testItem = (JsonObject) item;
-				final String description = (String) testItem.get("description");
-				final JsonObject schema = (JsonObject) testItem.get("schema");
-				final Object data = testItem.get("data");
-				final Boolean validSchema;
-				if (testItem.containsPropertyKey("validSchema")) {
-					validSchema = (Boolean) testItem.get("validSchema");
-				} else {
-					validSchema = true;
-				}
-				final Boolean valid = (Boolean) testItem.get("valid");
-
-				try {
-					final JsonSchema jsonSchema = new JsonSchema(schema, JsonSchemaVersion.draftV6);
-					jsonSchema.setDownloadReferencedSchemas(true);
-					jsonSchema.validate(data);
-					if (!validSchema) {
-						Assert.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
-					}
-					if (!valid) {
-						Assert.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
-					}
-				} catch (final JsonSchemaDataValidationError e) {
-					if (valid) {
-						e.printStackTrace();
-						Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
-					}
-				} catch (final JsonSchemaDefinitionError e) {
-					if (validSchema) {
-						e.printStackTrace();
-						Assert.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
-					}
-				} catch (final Exception e) {
-					e.printStackTrace();
-					Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
-				}
-			}
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		}
-	}
-
-	@Test
-	public void testSuiteV7() {
-		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteDraftV7.json"))) {
-			int testCount = 0;
-			final JsonNode testsuiteNode = testsuiteReader.read();
-			for (final Object item : ((JsonArray) testsuiteNode.getValue())) {
-				testCount++;
-				final JsonObject testItem = (JsonObject) item;
-				final String description = (String) testItem.get("description");
-				final JsonObject schema = (JsonObject) testItem.get("schema");
-				final Object data = testItem.get("data");
-				final Boolean validSchema;
-				if (testItem.containsPropertyKey("validSchema")) {
-					validSchema = (Boolean) testItem.get("validSchema");
-				} else {
-					validSchema = true;
-				}
-				final Boolean valid = (Boolean) testItem.get("valid");
-
-				try {
-					final JsonSchema jsonSchema = new JsonSchema(schema, JsonSchemaVersion.draftV7);
-					jsonSchema.setDownloadReferencedSchemas(true);
-					jsonSchema.validate(data);
-					if (!validSchema) {
-						Assert.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
-					}
-					if (!valid) {
-						Assert.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
-					}
-				} catch (final JsonSchemaDataValidationError e) {
-					if (valid) {
-						e.printStackTrace();
-						Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
-					}
-				} catch (final JsonSchemaDefinitionError e) {
-					if (validSchema) {
-						e.printStackTrace();
-						Assert.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
-					}
-				} catch (final Exception e) {
-					e.printStackTrace();
-					Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
-				}
-			}
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Assert.fail(e.getMessage());
-		}
-	}
+	//	@Test
+	//	public void testNotError() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "not: { enum: [ 1, 7 ] }\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"7\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testUniqueItems() {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "uniqueItems: true\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"[ 1, 2, 3, null, \"Text\" ]\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testUniqueItemsError1() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "uniqueItems: true\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"[ 1, 2, 3, 1 ]\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testUniqueItemsError2() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "uniqueItems: true\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"[ 1, \"Text\", 2, 3, null, \"Text\" ]\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testUniqueItemsError3() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "uniqueItems: true\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"[ 1, null, 2, 3, null, \"Text\" ]\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testUniqueItemsError4() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "uniqueItems: true\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"[ [1, 2], [1, 2] ]\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testUniqueItemsError5() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "uniqueItems: true\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"[ { a: 1, b: 2 }, { b: 2, a: 1 } ]\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testFormatEmail() {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "format: \"email\"\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"\"tester@example.com\"\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testFormatEmailError() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "format: \"email\"\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"\"tester@@example.com\"\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testFormatIpv4() {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "format: \"ipv4\"\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"\"192.168.1.70\"\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testFormatIpv4Error() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "format: \"ipv4\"\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"\"192.168.1.707\"\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testFormatIpv6() {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "format: \"ipv6\"\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"\"2001:0db8:1234::0000\"\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testFormatIpv6Error() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "format: \"ipv6\"\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"\"2001:0db8:1234:ffff:ffff:ffff:ffff:fffx\"\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testFormatDate() {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "format: \"date-time\"\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"\"2017-02-28T17:30:00+01\"\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testFormatDateError() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "format: \"date-time\"\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"\"2017-02-28T17:30:00\"\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testFormatBase64() {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "format: \"base64\"\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"\"" + Utilities.encodeBase64("Text".getBytes(StandardCharsets.UTF_8)) + "\"\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testFormatBase64Error() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "format: \"base64\"\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"\"" + Utilities.encodeBase64("Text".getBytes(StandardCharsets.UTF_8)) + "x\"\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testItems() {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "items: { type: \"number\" }\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"[1, 2, 3]\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testItemsError1() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "items: { type: \"number\" }\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"[1, \"a\", 3]\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$[1]"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testItemsWithAdditionalItems() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "items: { type: \"number\" },\n"
+	//							+ "additionalItems: false\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"[1, 2, 3 ]\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDefinitionError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testItemsArray() {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "items: [ { type: \"number\" }, { type: \"number\" } ]\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"[1, 2, 3]\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testItemsArrayError1() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "items: [ { type: \"number\" }, { type: \"number\" } ]\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"[1, true ]\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$[1]"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testItemsArrayError2() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "items: [ { type: \"number\" }, { type: \"number\" } ]\n"
+	//							+ "additionalItems: false\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"[1, 2, 3 ]\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testPatternProperties() {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "patternProperties: {"
+	//							+ "\"^abc$\": { type: \"boolean\" }\n"
+	//							+ "\"^Num_\": { type: \"number\" }\n"
+	//							+ "}\n"
+	//							+ "additionalProperties: { type: \"string\" }\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"{"
+	//							+ "abc: true,"
+	//							+ "Num_1: 1,"
+	//							+ "Num_2: 1,"
+	//							+ "StringProp: \"Text\""
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testPatternPropertiesError1() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "patternProperties: {"
+	//							+ "\"^abc$\": { type: \"boolean\" }\n"
+	//							+ "\"^Num_\": { type: \"number\" }\n"
+	//							+ "}\n"
+	//							+ "additionalProperties: { type: \"string\" }\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"{"
+	//							+ "abc: true,"
+	//							+ "Num_1: 1,"
+	//							+ "Num_2: 1,"
+	//							+ "StringProp: 7"
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$.StringProp"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testPatternPropertiesError2() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "patternProperties: {"
+	//							+ "\"^abc$\": { type: \"boolean\" }\n"
+	//							+ "\"^Num_\": { type: \"number\" }\n"
+	//							+ "}\n"
+	//							+ "additionalProperties: false\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"{"
+	//							+ "abc: true,"
+	//							+ "Num_1: 1,"
+	//							+ "Num_2: 1,"
+	//							+ "StringProp: \"Text\""
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testTitle() {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "title: \"My JSON schema\"\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"null\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testTitleError1() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "title: null\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"null\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDefinitionError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("$"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testReference() {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "type: \"object\",\n"
+	//							+ "properties: {\n"
+	//							+ "item1: { $ref: \"#/definitions/predefType\" }\n"
+	//							+ "},\n"
+	//							+ "definitions: {\n"
+	//							+ "predefType: { type: \"string\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"{\n"
+	//							+ "item1: \"Text1\"\n"
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testReferenceIndirect() {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		InputStream indirectSchemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "type: \"object\",\n"
+	//							+ "properties: {\n"
+	//							+ "item1: { $ref: \"otherSchema.json#/definitions/predefType\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String indirectSchema =
+	//					"{\n"
+	//							+ "definitions: {\n"
+	//							+ "predefType: { type: \"string\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream);
+	//
+	//			final String data =
+	//					"{\n"
+	//							+ "item1: \"Text1\"\n"
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//			Utilities.closeQuietly(indirectSchemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testReferenceIndirectKomplex1() {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		InputStream indirectSchemaInputStream1 = null;
+	//		InputStream indirectSchemaInputStream2 = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "type: \"object\",\n"
+	//							+ "properties: {\n"
+	//							+ "item1: { $ref: \"otherSchema.json#/definitions/predefType1\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String indirectSchema1 =
+	//					"{\n"
+	//							+ "definitions: {\n"
+	//							+ "predefType1: { $ref: \"someOtherSchema.json#/definitions/predefType2\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			indirectSchemaInputStream1 = new ByteArrayInputStream(indirectSchema1.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream1);
+	//
+	//			final String indirectSchema2 =
+	//					"{\n"
+	//							+ "definitions: {\n"
+	//							+ "predefType2: { type: \"string\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			indirectSchemaInputStream2 = new ByteArrayInputStream(indirectSchema2.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.addJsonSchemaDefinition("someOtherSchema.json", indirectSchemaInputStream2);
+	//
+	//			final String data =
+	//					"{\n"
+	//							+ "item1: \"Text1\"\n"
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//			Utilities.closeQuietly(indirectSchemaInputStream1);
+	//			Utilities.closeQuietly(indirectSchemaInputStream2);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testReferenceIndirectKomplex2() {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		InputStream indirectSchemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "type: \"object\",\n"
+	//							+ "properties: {\n"
+	//							+ "item1: { $ref: \"otherSchema.json#/definitions/predefType1\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String indirectSchema =
+	//					"{\n"
+	//							+ "definitions: {\n"
+	//							+ "predefType1: { $ref: \"#/definitions/predefType2\" },\n"
+	//							+ "predefType2: { type: \"string\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream);
+	//
+	//			final String data =
+	//					"{\n"
+	//							+ "item1: \"Text1\"\n"
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//			Utilities.closeQuietly(indirectSchemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testReferenceIndirectSimple() {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		InputStream indirectSchemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "type: \"object\",\n"
+	//							+ "properties: {\n"
+	//							+ "item1: { $ref: \"predefType\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String indirectSchema =
+	//					"{\n"
+	//							+ "definitions: {\n"
+	//							+ "predefType: { type: \"string\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream);
+	//
+	//			final String data =
+	//					"{\n"
+	//							+ "item1: \"Text1\"\n"
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//			Utilities.closeQuietly(indirectSchemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testReferenceError1() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "type: \"object\",\n"
+	//							+ "properties: {\n"
+	//							+ "item1: { $ref: \"#/definitions/unknownPredefType\" }\n"
+	//							+ "},\n"
+	//							+ "definitions: {\n"
+	//							+ "predefType: { type: \"string\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"{\n"
+	//							+ "item1: \"Text1\"\n"
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDefinitionError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("#/definitions/unknownPredefType"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testReferenceError2() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "type: \"object\",\n"
+	//							+ "properties: {\n"
+	//							+ "item1: { $ref: \"#/definitions/predefType\" }\n"
+	//							+ "},\n"
+	//							+ "definitions: 3\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"{\n"
+	//							+ "item1: \"Text1\"\n"
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDefinitionError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("#/definitions/predefType"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testReferenceError3() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "type: \"object\",\n"
+	//							+ "properties: {\n"
+	//							+ "item1: { $ref: \"#/definitions/predefType\" }\n"
+	//							+ "},\n"
+	//							+ "definitions: {\n"
+	//							+ "predefType: { type: \"string\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"{\n"
+	//							+ "item1: true\n"
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$.item1"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testReferenceIndirectError1() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		final InputStream indirectSchemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "type: \"object\",\n"
+	//							+ "properties: {\n"
+	//							+ "item1: { $ref: \"#/definitions/predefType\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"{\n"
+	//							+ "item1: \"Text1\"\n"
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDefinitionError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("#/definitions/predefType"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//			Utilities.closeQuietly(indirectSchemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testReferenceIndirectError2() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		InputStream indirectSchemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "type: \"object\",\n"
+	//							+ "properties: {\n"
+	//							+ "item1: { $ref: \"otherSchema.json#/definitions/unknownPredefType\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String indirectSchema =
+	//					"{\n"
+	//							+ "definitions: {\n"
+	//							+ "predefType: { type: \"string\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream);
+	//
+	//			final String data =
+	//					"{\n"
+	//							+ "item1: \"Text1\"\n"
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDefinitionError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("otherSchema.json#/definitions/unknownPredefType"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//			Utilities.closeQuietly(indirectSchemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testReferenceIndirectError3() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		InputStream indirectSchemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "type: \"object\",\n"
+	//							+ "properties: {\n"
+	//							+ "item1: { $ref: \"unknownOtherSchema.json#/definitions/unknownPredefType\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String indirectSchema =
+	//					"{\n"
+	//							+ "definitions: {\n"
+	//							+ "predefType: { type: \"string\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			indirectSchemaInputStream = new ByteArrayInputStream(indirectSchema.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.addJsonSchemaDefinition("otherSchema.json", indirectSchemaInputStream);
+	//
+	//			final String data =
+	//					"{\n"
+	//							+ "item1: \"Text1\"\n"
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDefinitionError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("unknownOtherSchema.json#/definitions/unknownPredefType"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//			Utilities.closeQuietly(indirectSchemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testDependenciesArray() {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "dependencies: {\n"
+	//							+ "field1: [ \"field2\" ]\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"{\n"
+	//							+ "field1: 1,\n"
+	//							+ "field2: 2\n"
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testDependenciesArrayError() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "dependencies: {\n"
+	//							+ "field1: [ \"field2\" ]\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"{\n"
+	//							+ "field1: 1\n"
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testDependenciesObject() {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "dependencies: {\n"
+	//							+ "field1: {\n"
+	//							+ "properties: {\n"
+	//							+ "field2: { type: \"integer\" }\n"
+	//							+ "},\n"
+	//							+ "required: [\"field2\"]\n"
+	//							+ "}\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"{\n"
+	//							+ "field1: 1,\n"
+	//							+ "field2: 2\n"
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testDependenciesObjectError() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "dependencies: {\n"
+	//							+ "field1: {\n"
+	//							+ "properties: {\n"
+	//							+ "field2: { type: \"string\" }\n"
+	//							+ "},\n"
+	//							+ "required: [\"billing_address\"]\n"
+	//							+ "}\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"{\n"
+	//							+ "field1: 1\n"
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testReferenceInfiniteCycle() throws Exception {
+	//		InputStream dataInputStream = null;
+	//		InputStream schemaInputStream = null;
+	//		final InputStream indirectSchemaInputStream = null;
+	//		try {
+	//			final String schema =
+	//					"{\n"
+	//							+ "type: \"object\",\n"
+	//							+ "properties: {\n"
+	//							+ "item1: { $ref: \"#/definitions/predefType1\" }\n"
+	//							+ "},\n"
+	//							+ "definitions: {\n"
+	//							+ "predefType1: { $ref: \"#/definitions/predefType2\" },\n"
+	//							+ "predefType2: { $ref: \"#/definitions/predefType1\" }\n"
+	//							+ "}\n"
+	//							+ "}\n";
+	//			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream);
+	//
+	//			final String data =
+	//					"{\n"
+	//							+ "item1: \"Text1\"\n"
+	//							+ "}\n";
+	//			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	//			jsonSchema.validate(dataInputStream);
+	//			Assert.fail("Missing expected exception");
+	//		} catch (final JsonSchemaDefinitionError e) {
+	//			// Expected exception
+	//			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("#/definitions/predefType1"));
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} finally {
+	//			Utilities.closeQuietly(dataInputStream);
+	//			Utilities.closeQuietly(schemaInputStream);
+	//			Utilities.closeQuietly(indirectSchemaInputStream);
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testJsonSchemaForJsonSchemas() {
+	//		try (InputStream schemaInputStream = JsonSchema.class.getClassLoader().getResourceAsStream("json/JsonSchemaDescriptionDraftV4.json")) {
+	//			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream, StandardCharsets.UTF_8, JsonSchemaVersion.draftV4);
+	//			try (InputStream dataInputStream = getClass().getClassLoader().getResourceAsStream("json/JsonSchemaDescriptionDraftV4.json")) {
+	//				jsonSchema.validate(dataInputStream);
+	//			}
+	//		} catch (final JsonSchemaDataValidationError e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testSuiteSimpleMode() {
+	//		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteSimpleMode.json"))) {
+	//			int testCount = 0;
+	//			final JsonNode testsuiteNode = testsuiteReader.read();
+	//			for (final Object item : ((JsonArray) testsuiteNode.getValue())) {
+	//				testCount++;
+	//				final JsonObject testItem = (JsonObject) item;
+	//				final String description = (String) testItem.get("description");
+	//				final JsonObject schema = (JsonObject) testItem.get("schema");
+	//				final Object data = testItem.get("data");
+	//				final Boolean validSchema;
+	//				if (testItem.containsPropertyKey("validSchema")) {
+	//					validSchema = (Boolean) testItem.get("validSchema");
+	//				} else {
+	//					validSchema = true;
+	//				}
+	//				final Boolean valid = (Boolean) testItem.get("valid");
+	//
+	//				try {
+	//					final JsonSchema jsonSchema = new JsonSchema(schema, null);
+	//					jsonSchema.setDownloadReferencedSchemas(true);
+	//					jsonSchema.validate(data);
+	//					if (!validSchema) {
+	//						Assert.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
+	//					}
+	//					if (!valid) {
+	//						Assert.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
+	//					}
+	//				} catch (final JsonSchemaDataValidationError e) {
+	//					if (valid) {
+	//						e.printStackTrace();
+	//						Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+	//					}
+	//				} catch (final JsonSchemaDefinitionError e) {
+	//					if (validSchema) {
+	//						e.printStackTrace();
+	//						Assert.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+	//					}
+	//				} catch (final Exception e) {
+	//					e.printStackTrace();
+	//					Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+	//				}
+	//			}
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testSuiteV4() {
+	//		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteDraftV4.json"))) {
+	//			int testCount = 0;
+	//			final JsonNode testsuiteNode = testsuiteReader.read();
+	//			for (final Object item : ((JsonArray) testsuiteNode.getValue())) {
+	//				testCount++;
+	//				final JsonObject testItem = (JsonObject) item;
+	//				final String description = (String) testItem.get("description");
+	//				final JsonObject schema = (JsonObject) testItem.get("schema");
+	//				final Object data = testItem.get("data");
+	//				final Boolean validSchema;
+	//				if (testItem.containsPropertyKey("validSchema")) {
+	//					validSchema = (Boolean) testItem.get("validSchema");
+	//				} else {
+	//					validSchema = true;
+	//				}
+	//				final Boolean valid = (Boolean) testItem.get("valid");
+	//
+	//				try {
+	//					final JsonSchema jsonSchema = new JsonSchema(schema, JsonSchemaVersion.draftV4);
+	//					jsonSchema.setDownloadReferencedSchemas(true);
+	//					jsonSchema.validate(data);
+	//					if (!validSchema) {
+	//						Assert.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
+	//					}
+	//					if (!valid) {
+	//						Assert.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
+	//					}
+	//				} catch (final JsonSchemaDataValidationError e) {
+	//					if (valid) {
+	//						e.printStackTrace();
+	//						Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+	//					}
+	//				} catch (final JsonSchemaDefinitionError e) {
+	//					if (validSchema) {
+	//						e.printStackTrace();
+	//						Assert.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+	//					}
+	//				} catch (final Exception e) {
+	//					e.printStackTrace();
+	//					Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+	//				}
+	//			}
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testSuiteV6() {
+	//		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteDraftV6.json"))) {
+	//			int testCount = 0;
+	//			final JsonNode testsuiteNode = testsuiteReader.read();
+	//			for (final Object item : ((JsonArray) testsuiteNode.getValue())) {
+	//				testCount++;
+	//				final JsonObject testItem = (JsonObject) item;
+	//				final String description = (String) testItem.get("description");
+	//				final JsonObject schema = (JsonObject) testItem.get("schema");
+	//				final Object data = testItem.get("data");
+	//				final Boolean validSchema;
+	//				if (testItem.containsPropertyKey("validSchema")) {
+	//					validSchema = (Boolean) testItem.get("validSchema");
+	//				} else {
+	//					validSchema = true;
+	//				}
+	//				final Boolean valid = (Boolean) testItem.get("valid");
+	//
+	//				try {
+	//					final JsonSchema jsonSchema = new JsonSchema(schema, JsonSchemaVersion.draftV6);
+	//					jsonSchema.setDownloadReferencedSchemas(true);
+	//					jsonSchema.validate(data);
+	//					if (!validSchema) {
+	//						Assert.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
+	//					}
+	//					if (!valid) {
+	//						Assert.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
+	//					}
+	//				} catch (final JsonSchemaDataValidationError e) {
+	//					if (valid) {
+	//						e.printStackTrace();
+	//						Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+	//					}
+	//				} catch (final JsonSchemaDefinitionError e) {
+	//					if (validSchema) {
+	//						e.printStackTrace();
+	//						Assert.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+	//					}
+	//				} catch (final Exception e) {
+	//					e.printStackTrace();
+	//					Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+	//				}
+	//			}
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		}
+	//	}
+	//
+	//	@Test
+	//	public void testSuiteV7() {
+	//		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteDraftV7.json"))) {
+	//			int testCount = 0;
+	//			final JsonNode testsuiteNode = testsuiteReader.read();
+	//			for (final Object item : ((JsonArray) testsuiteNode.getValue())) {
+	//				testCount++;
+	//				final JsonObject testItem = (JsonObject) item;
+	//				final String description = (String) testItem.get("description");
+	//				final JsonObject schema = (JsonObject) testItem.get("schema");
+	//				final Object data = testItem.get("data");
+	//				final Boolean validSchema;
+	//				if (testItem.containsPropertyKey("validSchema")) {
+	//					validSchema = (Boolean) testItem.get("validSchema");
+	//				} else {
+	//					validSchema = true;
+	//				}
+	//				final Boolean valid = (Boolean) testItem.get("valid");
+	//
+	//				try {
+	//					final JsonSchema jsonSchema = new JsonSchema(schema, JsonSchemaVersion.draftV7);
+	//					jsonSchema.setDownloadReferencedSchemas(true);
+	//					jsonSchema.validate(data);
+	//					if (!validSchema) {
+	//						Assert.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
+	//					}
+	//					if (!valid) {
+	//						Assert.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
+	//					}
+	//				} catch (final JsonSchemaDataValidationError e) {
+	//					if (valid) {
+	//						e.printStackTrace();
+	//						Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+	//					}
+	//				} catch (final JsonSchemaDefinitionError e) {
+	//					if (validSchema) {
+	//						e.printStackTrace();
+	//						Assert.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+	//					}
+	//				} catch (final Exception e) {
+	//					e.printStackTrace();
+	//					Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+	//				}
+	//			}
+	//		} catch (final Exception e) {
+	//			e.printStackTrace();
+	//			Assert.fail(e.getMessage());
+	//		}
+	//	}
 
 	private void assertJsonSchemaDataValidationErrorJsonPath(final JsonSchemaDataValidationError e, final JsonPath jsonPath) throws Exception {
 		if (e == null || e.getMessage() == null) {
