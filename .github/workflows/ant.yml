@@ -33,6 +33,7 @@ jobs:
       if: always()
       with:
         files: |
+          test-results/**/*.txt
           test-results/**/*.xml
           test-results/**/*.trx
           test-results/**/*.json
