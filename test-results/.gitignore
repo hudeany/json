@@ -6,3 +6,10 @@
 /TEST-de.soderer.utilities.json.JsonSerializerTest.txt
 /TEST-de.soderer.utilities.json.JsonTest.txt
 /TEST-de.soderer.utilities.json.JsonValidationTest.txt
+/TEST-de.soderer.utilities.json.Json5Test.xml
+/TEST-de.soderer.utilities.json.JsonCompareTest.xml
+/TEST-de.soderer.utilities.json.JsonPathTest.xml
+/TEST-de.soderer.utilities.json.JsonSchemaPathTest.xml
+/TEST-de.soderer.utilities.json.JsonSerializerTest.xml
+/TEST-de.soderer.utilities.json.JsonTest.xml
+/TEST-de.soderer.utilities.json.JsonValidationTest.xml
