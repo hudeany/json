@@ -100,7 +100,7 @@
 
 		<junit printsummary="yes" haltonfailure="yes">
 			<classpath refid="test.classpath" />
-			<batchtest todir="build">
+			<batchtest todir="test-results">
 				<formatter type="plain" usefile="true"/>
 				<fileset dir="src/test/java">
 					<include name="**/*Test.java" />
