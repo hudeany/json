@@ -10,8 +10,8 @@ import de.soderer.utilities.json.utilities.Utilities;
 public class JsonSchemaPath {
 	private Stack<JsonSchemaPathElement> jsonSchemaPathElements = new Stack<>();
 
-	public JsonSchemaPath() throws Exception {
-		this("$");
+	public JsonSchemaPath() {
+		jsonSchemaPathElements.push(new JsonSchemaPathRoot("$"));
 	}
 
 	/**
@@ -32,13 +32,15 @@ public class JsonSchemaPath {
 	 * @param jsonSchemaPathString
 	 * @throws Exception
 	 */
-	public JsonSchemaPath(final String jsonSchemaPathString) throws Exception {
+	public JsonSchemaPath(final String jsonSchemaPathString) throws JsonSchemaDefinitionError {
 		try (JsonSchemaPathReader jsonSchemaPathReader = new JsonSchemaPathReader(jsonSchemaPathString)) {
 			jsonSchemaPathElements = jsonSchemaPathReader.getReadJsonSchemaPathElements();
+		} catch (final Exception e) {
+			throw new JsonSchemaDefinitionError(e.getMessage(), null, e);
 		}
 	}
 
-	public JsonSchemaPath(final JsonSchemaPath JsonSchemaPath) throws Exception {
+	public JsonSchemaPath(final JsonSchemaPath JsonSchemaPath) {
 		jsonSchemaPathElements = new Stack<>();
 		jsonSchemaPathElements.addAll(JsonSchemaPath.getPathParts());
 	}

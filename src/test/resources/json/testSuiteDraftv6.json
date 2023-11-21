@@ -3610,7 +3610,7 @@
         },
         "description": "Valid propertyNames enum",
         "schema": {
-            "$schema": "http://json-schema.org/draft-07/schema#",
+            "$schema": "http://json-schema.org/draft-06/schema#",
             "type": "object",
             "propertyNames": {"enum": ["num", "name"]}
         },
@@ -3622,9 +3622,95 @@
         },
         "description": "Invalid propertyNames enum",
         "schema": {
-            "$schema": "http://json-schema.org/draft-07/schema#",
+            "$schema": "http://json-schema.org/draft-06/schema#",
             "type": "object",
             "propertyNames": {"enum": ["num", "name"]}
+        },
+        "valid": false
+    },
+    {
+        "data": {
+            "names": [
+                {
+                    "name": "Worker1"
+                },
+                {
+                    "name": "Boss"
+                },
+                {
+                    "name": "Worker2"
+                }
+            ]
+        },
+        "description": "Array contains item",
+        "schema": {
+            "$schema": "http://json-schema.org/draft-06/schema#",
+            "type": "object",
+            "properties": {
+                "names": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "contains":{
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "pattern": "^Boss$"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "valid": true
+    },
+    {
+        "data": {
+            "names": [
+                {
+                    "name": "Worker1"
+                },
+                {
+                    "name": "NoBoss"
+                },
+                {
+                    "name": "Worker2"
+                }
+            ]
+        },
+        "description": "Array not contains item",
+        "schema": {
+            "$schema": "http://json-schema.org/draft-06/schema#",
+            "type": "object",
+            "properties": {
+                "names": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "contains":{
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "pattern": "^Boss$"
+                            }
+                        }
+                    }
+                }
+            }
         },
         "valid": false
     }

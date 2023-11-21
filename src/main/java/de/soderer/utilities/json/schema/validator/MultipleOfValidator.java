@@ -10,8 +10,8 @@ import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 
 public class MultipleOfValidator extends BaseJsonSchemaValidator {
-	public MultipleOfValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData, final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDefinitionError {
-		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData, jsonNode, jsonPath);
+	public MultipleOfValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
+		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
 		if (validatorData == null) {
 			throw new JsonSchemaDefinitionError("Data for multipleOf is null", jsonSchemaPath);
@@ -27,7 +27,7 @@ public class MultipleOfValidator extends BaseJsonSchemaValidator {
 	}
 
 	@Override
-	public void validate() throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		if (!(jsonNode.isNumber())) {
 			if (jsonSchemaDependencyResolver.isSimpleMode()) {
 				throw new JsonSchemaDataValidationError("Expected data type 'number' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);

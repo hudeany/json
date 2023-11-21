@@ -4,13 +4,14 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Stack;
 
+import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.utilities.BasicReader;
 
 public class JsonPath {
 	private Stack<JsonPathElement> jsonPathElements = new Stack<>();
 
-	public JsonPath() throws Exception {
-		this("$");
+	public JsonPath() {
+		jsonPathElements.push(new JsonPathRoot("$"));
 	}
 
 	/**
@@ -29,15 +30,18 @@ public class JsonPath {
 	 * 	otherSchema.json#/store/customer/item
 	 *
 	 * @param jsonPathString
+	 * @throws JsonSchemaDefinitionError
 	 * @throws Exception
 	 */
-	public JsonPath(final String jsonPathString) throws Exception {
+	public JsonPath(final String jsonPathString) throws JsonSchemaDefinitionError {
 		try (JsonPathReader jsonPathReader = new JsonPathReader(jsonPathString)) {
 			jsonPathElements = jsonPathReader.getReadJsonPathElements();
+		} catch (final Exception e) {
+			throw new JsonSchemaDefinitionError(e.getMessage(), null, e);
 		}
 	}
 
-	public JsonPath(final JsonPath JsonPath) throws Exception {
+	public JsonPath(final JsonPath JsonPath) {
 		jsonPathElements = new Stack<>();
 		jsonPathElements.addAll(JsonPath.getPathParts());
 	}

@@ -712,7 +712,7 @@
         },
         "description": "valid definition schema",
         "schema": {
-            "$ref": "https://json-schema.org/draft-06/schema#"
+            "$ref": "https://json-schema.org/draft-07/schema#"
         },
         "valid": true
     },
@@ -726,7 +726,7 @@
         },
         "description": "invalid definition schema",
         "schema": {
-            "$ref": "https://json-schema.org/draft-06/schema#"
+            "$ref": "https://json-schema.org/draft-07/schema#"
         },
         "valid": false
     },
@@ -3271,7 +3271,7 @@
         },
         "description": "remote ref valid",
         "schema": {
-            "$ref": "https://json-schema.org/draft-06/schema#"
+            "$ref": "https://json-schema.org/draft-07/schema#"
         },
         "valid": true
     },
@@ -3281,7 +3281,7 @@
         },
         "description": "remote ref invalid",
         "schema": {
-            "$ref": "https://json-schema.org/draft-06/schema#"
+            "$ref": "https://json-schema.org/draft-07/schema#"
         },
         "valid": false
     },
@@ -3462,7 +3462,7 @@
         },
         "description": "Draft V6 example schema",
         "schema": {
-            "$schema": "https://json-schema.org/draft-06/schema",
+            "$schema": "https://json-schema.org/draft-07/schema",
             "$id": "https://example.com/product.schema.json",
             "title": "Example schema",
             "description": "Draft V6 example schema",
@@ -3494,7 +3494,7 @@
         },
         "description": "Draft V6 exclusiveMinimum error",
         "schema": {
-            "$schema": "https://json-schema.org/draft-06/schema",
+            "$schema": "https://json-schema.org/draft-07/schema",
             "$id": "https://example.com/product.schema.json",
             "title": "Example schema",
             "description": "Draft V6 example schema",
@@ -3625,6 +3625,92 @@
             "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "propertyNames": {"enum": ["num", "name"]}
+        },
+        "valid": false
+    },
+    {
+        "data": {
+            "names": [
+                {
+                    "name": "Worker1"
+                },
+                {
+                    "name": "Boss"
+                },
+                {
+                    "name": "Worker2"
+                }
+            ]
+        },
+        "description": "Array contains item",
+        "schema": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
+            "properties": {
+                "names": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "contains":{
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "pattern": "^Boss$"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "valid": true
+    },
+    {
+        "data": {
+            "names": [
+                {
+                    "name": "Worker1"
+                },
+                {
+                    "name": "NoBoss"
+                },
+                {
+                    "name": "Worker2"
+                }
+            ]
+        },
+        "description": "Array not contains item",
+        "schema": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
+            "properties": {
+                "names": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "contains":{
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "pattern": "^Boss$"
+                            }
+                        }
+                    }
+                }
+            }
         },
         "valid": false
     }

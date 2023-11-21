@@ -15,6 +15,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 import de.soderer.utilities.json.schema.JsonSchema;
+import de.soderer.utilities.json.schema.JsonSchemaConfiguration;
 import de.soderer.utilities.json.schema.JsonSchemaVersion;
 import de.soderer.utilities.json.utilities.Utilities;
 
@@ -224,7 +225,7 @@ public class JsonUtilities {
 	public static JsonNode parseJsonDataAndVerifyJsonSchema(final byte[] jsonData, final Charset encoding, final String jsonSchemaFileName) throws Exception {
 		JsonSchema jsonSchema;
 		try (InputStream jsonSchemaInputStream = new FileInputStream(jsonSchemaFileName)) {
-			jsonSchema = new JsonSchema(jsonSchemaInputStream, encoding);
+			jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setEncoding(encoding));
 		}
 		return jsonSchema.validate(new ByteArrayInputStream(jsonData), encoding);
 	}
@@ -252,7 +253,7 @@ public class JsonUtilities {
 	public static JsonNode validateJsonSchema(final byte[] jsonSchemaData, final Charset encoding, final JsonSchemaVersion jsonSchemaVersion) throws Exception {
 		JsonSchema jsonSchema;
 		try (InputStream jsonSchemaInputStream = JsonSchema.class.getClassLoader().getResourceAsStream(jsonSchemaVersion.getLocalFile());) {
-			jsonSchema = new JsonSchema(jsonSchemaInputStream, encoding);
+			jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setEncoding(encoding));
 		}
 		return jsonSchema.validate(new ByteArrayInputStream(jsonSchemaData), encoding);
 	}

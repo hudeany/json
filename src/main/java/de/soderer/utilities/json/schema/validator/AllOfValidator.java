@@ -16,8 +16,8 @@ import de.soderer.utilities.json.schema.JsonSchemaPath;
 public class AllOfValidator extends BaseJsonSchemaValidator {
 	private List<List<BaseJsonSchemaValidator>> subValidatorPackages = null;
 
-	public AllOfValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData, final JsonNode jsonNode, final JsonPath jsonPath) throws Exception {
-		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData, jsonNode, jsonPath);
+	public AllOfValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
+		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
 		if (validatorData == null) {
 			throw new JsonSchemaDefinitionError("AllOf array is 'null'", jsonSchemaPath);
@@ -26,7 +26,7 @@ public class AllOfValidator extends BaseJsonSchemaValidator {
 			for (int i = 0; i < ((JsonArray) validatorData).size(); i++) {
 				final Object subValidationData = ((JsonArray) validatorData).get(i);
 				if (subValidationData instanceof JsonObject) {
-					subValidatorPackages.add(JsonSchema.createValidators((JsonObject) subValidationData, jsonSchemaDependencyResolver, jsonSchemaPath, jsonNode, jsonPath));
+					subValidatorPackages.add(JsonSchema.createValidators((JsonObject) subValidationData, jsonSchemaDependencyResolver, jsonSchemaPath));
 				} else {
 					throw new JsonSchemaDefinitionError("AllOf array contains a non-JsonObject", jsonSchemaPath);
 				}
@@ -40,11 +40,11 @@ public class AllOfValidator extends BaseJsonSchemaValidator {
 	}
 
 	@Override
-	public void validate() throws Exception {
+	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		for (final List<BaseJsonSchemaValidator> subValidatorPackage : subValidatorPackages) {
 			try {
 				for (final BaseJsonSchemaValidator subValidator : subValidatorPackage) {
-					subValidator.validate();
+					subValidator.validate(jsonNode, jsonPath);
 				}
 			} catch (final JsonSchemaDataValidationError e) {
 				throw new JsonSchemaDataValidationError("Some option of 'allOf' property did not apply to JsonNode", jsonPath, e);

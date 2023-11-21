@@ -10,8 +10,8 @@ import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 
 public class PatternValidator extends BaseJsonSchemaValidator {
-	public PatternValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData, final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDefinitionError {
-		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData, jsonNode, jsonPath);
+	public PatternValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
+		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
 		if (!(validatorData instanceof String)) {
 			throw new JsonSchemaDefinitionError("Pattern is no string", jsonSchemaPath);
@@ -19,7 +19,7 @@ public class PatternValidator extends BaseJsonSchemaValidator {
 	}
 
 	@Override
-	public void validate() throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		final Pattern pattern = Pattern.compile((String) validatorData);
 		if (jsonNode.isNumber()) {
 			if (jsonSchemaDependencyResolver.isSimpleMode()) {

@@ -10,8 +10,10 @@ import de.soderer.utilities.json.schema.JsonSchemaPath;
 import de.soderer.utilities.json.utilities.NumberUtilities;
 
 public class MaximumValidator extends ExtendedBaseJsonSchemaValidator {
-	public MaximumValidator(final JsonObject parentValidatorData, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData, final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDefinitionError {
-		super(parentValidatorData, jsonSchemaDependencyResolver, jsonSchemaPath, validatorData, jsonNode, jsonPath);
+	boolean isExclusiveMaximum = false;
+
+	public MaximumValidator(final JsonObject parentValidatorData, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
+		super(parentValidatorData, jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
 		if (validatorData == null) {
 			throw new JsonSchemaDefinitionError("Data for maximum is null", jsonSchemaPath);
@@ -24,10 +26,21 @@ public class MaximumValidator extends ExtendedBaseJsonSchemaValidator {
 		} else if (!(validatorData instanceof Number)) {
 			throw new JsonSchemaDefinitionError("Data for maximum '" + validatorData + "' is not a number", jsonSchemaPath);
 		}
+
+		if (parentValidatorData.containsPropertyKey("exclusiveMaximum")) {
+			final Object exclusiveMaximumRaw = parentValidatorData.get("exclusiveMaximum");
+			if (exclusiveMaximumRaw == null) {
+				throw new JsonSchemaDefinitionError("Property 'exclusiveMaximum' is 'null'", jsonSchemaPath);
+			} else if (exclusiveMaximumRaw instanceof Boolean) {
+				isExclusiveMaximum = (Boolean) exclusiveMaximumRaw;
+			} else {
+				throw new JsonSchemaDefinitionError("ExclusiveMaximum data is not 'boolean'", jsonSchemaPath);
+			}
+		}
 	}
 
 	@Override
-	public void validate() throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		if (!(jsonNode.isNumber())) {
 			if (jsonSchemaDependencyResolver.isSimpleMode()) {
 				throw new JsonSchemaDataValidationError("Expected data type 'number' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
@@ -38,21 +51,8 @@ public class MaximumValidator extends ExtendedBaseJsonSchemaValidator {
 
 			if (NumberUtilities.compare(dataValue, maximumValue) > 0) {
 				throw new JsonSchemaDataValidationError("Maximum number is '" + validatorData + "' but value was '" + jsonNode.getValue() + "'", jsonPath);
-			}
-
-			if (parentValidatorData.containsPropertyKey("exclusiveMaximum")) {
-				final Object exclusiveMaximumRaw = parentValidatorData.get("exclusiveMaximum");
-				if (exclusiveMaximumRaw == null) {
-					throw new JsonSchemaDefinitionError("Property 'exclusiveMaximum' is 'null'", jsonSchemaPath);
-				} else if (exclusiveMaximumRaw instanceof Boolean) {
-					if ((Boolean) exclusiveMaximumRaw) {
-						if (NumberUtilities.compare(dataValue, maximumValue) == 0) {
-							throw new JsonSchemaDataValidationError("Exclusive maximum number is '" + validatorData + "' but value was '" + jsonNode.getValue() + "'", jsonPath);
-						}
-					}
-				} else {
-					throw new JsonSchemaDefinitionError("ExclusiveMaximum data is not 'boolean'", jsonSchemaPath);
-				}
+			} else if (isExclusiveMaximum && NumberUtilities.compare(dataValue, maximumValue) == 0) {
+				throw new JsonSchemaDataValidationError("Exclusive maximum number is '" + validatorData + "' but value was '" + jsonNode.getValue() + "'", jsonPath);
 			}
 		}
 	}

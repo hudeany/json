@@ -1,6 +1,6 @@
 [
     {
-        "desc": "description: a schema given for items; test: valid items",
+        "description": "a schema given for items; test: valid items",
         "schema": {
             "items": {
                 "type": "integer"
@@ -10,7 +10,7 @@
         "valid": true
     },
     {
-        "desc": "description: a schema given for items; test: wrong type of items",
+        "description": "a schema given for items; test: wrong type of items",
         "schema": {
             "items": {
                 "type": "integer"
@@ -20,7 +20,7 @@
         "valid": false
     },
     {
-        "desc": "description: an array of schemas for items; test: correct types",
+        "description": "an array of schemas for items; test: correct types",
         "schema": {
             "items": [
                 {
@@ -35,7 +35,7 @@
         "valid": true
     },
     {
-        "desc": "description: an array of schemas for items; test: wrong types",
+        "description": "an array of schemas for items; test: wrong types",
         "schema": {
             "items": [
                 {
@@ -50,7 +50,7 @@
         "valid": false
     },
     {
-        "desc": "description: maxLength validation; test: shorter is valid",
+        "description": "maxLength validation; test: shorter is valid",
         "schema": {
             "maxLength": 2
         },
@@ -58,7 +58,7 @@
         "valid": true
     },
     {
-        "desc": "description: maxLength validation; test: exact length is valid",
+        "description": "maxLength validation; test: exact length is valid",
         "schema": {
             "maxLength": 2
         },
@@ -66,7 +66,7 @@
         "valid": true
     },
     {
-        "desc": "description: maxLength validation; test: too long is invalid",
+        "description": "maxLength validation; test: too long is invalid",
         "schema": {
             "maxLength": 2
         },
@@ -74,7 +74,7 @@
         "valid": false
     },
     {
-        "desc": "description: maximum validation; test: below the maximum is valid",
+        "description": "maximum validation; test: below the maximum is valid",
         "schema": {
             "maximum": 3
         },
@@ -82,7 +82,7 @@
         "valid": true
     },
     {
-        "desc": "description: maximum validation; test: above the maximum is invalid",
+        "description": "maximum validation; test: above the maximum is invalid",
         "schema": {
             "maximum": 3
         },
@@ -90,7 +90,7 @@
         "valid": false
     },
     {
-        "desc": "description: exclusiveMaximum validation; test: below the maximum is still valid",
+        "description": "exclusiveMaximum validation; test: below the maximum is still valid",
         "schema": {
             "maximum": 3,
             "exclusiveMaximum": true
@@ -99,7 +99,7 @@
         "valid": true
     },
     {
-        "desc": "description: exclusiveMaximum validation; test: boundary point is invalid",
+        "description": "exclusiveMaximum validation; test: boundary point is invalid",
         "schema": {
             "maximum": 3,
             "exclusiveMaximum": true
@@ -108,7 +108,7 @@
         "valid": false
     },
     {
-        "desc": "description: minimum validation; test: above the minimum is valid",
+        "description": "minimum validation; test: above the minimum is valid",
         "schema": {
             "minimum": 1.1
         },
@@ -116,7 +116,7 @@
         "valid": true
     },
     {
-        "desc": "description: minimum validation; test: below the minimum is invalid",
+        "description": "minimum validation; test: below the minimum is invalid",
         "schema": {
             "minimum": 1.1
         },
@@ -124,7 +124,7 @@
         "valid": false
     },
     {
-        "desc": "description: exclusiveMinimum validation; test: above the minimum is still valid",
+        "description": "exclusiveMinimum validation; test: above the minimum is still valid",
         "schema": {
             "minimum": 1.1,
             "exclusiveMinimum": true
@@ -133,7 +133,7 @@
         "valid": true
     },
     {
-        "desc": "description: exclusiveMinimum validation; test: boundary point is invalid",
+        "description": "exclusiveMinimum validation; test: boundary point is invalid",
         "schema": {
             "minimum": 1.1,
             "exclusiveMinimum": true
@@ -142,7 +142,7 @@
         "valid": false
     },
     {
-        "desc": "description: support for bignums; test: a bignum is an integer",
+        "description": "support for bignums; test: a bignum is an integer",
         "schema": {
             "type": "integer"
         },
@@ -150,7 +150,7 @@
         "valid": true
     },
     {
-        "desc": "description: root pointer ref; test: match",
+        "description": "root pointer ref; test: match",
         "schema": {
             "properties": {
                 "foo": {
@@ -165,7 +165,7 @@
         "valid": false
     },
     {
-        "desc": "description: root pointer ref; test: recursive match",
+        "description": "root pointer ref; test: recursive match",
         "schema": {
             "properties": {
                 "foo": {
@@ -182,7 +182,7 @@
         "valid": false
     },
     {
-        "desc": "description: root pointer ref; test: mismatch",
+        "description": "root pointer ref; test: mismatch",
         "schema": {
             "properties": {
                 "foo": {
@@ -197,7 +197,7 @@
         "valid": false
     },
     {
-        "desc": "description: root pointer ref; test: recursive mismatch",
+        "description": "root pointer ref; test: recursive mismatch",
         "schema": {
             "properties": {
                 "foo": {
@@ -214,7 +214,7 @@
         "valid": false
     },
     {
-        "desc": "description: relative pointer ref; test: match",
+        "description": "relative pointer ref; test: match",
         "schema": {
             "properties": {
                 "foo": {
@@ -231,7 +231,7 @@
         "valid": true
     },
     {
-        "desc": "description: relative pointer ref; test: mismatch",
+        "description": "relative pointer ref; test: mismatch",
         "schema": {
             "properties": {
                 "foo": {
@@ -248,7 +248,7 @@
         "valid": false
     },
     {
-        "desc": "description: escaped pointer ref; test: slash",
+        "description": "escaped pointer ref; test: slash",
         "schema": {
         	"definitions": {
 	            "tilda~field": {
@@ -279,7 +279,7 @@
         "valid": false
     },
     {
-        "desc": "description: escaped pointer ref; test: tilda",
+        "description": "escaped pointer ref; test: tilda",
         "schema": {
         	"definitions": {
 	            "tilda~field": {
@@ -310,7 +310,7 @@
         "valid": false
     },
     {
-        "desc": "description: escaped pointer ref; test: percent",
+        "description": "escaped pointer ref; test: percent",
         "schema": {
         	"definitions": {
 	            "tilda~field": {
@@ -341,7 +341,7 @@
         "valid": false
     },
     {
-        "desc": "description: array of items with no additionalItems; test: no additional items present",
+        "description": "array of items with no additionalItems; test: no additional items present",
         "schema": {
             "items": [
                 { },
@@ -354,7 +354,7 @@
         "valid": true
     },
     {
-        "desc": "description: array of items with no additionalItems; test: additional items are not permitted",
+        "description": "array of items with no additionalItems; test: additional items are not permitted",
         "schema": {
             "items": [
                 { },
@@ -367,7 +367,7 @@
         "valid": false
     },
     {
-        "desc": "description: additionalItems are allowed by default; test: only the first items are validated",
+        "description": "additionalItems are allowed by default; test: only the first items are validated",
         "schema": {
             "items": [ ]
         },
@@ -375,7 +375,7 @@
         "valid": true
     },
     {
-        "desc": "description: required validation; test: present required property is valid",
+        "description": "required validation; test: present required property is valid",
         "schema": {
             "properties": {
                 "foo": { },
@@ -389,7 +389,7 @@
         "valid": true
     },
     {
-        "desc": "description: required validation; test: non-present required property is invalid",
+        "description": "required validation; test: non-present required property is invalid",
         "schema": {
             "properties": {
                 "foo": { },
@@ -403,7 +403,7 @@
         "valid": false
     },
     {
-        "desc": "description: required default validation; test: not required by default",
+        "description": "required default validation; test: not required by default",
         "schema": {
             "properties": {
                 "foo": { }
@@ -413,7 +413,7 @@
         "valid": true
     },
     {
-        "desc": "description: required explicitly false validation; test: not required if required is false",
+        "description": "required explicitly false validation; test: not required if required is false",
         "schema": {
             "properties": {
                 "foo": {
@@ -422,10 +422,10 @@
             }
         },
         "data": { },
-        "valid": true
+        "validSchema": false
     },
     {
-        "desc": "description: minItems validation; test: longer is valid",
+        "description": "minItems validation; test: longer is valid",
         "schema": {
             "minItems": 1
         },
@@ -433,7 +433,7 @@
         "valid": true
     },
     {
-        "desc": "description: minItems validation; test: exact length is valid",
+        "description": "minItems validation; test: exact length is valid",
         "schema": {
             "minItems": 1
         },
@@ -441,7 +441,7 @@
         "valid": true
     },
     {
-        "desc": "description: minItems validation; test: too short is invalid",
+        "description": "minItems validation; test: too short is invalid",
         "schema": {
             "minItems": 1
         },
@@ -449,7 +449,7 @@
         "valid": false
     },
     {
-        "desc": "description: integer type matches integers; test: an integer is an integer",
+        "description": "integer type matches integers; test: an integer is an integer",
         "schema": {
             "type": "integer"
         },
@@ -457,7 +457,7 @@
         "valid": true
     },
     {
-        "desc": "description: integer type matches integers; test: a float is not an integer",
+        "description": "integer type matches integers; test: a float is not an integer",
         "schema": {
             "type": "integer"
         },
@@ -465,7 +465,7 @@
         "valid": false
     },
     {
-        "desc": "description: integer type matches integers; test: a float is not an integer even without fractional part",
+        "description": "integer type matches integers; test: a float is not an integer even without fractional part",
         "schema": {
             "type": "integer"
         },
@@ -473,7 +473,7 @@
         "valid": false
     },
     {
-        "desc": "description: integer type matches integers; test: a string is not an integer",
+        "description": "integer type matches integers; test: a string is not an integer",
         "schema": {
             "type": "integer"
         },
@@ -481,7 +481,7 @@
         "valid": false
     },
     {
-        "desc": "description: integer type matches integers; test: an object is not an integer",
+        "description": "integer type matches integers; test: an object is not an integer",
         "schema": {
             "type": "integer"
         },
@@ -489,7 +489,7 @@
         "valid": false
     },
     {
-        "desc": "description: integer type matches integers; test: an array is not an integer",
+        "description": "integer type matches integers; test: an array is not an integer",
         "schema": {
             "type": "integer"
         },
@@ -497,7 +497,7 @@
         "valid": false
     },
     {
-        "desc": "description: integer type matches integers; test: a boolean is not an integer",
+        "description": "integer type matches integers; test: a boolean is not an integer",
         "schema": {
             "type": "integer"
         },
@@ -505,7 +505,7 @@
         "valid": false
     },
     {
-        "desc": "description: integer type matches integers; test: null is not an integer",
+        "description": "integer type matches integers; test: null is not an integer",
         "schema": {
             "type": "integer"
         },
@@ -513,7 +513,7 @@
         "valid": false
     },
     {
-        "desc": "description: number type matches numbers; test: an integer is a number",
+        "description": "number type matches numbers; test: an integer is a number",
         "schema": {
             "type": "number"
         },
@@ -521,7 +521,7 @@
         "valid": true
     },
     {
-        "desc": "description: number type matches numbers; test: a float is a number",
+        "description": "number type matches numbers; test: a float is a number",
         "schema": {
             "type": "number"
         },
@@ -529,7 +529,7 @@
         "valid": true
     },
     {
-        "desc": "description: number type matches numbers; test: a string is not a number",
+        "description": "number type matches numbers; test: a string is not a number",
         "schema": {
             "type": "number"
         },
@@ -537,7 +537,7 @@
         "valid": false
     },
     {
-        "desc": "description: number type matches numbers; test: an object is not a number",
+        "description": "number type matches numbers; test: an object is not a number",
         "schema": {
             "type": "number"
         },
@@ -545,7 +545,7 @@
         "valid": false
     },
     {
-        "desc": "description: number type matches numbers; test: an array is not a number",
+        "description": "number type matches numbers; test: an array is not a number",
         "schema": {
             "type": "number"
         },
@@ -553,7 +553,7 @@
         "valid": false
     },
     {
-        "desc": "description: number type matches numbers; test: a boolean is not a number",
+        "description": "number type matches numbers; test: a boolean is not a number",
         "schema": {
             "type": "number"
         },
@@ -561,7 +561,7 @@
         "valid": false
     },
     {
-        "desc": "description: number type matches numbers; test: null is not a number",
+        "description": "number type matches numbers; test: null is not a number",
         "schema": {
             "type": "number"
         },
@@ -569,7 +569,7 @@
         "valid": false
     },
     {
-        "desc": "description: string type matches strings; test: 1 is not a string",
+        "description": "string type matches strings; test: 1 is not a string",
         "schema": {
             "type": "string"
         },
@@ -577,7 +577,7 @@
         "valid": false
     },
     {
-        "desc": "description: string type matches strings; test: a float is not a string",
+        "description": "string type matches strings; test: a float is not a string",
         "schema": {
             "type": "string"
         },
@@ -585,7 +585,7 @@
         "valid": false
     },
     {
-        "desc": "description: string type matches strings; test: a string is a string",
+        "description": "string type matches strings; test: a string is a string",
         "schema": {
             "type": "string"
         },
@@ -593,7 +593,7 @@
         "valid": true
     },
     {
-        "desc": "description: string type matches strings; test: an object is not a string",
+        "description": "string type matches strings; test: an object is not a string",
         "schema": {
             "type": "string"
         },
@@ -601,7 +601,7 @@
         "valid": false
     },
     {
-        "desc": "description: string type matches strings; test: an array is not a string",
+        "description": "string type matches strings; test: an array is not a string",
         "schema": {
             "type": "string"
         },
@@ -609,7 +609,7 @@
         "valid": false
     },
     {
-        "desc": "description: string type matches strings; test: a boolean is not a string",
+        "description": "string type matches strings; test: a boolean is not a string",
         "schema": {
             "type": "string"
         },
@@ -617,7 +617,7 @@
         "valid": false
     },
     {
-        "desc": "description: string type matches strings; test: null is not a string",
+        "description": "string type matches strings; test: null is not a string",
         "schema": {
             "type": "string"
         },
@@ -625,7 +625,7 @@
         "valid": false
     },
     {
-        "desc": "description: object type matches objects; test: an integer is not an object",
+        "description": "object type matches objects; test: an integer is not an object",
         "schema": {
             "type": "object"
         },
@@ -633,7 +633,7 @@
         "valid": false
     },
     {
-        "desc": "description: object type matches objects; test: a float is not an object",
+        "description": "object type matches objects; test: a float is not an object",
         "schema": {
             "type": "object"
         },
@@ -641,7 +641,7 @@
         "valid": false
     },
     {
-        "desc": "description: object type matches objects; test: a string is not an object",
+        "description": "object type matches objects; test: a string is not an object",
         "schema": {
             "type": "object"
         },
@@ -649,7 +649,7 @@
         "valid": false
     },
     {
-        "desc": "description: object type matches objects; test: an object is an object",
+        "description": "object type matches objects; test: an object is an object",
         "schema": {
             "type": "object"
         },
@@ -657,7 +657,7 @@
         "valid": true
     },
     {
-        "desc": "description: object type matches objects; test: an array is not an object",
+        "description": "object type matches objects; test: an array is not an object",
         "schema": {
             "type": "object"
         },
@@ -665,7 +665,7 @@
         "valid": false
     },
     {
-        "desc": "description: object type matches objects; test: a boolean is not an object",
+        "description": "object type matches objects; test: a boolean is not an object",
         "schema": {
             "type": "object"
         },
@@ -673,7 +673,7 @@
         "valid": false
     },
     {
-        "desc": "description: object type matches objects; test: null is not an object",
+        "description": "object type matches objects; test: null is not an object",
         "schema": {
             "type": "object"
         },
@@ -681,7 +681,7 @@
         "valid": false
     },
     {
-        "desc": "description: array type matches arrays; test: an integer is not an array",
+        "description": "array type matches arrays; test: an integer is not an array",
         "schema": {
             "type": "array"
         },
@@ -689,7 +689,7 @@
         "valid": false
     },
     {
-        "desc": "description: array type matches arrays; test: a float is not an array",
+        "description": "array type matches arrays; test: a float is not an array",
         "schema": {
             "type": "array"
         },
@@ -697,7 +697,7 @@
         "valid": false
     },
     {
-        "desc": "description: array type matches arrays; test: a string is not an array",
+        "description": "array type matches arrays; test: a string is not an array",
         "schema": {
             "type": "array"
         },
@@ -705,7 +705,7 @@
         "valid": false
     },
     {
-        "desc": "description: array type matches arrays; test: an object is not an array",
+        "description": "array type matches arrays; test: an object is not an array",
         "schema": {
             "type": "array"
         },
@@ -713,7 +713,7 @@
         "valid": false
     },
     {
-        "desc": "description: array type matches arrays; test: an array is not an array",
+        "description": "array type matches arrays; test: an array is not an array",
         "schema": {
             "type": "array"
         },
@@ -721,7 +721,7 @@
         "valid": true
     },
     {
-        "desc": "description: array type matches arrays; test: a boolean is not an array",
+        "description": "array type matches arrays; test: a boolean is not an array",
         "schema": {
             "type": "array"
         },
@@ -729,7 +729,7 @@
         "valid": false
     },
     {
-        "desc": "description: array type matches arrays; test: null is not an array",
+        "description": "array type matches arrays; test: null is not an array",
         "schema": {
             "type": "array"
         },
@@ -737,7 +737,7 @@
         "valid": false
     },
     {
-        "desc": "description: boolean type matches booleans; test: an integer is not a boolean",
+        "description": "boolean type matches booleans; test: an integer is not a boolean",
         "schema": {
             "type": "boolean"
         },
@@ -745,7 +745,7 @@
         "valid": false
     },
     {
-        "desc": "description: boolean type matches booleans; test: a float is not a boolean",
+        "description": "boolean type matches booleans; test: a float is not a boolean",
         "schema": {
             "type": "boolean"
         },
@@ -753,7 +753,7 @@
         "valid": false
     },
     {
-        "desc": "description: boolean type matches booleans; test: a string is not a boolean",
+        "description": "boolean type matches booleans; test: a string is not a boolean",
         "schema": {
             "type": "boolean"
         },
@@ -761,7 +761,7 @@
         "valid": false
     },
     {
-        "desc": "description: boolean type matches booleans; test: an object is not a boolean",
+        "description": "boolean type matches booleans; test: an object is not a boolean",
         "schema": {
             "type": "boolean"
         },
@@ -769,7 +769,7 @@
         "valid": false
     },
     {
-        "desc": "description: boolean type matches booleans; test: an array is not a boolean",
+        "description": "boolean type matches booleans; test: an array is not a boolean",
         "schema": {
             "type": "boolean"
         },
@@ -777,7 +777,7 @@
         "valid": false
     },
     {
-        "desc": "description: boolean type matches booleans; test: a boolean is not a boolean",
+        "description": "boolean type matches booleans; test: a boolean is not a boolean",
         "schema": {
             "type": "boolean"
         },
@@ -785,7 +785,7 @@
         "valid": true
     },
     {
-        "desc": "description: boolean type matches booleans; test: null is not a boolean",
+        "description": "boolean type matches booleans; test: null is not a boolean",
         "schema": {
             "type": "boolean"
         },
@@ -793,7 +793,7 @@
         "valid": false
     },
     {
-        "desc": "description: null type matches only the null object; test: an integer is not null",
+        "description": "null type matches only the null object; test: an integer is not null",
         "schema": {
             "type": "null"
         },
@@ -801,7 +801,7 @@
         "valid": false
     },
     {
-        "desc": "description: null type matches only the null object; test: a float is not null",
+        "description": "null type matches only the null object; test: a float is not null",
         "schema": {
             "type": "null"
         },
@@ -809,7 +809,7 @@
         "valid": false
     },
     {
-        "desc": "description: null type matches only the null object; test: a string is not null",
+        "description": "null type matches only the null object; test: a string is not null",
         "schema": {
             "type": "null"
         },
@@ -817,7 +817,7 @@
         "valid": false
     },
     {
-        "desc": "description: null type matches only the null object; test: an object is not null",
+        "description": "null type matches only the null object; test: an object is not null",
         "schema": {
             "type": "null"
         },
@@ -825,7 +825,7 @@
         "valid": false
     },
     {
-        "desc": "description: null type matches only the null object; test: an array is not null",
+        "description": "null type matches only the null object; test: an array is not null",
         "schema": {
             "type": "null"
         },
@@ -833,7 +833,7 @@
         "valid": false
     },
     {
-        "desc": "description: null type matches only the null object; test: a boolean is not null",
+        "description": "null type matches only the null object; test: a boolean is not null",
         "schema": {
             "type": "null"
         },
@@ -841,7 +841,7 @@
         "valid": false
     },
     {
-        "desc": "description: null type matches only the null object; test: null is null",
+        "description": "null type matches only the null object; test: null is null",
         "schema": {
             "type": "null"
         },
@@ -849,63 +849,15 @@
         "valid": true
     },
     {
-        "desc": "description: any type matches any type; test: any type includes integers",
+        "description": "any type is not specified",
         "schema": {
             "type": "any"
         },
         "data": 1,
-        "valid": true
+        "validSchema": false
     },
     {
-        "desc": "description: any type matches any type; test: any type includes float",
-        "schema": {
-            "type": "any"
-        },
-        "data": 1.1,
-        "valid": true
-    },
-    {
-        "desc": "description: any type matches any type; test: any type includes string",
-        "schema": {
-            "type": "any"
-        },
-        "data": "foo",
-        "valid": true
-    },
-    {
-        "desc": "description: any type matches any type; test: any type includes object",
-        "schema": {
-            "type": "any"
-        },
-        "data": { },
-        "valid": true
-    },
-    {
-        "desc": "description: any type matches any type; test: any type includes array",
-        "schema": {
-            "type": "any"
-        },
-        "data": [ ],
-        "valid": true
-    },
-    {
-        "desc": "description: any type matches any type; test: any type includes boolean",
-        "schema": {
-            "type": "any"
-        },
-        "data": true,
-        "valid": true
-    },
-    {
-        "desc": "description: any type matches any type; test: any type includes null",
-        "schema": {
-            "type": "any"
-        },
-        "data": null,
-        "valid": true
-    },
-    {
-        "desc": "description: multiple types can be specified in an array; test: an integer is valid",
+        "description": "multiple types can be specified in an array; test: an integer is valid",
         "schema": {
             "type": [ "integer", "string" ]
         },
@@ -913,7 +865,7 @@
         "valid": true
     },
     {
-        "desc": "description: multiple types can be specified in an array; test: a string is valid",
+        "description": "multiple types can be specified in an array; test: a string is valid",
         "schema": {
             "type": [ "integer", "string" ]
         },
@@ -921,7 +873,7 @@
         "valid": true
     },
     {
-        "desc": "description: multiple types can be specified in an array; test: a float is invalid",
+        "description": "multiple types can be specified in an array; test: a float is invalid",
         "schema": {
             "type": [ "integer", "string" ]
         },
@@ -929,7 +881,7 @@
         "valid": false
     },
     {
-        "desc": "description: multiple types can be specified in an array; test: an object is invalid",
+        "description": "multiple types can be specified in an array; test: an object is invalid",
         "schema": {
             "type": [ "integer", "string" ]
         },
@@ -937,7 +889,7 @@
         "valid": false
     },
     {
-        "desc": "description: multiple types can be specified in an array; test: an array is invalid",
+        "description": "multiple types can be specified in an array; test: an array is invalid",
         "schema": {
             "type": [ "integer", "string" ]
         },
@@ -945,7 +897,7 @@
         "valid": false
     },
     {
-        "desc": "description: multiple types can be specified in an array; test: a boolean is invalid",
+        "description": "multiple types can be specified in an array; test: a boolean is invalid",
         "schema": {
             "type": [ "integer", "string" ]
         },
@@ -953,7 +905,7 @@
         "valid": false
     },
     {
-        "desc": "description: multiple types can be specified in an array; test: null is invalid",
+        "description": "multiple types can be specified in an array; test: null is invalid",
         "schema": {
             "type": [ "integer", "string" ]
         },
@@ -961,7 +913,7 @@
         "valid": false
     },
     {
-        "desc": "description: types can include schemas; test: an integer is invalid",
+        "description": "types can include schemas; test: an integer is invalid",
         "schema": {
             "type": [ "array", {
                 "type": "object"
@@ -971,7 +923,7 @@
         "valid": false
     },
     {
-        "desc": "description: types can include schemas; test: a string is invalid",
+        "description": "types can include schemas; test: a string is invalid",
         "schema": {
             "type": [ "array", {
                 "type": "object"
@@ -981,7 +933,7 @@
         "valid": false
     },
     {
-        "desc": "description: types can include schemas; test: a float is invalid",
+        "description": "types can include schemas; test: a float is invalid",
         "schema": {
             "type": [ "array", {
                 "type": "object"
@@ -991,7 +943,7 @@
         "valid": false
     },
     {
-        "desc": "description: types can include schemas; test: an object is valid",
+        "description": "types can include schemas; test: an object is valid",
         "schema": {
             "type": [ "array", {
                 "type": "object"
@@ -1001,7 +953,7 @@
         "valid": true
     },
     {
-        "desc": "description: types can include schemas; test: an array is valid",
+        "description": "types can include schemas; test: an array is valid",
         "schema": {
             "type": [ "array", {
                 "type": "object"
@@ -1011,7 +963,7 @@
         "valid": true
     },
     {
-        "desc": "description: types can include schemas; test: a boolean is invalid",
+        "description": "types can include schemas; test: a boolean is invalid",
         "schema": {
             "type": [ "array", {
                 "type": "object"
@@ -1021,7 +973,7 @@
         "valid": false
     },
     {
-        "desc": "description: types can include schemas; test: null is invalid",
+        "description": "types can include schemas; test: null is invalid",
         "schema": {
             "type": [ "array", {
                 "type": "object"
@@ -1031,7 +983,7 @@
         "valid": false
     },
     {
-        "desc": "description: when types includes a schema it should fully validate the schema; test: an integer is valid",
+        "description": "when types includes a schema it should fully validate the schema; test: an integer is valid",
         "schema": {
             "type": [ "integer", {
                 "properties": {
@@ -1045,7 +997,7 @@
         "valid": true
     },
     {
-        "desc": "description: when types includes a schema it should fully validate the schema; test: an object is valid only if it is fully valid",
+        "description": "when types includes a schema it should fully validate the schema; test: an object is valid only if it is fully valid",
         "schema": {
             "type": [ "integer", {
                 "properties": {
@@ -1061,7 +1013,7 @@
         "valid": true
     },
     {
-        "desc": "description: when types includes a schema it should fully validate the schema; test: an object is invalid otherwise",
+        "description": "when types includes a schema it should fully validate the schema; test: an object is invalid otherwise",
         "schema": {
             "type": [ "integer", {
                 "properties": {
@@ -1077,7 +1029,7 @@
         "valid": false
     },
     {
-        "desc": "description: types from separate schemas are merged; test: an integer is invalid",
+        "description": "types from separate schemas are merged; test: an integer is invalid",
         "schema": {
             "type": [
                 {
@@ -1092,7 +1044,7 @@
         "valid": false
     },
     {
-        "desc": "description: types from separate schemas are merged; test: a string is valid",
+        "description": "types from separate schemas are merged; test: a string is valid",
         "schema": {
             "type": [
                 {
@@ -1107,7 +1059,7 @@
         "valid": true
     },
     {
-        "desc": "description: types from separate schemas are merged; test: an array is valid",
+        "description": "types from separate schemas are merged; test: an array is valid",
         "schema": {
             "type": [
                 {
@@ -1122,7 +1074,7 @@
         "valid": true
     },
     {
-        "desc": "description: simple enum validation; test: one of the enum is valid",
+        "description": "simple enum validation; test: one of the enum is valid",
         "schema": {
             "enum": [ 1, 2, 3 ]
         },
@@ -1130,7 +1082,7 @@
         "valid": true
     },
     {
-        "desc": "description: simple enum validation; test: something else is invalid",
+        "description": "simple enum validation; test: something else is invalid",
         "schema": {
             "enum": [ 1, 2, 3 ]
         },
@@ -1138,7 +1090,7 @@
         "valid": false
     },
     {
-        "desc": "description: heterogeneous enum validation; test: one of the enum is valid",
+        "description": "heterogeneous enum validation; test: one of the enum is valid",
         "schema": {
             "enum": [ 6, "foo", [ ], true, {
                 "foo": 12
@@ -1148,7 +1100,7 @@
         "valid": true
     },
     {
-        "desc": "description: heterogeneous enum validation; test: something else is invalid",
+        "description": "heterogeneous enum validation; test: something else is invalid",
         "schema": {
             "enum": [ 6, "foo", [ ], true, {
                 "foo": 12
@@ -1158,7 +1110,7 @@
         "valid": false
     },
     {
-        "desc": "description: heterogeneous enum validation; test: objects are deep compared",
+        "description": "heterogeneous enum validation; test: objects are deep compared",
         "schema": {
             "enum": [ 6, "foo", [ ], true, {
                 "foo": 12
@@ -1170,7 +1122,7 @@
         "valid": false
     },
     {
-        "desc": "description: by number; test: zero is multiple by anything (except 0)",
+        "description": "by number; test: zero is multiple by anything (except 0)",
         "schema": {
             "multipleOf": 1.5
         },
@@ -1178,7 +1130,7 @@
         "valid": true
     },
     {
-        "desc": "description: by number; test: 4.5 is divisible by 1.5",
+        "description": "by number; test: 4.5 is divisible by 1.5",
         "schema": {
             "multipleOf": 1.5
         },
@@ -1186,7 +1138,7 @@
         "valid": true
     },
     {
-        "desc": "description: by number; test: 35 is not divisible by 1.5",
+        "description": "by number; test: 35 is not divisible by 1.5",
         "schema": {
             "multipleOf": 1.5
         },
@@ -1194,7 +1146,7 @@
         "valid": false
     },
     {
-        "desc": "description: by int; test: int by int",
+        "description": "by int; test: int by int",
         "schema": {
             "multipleOf": 2
         },
@@ -1202,7 +1154,7 @@
         "valid": true
     },
     {
-        "desc": "description: by int; test: int by int fail",
+        "description": "by int; test: int by int fail",
         "schema": {
             "multipleOf": 2
         },
@@ -1210,7 +1162,7 @@
         "valid": false
     },
     {
-        "desc": "description: by small number; test: 0.0075 is divisible by 0.0001",
+        "description": "by small number; test: 0.0075 is divisible by 0.0001",
         "schema": {
             "multipleOf": 0.0001
         },
@@ -1218,7 +1170,7 @@
         "valid": true
     },
     {
-        "desc": "description: by small number; test: 0.00751 is not divisible by 0.0001",
+        "description": "by small number; test: 0.00751 is not divisible by 0.0001",
         "schema": {
             "multipleOf": 0.0001
         },
@@ -1226,7 +1178,7 @@
         "valid": false
     },
     {
-        "desc": "description: disallow; test: allowed",
+        "description": "disallow; test: allowed",
         "schema": {
             "not": {"type": "integer"}
         },
@@ -1234,7 +1186,7 @@
         "valid": true
     },
     {
-        "desc": "description: disallow; test: disallowed",
+        "description": "disallow; test: disallowed",
         "schema": {
             "not": {"type": "integer"}
         },
@@ -1242,7 +1194,7 @@
         "valid": false
     },
     {
-        "desc": "description: multiple disallow; test: valid",
+        "description": "multiple disallow; test: valid",
         "schema": {
         	"not": {"type": [ "integer", "boolean" ]}
         },
@@ -1250,7 +1202,7 @@
         "valid": true
     },
     {
-        "desc": "description: multiple disallow; test: mismatch",
+        "description": "multiple disallow; test: mismatch",
         "schema": {
             "not": {"type": [ "integer", "boolean" ]}
         },
@@ -1258,7 +1210,7 @@
         "valid": false
     },
     {
-        "desc": "description: multiple disallow; test: other mismatch",
+        "description": "multiple disallow; test: other mismatch",
         "schema": {
             "not": {"type": [ "integer", "boolean" ]}
         },
@@ -1266,7 +1218,7 @@
         "valid": false
     },
     {
-        "desc": "description: multiple disallow subschema; test: match",
+        "description": "multiple disallow subschema; test: match",
         "schema": {
         	"not": {
 	            "type": [ "string", {
@@ -1281,7 +1233,7 @@
         "valid": true
     },
     {
-        "desc": "description: multiple disallow subschema; test: other match",
+        "description": "multiple disallow subschema; test: other match",
         "schema": {
             "not": {
 	            "type": [ "string", {
@@ -1300,7 +1252,7 @@
         "valid": true
     },
     {
-        "desc": "description: multiple disallow subschema; test: mismatch",
+        "description": "multiple disallow subschema; test: mismatch",
         "schema": {
             "not": {
 	            "type": [ "string", {
@@ -1317,7 +1269,7 @@
         "valid": false
     },
     {
-        "desc": "description: multiple disallow subschema; test: other mismatch",
+        "description": "multiple disallow subschema; test: other mismatch",
         "schema": {
             "not": { "type": [ "string", {
 	                "type": "object",
@@ -1335,7 +1287,7 @@
         "valid": false
     },
     {
-        "desc": "description: pattern validation; test: a matching pattern is valid",
+        "description": "pattern validation; test: a matching pattern is valid",
         "schema": {
             "pattern": "^a*$"
         },
@@ -1343,7 +1295,7 @@
         "valid": true
     },
     {
-        "desc": "description: pattern validation; test: a non-matching pattern is invalid",
+        "description": "pattern validation; test: a non-matching pattern is invalid",
         "schema": {
             "pattern": "^a*$"
         },
@@ -1351,7 +1303,7 @@
         "valid": false
     },
     {
-        "desc": "description: uniqueItems validation; test: unique array of integers is valid",
+        "description": "uniqueItems validation; test: unique array of integers is valid",
         "schema": {
             "uniqueItems": true
         },
@@ -1359,7 +1311,7 @@
         "valid": true
     },
     {
-        "desc": "description: uniqueItems validation; test: non-unique array of integers is invalid",
+        "description": "uniqueItems validation; test: non-unique array of integers is invalid",
         "schema": {
             "uniqueItems": true
         },
@@ -1367,7 +1319,7 @@
         "valid": false
     },
     {
-        "desc": "description: uniqueItems validation; test: numbers are unique if mathematically unequal",
+        "description": "uniqueItems validation; test: numbers are unique if mathematically unequal",
         "schema": {
             "uniqueItems": true
         },
@@ -1375,7 +1327,7 @@
         "valid": false
     },
     {
-        "desc": "description: uniqueItems validation; test: unique array of objects is valid",
+        "description": "uniqueItems validation; test: unique array of objects is valid",
         "schema": {
             "uniqueItems": true
         },
@@ -1390,7 +1342,7 @@
         "valid": true
     },
     {
-        "desc": "description: uniqueItems validation; test: non-unique array of objects is invalid",
+        "description": "uniqueItems validation; test: non-unique array of objects is invalid",
         "schema": {
             "uniqueItems": true
         },
@@ -1405,7 +1357,7 @@
         "valid": false
     },
     {
-        "desc": "description: uniqueItems validation; test: unique array of nested objects is valid",
+        "description": "uniqueItems validation; test: unique array of nested objects is valid",
         "schema": {
             "uniqueItems": true
         },
@@ -1428,7 +1380,7 @@
         "valid": true
     },
     {
-        "desc": "description: uniqueItems validation; test: non-unique array of nested objects is invalid",
+        "description": "uniqueItems validation; test: non-unique array of nested objects is invalid",
         "schema": {
             "uniqueItems": true
         },
@@ -1451,7 +1403,7 @@
         "valid": false
     },
     {
-        "desc": "description: uniqueItems validation; test: unique array of arrays is valid",
+        "description": "uniqueItems validation; test: unique array of arrays is valid",
         "schema": {
             "uniqueItems": true
         },
@@ -1462,7 +1414,7 @@
         "valid": true
     },
     {
-        "desc": "description: uniqueItems validation; test: non-unique array of arrays is invalid",
+        "description": "uniqueItems validation; test: non-unique array of arrays is invalid",
         "schema": {
             "uniqueItems": true
         },
@@ -1473,7 +1425,7 @@
         "valid": false
     },
     {
-        "desc": "description: uniqueItems validation; test: 1 and true are unique",
+        "description": "uniqueItems validation; test: 1 and true are unique",
         "schema": {
             "uniqueItems": true
         },
@@ -1481,7 +1433,7 @@
         "valid": true
     },
     {
-        "desc": "description: uniqueItems validation; test: 0 and false are unique",
+        "description": "uniqueItems validation; test: 0 and false are unique",
         "schema": {
             "uniqueItems": true
         },
@@ -1489,7 +1441,7 @@
         "valid": true
     },
     {
-        "desc": "description: uniqueItems validation; test: unique heterogeneous types are valid",
+        "description": "uniqueItems validation; test: unique heterogeneous types are valid",
         "schema": {
             "uniqueItems": true
         },
@@ -1503,7 +1455,7 @@
         "valid": true
     },
     {
-        "desc": "description: uniqueItems validation; test: non-unique heterogeneous types are invalid",
+        "description": "uniqueItems validation; test: non-unique heterogeneous types are invalid",
         "schema": {
             "uniqueItems": true
         },
@@ -1518,7 +1470,7 @@
         "valid": false
     },
     {
-        "desc": "description: additionalProperties being false does not allow other properties; test: no additional properties is valid",
+        "description": "additionalProperties being false does not allow other properties; test: no additional properties is valid",
         "schema": {
             "properties": {
                 "foo": { },
@@ -1532,7 +1484,7 @@
         "valid": true
     },
     {
-        "desc": "description: additionalProperties being false does not allow other properties; test: an additional property is invalid",
+        "description": "additionalProperties being false does not allow other properties; test: an additional property is invalid",
         "schema": {
             "properties": {
                 "foo": { },
@@ -1548,7 +1500,7 @@
         "valid": false
     },
     {
-        "desc": "description: additionalProperties allows a schema which should validate; test: no additional properties is valid",
+        "description": "additionalProperties allows a schema which should validate; test: no additional properties is valid",
         "schema": {
             "properties": {
                 "foo": { },
@@ -1564,7 +1516,7 @@
         "valid": true
     },
     {
-        "desc": "description: additionalProperties allows a schema which should validate; test: an additional valid property is valid",
+        "description": "additionalProperties allows a schema which should validate; test: an additional valid property is valid",
         "schema": {
             "properties": {
                 "foo": { },
@@ -1582,7 +1534,7 @@
         "valid": true
     },
     {
-        "desc": "description: additionalProperties allows a schema which should validate; test: an additional invalid property is invalid",
+        "description": "additionalProperties allows a schema which should validate; test: an additional invalid property is invalid",
         "schema": {
             "properties": {
                 "foo": { },
@@ -1600,7 +1552,7 @@
         "valid": false
     },
     {
-        "desc": "description: additionalProperties are allowed by default; test: additional properties are allowed",
+        "description": "additionalProperties are allowed by default; test: additional properties are allowed",
         "schema": {
             "properties": {
                 "foo": { },
@@ -1615,7 +1567,7 @@
         "valid": true
     },
     {
-        "desc": "description: object properties validation; test: both properties present and valid is valid",
+        "description": "object properties validation; test: both properties present and valid is valid",
         "schema": {
             "properties": {
                 "foo": {
@@ -1633,7 +1585,7 @@
         "valid": true
     },
     {
-        "desc": "description: object properties validation; test: one property invalid is invalid",
+        "description": "object properties validation; test: one property invalid is invalid",
         "schema": {
             "properties": {
                 "foo": {
@@ -1651,7 +1603,7 @@
         "valid": false
     },
     {
-        "desc": "description: object properties validation; test: both properties invalid is invalid",
+        "description": "object properties validation; test: both properties invalid is invalid",
         "schema": {
             "properties": {
                 "foo": {
@@ -1669,7 +1621,7 @@
         "valid": false
     },
     {
-        "desc": "description: object properties validation; test: doesn't invalidate other properties",
+        "description": "object properties validation; test: doesn't invalidate other properties",
         "schema": {
             "properties": {
                 "foo": {
@@ -1686,7 +1638,7 @@
         "valid": true
     },
     {
-        "desc": "description: properties, patternProperties, additionalProperties interaction; test: property validates property",
+        "description": "properties, patternProperties, additionalProperties interaction; test: property validates property",
         "schema": {
             "properties": {
                 "foo": {
@@ -1712,7 +1664,7 @@
         "valid": true
     },
     {
-        "desc": "description: properties, patternProperties, additionalProperties interaction; test: property invalidates property",
+        "description": "properties, patternProperties, additionalProperties interaction; test: property invalidates property",
         "schema": {
             "properties": {
                 "foo": {
@@ -1738,7 +1690,7 @@
         "valid": false
     },
     {
-        "desc": "description: properties, patternProperties, additionalProperties interaction; test: patternProperty invalidates property",
+        "description": "properties, patternProperties, additionalProperties interaction; test: patternProperty invalidates property",
         "schema": {
             "properties": {
                 "foo": {
@@ -1764,7 +1716,7 @@
         "valid": false
     },
     {
-        "desc": "description: properties, patternProperties, additionalProperties interaction; test: patternProperty validates nonproperty",
+        "description": "properties, patternProperties, additionalProperties interaction; test: patternProperty validates nonproperty",
         "schema": {
             "properties": {
                 "foo": {
@@ -1790,7 +1742,7 @@
         "valid": true
     },
     {
-        "desc": "description: properties, patternProperties, additionalProperties interaction; test: patternProperty invalidates nonproperty",
+        "description": "properties, patternProperties, additionalProperties interaction; test: patternProperty invalidates nonproperty",
         "schema": {
             "properties": {
                 "foo": {
@@ -1816,7 +1768,7 @@
         "valid": false
     },
     {
-        "desc": "description: properties, patternProperties, additionalProperties interaction; test: additionalProperty ignores property",
+        "description": "properties, patternProperties, additionalProperties interaction; test: additionalProperty ignores property",
         "schema": {
             "properties": {
                 "foo": {
@@ -1842,7 +1794,7 @@
         "valid": true
     },
     {
-        "desc": "description: properties, patternProperties, additionalProperties interaction; test: additionalProperty validates others",
+        "description": "properties, patternProperties, additionalProperties interaction; test: additionalProperty validates others",
         "schema": {
             "properties": {
                 "foo": {
@@ -1868,7 +1820,7 @@
         "valid": true
     },
     {
-        "desc": "description: properties, patternProperties, additionalProperties interaction; test: additionalProperty invalidates others",
+        "description": "properties, patternProperties, additionalProperties interaction; test: additionalProperty invalidates others",
         "schema": {
             "properties": {
                 "foo": {
@@ -1894,7 +1846,7 @@
         "valid": false
     },
     {
-        "desc": "description: patternProperties validates properties matching a regex; test: a single valid match is valid",
+        "description": "patternProperties validates properties matching a regex; test: a single valid match is valid",
         "schema": {
             "patternProperties": {
                 "f.*o": {
@@ -1908,7 +1860,7 @@
         "valid": true
     },
     {
-        "desc": "description: patternProperties validates properties matching a regex; test: multiple valid matches is valid",
+        "description": "patternProperties validates properties matching a regex; test: multiple valid matches is valid",
         "schema": {
             "patternProperties": {
                 "f.*o": {
@@ -1923,7 +1875,7 @@
         "valid": true
     },
     {
-        "desc": "description: patternProperties validates properties matching a regex; test: a single invalid match is invalid",
+        "description": "patternProperties validates properties matching a regex; test: a single invalid match is invalid",
         "schema": {
             "patternProperties": {
                 "f.*o": {
@@ -1938,7 +1890,7 @@
         "valid": false
     },
     {
-        "desc": "description: patternProperties validates properties matching a regex; test: multiple invalid matches is invalid",
+        "description": "patternProperties validates properties matching a regex; test: multiple invalid matches is invalid",
         "schema": {
             "patternProperties": {
                 "f.*o": {
@@ -1953,7 +1905,7 @@
         "valid": false
     },
     {
-        "desc": "description: multiple simulatneous patternProperties are validated; test: a single valid match is valid",
+        "description": "multiple simulatneous patternProperties are validated; test: a single valid match is valid",
         "schema": {
             "patternProperties": {
                 "a*": {
@@ -1970,7 +1922,7 @@
         "valid": true
     },
     {
-        "desc": "description: multiple simulatneous patternProperties are validated; test: a simultaneous match is valid",
+        "description": "multiple simulatneous patternProperties are validated; test: a simultaneous match is valid",
         "schema": {
             "patternProperties": {
                 "a*": {
@@ -1987,7 +1939,7 @@
         "valid": true
     },
     {
-        "desc": "description: multiple simulatneous patternProperties are validated; test: multiple matches is valid",
+        "description": "multiple simulatneous patternProperties are validated; test: multiple matches is valid",
         "schema": {
             "patternProperties": {
                 "a*": {
@@ -2005,7 +1957,7 @@
         "valid": true
     },
     {
-        "desc": "description: multiple simulatneous patternProperties are validated; test: an invalid due to one is invalid",
+        "description": "multiple simulatneous patternProperties are validated; test: an invalid due to one is invalid",
         "schema": {
             "patternProperties": {
                 "a*": {
@@ -2022,7 +1974,7 @@
         "valid": false
     },
     {
-        "desc": "description: multiple simulatneous patternProperties are validated; test: an invalid due to the other is invalid",
+        "description": "multiple simulatneous patternProperties are validated; test: an invalid due to the other is invalid",
         "schema": {
             "patternProperties": {
                 "a*": {
@@ -2039,7 +1991,7 @@
         "valid": false
     },
     {
-        "desc": "description: multiple simulatneous patternProperties are validated; test: an invalid due to both is invalid",
+        "description": "multiple simulatneous patternProperties are validated; test: an invalid due to both is invalid",
         "schema": {
             "patternProperties": {
                 "a*": {
@@ -2057,7 +2009,7 @@
         "valid": false
     },
     {
-        "desc": "description: validation of regular expressions; test: a valid regular expression",
+        "description": "validation of regular expressions; test: a valid regular expression",
         "schema": {
             "format": "regex"
         },
@@ -2065,7 +2017,7 @@
         "valid": true
     },
     {
-        "desc": "description: validation of regular expressions; test: a regular expression with unclosed parens is invalid",
+        "description": "validation of regular expressions; test: a regular expression with unclosed parens is invalid",
         "schema": {
             "format": "regex"
         },
@@ -2073,7 +2025,7 @@
         "valid": false
     },
     {
-        "desc": "description: maxItems validation; test: shorter is valid",
+        "description": "maxItems validation; test: shorter is valid",
         "schema": {
             "maxItems": 2
         },
@@ -2081,7 +2033,7 @@
         "valid": true
     },
     {
-        "desc": "description: maxItems validation; test: exact length is valid",
+        "description": "maxItems validation; test: exact length is valid",
         "schema": {
             "maxItems": 2
         },
@@ -2089,7 +2041,7 @@
         "valid": true
     },
     {
-        "desc": "description: maxItems validation; test: too long is invalid",
+        "description": "maxItems validation; test: too long is invalid",
         "schema": {
             "maxItems": 2
         },
@@ -2097,7 +2049,7 @@
         "valid": false
     },
     {
-        "desc": "description: minLength validation; test: longer is valid",
+        "description": "minLength validation; test: longer is valid",
         "schema": {
             "minLength": 2
         },
@@ -2105,7 +2057,7 @@
         "valid": true
     },
     {
-        "desc": "description: minLength validation; test: exact length is valid",
+        "description": "minLength validation; test: exact length is valid",
         "schema": {
             "minLength": 2
         },
@@ -2113,7 +2065,7 @@
         "valid": true
     },
     {
-        "desc": "description: minLength validation; test: too short is invalid",
+        "description": "minLength validation; test: too short is invalid",
         "schema": {
             "minLength": 2
         },
@@ -2121,7 +2073,7 @@
         "valid": false
     },
     {
-        "desc": "description: dependencies; test: neither",
+        "description": "dependencies; test: neither",
         "schema": {
             "dependencies": {
                 "bar": "foo"
@@ -2131,7 +2083,7 @@
         "valid": true
     },
     {
-        "desc": "description: dependencies; test: nondependant",
+        "description": "dependencies; test: nondependant",
         "schema": {
             "dependencies": {
                 "bar": "foo"
@@ -2143,7 +2095,7 @@
         "valid": true
     },
     {
-        "desc": "description: dependencies; test: with dependency",
+        "description": "dependencies; test: with dependency",
         "schema": {
             "dependencies": {
                 "bar": "foo"
@@ -2156,7 +2108,7 @@
         "valid": true
     },
     {
-        "desc": "description: dependencies; test: missing dependency",
+        "description": "dependencies; test: missing dependency",
         "schema": {
             "dependencies": {
                 "bar": "foo"
@@ -2168,7 +2120,7 @@
         "valid": false
     },
     {
-        "desc": "description: multiple dependencies; test: neither",
+        "description": "multiple dependencies; test: neither",
         "schema": {
             "dependencies": {
                 "quux": [ "foo", "bar" ]
@@ -2178,7 +2130,7 @@
         "valid": true
     },
     {
-        "desc": "description: multiple dependencies; test: nondependants",
+        "description": "multiple dependencies; test: nondependants",
         "schema": {
             "dependencies": {
                 "quux": [ "foo", "bar" ]
@@ -2191,7 +2143,7 @@
         "valid": true
     },
     {
-        "desc": "description: multiple dependencies; test: with dependencies",
+        "description": "multiple dependencies; test: with dependencies",
         "schema": {
             "dependencies": {
                 "quux": [ "foo", "bar" ]
@@ -2205,7 +2157,7 @@
         "valid": true
     },
     {
-        "desc": "description: multiple dependencies; test: missing dependency",
+        "description": "multiple dependencies; test: missing dependency",
         "schema": {
             "dependencies": {
                 "quux": [ "foo", "bar" ]
@@ -2218,7 +2170,7 @@
         "valid": false
     },
     {
-        "desc": "description: multiple dependencies; test: missing other dependency",
+        "description": "multiple dependencies; test: missing other dependency",
         "schema": {
             "dependencies": {
                 "quux": [ "foo", "bar" ]
@@ -2231,7 +2183,7 @@
         "valid": false
     },
     {
-        "desc": "description: multiple dependencies; test: missing both dependencies",
+        "description": "multiple dependencies; test: missing both dependencies",
         "schema": {
             "dependencies": {
                 "quux": [ "foo", "bar" ]
@@ -2243,7 +2195,7 @@
         "valid": false
     },
     {
-        "desc": "description: multiple dependencies subschema; test: valid",
+        "description": "multiple dependencies subschema; test: valid",
         "schema": {
             "dependencies": {
                 "bar": {
@@ -2265,7 +2217,7 @@
         "valid": true
     },
     {
-        "desc": "description: multiple dependencies subschema; test: wrong type",
+        "description": "multiple dependencies subschema; test: wrong type",
         "schema": {
             "dependencies": {
                 "bar": {
@@ -2287,7 +2239,7 @@
         "valid": false
     },
     {
-        "desc": "description: multiple dependencies subschema; test: wrong type other",
+        "description": "multiple dependencies subschema; test: wrong type other",
         "schema": {
             "dependencies": {
                 "bar": {
@@ -2309,7 +2261,7 @@
         "valid": false
     },
     {
-        "desc": "description: multiple dependencies subschema; test: wrong type both",
+        "description": "multiple dependencies subschema; test: wrong type both",
         "schema": {
             "dependencies": {
                 "bar": {
@@ -2331,7 +2283,7 @@
         "valid": false
     },
     {
-        "desc": "description: additionalItems as schema; test: additional items match schema",
+        "description": "additionalItems as schema; test: additional items match schema",
         "schema": {
             "items": [ ],
             "additionalItems": {
@@ -2342,7 +2294,7 @@
         "valid": true
     },
     {
-        "desc": "description: additionalItems as schema; test: additional items do not match schema",
+        "description": "additionalItems as schema; test: additional items do not match schema",
         "schema": {
             "items": [ ],
             "additionalItems": {
@@ -2353,7 +2305,7 @@
         "valid": false
     },
     {
-        "desc": "description: items is schema, no additionalItems; test: all items match schema",
+        "description": "items is schema, no additionalItems; test: all items match schema",
         "schema": {
             "items": { }
         },
@@ -2361,7 +2313,7 @@
         "valid": true
     },
     {
-        "desc": "description: additionalItems as false without items; test: items defaults to empty schema so everything is valid",
+        "description": "additionalItems as false without items; test: items defaults to empty schema so everything is valid",
         "schema": {
         },
         "data": [ 1, 2, 3, 4, 5 ],

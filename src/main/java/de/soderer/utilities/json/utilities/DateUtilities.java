@@ -60,6 +60,14 @@ public class DateUtilities {
 	public static final String ISO_8601_DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssX";
 	/** DateTime format for ISO 8601 */
 	public static final String ISO_8601_DATETIME_WITH_NANOS_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSX";
+	/** DateTime format for ISO 8601 */
+	public static final String ISO_8601_TIME_FORMAT_NO_TIMEZONE = "HH:mm:ss";
+	/** DateTime format for ISO 8601 */
+	public static final String ISO_8601_TIME_WITH_NANOS_FORMAT_NO_TIMEZONE = "HH:mm:ss.SSSSSSSSS";
+	/** DateTime format for ISO 8601 */
+	public static final String ISO_8601_TIME_FORMAT = "HH:mm:ssX";
+	/** DateTime format for ISO 8601 */
+	public static final String ISO_8601_TIME_WITH_NANOS_FORMAT = "HH:mm:ss.SSSSSSSSSX";
 
 	/** ANSI SQL standard date time format */
 	public static final String ANSI_SQL_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
@@ -1072,6 +1080,12 @@ public class DateUtilities {
 		final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormatPattern);
 		final LocalDateTime localDateTime = LocalDateTime.parse(dateTimeString, dateTimeFormatter);
 		return localDateTime;
+	}
+
+	public static LocalTime parseLocalTime(final String timeFormatPattern, final String timeString) {
+		final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern(timeFormatPattern);
+		final LocalTime localTime = LocalTime.parse(timeString, timeFormatter);
+		return localTime;
 	}
 
 	public static Date parseDateTime(final String format, final String dateTimeString) {

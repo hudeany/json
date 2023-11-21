@@ -10,8 +10,8 @@ import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 
 public class RequiredValidator extends BaseJsonSchemaValidator {
-	public RequiredValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData, final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDefinitionError {
-		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData, jsonNode, jsonPath);
+	public RequiredValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
+		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
 		if (!(validatorData instanceof JsonArray)) {
 			throw new JsonSchemaDefinitionError("Data for required property keys is not a JsonArray", jsonSchemaPath);
@@ -19,7 +19,7 @@ public class RequiredValidator extends BaseJsonSchemaValidator {
 	}
 
 	@Override
-	public void validate() throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		if (!(jsonNode.isJsonObject())) {
 			if (jsonSchemaDependencyResolver.isSimpleMode()) {
 				throw new JsonSchemaDataValidationError("Expected data type 'object' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
@@ -27,9 +27,9 @@ public class RequiredValidator extends BaseJsonSchemaValidator {
 		} else {
 			for (final Object propertyKey : (JsonArray) validatorData) {
 				if (propertyKey == null) {
-					throw new JsonSchemaDefinitionError("Data entry for required property key name must be 'string' but was 'null'", jsonSchemaPath);
+					throw new JsonSchemaDataValidationError("Data entry for required property key name must be 'string' but was 'null'", jsonPath);
 				} else if (!(propertyKey instanceof String)) {
-					throw new JsonSchemaDefinitionError("Data entry for required property key name must be 'string' but was '" + propertyKey.getClass().getSimpleName() + "'", jsonSchemaPath);
+					throw new JsonSchemaDataValidationError("Data entry for required property key name must be 'string' but was '" + propertyKey.getClass().getSimpleName() + "'", jsonPath);
 				} else if (!((JsonObject) jsonNode.getValue()).containsPropertyKey((String) propertyKey)) {
 					throw new JsonSchemaDataValidationError("Invalid property key. Missing required property '" + propertyKey + "'", jsonPath);
 				}

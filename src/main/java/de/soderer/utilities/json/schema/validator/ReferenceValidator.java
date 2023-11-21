@@ -6,15 +6,14 @@ import de.soderer.utilities.json.JsonNode;
 import de.soderer.utilities.json.JsonObject;
 import de.soderer.utilities.json.path.JsonPath;
 import de.soderer.utilities.json.schema.JsonSchema;
+import de.soderer.utilities.json.schema.JsonSchemaDataValidationError;
 import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 
 public class ReferenceValidator extends BaseJsonSchemaValidator {
-	private JsonObject dereferencedSchemaObject;
-
-	public ReferenceValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData, final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDefinitionError {
-		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData, jsonNode, jsonPath);
+	public ReferenceValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
+		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
 		try {
 			if (validatorData == null) {
@@ -23,16 +22,6 @@ public class ReferenceValidator extends BaseJsonSchemaValidator {
 				throw new JsonSchemaDefinitionError("Reference key is not a 'string'", jsonSchemaPath);
 			} else if (jsonSchemaDependencyResolver == null) {
 				throw new JsonSchemaDefinitionError("JSON schema reference definitions is empty. Cannot dereference key '" + validatorData + "'", jsonSchemaPath);
-			} else {
-				jsonSchemaDependencyResolver.checkCyclicDependency(jsonPath, (String) validatorData, jsonSchemaPath);
-
-				final JsonObject dereferencedValue = jsonSchemaDependencyResolver.getDependencyByReference((String) validatorData, jsonSchemaPath);
-				if (dereferencedValue == null) {
-					throw new JsonSchemaDefinitionError("Invalid JSON schema reference data type for key '" + validatorData + "'. Expected 'object' but was 'null'", jsonSchemaPath);
-				} else {
-					dereferencedSchemaObject = dereferencedValue;
-					this.jsonSchemaPath = new JsonSchemaPath((String) validatorData);
-				}
 			}
 		} catch (final JsonSchemaDefinitionError e) {
 			throw e;
@@ -42,14 +31,28 @@ public class ReferenceValidator extends BaseJsonSchemaValidator {
 	}
 
 	@Override
-	public void validate() throws Exception {
-		if (dereferencedSchemaObject == null) {
-			throw new JsonSchemaDefinitionError("Invalid JSON schema reference data type for key '" + validatorData + "'. Expected 'object' but was 'null'", jsonSchemaPath);
+	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
+		List<BaseJsonSchemaValidator> subValidators;
+		try {
+			final JsonObject dereferencedValue = jsonSchemaDependencyResolver.getDependencyByReference((String) validatorData, jsonSchemaPath);
+			if (dereferencedValue == null) {
+				throw new JsonSchemaDefinitionError("Invalid JSON schema reference data type for key '" + validatorData + "'. Expected 'object' but was 'null'", jsonSchemaPath);
+			} else {
+				jsonSchemaPath = new JsonSchemaPath((String) validatorData);
+				subValidators = JsonSchema.createValidators(dereferencedValue, jsonSchemaDependencyResolver, jsonSchemaPath);
+			}
+		} catch (final JsonSchemaDefinitionError e) {
+			throw new JsonSchemaDataValidationError("JsonSchemaDefinitionError while using JSON schema reference: " + e.getMessage(), jsonPath, e);
+		} catch (final Exception e) {
+			throw new JsonSchemaDataValidationError("JsonSchemaDefinitionError while using JSON schema reference: " + e.getMessage(), jsonPath, e);
 		}
 
-		final List<BaseJsonSchemaValidator> subValidators = JsonSchema.createValidators(dereferencedSchemaObject, jsonSchemaDependencyResolver, jsonSchemaPath, jsonNode, jsonPath);
-		for (final BaseJsonSchemaValidator subValidator : subValidators) {
-			subValidator.validate();
+		try {
+			for (final BaseJsonSchemaValidator subValidator : subValidators) {
+				subValidator.validate(jsonNode, jsonPath);
+			}
+		}catch (@SuppressWarnings("unused") final StackOverflowError e) {
+			throw new JsonSchemaDataValidationError("Cyclic reference detected", jsonPath);
 		}
 	}
 }

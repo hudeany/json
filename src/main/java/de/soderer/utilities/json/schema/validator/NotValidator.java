@@ -14,13 +14,13 @@ import de.soderer.utilities.json.schema.JsonSchemaPath;
 public class NotValidator extends BaseJsonSchemaValidator {
 	private List<BaseJsonSchemaValidator> subValidators = null;
 
-	public NotValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData, final JsonNode jsonNode, final JsonPath jsonPath) throws Exception {
-		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData, jsonNode, jsonPath);
+	public NotValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
+		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
 		if (validatorData == null) {
 			throw new JsonSchemaDefinitionError("Not-validation data is 'null'", jsonSchemaPath);
 		} else if (validatorData instanceof JsonObject) {
-			subValidators = JsonSchema.createValidators((JsonObject) validatorData, jsonSchemaDependencyResolver, jsonSchemaPath, jsonNode, jsonPath);
+			subValidators = JsonSchema.createValidators((JsonObject) validatorData, jsonSchemaDependencyResolver, jsonSchemaPath);
 			if (subValidators == null || subValidators.size() == 0) {
 				throw new JsonSchemaDefinitionError("Not-validation JsonObject is empty", jsonSchemaPath);
 			}
@@ -30,11 +30,11 @@ public class NotValidator extends BaseJsonSchemaValidator {
 	}
 
 	@Override
-	public void validate() throws Exception {
+	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		boolean didNotApply = false;
 		try {
 			for (final BaseJsonSchemaValidator subValidator : subValidators) {
-				subValidator.validate();
+				subValidator.validate(jsonNode, jsonPath);
 			}
 		} catch (@SuppressWarnings("unused") final JsonSchemaDataValidationError e) {
 			didNotApply = true;

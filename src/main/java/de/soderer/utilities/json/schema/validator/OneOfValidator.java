@@ -16,8 +16,8 @@ import de.soderer.utilities.json.schema.JsonSchemaPath;
 public class OneOfValidator extends BaseJsonSchemaValidator {
 	private List<List<BaseJsonSchemaValidator>> subValidatorPackages = null;
 
-	public OneOfValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData, final JsonNode jsonNode, final JsonPath jsonPath) throws Exception {
-		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData, jsonNode, jsonPath);
+	public OneOfValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
+		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
 		if (validatorData == null) {
 			throw new JsonSchemaDefinitionError("OneOf array is 'null'", jsonSchemaPath);
@@ -25,7 +25,7 @@ public class OneOfValidator extends BaseJsonSchemaValidator {
 			subValidatorPackages = new ArrayList<>();
 			for (final Object subValidationData : ((JsonArray) validatorData)) {
 				if (subValidationData instanceof JsonObject) {
-					subValidatorPackages.add(JsonSchema.createValidators((JsonObject) subValidationData, jsonSchemaDependencyResolver, jsonSchemaPath, jsonNode, jsonPath));
+					subValidatorPackages.add(JsonSchema.createValidators((JsonObject) subValidationData, jsonSchemaDependencyResolver, jsonSchemaPath));
 				} else {
 					throw new JsonSchemaDefinitionError("OneOf array contains a non-JsonObject", jsonSchemaPath);
 				}
@@ -39,12 +39,12 @@ public class OneOfValidator extends BaseJsonSchemaValidator {
 	}
 
 	@Override
-	public void validate() throws Exception {
+	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		int applyCount = 0;
 		for (final List<BaseJsonSchemaValidator> subValidatorPackage : subValidatorPackages) {
 			try {
 				for (final BaseJsonSchemaValidator subValidator : subValidatorPackage) {
-					subValidator.validate();
+					subValidator.validate(jsonNode, jsonPath);
 				}
 				applyCount++;
 			} catch (@SuppressWarnings("unused") final JsonSchemaDataValidationError e) {
