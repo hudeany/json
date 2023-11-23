@@ -15,6 +15,7 @@ import de.soderer.utilities.json.schema.validator.AdditionalPropertiesValidator;
 import de.soderer.utilities.json.schema.validator.AllOfValidator;
 import de.soderer.utilities.json.schema.validator.AnyOfValidator;
 import de.soderer.utilities.json.schema.validator.BaseJsonSchemaValidator;
+import de.soderer.utilities.json.schema.validator.BooleanValidator;
 import de.soderer.utilities.json.schema.validator.ContainsValidator;
 import de.soderer.utilities.json.schema.validator.DependenciesValidator;
 import de.soderer.utilities.json.schema.validator.EnumValidator;
@@ -92,6 +93,9 @@ public class JsonSchema {
 
 		if (jsonNode == null) {
 			throw new JsonSchemaDefinitionError("Contains null data", null);
+		} else if (jsonNode.isBoolean()) {
+			validators = new ArrayList<>();
+			validators.add(new BooleanValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(), jsonNode.getValue()));
 		} else if (jsonNode.isJsonObject()) {
 			readSchemaData((JsonObject) jsonNode.getValue(), jsonSchemaConfiguration, dependencies);
 			jsonSchemaDependencyResolver.setJsonSchemaVersion(jsonSchemaConfiguration.getJsonSchemaVersion());

@@ -1,5 +1,6 @@
 package de.soderer.utilities.json.schema.validator;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import de.soderer.utilities.json.JsonNode;
@@ -19,9 +20,12 @@ public class NotValidator extends BaseJsonSchemaValidator {
 
 		if (validatorData == null) {
 			throw new JsonSchemaDefinitionError("Not-validation data is 'null'", jsonSchemaPath);
+		} else if (validatorData instanceof Boolean) {
+			subValidators = new ArrayList<>();
+			subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData));
 		} else if (validatorData instanceof JsonObject) {
 			subValidators = JsonSchema.createValidators((JsonObject) validatorData, jsonSchemaDependencyResolver, jsonSchemaPath);
-			if (subValidators == null || subValidators.size() == 0) {
+			if (subValidators == null) {
 				throw new JsonSchemaDefinitionError("Not-validation JsonObject is empty", jsonSchemaPath);
 			}
 		} else {
