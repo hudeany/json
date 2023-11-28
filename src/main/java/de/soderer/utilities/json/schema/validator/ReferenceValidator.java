@@ -11,6 +11,9 @@ import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 
+/**
+ * JSON schema validator for external references in files and urls by code key name "$ref"
+ */
 public class ReferenceValidator extends BaseJsonSchemaValidator {
 	public ReferenceValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
