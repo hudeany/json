@@ -42,3 +42,4 @@
 /TEST-de.soderer.utilities.json.schema.RequiredValidatorTest.xml
 /TEST-de.soderer.utilities.json.schema.TypeValidatorTest.xml
 /TEST-de.soderer.utilities.json.schema.UniqueItemsValidatorTest.xml
+/TEST-de.soderer.utilities.json.schema.ReferenceValidatorTest.xml
