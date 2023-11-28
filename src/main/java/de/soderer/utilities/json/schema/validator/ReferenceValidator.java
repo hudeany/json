@@ -51,7 +51,7 @@ public class ReferenceValidator extends BaseJsonSchemaValidator {
 			for (final BaseJsonSchemaValidator subValidator : subValidators) {
 				subValidator.validate(jsonNode, jsonPath);
 			}
-		}catch (@SuppressWarnings("unused") final StackOverflowError e) {
+		} catch (@SuppressWarnings("unused") final StackOverflowError e) {
 			throw new JsonSchemaDataValidationError("Cyclic reference detected", jsonPath);
 		}
 	}

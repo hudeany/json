@@ -9,6 +9,10 @@ import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 import de.soderer.utilities.json.utilities.NumberUtilities;
 
+/**
+ * Minimum value for numeric JSON data
+ * Optional with boolean "exclusiveMinimum" which defines whether it is an exclusive minimum
+ */
 public class MinimumValidator extends ExtendedBaseJsonSchemaValidator {
 	boolean isExclusiveMinimum = false;
 

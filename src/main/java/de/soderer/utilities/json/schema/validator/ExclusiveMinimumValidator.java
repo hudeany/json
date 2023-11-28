@@ -9,6 +9,13 @@ import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 import de.soderer.utilities.json.utilities.NumberUtilities;
 
+/**
+ * before JSON schema draft v6:
+ * Boolean value that defines whether the value of minimum is to be used as an exclusive minimum in class MinimumValidator
+ *
+ * with JSON schema draft v6:
+ * Numeric value that defines a value to be used as an exclusive minimum
+ */
 public class ExclusiveMinimumValidator extends ExtendedBaseJsonSchemaValidator {
 	public ExclusiveMinimumValidator(final JsonObject parentValidatorData, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
 		super(parentValidatorData, jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
@@ -35,8 +42,8 @@ public class ExclusiveMinimumValidator extends ExtendedBaseJsonSchemaValidator {
 				throw new JsonSchemaDataValidationError("Expected data type 'number' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {
-			final Number dataValue = ((Number) jsonNode.getValue()).doubleValue();
-			final Number exclusiveMinimumValue = ((Number) validatorData).doubleValue();
+			final Number dataValue = (Number) jsonNode.getValue();
+			final Number exclusiveMinimumValue = (Number) validatorData;
 
 			if (NumberUtilities.compare(dataValue, exclusiveMinimumValue) <= 0) {
 				throw new JsonSchemaDataValidationError("ExclusiveMinimum number is '" + validatorData + "' but value was '" + jsonNode.getValue() + "'", jsonPath);

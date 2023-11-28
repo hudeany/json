@@ -30,7 +30,7 @@ public class PropertiesValidator extends BaseJsonSchemaValidator {
 				// Ignore default value, as it is only a descriptive annotation
 			} else if (entry.getValue() instanceof Boolean) {
 				final List<BaseJsonSchemaValidator> subValidators = new ArrayList<>();
-				subValidators .add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, entry.getValue()));
+				subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, entry.getValue()));
 				propertiesDefinitions.put(entry.getKey(), subValidators);
 			} else if (!(entry.getValue() instanceof JsonObject)) {
 				throw new JsonSchemaDefinitionError("Properties data is not a JsonObject", jsonSchemaPath.addPropertyKey(entry.getKey()));

@@ -1,5 +1,6 @@
 package de.soderer.utilities.json.schema.validator;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import de.soderer.utilities.json.JsonArray;
@@ -12,20 +13,26 @@ import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 
+/**
+ * The contains value is a schema, that needs to validate against one or more items in the JSON data array
+ */
 public class ContainsValidator extends ExtendedBaseJsonSchemaValidator {
 	final List<BaseJsonSchemaValidator> subValidators;
 
 	public ContainsValidator(final JsonObject parentValidatorData, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
 		super(parentValidatorData, jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
-		if (!(validatorData instanceof JsonObject)) {
-			throw new JsonSchemaDefinitionError("Contains data is not an 'object'", jsonSchemaPath);
-		} else {
+		if (validatorData instanceof Boolean) {
+			subValidators = new ArrayList<>();
+			subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData));
+		} else if (validatorData instanceof JsonObject) {
 			try {
 				subValidators = JsonSchema.createValidators((JsonObject) validatorData, jsonSchemaDependencyResolver, jsonSchemaPath);
 			} catch (final JsonSchemaDefinitionError e) {
 				throw new JsonSchemaDefinitionError("Contains data JSON schema is invalid: " + e.getMessage(), jsonSchemaPath, e);
 			}
+		} else {
+			throw new JsonSchemaDefinitionError("Contains data is not an 'object'", jsonSchemaPath);
 		}
 	}
 
@@ -36,8 +43,6 @@ public class ContainsValidator extends ExtendedBaseJsonSchemaValidator {
 				throw new JsonSchemaDataValidationError("Expected data type 'array' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {
-			boolean foundMatchingItem = false;
-
 			for (final Object itemObject : (JsonArray) jsonNode.getValue()) {
 				JsonNode newJsonNode;
 				try {
@@ -45,20 +50,12 @@ public class ContainsValidator extends ExtendedBaseJsonSchemaValidator {
 				} catch (final Exception e) {
 					throw new JsonSchemaDataValidationError("Invalid data type '" + itemObject.getClass().getSimpleName() + "'", jsonPath, e);
 				}
-				try {
-					for (final BaseJsonSchemaValidator subValidator : subValidators) {
-						subValidator.validate(newJsonNode, jsonPath);
-					}
-					foundMatchingItem = true;
-					break;
-				} catch (@SuppressWarnings("unused") final JsonSchemaDataValidationError e) {
-					// Current item does not match the schema
+				if (validateSubSchema(subValidators, newJsonNode, jsonPath)) {
+					return;
 				}
 			}
 
-			if (!foundMatchingItem) {
-				throw new JsonSchemaDataValidationError("Array does not contain expected item", jsonPath);
-			}
+			throw new JsonSchemaDataValidationError("Array does not contain expected item", jsonPath);
 		}
 	}
 }

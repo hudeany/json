@@ -61,7 +61,6 @@ import de.soderer.utilities.json.schema.validator.UniqueItemsValidator;
  * For examples and help on JSON schema creation see:<br />
  * https://spacetelescope.github.io<br />
  */
-// TODO: Introduce allowed true/false BooleanValidator for simple JSON schemas
 public class JsonSchema {
 	/**
 	 * Url describing the JSON schema standard and version a JSON schema was written for in compliance<br />

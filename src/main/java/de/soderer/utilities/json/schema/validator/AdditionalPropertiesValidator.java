@@ -15,8 +15,11 @@ import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 import de.soderer.utilities.json.utilities.Utilities;
 
+/**
+ * Basically the value defines whether or not additional properties are allowed that are not included by the other definitions of properties like "properties" and "patternProperties".
+ * Alternatively it is allowed to define a value that consists of a subschema that defines the structure of any additional property that is not included by the other definitions.
+ */
 public class AdditionalPropertiesValidator extends ExtendedBaseJsonSchemaValidator {
-
 	private final List<String> parentPropertyItemNames = new ArrayList<>();
 	private final List<Pattern> parentPropertyItemPatterns = new ArrayList<>();
 	private Boolean allowAdditionalPropertyNames = null;

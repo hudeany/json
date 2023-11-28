@@ -9,6 +9,10 @@ import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 import de.soderer.utilities.json.utilities.NumberUtilities;
 
+/**
+ * Maximum value for numeric JSON data
+ * Optional with boolean "exclusiveMaximum" which defines whether it is an exclusive maximum
+ */
 public class MaximumValidator extends ExtendedBaseJsonSchemaValidator {
 	boolean isExclusiveMaximum = false;
 

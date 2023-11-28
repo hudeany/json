@@ -16,6 +16,9 @@ import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 
+/**
+ * JSON Object that defines properties that must have a subschema as JSON object value which must be matched by the JAON data object
+ */
 public class DependenciesValidator extends BaseJsonSchemaValidator {
 	private final Map<String, List<BaseJsonSchemaValidator>> validators = new HashMap<>();
 	private final Map<String, List<String>> mandatoryProperties = new HashMap<>();

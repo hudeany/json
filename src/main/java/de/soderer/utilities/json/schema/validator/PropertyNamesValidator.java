@@ -11,6 +11,9 @@ import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 
+/**
+ * JSON schema validator for property key names of JSON objects
+ */
 public class PropertyNamesValidator extends BaseJsonSchemaValidator {
 	private final List<BaseJsonSchemaValidator> subValidators;
 
@@ -18,9 +21,9 @@ public class PropertyNamesValidator extends BaseJsonSchemaValidator {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
 		if (validatorData == null) {
-			throw new JsonSchemaDefinitionError("PropertyNamesValidator data is 'null'", jsonSchemaPath);
+			throw new JsonSchemaDefinitionError("PropertyNames validator data is 'null'", jsonSchemaPath);
 		} else if (!(validatorData instanceof JsonObject)) {
-			throw new JsonSchemaDefinitionError("PropertyNamesValidator data is not a JsonObject", jsonSchemaPath);
+			throw new JsonSchemaDefinitionError("PropertyNames validator data is not a JsonObject", jsonSchemaPath);
 		}
 
 		subValidators = JsonSchema.createValidators((JsonObject) validatorData, jsonSchemaDependencyResolver, jsonSchemaPath);

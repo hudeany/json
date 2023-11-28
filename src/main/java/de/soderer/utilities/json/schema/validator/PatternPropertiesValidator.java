@@ -15,6 +15,9 @@ import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 
+/**
+ * A JSON schema object with regex patterns as keys and subschemas which must match if the key pattern matches with a JSON data object property name
+ */
 public class PatternPropertiesValidator extends BaseJsonSchemaValidator {
 	private final Map <Pattern, List<BaseJsonSchemaValidator>> propertiesDefinitionsByPattern = new HashMap<>();
 

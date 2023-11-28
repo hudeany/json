@@ -13,6 +13,9 @@ import de.soderer.utilities.json.utilities.DateUtilities;
 import de.soderer.utilities.json.utilities.NetworkUtilities;
 import de.soderer.utilities.json.utilities.TextUtilities;
 
+/**
+ * Validates string values against special data formats
+ */
 public class FormatValidator extends BaseJsonSchemaValidator {
 	public FormatValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
@@ -58,21 +61,33 @@ public class FormatValidator extends BaseJsonSchemaValidator {
 			}
 		} else if ("date".equalsIgnoreCase((String) validatorData)) {
 			try {
-				DateUtilities.parseLocalDate(DateUtilities.ISO_8601_DATE_FORMAT, (String) jsonNode.getValue());
-			} catch (final DateTimeParseException e) {
-				throw new JsonSchemaDataValidationError("Invalid data for format '" + ((String) validatorData) + "' was '" + jsonNode.getValue() + "'", jsonPath, e);
+				DateUtilities.parseLocalDate(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE, (String) jsonNode.getValue());
+			} catch (final DateTimeParseException e1) {
+				try {
+					DateUtilities.parseLocalDate(DateUtilities.ISO_8601_DATE_FORMAT, (String) jsonNode.getValue());
+				} catch (@SuppressWarnings("unused") final DateTimeParseException e2) {
+					throw new JsonSchemaDataValidationError("Invalid data for format '" + ((String) validatorData) + "' was '" + jsonNode.getValue() + "'", jsonPath, e1);
+				}
 			}
 		} else if ("date-time".equalsIgnoreCase((String) validatorData)) {
 			try {
-				DateUtilities.parseLocalDateTime(DateUtilities.ISO_8601_DATETIME_FORMAT, (String) jsonNode.getValue());
-			} catch (final DateTimeParseException e) {
-				throw new JsonSchemaDataValidationError("Invalid data for format '" + ((String) validatorData) + "' was '" + jsonNode.getValue() + "'", jsonPath, e);
+				DateUtilities.parseLocalDateTime(DateUtilities.ISO_8601_DATETIME_FORMAT_NO_TIMEZONE, (String) jsonNode.getValue());
+			} catch (final DateTimeParseException e1) {
+				try {
+					DateUtilities.parseLocalDateTime(DateUtilities.ISO_8601_DATETIME_FORMAT, (String) jsonNode.getValue());
+				} catch (@SuppressWarnings("unused") final DateTimeParseException e2) {
+					throw new JsonSchemaDataValidationError("Invalid data for format '" + ((String) validatorData) + "' was '" + jsonNode.getValue() + "'", jsonPath, e1);
+				}
 			}
 		} else if ("time".equalsIgnoreCase((String) validatorData)) {
 			try {
-				DateUtilities.parseLocalTime(DateUtilities.ISO_8601_TIME_FORMAT, (String) jsonNode.getValue());
-			} catch (final DateTimeParseException e) {
-				throw new JsonSchemaDataValidationError("Invalid data for format '" + ((String) validatorData) + "' was '" + jsonNode.getValue() + "'", jsonPath, e);
+				DateUtilities.parseLocalTime(DateUtilities.ISO_8601_TIME_FORMAT_NO_TIMEZONE, (String) jsonNode.getValue());
+			} catch (final DateTimeParseException e1) {
+				try {
+					DateUtilities.parseLocalTime(DateUtilities.ISO_8601_TIME_FORMAT, (String) jsonNode.getValue());
+				} catch (@SuppressWarnings("unused") final DateTimeParseException e2) {
+					throw new JsonSchemaDataValidationError("Invalid data for format '" + ((String) validatorData) + "' was '" + jsonNode.getValue() + "'", jsonPath, e1);
+				}
 			}
 		} else if ("hostname".equalsIgnoreCase((String) validatorData)) {
 			if (!NetworkUtilities.isValidHostname((String) jsonNode.getValue())) {

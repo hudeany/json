@@ -12,6 +12,9 @@ import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 
+/**
+ * Logic inverter for JSON schema tests
+ */
 public class NotValidator extends BaseJsonSchemaValidator {
 	private List<BaseJsonSchemaValidator> subValidators = null;
 
@@ -36,11 +39,7 @@ public class NotValidator extends BaseJsonSchemaValidator {
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		boolean didNotApply = false;
-		try {
-			for (final BaseJsonSchemaValidator subValidator : subValidators) {
-				subValidator.validate(jsonNode, jsonPath);
-			}
-		} catch (@SuppressWarnings("unused") final JsonSchemaDataValidationError e) {
+		if (!validateSubSchema(subValidators, jsonNode, jsonPath))  {
 			didNotApply = true;
 		}
 		if (!didNotApply) {

@@ -13,6 +13,9 @@ import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 
+/**
+ * An array of sub schemas of which exactly one must match
+ */
 public class OneOfValidator extends BaseJsonSchemaValidator {
 	private List<List<BaseJsonSchemaValidator>> subValidatorPackages = null;
 
@@ -24,7 +27,11 @@ public class OneOfValidator extends BaseJsonSchemaValidator {
 		} else if (validatorData instanceof JsonArray) {
 			subValidatorPackages = new ArrayList<>();
 			for (final Object subValidationData : ((JsonArray) validatorData)) {
-				if (subValidationData instanceof JsonObject) {
+				if (subValidationData instanceof Boolean) {
+					final List<BaseJsonSchemaValidator> subValidators = new ArrayList<>();
+					subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, subValidationData));
+					subValidatorPackages.add(subValidators);
+				} else if (subValidationData instanceof JsonObject) {
 					subValidatorPackages.add(JsonSchema.createValidators((JsonObject) subValidationData, jsonSchemaDependencyResolver, jsonSchemaPath));
 				} else {
 					throw new JsonSchemaDefinitionError("OneOf array contains a non-JsonObject", jsonSchemaPath);
@@ -40,22 +47,20 @@ public class OneOfValidator extends BaseJsonSchemaValidator {
 
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
-		int applyCount = 0;
+		boolean foundMatch = false;
+
 		for (final List<BaseJsonSchemaValidator> subValidatorPackage : subValidatorPackages) {
-			try {
-				for (final BaseJsonSchemaValidator subValidator : subValidatorPackage) {
-					subValidator.validate(jsonNode, jsonPath);
+			if (validateSubSchema(subValidatorPackage, jsonNode, jsonPath)) {
+				if (foundMatch) {
+					throw new JsonSchemaDataValidationError("More than one option of 'oneOf' property did apply to JsonNode", jsonPath);
+				} else {
+					foundMatch = true;
 				}
-				applyCount++;
-			} catch (@SuppressWarnings("unused") final JsonSchemaDataValidationError e) {
-				// Do nothing, exactly one subvalidator must have successfully validated
 			}
 		}
 
-		if (applyCount < 1) {
+		if (!foundMatch) {
 			throw new JsonSchemaDataValidationError("No option of 'oneOf' property did apply to JsonNode", jsonPath);
-		} else if (applyCount > 1) {
-			throw new JsonSchemaDataValidationError("More than one option of 'oneOf' property did apply to JsonNode", jsonPath);
 		}
 	}
 }

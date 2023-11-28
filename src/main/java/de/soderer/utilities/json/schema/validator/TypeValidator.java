@@ -14,6 +14,9 @@ import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 
+/**
+ * JSON subschema that matches a simple data value to a type definition
+ */
 public class TypeValidator extends BaseJsonSchemaValidator {
 	private final List<String> typeStrings = new ArrayList<>();
 	private final List<List<BaseJsonSchemaValidator>> typeValidators = new ArrayList<>();
@@ -75,13 +78,8 @@ public class TypeValidator extends BaseJsonSchemaValidator {
 			}
 		}
 		for (final List<BaseJsonSchemaValidator> typeValidatorList : typeValidators) {
-			try {
-				for (final BaseJsonSchemaValidator subValidator : typeValidatorList) {
-					subValidator.validate(jsonNode, jsonPath);
-				}
+			if (validateSubSchema(typeValidatorList, jsonNode, jsonPath)) {
 				return;
-			} catch (@SuppressWarnings("unused") final JsonSchemaDataValidationError e) {
-				// Do nothing, just check the next array item
 			}
 		}
 		throw new JsonSchemaDataValidationError("Invalid data type '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);

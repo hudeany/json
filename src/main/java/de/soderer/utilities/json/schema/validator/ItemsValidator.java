@@ -13,6 +13,13 @@ import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 
+/**
+ * Validates the items of a JSON array.
+ * A single subschema defines a schema all items must match.
+ * An array of subschemas define a schema for every indexed item of the JSON data matching the same index position.
+ * Additional optional boolean attribute "additionalItems" defines whether or not there are more items allowed:
+ * Additional optional subschema attribute "additionalItems" defines a schema all additional items must match.
+ */
 public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 	private List<BaseJsonSchemaValidator> singleValidatorPack = null;
 	private List<List<BaseJsonSchemaValidator>> indexedValidatorPacks = null;

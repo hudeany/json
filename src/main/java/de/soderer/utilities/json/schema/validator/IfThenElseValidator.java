@@ -9,6 +9,11 @@ import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
 import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 
+/**
+ * Tripartite directive with mandatory "if", optional "then" and optional "else" part.
+ * If the JSON subschema from the "if" part matches, then the JSON schema from the "then" part must match also, if available.
+ * If the JSON subschema from the "if" part does not match, then the JSON schema from the "else" part must match also, if available.
+ */
 public class IfThenElseValidator extends BaseJsonSchemaValidator {
 	private JsonSchema ifJsonSchema;
 	private Boolean thenBoolean = null;
