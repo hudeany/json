@@ -78,8 +78,7 @@ public class JsonNode {
 				|| jsonDataType == JsonDataType.STRING
 				|| jsonDataType == JsonDataType.BOOLEAN
 				|| jsonDataType == JsonDataType.INTEGER
-				|| jsonDataType == JsonDataType.NUMBER
-				|| jsonDataType == JsonDataType.STRING;
+				|| jsonDataType == JsonDataType.NUMBER;
 	}
 
 	public boolean isKomplexValue() {

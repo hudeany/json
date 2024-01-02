@@ -16,11 +16,16 @@ import de.soderer.utilities.json.schema.validator.AllOfValidator;
 import de.soderer.utilities.json.schema.validator.AnyOfValidator;
 import de.soderer.utilities.json.schema.validator.BaseJsonSchemaValidator;
 import de.soderer.utilities.json.schema.validator.BooleanValidator;
+import de.soderer.utilities.json.schema.validator.ConstValidator;
 import de.soderer.utilities.json.schema.validator.ContainsValidator;
+import de.soderer.utilities.json.schema.validator.ContentEncodingValidator;
+import de.soderer.utilities.json.schema.validator.ContentMediaTypeValidator;
 import de.soderer.utilities.json.schema.validator.DependenciesValidator;
+import de.soderer.utilities.json.schema.validator.DisallowValidator;
 import de.soderer.utilities.json.schema.validator.EnumValidator;
 import de.soderer.utilities.json.schema.validator.ExclusiveMaximumValidator;
 import de.soderer.utilities.json.schema.validator.ExclusiveMinimumValidator;
+import de.soderer.utilities.json.schema.validator.ExtendsValidator;
 import de.soderer.utilities.json.schema.validator.FormatValidator;
 import de.soderer.utilities.json.schema.validator.IfThenElseValidator;
 import de.soderer.utilities.json.schema.validator.ItemsValidator;
@@ -78,6 +83,18 @@ public class JsonSchema {
 		this(jsonSchemaInputStream, new JsonSchemaConfiguration(), dependencies);
 	}
 
+	public JsonSchema(final Boolean jsonSchemaDefinitionObject, final JsonSchemaDependency... dependencies) throws JsonSchemaDefinitionError {
+		this(jsonSchemaDefinitionObject == null ? (JsonObject) null : (jsonSchemaDefinitionObject ? new JsonObject() : new JsonObject().add("not", new JsonObject())), new JsonSchemaConfiguration(), dependencies);
+	}
+
+	public JsonSchema(final Boolean jsonSchemaDefinitionObject, final JsonSchemaConfiguration jsonSchemaConfiguration, final JsonSchemaDependency... dependencies) throws JsonSchemaDefinitionError {
+		this(jsonSchemaDefinitionObject == null ? (JsonObject) null : (jsonSchemaDefinitionObject ? new JsonObject() : new JsonObject().add("not", new JsonObject())), jsonSchemaConfiguration, dependencies);
+	}
+
+	public JsonSchema(final Boolean jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver) throws JsonSchemaDefinitionError {
+		this(jsonSchemaDefinitionObject == null ? (JsonObject) null : (jsonSchemaDefinitionObject ? new JsonObject() : new JsonObject().add("not", new JsonObject())), jsonSchemaDependencyResolver);
+	}
+
 	public JsonSchema(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependency... dependencies) throws JsonSchemaDefinitionError {
 		this(jsonSchemaDefinitionObject, new JsonSchemaConfiguration(), dependencies);
 	}
@@ -112,6 +129,15 @@ public class JsonSchema {
 			readSchemaData(jsonSchemaDefinitionObject, jsonSchemaConfiguration, dependencies);
 			jsonSchemaDependencyResolver.setJsonSchemaVersion(jsonSchemaConfiguration.getJsonSchemaVersion());
 			jsonSchemaDependencyResolver.setDownloadReferencedSchemas(jsonSchemaConfiguration.isDownloadReferencedSchemas());
+			validators = createValidators(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, new JsonSchemaPath());
+		}
+	}
+
+	public JsonSchema(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver) throws JsonSchemaDefinitionError {
+		if (jsonSchemaDefinitionObject == null) {
+			throw new JsonSchemaDefinitionError("Contains null data", null);
+		} else {
+			this.jsonSchemaDependencyResolver = jsonSchemaDependencyResolver;
 			validators = createValidators(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, new JsonSchemaPath());
 		}
 	}
@@ -263,7 +289,7 @@ public class JsonSchema {
 	public static List<BaseJsonSchemaValidator> createValidators(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath currentJsonSchemaPath) throws JsonSchemaDefinitionError {
 		final List<BaseJsonSchemaValidator> validators = new ArrayList<>();
 
-		JsonObject ifJsonObject = null;
+		Object ifJsonObject = null;
 		Object thenObject = null;
 		Object elseObject = null;
 
@@ -271,6 +297,15 @@ public class JsonSchema {
 			switch (entry.getKey()) {
 				case "type":
 					validators.add(new TypeValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
+					break;
+				case "contentMediaType":
+					validators.add(new ContentMediaTypeValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
+					break;
+				case "contentEncoding":
+					validators.add(new ContentEncodingValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
+					break;
+				case "disallow":
+					validators.add(new DisallowValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
 					break;
 				case "properties":
 					validators.add(new PropertiesValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
@@ -320,6 +355,7 @@ public class JsonSchema {
 				case "maximum":
 					validators.add(new MaximumValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
 					break;
+				case "divisibleBy":
 				case "multipleOf":
 					validators.add(new MultipleOfValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
 					break;
@@ -338,6 +374,9 @@ public class JsonSchema {
 				case "enum":
 					validators.add(new EnumValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
 					break;
+				case "const":
+					validators.add(new ConstValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
+					break;
 				case "format":
 					validators.add(new FormatValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
 					break;
@@ -353,29 +392,30 @@ public class JsonSchema {
 
 				case "exclusiveMinimum":
 					// Do nothing, because this is validated by MinimumValidator, too
-					// Value must be of boolean type and "minimum" value item must exist in simpleMode and draft v4.
-					if ((jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV4Mode())
+					// Value must be of boolean type and "minimum" value item must exist in simpleMode and draft v3/v4.
+					if ((jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV3Mode() || jsonSchemaDependencyResolver.isDraftV4Mode())
 							&& !jsonSchemaDefinitionObject.containsPropertyKey("minimum")) {
 						throw new JsonSchemaDefinitionError("Missing 'minimum' rule for 'exclusiveMinimum'", currentJsonSchemaPath);
-					} else if (!jsonSchemaDependencyResolver.isSimpleMode() && !jsonSchemaDependencyResolver.isDraftV4Mode()) {
+					} else if (!jsonSchemaDependencyResolver.isSimpleMode() && !jsonSchemaDependencyResolver.isDraftV3Mode() && !jsonSchemaDependencyResolver.isDraftV4Mode()) {
 						validators.add(new ExclusiveMinimumValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
 					}
 					break;
 				case "exclusiveMaximum":
 					// Do nothing, because this is validated by MaximumValidator, too
-					// Value must be of boolean type and "maximum" value item must exist in simpleMode and draft v4.
-					if ((jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV4Mode())
+					// Value must be of boolean type and "maximum" value item must exist in simpleMode and draft v3/v4.
+					if ((jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV3Mode() || jsonSchemaDependencyResolver.isDraftV4Mode())
 							&& !jsonSchemaDefinitionObject.containsPropertyKey("maximum")) {
 						throw new JsonSchemaDefinitionError("Missing 'maximum' rule for 'exclusiveMaximum'", currentJsonSchemaPath);
-					} else if (!jsonSchemaDependencyResolver.isSimpleMode() && !jsonSchemaDependencyResolver.isDraftV4Mode()) {
+					} else if (!jsonSchemaDependencyResolver.isSimpleMode() && !jsonSchemaDependencyResolver.isDraftV3Mode() && !jsonSchemaDependencyResolver.isDraftV4Mode()) {
 						validators.add(new ExclusiveMaximumValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
 					}
 					break;
 				case "additionalItems":
-					// Do nothing, because this is validated by ItemsValidator, too
-					if (!jsonSchemaDefinitionObject.containsPropertyKey("items") && jsonSchemaDependencyResolver.isSimpleMode()) {
-						throw new JsonSchemaDefinitionError("Missing 'items' rule for 'additionalItems'", currentJsonSchemaPath);
-					}
+					// Do nothing, because this is validated by ItemsValidator, if there is any
+					break;
+
+				case "extends":
+					validators.add(new ExtendsValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
 					break;
 
 				case "$ref":
@@ -383,7 +423,7 @@ public class JsonSchema {
 					break;
 
 				case "id":
-					if (!jsonSchemaDependencyResolver.isSimpleMode() && !jsonSchemaDependencyResolver.isDraftV4Mode()) {
+					if (!jsonSchemaDependencyResolver.isSimpleMode() && !jsonSchemaDependencyResolver.isDraftV3Mode() && !jsonSchemaDependencyResolver.isDraftV4Mode()) {
 						throw new JsonSchemaDefinitionError("JSON schema 'id' on top level of JSON schema is only allowed for JSON schema versions draft v4 and lower", currentJsonSchemaPath);
 					}
 					// $id should be a descriptive url
@@ -392,7 +432,7 @@ public class JsonSchema {
 					}
 					break;
 				case "$id":
-					if (jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV4Mode()) {
+					if (jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV3Mode() || jsonSchemaDependencyResolver.isDraftV4Mode()) {
 						throw new JsonSchemaDefinitionError("JSON schema '$id' on top level of JSON schema is only allowed for JSON schema versions draft v6 and higher", currentJsonSchemaPath);
 					}
 					// $id should be a descriptive url
@@ -430,10 +470,14 @@ public class JsonSchema {
 					break;
 				case "if":
 					// Main part of "if-then-else" construct
-					if (!(entry.getValue() instanceof JsonObject)) {
-						throw new JsonSchemaDefinitionError("Invalid data type '" + entry.getValue().getClass().getSimpleName() + "' for key 'if'. JsonObject expected", currentJsonSchemaPath);
+					if (entry.getValue() == null) {
+						throw new JsonSchemaDefinitionError("Invalid data type 'null' for key 'if'. JsonObject or Boolean expected", currentJsonSchemaPath);
+					} else if (entry.getValue() instanceof JsonObject) {
+						ifJsonObject = entry.getValue();
+					} else if (entry.getValue() instanceof Boolean) {
+						ifJsonObject = entry.getValue();
 					} else {
-						ifJsonObject = (JsonObject) entry.getValue();
+						throw new JsonSchemaDefinitionError("Invalid data type '" + entry.getValue().getClass().getSimpleName() + "' for key 'if'. JsonObject or Boolean expected", currentJsonSchemaPath);
 					}
 					break;
 				case "then":
@@ -453,10 +497,6 @@ public class JsonSchema {
 
 		if (ifJsonObject != null) {
 			validators.add(new IfThenElseValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath, ifJsonObject, thenObject, elseObject));
-		} else if (thenObject != null) {
-			throw new JsonSchemaDefinitionError("Unexpected data key 'then' without key 'if'", currentJsonSchemaPath);
-		} else if (elseObject != null) {
-			throw new JsonSchemaDefinitionError("Unexpected data key 'else' without key 'if'", currentJsonSchemaPath);
 		}
 
 		return validators;

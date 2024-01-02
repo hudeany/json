@@ -1,5 +1,6 @@
 package de.soderer.utilities.json.schema.validator;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import de.soderer.utilities.json.JsonNode;
@@ -22,11 +23,14 @@ public class PropertyNamesValidator extends BaseJsonSchemaValidator {
 
 		if (validatorData == null) {
 			throw new JsonSchemaDefinitionError("PropertyNames validator data is 'null'", jsonSchemaPath);
-		} else if (!(validatorData instanceof JsonObject)) {
-			throw new JsonSchemaDefinitionError("PropertyNames validator data is not a JsonObject", jsonSchemaPath);
+		} else if (validatorData instanceof JsonObject) {
+			subValidators = JsonSchema.createValidators((JsonObject) validatorData, jsonSchemaDependencyResolver, jsonSchemaPath);
+		} else if (validatorData instanceof Boolean) {
+			subValidators = new ArrayList<>();
+			subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData));
+		} else {
+			throw new JsonSchemaDefinitionError("PropertyNames validator data is not a JsonObject or Boolean", jsonSchemaPath);
 		}
-
-		subValidators = JsonSchema.createValidators((JsonObject) validatorData, jsonSchemaDependencyResolver, jsonSchemaPath);
 	}
 
 	@Override

@@ -1177,4 +1177,24 @@ public class TextUtilities {
 	public static String replaceLast(final String text, final String searchText, final String replacement) {
 		return text.replaceFirst("(?s)" + Pattern.quote(searchText) + "(?!.*?" + Pattern.quote(searchText) + ")", replacement);
 	}
+
+	public static String decodeUnicodeEncoding(final String input) {
+		final Pattern pattern = Pattern.compile("\\\\u[0-9a-fA-F]{4}");
+		final Matcher matcher = pattern.matcher(input);
+
+		final StringBuilder decodedString = new StringBuilder();
+
+		while (matcher.find()) {
+			final String unicodeSequence = matcher.group();
+			final char unicodeChar = (char) Integer.parseInt(unicodeSequence.substring(2), 16);
+			matcher.appendReplacement(decodedString, Character.toString(unicodeChar));
+		}
+
+		matcher.appendTail(decodedString);
+		return decodedString.toString();
+	}
+
+	public static int getUnicodeStringLength(final String input) {
+		return input.codePointCount(0, input.length());
+	}
 }

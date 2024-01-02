@@ -123,7 +123,7 @@ public class DateUtilities {
 		String returnString = "";
 
 		if (ts != null) {
-			final String s = DateTimeFormatter.ofPattern(YYYY_MM_DD_HHMMSS).format(DateUtilities.getLocalDateForDate(ts));
+			final String s = DateTimeFormatter.ofPattern(YYYY_MM_DD_HHMMSS).withResolverStyle(ResolverStyle.STRICT).format(DateUtilities.getLocalDateForDate(ts));
 			String nanosString = Integer.toString(ts.getNanos());
 
 			if (nanosString.length() > 6) {
@@ -743,7 +743,7 @@ public class DateUtilities {
 	 * @return
 	 * @throws Exception
 	 */
-	public static ZonedDateTime parseIso8601DateTimeString(final String dateValue) throws Exception {
+	public static ZonedDateTime parseIso8601DateTimeString(final String dateValue) {
 		return parseIso8601DateTimeString(dateValue, ZoneId.systemDefault());
 	}
 
@@ -754,7 +754,7 @@ public class DateUtilities {
 	 * @return
 	 * @throws Exception
 	 */
-	public static ZonedDateTime parseIso8601DateTimeString(String dateValueString, final ZoneId defaultZoneId) throws Exception {
+	public static ZonedDateTime parseIso8601DateTimeString(String dateValueString, final ZoneId defaultZoneId) {
 		if (Utilities.isBlank(dateValueString)) {
 			return null;
 		}
@@ -778,32 +778,37 @@ public class DateUtilities {
 				if (hasTimezone) {
 					if (dateValueString.substring(dateValueString.indexOf(".")).length() > 13 ) {
 						// Date with time and nanoseconds
-						final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSSSSSSSXXXXX");
+						final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSSSSSSSXXXXX").withResolverStyle(ResolverStyle.STRICT);
 						dateTimeFormatter.withResolverStyle(ResolverStyle.STRICT);
 						return ZonedDateTime.parse(dateValueString, dateTimeFormatter);
 					} else if (dateValueString.substring(dateValueString.indexOf(".")).length() > 10 ) {
 						// Date with time and fractals
-						final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSSSSXXXXX");
+						final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSSSSXXXXX").withResolverStyle(ResolverStyle.STRICT);
+						dateTimeFormatter.withResolverStyle(ResolverStyle.STRICT);
+						return ZonedDateTime.parse(dateValueString, dateTimeFormatter);
+					} else if (dateValueString.substring(dateValueString.indexOf(".")).length() > 9 ) {
+						// Date with time and milliseconds
+						final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSXXXXX").withResolverStyle(ResolverStyle.STRICT);
 						dateTimeFormatter.withResolverStyle(ResolverStyle.STRICT);
 						return ZonedDateTime.parse(dateValueString, dateTimeFormatter);
 					} else {
-						// Date with time and milliseconds
-						final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSXXXXX");
+						// Date with time and partial seconds
+						final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSXXXXX").withResolverStyle(ResolverStyle.STRICT);
 						dateTimeFormatter.withResolverStyle(ResolverStyle.STRICT);
 						return ZonedDateTime.parse(dateValueString, dateTimeFormatter);
 					}
 				} else {
 					if (dateValueString.substring(dateValueString.indexOf(".")).length() > 7 ) {
 						// Date with time and nanoseconds
-						final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSSSSSSS");
+						final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSSSSSSS").withResolverStyle(ResolverStyle.STRICT);
 						return LocalDateTime.parse(dateValueString, dateTimeFormatter).atZone(defaultZoneId);
 					} else if (dateValueString.substring(dateValueString.indexOf(".")).length() > 4 ) {
 						// Date with time and fractals
-						final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSSSS");
+						final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSSSS").withResolverStyle(ResolverStyle.STRICT);
 						return LocalDateTime.parse(dateValueString, dateTimeFormatter).atZone(defaultZoneId);
 					} else {
 						// Date with time and milliseconds
-						final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSS");
+						final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSS").withResolverStyle(ResolverStyle.STRICT);
 						dateTimeFormatter.withResolverStyle(ResolverStyle.STRICT);
 						return LocalDateTime.parse(dateValueString, dateTimeFormatter).atZone(defaultZoneId);
 					}
@@ -1071,7 +1076,13 @@ public class DateUtilities {
 	}
 
 	public static LocalDate parseLocalDate(final String dateFormatPattern, final String dateString) {
-		final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormatPattern);
+		final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormatPattern).withResolverStyle(ResolverStyle.STRICT);
+		final LocalDate localDate = LocalDate.parse(dateString, dateTimeFormatter);
+		return localDate;
+	}
+
+	public static LocalDate parseStrictLocalDate(final String dateFormatPattern, final String dateString) {
+		final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormatPattern.replace("yyyy", "uuuu")).withResolverStyle(ResolverStyle.STRICT);
 		final LocalDate localDate = LocalDate.parse(dateString, dateTimeFormatter);
 		return localDate;
 	}
@@ -1083,7 +1094,7 @@ public class DateUtilities {
 	}
 
 	public static LocalTime parseLocalTime(final String timeFormatPattern, final String timeString) {
-		final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern(timeFormatPattern);
+		final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern(timeFormatPattern).withResolverStyle(ResolverStyle.STRICT);
 		final LocalTime localTime = LocalTime.parse(timeString, timeFormatter);
 		return localTime;
 	}

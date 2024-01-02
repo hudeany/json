@@ -41,9 +41,9 @@ public class JsonPath {
 		}
 	}
 
-	public JsonPath(final JsonPath JsonPath) {
+	public JsonPath(final JsonPath jsonPath) {
 		jsonPathElements = new Stack<>();
-		jsonPathElements.addAll(JsonPath.getPathParts());
+		jsonPathElements.addAll(jsonPath.getPathParts());
 	}
 
 	public String getDotFormattedPath() {

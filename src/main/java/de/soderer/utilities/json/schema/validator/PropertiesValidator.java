@@ -16,6 +16,7 @@ import de.soderer.utilities.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.utilities.json.schema.JsonSchemaPath;
 
 public class PropertiesValidator extends BaseJsonSchemaValidator {
+	private List<String> requiredKeysV3 = null;
 	private final Map <String, List<BaseJsonSchemaValidator>> propertiesDefinitions = new HashMap<>();
 
 	public PropertiesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
@@ -37,6 +38,13 @@ public class PropertiesValidator extends BaseJsonSchemaValidator {
 			} else {
 				final List<BaseJsonSchemaValidator> subValidators = JsonSchema.createValidators((JsonObject) entry.getValue(), jsonSchemaDependencyResolver, new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()));
 				propertiesDefinitions.put(entry.getKey(), subValidators);
+
+				if (jsonSchemaDependencyResolver.isDraftV3Mode() && ((JsonObject) entry.getValue()).containsPropertyKey("required") && ((JsonObject) entry.getValue()).get("required") instanceof Boolean && (Boolean) ((JsonObject) entry.getValue()).get("required")) {
+					if (requiredKeysV3 == null) {
+						requiredKeysV3 = new ArrayList<>();
+					}
+					requiredKeysV3.add(entry.getKey());
+				}
 			}
 		}
 	}
@@ -58,6 +66,14 @@ public class PropertiesValidator extends BaseJsonSchemaValidator {
 					}
 					for (final BaseJsonSchemaValidator subValidator : propertiesDefinitions.get(propertyEntry.getKey())) {
 						subValidator.validate(newJsonNode, new JsonPath(jsonPath).addPropertyKey(propertyEntry.getKey()));
+					}
+				}
+			}
+
+			if (requiredKeysV3 != null) {
+				for (final String propertyKey : requiredKeysV3) {
+					if (!((JsonObject) jsonNode.getValue()).containsPropertyKey(propertyKey)) {
+						throw new JsonSchemaDataValidationError("Invalid property key. Missing required property '" + propertyKey + "'", jsonPath);
 					}
 				}
 			}

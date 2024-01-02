@@ -1,7 +1,9 @@
 package de.soderer.utilities.json.schema;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
@@ -13,8 +15,10 @@ import de.soderer.utilities.json.JsonArray;
 import de.soderer.utilities.json.JsonNode;
 import de.soderer.utilities.json.JsonObject;
 import de.soderer.utilities.json.path.JsonPath;
+import de.soderer.utilities.json.path.JsonPathArrayElement;
 import de.soderer.utilities.json.path.JsonPathElement;
 import de.soderer.utilities.json.path.JsonPathPropertyElement;
+import de.soderer.utilities.json.path.JsonPathRoot;
 import de.soderer.utilities.json.utilities.Utilities;
 
 public class JsonSchemaDependencyResolver {
@@ -27,6 +31,7 @@ public class JsonSchemaDependencyResolver {
 	private JsonSchemaVersion jsonSchemaVersion = JsonSchemaVersion.draftV7;
 
 	private boolean downloadReferencedSchemas = false;
+	private boolean lazyFailOnMissingExternalSchemas = true;
 
 	public JsonSchemaDependencyResolver(final JsonObject schemaDocumentNode, final JsonSchemaDependency... dependencies) throws JsonSchemaDefinitionError {
 		if (schemaDocumentNode == null) {
@@ -65,23 +70,58 @@ public class JsonSchemaDependencyResolver {
 			} else if (reference.startsWith("#")) {
 				// Dereference local document reference
 				final JsonPath jsonPath = new JsonPath(reference);
-				JsonObject referencedObject = schemaDocumentNode;
+				Object referencedObject = schemaDocumentNode;
 				for (final JsonPathElement jsonPathElement : jsonPath.getPathParts()) {
 					if (jsonPathElement == null) {
 						throw new JsonSchemaDefinitionError("Invalid JSON reference path contains null value", jsonSchemaPath);
-					} else if (jsonPathElement instanceof JsonPathPropertyElement) {
-						if (!referencedObject.containsPropertyKey(jsonPathElement.toString())) {
+					} else if (jsonPathElement instanceof JsonPathRoot) {
+						// Skip
+					} else if (referencedObject instanceof JsonObject) {
+						if (!(jsonPathElement instanceof JsonPathPropertyElement)) {
 							throw new JsonSchemaDefinitionError("Referenced JsonSchema does not contain the reference path '" + reference + "'", jsonSchemaPath);
-						} else if (referencedObject.get(jsonPathElement.toString()) == null) {
-							throw new JsonSchemaDefinitionError("Invalid data type 'null' for reference path '" + reference + "'", jsonSchemaPath);
-						} else if (!(referencedObject.get(jsonPathElement.toString()) instanceof JsonObject)) {
-							throw new JsonSchemaDefinitionError("Invalid data type '" + schemaDocumentNode.get("definitions").getClass().getSimpleName() + "' for reference path '" + reference + "'", jsonSchemaPath);
 						} else {
-							referencedObject = (JsonObject) referencedObject.get(jsonPathElement.toString());
+							final JsonObject referencedJsonObject = (JsonObject) referencedObject;
+							if (!referencedJsonObject.containsPropertyKey(jsonPathElement.toString())) {
+								throw new JsonSchemaDefinitionError("Referenced JsonSchema does not contain the reference path '" + reference + "'", jsonSchemaPath);
+							} else if (referencedJsonObject.get(jsonPathElement.toString()) == null) {
+								throw new JsonSchemaDefinitionError("Invalid data type 'null' for reference path '" + reference + "'", jsonSchemaPath);
+							} else if ((referencedJsonObject.get(jsonPathElement.toString()) instanceof JsonObject)) {
+								referencedObject = referencedJsonObject.get(jsonPathElement.toString());
+							} else if ((referencedJsonObject.get(jsonPathElement.toString()) instanceof JsonArray)) {
+								referencedObject = referencedJsonObject.get(jsonPathElement.toString());
+							} else {
+								throw new JsonSchemaDefinitionError("Invalid data type '" + schemaDocumentNode.get("definitions").getClass().getSimpleName() + "' for reference path '" + reference + "'", jsonSchemaPath);
+							}
+						}
+					} else if (referencedObject instanceof JsonArray) {
+						final int referencedIndex;
+						if (jsonPathElement instanceof JsonPathArrayElement) {
+							referencedIndex = ((JsonPathArrayElement) jsonPathElement).getIndex();
+						} else if (jsonPathElement instanceof JsonPathPropertyElement) {
+							try {
+								referencedIndex = Integer.parseInt(((JsonPathPropertyElement) jsonPathElement).toString());
+							} catch (@SuppressWarnings("unused") final NumberFormatException e) {
+								throw new JsonSchemaDefinitionError("Referenced JsonSchema does not contain the reference path '" + reference + "'", jsonSchemaPath);
+							}
+						} else {
+							throw new JsonSchemaDefinitionError("Referenced JsonSchema does not contain the reference path '" + reference + "'", jsonSchemaPath);
+						}
+
+						final JsonArray referencedJsonArray = (JsonArray) referencedObject;
+						if (referencedJsonArray.size() <= referencedIndex) {
+							throw new JsonSchemaDefinitionError("Referenced JsonSchema does not contain the reference path '" + reference + "'", jsonSchemaPath);
+						} else if (referencedJsonArray.get(referencedIndex) == null) {
+							throw new JsonSchemaDefinitionError("Invalid data type 'null' for reference path '" + reference + "'", jsonSchemaPath);
+						} else if ((referencedJsonArray.get(referencedIndex) instanceof JsonObject)) {
+							referencedObject = referencedJsonArray.get(referencedIndex);
+						} else if ((referencedJsonArray.get(referencedIndex) instanceof JsonArray)) {
+							referencedObject = referencedJsonArray.get(referencedIndex);
+						} else {
+							throw new JsonSchemaDefinitionError("Invalid data type '" + schemaDocumentNode.get("definitions").getClass().getSimpleName() + "' for reference path '" + reference + "'", jsonSchemaPath);
 						}
 					}
 				}
-				return referencedObject;
+				return (JsonObject) referencedObject;
 			} else {
 				// Dereference other document reference
 				String packageName = reference;
@@ -91,14 +131,15 @@ public class JsonSchemaDependencyResolver {
 
 				if (!additionalSchemaDocumentNodes.containsKey(packageName) && packageName != null && packageName.toLowerCase().startsWith("http")) {
 					if (downloadReferencedSchemas) {
-						final URLConnection urlConnection = new URL(packageName).openConnection();
-						final int statusCode = ((HttpURLConnection) urlConnection).getResponseCode();
-						if (statusCode != HttpURLConnection.HTTP_OK) {
-							throw new Exception("Cannot get content from '" + packageName + "'. Http-Code was " + statusCode);
+						try {
+							downloadSchemaData(packageName);
+						} catch (final JsonSchemaDefinitionError e) {
+							throw e;
+						} catch (final Exception e) {
+							throw new JsonSchemaDefinitionError("Cannot get content from '" + packageName + "'", jsonSchemaPath, e);
 						}
-						try (InputStream jsonSchemaInputStream = urlConnection.getInputStream()) {
-							addJsonSchemaDefinition(packageName, jsonSchemaInputStream);
-						}
+					} else if (lazyFailOnMissingExternalSchemas){
+						additionalSchemaDocumentNodes.put(packageName, null);
 					} else {
 						throw new Exception("Referenced JSON schema needs download: " + packageName);
 					}
@@ -131,6 +172,26 @@ public class JsonSchemaDependencyResolver {
 			}
 		} else {
 			throw new Exception("Invalid JSON schema reference key 'null'");
+		}
+	}
+
+	private void downloadSchemaData(final String packageName) throws IOException, MalformedURLException, Exception, JsonSchemaDefinitionError {
+		String downloadUrl = packageName;
+		int redirectsFollowed = 0;
+		while (redirectsFollowed < 10) {
+			final URLConnection urlConnection = new URL(downloadUrl).openConnection();
+			final int statusCode = ((HttpURLConnection) urlConnection).getResponseCode();
+			if (statusCode >= 300 && statusCode < 400) {
+				downloadUrl = urlConnection.getHeaderField("Location");
+				redirectsFollowed++;
+			} else if (statusCode != HttpURLConnection.HTTP_OK) {
+				throw new Exception("Cannot get content from '" + packageName + "'. Http-Code was " + statusCode);
+			} else {
+				try (InputStream jsonSchemaInputStream = urlConnection.getInputStream()) {
+					addJsonSchemaDefinition(packageName, jsonSchemaInputStream);
+				}
+				break;
+			}
 		}
 	}
 
@@ -186,19 +247,14 @@ public class JsonSchemaDependencyResolver {
 				if (!additionalSchemaDocumentNodes.containsKey(packageName) && packageName != null && packageName.toLowerCase().startsWith("http")) {
 					if (downloadReferencedSchemas) {
 						try {
-							final URLConnection urlConnection = new URL(packageName).openConnection();
-							final int statusCode = ((HttpURLConnection) urlConnection).getResponseCode();
-							if (statusCode != HttpURLConnection.HTTP_OK) {
-								throw new JsonSchemaDefinitionError("Cannot get content from '" + packageName + "'. Http-Code was " + statusCode, jsonSchemaPath);
-							}
-							try (InputStream jsonSchemaInputStream = urlConnection.getInputStream()) {
-								addJsonSchemaDefinition(packageName, jsonSchemaInputStream);
-							}
+							downloadSchemaData(packageName);
 						} catch (final JsonSchemaDefinitionError e) {
 							throw e;
 						} catch (final Exception e) {
 							throw new JsonSchemaDefinitionError("Cannot get content from '" + packageName + "'", jsonSchemaPath, e);
 						}
+					} else if (lazyFailOnMissingExternalSchemas){
+						additionalSchemaDocumentNodes.put(packageName, null);
 					} else {
 						throw new JsonSchemaDefinitionError("Referenced JSON schema needs download: " + packageName, jsonSchemaPath);
 					}
@@ -298,6 +354,10 @@ public class JsonSchemaDependencyResolver {
 		return jsonSchemaVersion == null || jsonSchemaVersion == JsonSchemaVersion.simple;
 	}
 
+	public boolean isDraftV3Mode() {
+		return jsonSchemaVersion == JsonSchemaVersion.draftV3;
+	}
+
 	public boolean isDraftV4Mode() {
 		return jsonSchemaVersion == JsonSchemaVersion.draftV4;
 	}
@@ -312,5 +372,9 @@ public class JsonSchemaDependencyResolver {
 
 	public void setDownloadReferencedSchemas(final boolean downloadReferencedSchemas) {
 		this.downloadReferencedSchemas = downloadReferencedSchemas;
+	}
+
+	public void setLazyFailOnMissingExternalSchemas(final boolean lazyFailOnMissingExternalSchemas) {
+		this.lazyFailOnMissingExternalSchemas = lazyFailOnMissingExternalSchemas;
 	}
 }

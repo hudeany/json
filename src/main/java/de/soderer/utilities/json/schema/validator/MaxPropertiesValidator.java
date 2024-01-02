@@ -15,16 +15,23 @@ public class MaxPropertiesValidator extends BaseJsonSchemaValidator {
 	public MaxPropertiesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
-		if (!(validatorData instanceof Integer)) {
-			throw new JsonSchemaDefinitionError("Data for maximum property keys amount is not an integer", jsonSchemaPath);
+		if (validatorData == null) {
+			throw new JsonSchemaDefinitionError("Data for maximum property keys is 'null'", jsonSchemaPath);
 		} else if (validatorData instanceof String) {
 			try {
 				this.validatorData = Integer.parseInt((String) validatorData);
 			} catch (final NumberFormatException e) {
-				throw new JsonSchemaDefinitionError("Data for maximum property keys amount '" + validatorData + "' is not a number", jsonSchemaPath, e);
+				throw new JsonSchemaDefinitionError("Data for maximum property keys '" + validatorData + "' is not a number", jsonSchemaPath, e);
 			}
-		} else if (((Integer) validatorData) < 0) {
-			throw new JsonSchemaDefinitionError("Data for maximum property keys amount is negative", jsonSchemaPath);
+		} else if (validatorData instanceof Number) {
+			final int maximumPropertiesValue = ((Number) validatorData).intValue();
+			if (maximumPropertiesValue < 0) {
+				throw new JsonSchemaDefinitionError("Data for maximum property keys is negative", jsonSchemaPath);
+			} else {
+				this.validatorData = maximumPropertiesValue;
+			}
+		} else {
+			throw new JsonSchemaDefinitionError("Data for maximum property keys '" + validatorData + "' is not a number", jsonSchemaPath);
 		}
 	}
 

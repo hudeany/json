@@ -16,7 +16,9 @@ public class RequiredValidator extends BaseJsonSchemaValidator {
 	public RequiredValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
-		if (!(validatorData instanceof JsonArray)) {
+		if (jsonSchemaDependencyResolver.isDraftV3Mode() && validatorData instanceof Boolean) {
+			// Handled in PropertiesValidator
+		} else if (!(validatorData instanceof JsonArray)) {
 			throw new JsonSchemaDefinitionError("Data for required property keys is not a JsonArray", jsonSchemaPath);
 		}
 	}

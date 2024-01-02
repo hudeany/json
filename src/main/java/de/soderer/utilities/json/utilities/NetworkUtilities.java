@@ -10,6 +10,7 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.URI;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
@@ -206,12 +207,21 @@ public class NetworkUtilities {
 			return false;
 		}
 
-		// Do not allow ".local" top level domain
-		if (asciiDomainName.toLowerCase().endsWith(".local")) {
-			return false;
-		}
+		if (asciiDomainName.startsWith("xn--")) {
+			try {
+				asciiDomainName = PunycodeCodec.decode(asciiDomainName);
+				return true;
+			} catch (@SuppressWarnings("unused") final Exception e) {
+				return false;
+			}
+		} else {
+			// Do not allow ".local" top level domain
+			if (asciiDomainName.toLowerCase().endsWith(".local")) {
+				return false;
+			}
 
-		return DOMAIN_NAME_PATTERN.matcher(asciiDomainName).matches();
+			return DOMAIN_NAME_PATTERN.matcher(asciiDomainName).matches();
+		}
 	}
 
 	public static boolean isValidEmail(final String emailAddress) {
@@ -262,7 +272,8 @@ public class NetworkUtilities {
 
 	public static boolean isValidUri(final String uri) {
 		try {
-			new URL(uri).toURI();
+			@SuppressWarnings("unused")
+			final URI unused = new URI(uri);
 			return true;
 		} catch (@SuppressWarnings("unused") final Exception e) {
 			return false;

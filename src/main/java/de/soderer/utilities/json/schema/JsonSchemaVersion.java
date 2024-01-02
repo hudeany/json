@@ -3,6 +3,8 @@ package de.soderer.utilities.json.schema;
 public enum JsonSchemaVersion {
 	simple(null, null),
 
+	draftV3("http://json-schema.org/draft-03/schema", "json/JsonSchemaDescriptionDraftV3.json"),
+
 	draftV4("http://json-schema.org/draft-04/schema", "json/JsonSchemaDescriptionDraftV4.json"),
 
 	/**

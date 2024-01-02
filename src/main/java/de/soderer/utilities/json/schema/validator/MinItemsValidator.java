@@ -17,16 +17,21 @@ public class MinItemsValidator extends BaseJsonSchemaValidator {
 
 		if (validatorData == null) {
 			throw new JsonSchemaDefinitionError("Data for minimum items is 'null'", jsonSchemaPath);
-		} else if (validatorData instanceof Integer) {
-			if (((Integer) validatorData) < 0) {
-				throw new JsonSchemaDefinitionError("Data for minimum items amount is negative", jsonSchemaPath);
-			}
 		} else if (validatorData instanceof String) {
 			try {
 				this.validatorData = Integer.parseInt((String) validatorData);
 			} catch (final NumberFormatException e) {
 				throw new JsonSchemaDefinitionError("Data for minimum items '" + validatorData + "' is not a number", jsonSchemaPath, e);
 			}
+		} else if (validatorData instanceof Number) {
+			final int minimumItemsValue = ((Number) validatorData).intValue();
+			if (minimumItemsValue < 0) {
+				throw new JsonSchemaDefinitionError("Data for minimum items amount is negative", jsonSchemaPath);
+			} else {
+				this.validatorData = minimumItemsValue;
+			}
+		} else {
+			throw new JsonSchemaDefinitionError("Data for minimum items '" + validatorData + "' is not a number", jsonSchemaPath);
 		}
 	}
 

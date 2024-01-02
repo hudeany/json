@@ -17,16 +17,21 @@ public class MaxItemsValidator extends BaseJsonSchemaValidator {
 
 		if (validatorData == null) {
 			throw new JsonSchemaDefinitionError("Data for maximum items is 'null'", jsonSchemaPath);
-		} else if (validatorData instanceof Integer) {
-			if (((Integer) validatorData) < 0) {
-				throw new JsonSchemaDefinitionError("Data for maximum items amount is negative", jsonSchemaPath);
-			}
 		} else if (validatorData instanceof String) {
 			try {
 				this.validatorData = Integer.parseInt((String) validatorData);
 			} catch (final NumberFormatException e) {
 				throw new JsonSchemaDefinitionError("Data for maximum items '" + validatorData + "' is not a number", jsonSchemaPath, e);
 			}
+		} else if (validatorData instanceof Number) {
+			final int maximumItemsValue = ((Number) validatorData).intValue();
+			if (maximumItemsValue < 0) {
+				throw new JsonSchemaDefinitionError("Data for maximum items amount is negative", jsonSchemaPath);
+			} else {
+				this.validatorData = maximumItemsValue;
+			}
+		} else {
+			throw new JsonSchemaDefinitionError("Data for maximum items '" + validatorData + "' is not a number", jsonSchemaPath);
 		}
 	}
 
@@ -37,6 +42,10 @@ public class MaxItemsValidator extends BaseJsonSchemaValidator {
 				throw new JsonSchemaDataValidationError("Expected data type 'array' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {
+			if (!(validatorData instanceof Integer)) {
+				System.out.println(); // TODO
+			}
+
 			if (((JsonArray) jsonNode.getValue()).size() > ((Integer) validatorData)) {
 				throw new JsonSchemaDataValidationError("Required maximum number of items is '" + validatorData + "' but was '" + ((JsonArray) jsonNode.getValue()).size() + "'", jsonPath);
 			}

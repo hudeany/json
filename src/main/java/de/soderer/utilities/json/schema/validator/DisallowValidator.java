@@ -18,11 +18,11 @@ import de.soderer.utilities.json.schema.JsonSchemaPath;
 /**
  * JSON subschema that matches a simple data value to a type definition
  */
-public class TypeValidator extends BaseJsonSchemaValidator {
+public class DisallowValidator extends BaseJsonSchemaValidator {
 	private final List<String> typeStrings = new ArrayList<>();
 	private final List<List<BaseJsonSchemaValidator>> typeValidators = new ArrayList<>();
 
-	public TypeValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
+	public DisallowValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
 		if (validatorData == null) {
@@ -32,16 +32,12 @@ public class TypeValidator extends BaseJsonSchemaValidator {
 		}
 
 		if (validatorData instanceof String) {
-			if ("any".equals(validatorData)) {
-				typeStrings.add((String) validatorData);
-			} else {
-				try {
-					JsonDataType.getFromString((String) validatorData);
-				} catch (final Exception e) {
-					throw new JsonSchemaDefinitionError("Invalid JSON data type '" + validatorData + "'", jsonSchemaPath, e);
-				}
-				typeStrings.add((String) validatorData);
+			try {
+				JsonDataType.getFromString((String) validatorData);
+			} catch (final Exception e) {
+				throw new JsonSchemaDefinitionError("Invalid JSON data type '" + validatorData + "'", jsonSchemaPath, e);
 			}
+			typeStrings.add((String) validatorData);
 		} else if (validatorData instanceof JsonArray) {
 			for (final Object typeData : ((JsonArray) validatorData)) {
 				if (typeData == null) {
@@ -68,7 +64,7 @@ public class TypeValidator extends BaseJsonSchemaValidator {
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		for (final String typeString : typeStrings) {
 			if ("any".equals(typeString)) {
-				return;
+				throw new JsonSchemaDataValidationError("Invalid data type '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			} else {
 				JsonDataType jsonDataType;
 				try {
@@ -78,16 +74,15 @@ public class TypeValidator extends BaseJsonSchemaValidator {
 				}
 
 				if (checkJsonDataType(jsonNode, jsonDataType)) {
-					return;
+					throw new JsonSchemaDataValidationError("Invalid data type '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 				}
 			}
 		}
 		for (final List<BaseJsonSchemaValidator> typeValidatorList : typeValidators) {
 			if (validateSubSchema(typeValidatorList, jsonNode, jsonPath)) {
-				return;
+				throw new JsonSchemaDataValidationError("Invalid data type '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		}
-		throw new JsonSchemaDataValidationError("Invalid data type '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 	}
 
 	private boolean checkJsonDataType(final JsonNode jsonNode, final JsonDataType jsonDataType) {

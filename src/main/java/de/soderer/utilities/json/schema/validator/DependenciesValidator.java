@@ -52,6 +52,10 @@ public class DependenciesValidator extends BaseJsonSchemaValidator {
 				final List<String> propertiesList = new ArrayList<>();
 				propertiesList.add((String) entry.getValue());
 				mandatoryProperties.put(entry.getKey(), propertiesList);
+			} else if (entry.getValue() instanceof Boolean) {
+				final List<BaseJsonSchemaValidator> subValidators = new ArrayList<>();
+				subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, entry.getValue()));
+				validators.put(entry.getKey(), subValidators);
 			} else {
 				throw new JsonSchemaDefinitionError("Dependencies value for key '" + entry.getKey() + "' is not an 'object' or 'array' or 'string'", jsonSchemaPath);
 			}
