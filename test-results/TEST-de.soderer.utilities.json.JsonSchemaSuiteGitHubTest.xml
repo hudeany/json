@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite errors="1" failures="0" hostname="DeathStar" name="de.soderer.utilities.json.JsonSchemaSuiteGitHubTest" skipped="0" tests="1" time="0.867" timestamp="2024-01-02T14:58:25">
+<testsuite errors="0" failures="0" hostname="DeathStar" name="de.soderer.utilities.json.JsonSchemaSuiteGitHubTest" skipped="0" tests="1" time="0.78" timestamp="2024-01-02T22:52:59">
   <properties>
     <property name="ant.library.dir" value="C:\Users\Andreas\.p2\pool\plugins\org.apache.ant_1.10.14.v20230922-1200\lib" />
     <property name="java.specification.version" value="17" />
@@ -16,7 +16,7 @@
     <property name="user.country" value="DE" />
     <property name="sun.java.launcher" value="SUN_STANDARD" />
     <property name="sun.boot.library.path" value="C:\Program Files\Java\openjdk\jdk-17.0.2\bin" />
-    <property name="sun.java.command" value="org.eclipse.ant.internal.launching.remote.InternalAntRunner -Dorg.eclipse.ant.core.ANT_PROCESS_ID=1704207501546 -Declipse.connect.port=57834 -Dant.home=C:\Users\Andreas\.p2\pool\plugins\org.apache.ant_1.10.14.v20230922-1200 -Djava.security.manager=allow -logger org.eclipse.ant.internal.launching.remote.logger.RemoteAntBuildLogger -inputhandler org.eclipse.ant.internal.ui.antsupport.inputhandler.ProxyInputHandler -buildfile C:\Users\Andreas\git\JSON\build.xml" />
+    <property name="sun.java.command" value="org.eclipse.ant.internal.launching.remote.InternalAntRunner -Dorg.eclipse.ant.core.ANT_PROCESS_ID=1704235977254 -Declipse.connect.port=56746 -Dant.home=C:\Users\Andreas\.p2\pool\plugins\org.apache.ant_1.10.14.v20230922-1200 -Djava.security.manager=allow -logger org.eclipse.ant.internal.launching.remote.logger.RemoteAntBuildLogger -inputhandler org.eclipse.ant.internal.ui.antsupport.inputhandler.ProxyInputHandler -buildfile C:\Users\Andreas\git\JSON\build.xml" />
     <property name="ant.file.type.Create all Jars for Project JsonReader" value="file" />
     <property name="jdk.debug" value="release" />
     <property name="sun.cpu.endian" value="little" />
@@ -70,81 +70,219 @@
     <property name="ant.file.Create all Jars for Project JsonReader" value="C:\Users\Andreas\git\JSON\build.xml" />
     <property name="ant.project.default-target" value="build_jar" />
   </properties>
-  <testcase classname="de.soderer.utilities.json.JsonSchemaSuiteGitHubTest" name="testGitHubTestSuite" time="0.867">
-    <error message="Not a valid JSON schema in test &apos;items with boolean schemas&apos;: Invalid JSON schema definition: Items data item is not an &apos;object&apos; at JSON schema path: $.items" type="java.lang.Exception">java.lang.Exception: Not a valid JSON schema in test &apos;items with boolean schemas&apos;: Invalid JSON schema definition: Items data item is not an &apos;object&apos; at JSON schema path: $.items
-	at de.soderer.utilities.json.JsonSchemaSuiteGitHubTest.executeJsonSchemaTestCollection(JsonSchemaSuiteGitHubTest.java:170)
-	at de.soderer.utilities.json.JsonSchemaSuiteGitHubTest.testGitHubTestSuite(JsonSchemaSuiteGitHubTest.java:90)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
-	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at jdk.internal.reflect.GeneratedMethodAccessor4.invoke(Unknown Source)
-	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at org.eclipse.ant.internal.launching.remote.EclipseDefaultExecutor.executeTargets(EclipseDefaultExecutor.java:34)
-	at org.eclipse.ant.internal.launching.remote.InternalAntRunner.run(InternalAntRunner.java:464)
-	at org.eclipse.ant.internal.launching.remote.InternalAntRunner.main(InternalAntRunner.java:143)
-Caused by: de.soderer.utilities.json.schema.JsonSchemaDefinitionError: Invalid JSON schema definition: Items data item is not an &apos;object&apos; at JSON schema path: $.items
-	at de.soderer.utilities.json.schema.validator.ItemsValidator.&lt;init&gt;(ItemsValidator.java:50)
-	at de.soderer.utilities.json.schema.JsonSchema.createValidators(JsonSchema.java:324)
-	at de.soderer.utilities.json.schema.JsonSchema.&lt;init&gt;(JsonSchema.java:130)
-	at de.soderer.utilities.json.JsonSchemaSuiteGitHubTest.executeJsonSchemaTestCollection(JsonSchemaSuiteGitHubTest.java:160)
-</error>
-  </testcase>
-  <system-out><![CDATA[JSON-Schema-Test-Suite-23.1.0/tests/draft7/items.json
-items with boolean schemas
-{
-	"items":
-		[
-			true,
-			false
-		]
-}
+  <testcase classname="de.soderer.utilities.json.JsonSchemaSuiteGitHubTest" name="testGitHubTestSuite" time="0.779" />
+  <system-out><![CDATA[Directory: JSON-Schema-Test-Suite-23.1.0/tests/draft3
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/additionalItems.json PASSED: 13
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/additionalProperties.json PASSED: 16
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/default.json PASSED: 7
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/dependencies.json PASSED: 18
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/disallow.json PASSED: 9
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/divisibleBy.json PASSED: 8
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/enum.json PASSED: 16
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/extends.json PASSED: 8 SKIPPED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/format.json PASSED: 60
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/infinite-loop-detection.json PASSED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/items.json PASSED: 7
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/maxItems.json PASSED: 4
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/maxLength.json PASSED: 5
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/maximum.json PASSED: 14
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/minItems.json PASSED: 4
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/minLength.json PASSED: 5
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/minimum.json PASSED: 13
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/optional/bignum.json PASSED: 9
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/optional/ecmascript-regex.json PASSED: 0 SKIPPED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/optional/format/color.json PASSED: 6
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/optional/format/date-time.json PASSED: 6
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/optional/format/date.json PASSED: 32
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/optional/format/email.json PASSED: 9
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/optional/format/host-name.json PASSED: 11
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/optional/format/ip-address.json PASSED: 3
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/optional/format/ipv6.json PASSED: 11 SKIPPED: 1
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/optional/format/regex.json PASSED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/optional/format/time.json PASSED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/optional/format/uri.json PASSED: 2 SKIPPED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/optional/non-bmp-regex.json PASSED: 12
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/optional/zeroTerminatedFloats.json PASSED: 1
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/pattern.json PASSED: 9
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/patternProperties.json PASSED: 17
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/properties.json PASSED: 15
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/ref.json PASSED: 24 SKIPPED: 1
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/refRemote.json PASSED: 2 SKIPPED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/required.json PASSED: 4
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/type.json PASSED: 80
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/uniqueItems.json PASSED: 62
+PASSED: 528 SKIPPED: 10
+
+Directory: JSON-Schema-Test-Suite-23.1.0/tests/draft4
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/additionalItems.json PASSED: 16
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/additionalProperties.json PASSED: 16
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/allOf.json PASSED: 27
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/anyOf.json PASSED: 15
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/default.json PASSED: 7
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/definitions.json PASSED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/dependencies.json PASSED: 29
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/enum.json PASSED: 33
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/format.json PASSED: 36
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/id.json PASSED: 0
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/infinite-loop-detection.json PASSED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/items.json PASSED: 21
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/maxItems.json PASSED: 4
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/maxLength.json PASSED: 5
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/maxProperties.json PASSED: 8
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/maximum.json PASSED: 14
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/minItems.json PASSED: 4
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/minLength.json PASSED: 5
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/minProperties.json PASSED: 6
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/minimum.json PASSED: 17
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/multipleOf.json PASSED: 10
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/not.json PASSED: 10
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/oneOf.json PASSED: 23
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/optional/bignum.json PASSED: 9
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/optional/ecmascript-regex.json PASSED: 51 SKIPPED: 16
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/optional/float-overflow.json PASSED: 1
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/optional/format/date-time.json PASSED: 23 SKIPPED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/optional/format/email.json PASSED: 15
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/optional/format/hostname.json PASSED: 18
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/optional/format/ipv4.json PASSED: 14 SKIPPED: 1
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/optional/format/ipv6.json PASSED: 37 SKIPPED: 3
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/optional/format/unknown.json PASSED: 7
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/optional/format/uri.json PASSED: 23 SKIPPED: 3
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/optional/non-bmp-regex.json PASSED: 12
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/optional/zeroTerminatedFloats.json PASSED: 1
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/pattern.json PASSED: 9
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/patternProperties.json PASSED: 18
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/properties.json PASSED: 24
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/ref.json PASSED: 36 SKIPPED: 5
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/refRemote.json PASSED: 6 SKIPPED: 7
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/required.json PASSED: 15
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/type.json PASSED: 79
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft4/uniqueItems.json PASSED: 69
+PASSED: 777 SKIPPED: 37
+
+Directory: JSON-Schema-Test-Suite-23.1.0/tests/draft6
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/additionalItems.json PASSED: 18
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/additionalProperties.json PASSED: 16
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/allOf.json PASSED: 30
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/anyOf.json PASSED: 18
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/boolean_schema.json PASSED: 18
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/const.json PASSED: 49 SKIPPED: 1
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/contains.json PASSED: 19
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/default.json PASSED: 7
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/definitions.json PASSED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/dependencies.json PASSED: 36
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/enum.json PASSED: 33
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/exclusiveMaximum.json PASSED: 4
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/exclusiveMinimum.json PASSED: 4
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/format.json PASSED: 54
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/id.json PASSED: 4
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/infinite-loop-detection.json PASSED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/items.json PASSED: 28
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/maxItems.json PASSED: 6
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/maxLength.json PASSED: 7
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/maxProperties.json PASSED: 10
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/maximum.json PASSED: 8
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/minItems.json PASSED: 6
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/minLength.json PASSED: 7
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/minProperties.json PASSED: 8
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/minimum.json PASSED: 11
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/multipleOf.json PASSED: 10
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/not.json PASSED: 12
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/oneOf.json PASSED: 27
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/optional/bignum.json PASSED: 9
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/optional/ecmascript-regex.json PASSED: 41 SKIPPED: 16
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/optional/float-overflow.json PASSED: 1
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/optional/format/date-time.json PASSED: 23 SKIPPED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/optional/format/email.json PASSED: 15
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/optional/format/hostname.json PASSED: 18
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/optional/format/ipv4.json PASSED: 14 SKIPPED: 1
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/optional/format/ipv6.json PASSED: 37 SKIPPED: 3
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/optional/format/json-pointer.json PASSED: 26 SKIPPED: 12
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/optional/format/unknown.json PASSED: 7
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/optional/format/uri-reference.json PASSED: 11 SKIPPED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/optional/format/uri-template.json PASSED: 9 SKIPPED: 1
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/optional/format/uri.json PASSED: 23 SKIPPED: 3
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/optional/non-bmp-regex.json PASSED: 12
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/pattern.json PASSED: 9
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/patternProperties.json PASSED: 23
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/properties.json PASSED: 28
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/propertyNames.json PASSED: 13
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/ref.json PASSED: 48 SKIPPED: 8
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/refRemote.json PASSED: 6 SKIPPED: 7
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/required.json PASSED: 16
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/type.json PASSED: 80
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/uniqueItems.json PASSED: 69
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft6/unknownKeyword.json PASSED: 0
+PASSED: 992 SKIPPED: 56
+
+Directory: JSON-Schema-Test-Suite-23.1.0/tests/draft7
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/additionalItems.json PASSED: 18
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/additionalProperties.json PASSED: 16
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/allOf.json PASSED: 30
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/anyOf.json PASSED: 18
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/boolean_schema.json PASSED: 18
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/const.json PASSED: 49 SKIPPED: 1
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/contains.json PASSED: 21
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/default.json PASSED: 7
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/definitions.json PASSED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/dependencies.json PASSED: 36
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/enum.json PASSED: 33
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/exclusiveMaximum.json PASSED: 4
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/exclusiveMinimum.json PASSED: 4
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/format.json PASSED: 102
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/id.json PASSED: 4
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/if-then-else.json PASSED: 26
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/infinite-loop-detection.json PASSED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/items.json PASSED: 28
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/maxItems.json PASSED: 6
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/maxLength.json PASSED: 7
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/maxProperties.json PASSED: 10
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/maximum.json PASSED: 8
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/minItems.json PASSED: 6
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/minLength.json PASSED: 7
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/minProperties.json PASSED: 8
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/minimum.json PASSED: 11
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/multipleOf.json PASSED: 10
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/not.json PASSED: 12
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/oneOf.json PASSED: 27
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/bignum.json PASSED: 9
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/content.json PASSED: 10
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/cross-draft.json PASSED: 0
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/ecmascript-regex.json PASSED: 41 SKIPPED: 16
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/float-overflow.json PASSED: 1
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/date-time.json PASSED: 23 SKIPPED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/date.json PASSED: 47
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/email.json PASSED: 15
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/hostname.json PASSED: 18
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/idn-email.json PASSED: 10
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/idn-hostname.json PASSED: 32 SKIPPED: 19
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/ipv4.json PASSED: 14 SKIPPED: 1
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/ipv6.json PASSED: 37 SKIPPED: 3
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/iri-reference.json PASSED: 11 SKIPPED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/iri.json PASSED: 12 SKIPPED: 3
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/json-pointer.json PASSED: 26 SKIPPED: 12
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/regex.json PASSED: 8
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/relative-json-pointer.json PASSED: 11 SKIPPED: 7
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/time.json PASSED: 34 SKIPPED: 11
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/unknown.json PASSED: 7
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/uri-reference.json PASSED: 11 SKIPPED: 2
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/uri-template.json PASSED: 9 SKIPPED: 1
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/format/uri.json PASSED: 23 SKIPPED: 3
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/optional/non-bmp-regex.json PASSED: 12
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/pattern.json PASSED: 9
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/patternProperties.json PASSED: 23
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/properties.json PASSED: 28
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/propertyNames.json PASSED: 13
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/ref.json PASSED: 48 SKIPPED: 8
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/refRemote.json PASSED: 6 SKIPPED: 7
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/required.json PASSED: 16
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/type.json PASSED: 80
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/uniqueItems.json PASSED: 69
+File: JSON-Schema-Test-Suite-23.1.0/tests/draft7/unknownKeyword.json PASSED: 0
+PASSED: 1243 SKIPPED: 98
+
+SKIPPED schema test collections: 47
+TESTS: 3741
+Overall PASSED: 3540 (95%) SKIPPED: 201 (5%)
 ]]></system-out>
-  <system-err><![CDATA[de.soderer.utilities.json.schema.JsonSchemaDefinitionError: Invalid JSON schema definition: Items data item is not an 'object' at JSON schema path: $.items
-	at de.soderer.utilities.json.schema.validator.ItemsValidator.<init>(ItemsValidator.java:50)
-	at de.soderer.utilities.json.schema.JsonSchema.createValidators(JsonSchema.java:324)
-	at de.soderer.utilities.json.schema.JsonSchema.<init>(JsonSchema.java:130)
-	at de.soderer.utilities.json.JsonSchemaSuiteGitHubTest.executeJsonSchemaTestCollection(JsonSchemaSuiteGitHubTest.java:160)
-	at de.soderer.utilities.json.JsonSchemaSuiteGitHubTest.testGitHubTestSuite(JsonSchemaSuiteGitHubTest.java:90)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
-	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
-	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
-	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
-	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
-	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
-	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
-	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
-	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
-	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
-	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
-	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
-	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
-	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
-	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
-	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
-	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
-	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
-	at junit.framework.JUnit4TestAdapter.run(JUnit4TestAdapter.java:50)
-	at org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner.run(JUnitTestRunner.java:535)
-	at org.apache.tools.ant.taskdefs.optional.junit.JUnitTask.executeInVM(JUnitTask.java:1618)
-	at org.apache.tools.ant.taskdefs.optional.junit.JUnitTask.execute(JUnitTask.java:1040)
-	at org.apache.tools.ant.taskdefs.optional.junit.JUnitTask.executeOrQueue(JUnitTask.java:2163)
-	at org.apache.tools.ant.taskdefs.optional.junit.JUnitTask.execute(JUnitTask.java:854)
-	at org.apache.tools.ant.UnknownElement.execute(UnknownElement.java:299)
-	at jdk.internal.reflect.GeneratedMethodAccessor4.invoke(Unknown Source)
-	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
-	at org.apache.tools.ant.dispatch.DispatchUtils.execute(DispatchUtils.java:99)
-	at org.apache.tools.ant.Task.perform(Task.java:350)
-	at org.apache.tools.ant.Target.execute(Target.java:449)
-	at org.apache.tools.ant.Target.performTasks(Target.java:470)
-	at org.apache.tools.ant.Project.executeSortedTargets(Project.java:1401)
-	at org.apache.tools.ant.Project.executeTarget(Project.java:1374)
-	at org.apache.tools.ant.helper.DefaultExecutor.executeTargets(DefaultExecutor.java:41)
-	at org.eclipse.ant.internal.launching.remote.EclipseDefaultExecutor.executeTargets(EclipseDefaultExecutor.java:34)
-	at org.apache.tools.ant.Project.executeTargets(Project.java:1264)
-	at org.eclipse.ant.internal.launching.remote.InternalAntRunner.run(InternalAntRunner.java:464)
-	at org.eclipse.ant.internal.launching.remote.InternalAntRunner.main(InternalAntRunner.java:143)
-]]></system-err>
+  <system-err><![CDATA[]]></system-err>
 </testsuite>

@@ -849,12 +849,12 @@
         "valid": true
     },
     {
-        "description": "any type is not specified",
+        "description": "any type is specified",
         "schema": {
             "type": "any"
         },
         "data": 1,
-        "validSchema": false
+        "valid": true
     },
     {
         "description": "multiple types can be specified in an array; test: an integer is valid",
