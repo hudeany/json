@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite errors="0" failures="0" hostname="DeathStar" name="de.soderer.utilities.json.JsonSchemaSuiteGitHubTest" skipped="0" tests="1" time="0.78" timestamp="2024-01-02T22:52:59">
+<testsuite errors="0" failures="0" hostname="DeathStar" name="de.soderer.utilities.json.JsonSchemaSuiteGitHubTest" skipped="0" tests="1" time="0.775" timestamp="2024-01-02T22:58:54">
   <properties>
     <property name="ant.library.dir" value="C:\Users\Andreas\.p2\pool\plugins\org.apache.ant_1.10.14.v20230922-1200\lib" />
     <property name="java.specification.version" value="17" />
@@ -16,7 +16,7 @@
     <property name="user.country" value="DE" />
     <property name="sun.java.launcher" value="SUN_STANDARD" />
     <property name="sun.boot.library.path" value="C:\Program Files\Java\openjdk\jdk-17.0.2\bin" />
-    <property name="sun.java.command" value="org.eclipse.ant.internal.launching.remote.InternalAntRunner -Dorg.eclipse.ant.core.ANT_PROCESS_ID=1704235977254 -Declipse.connect.port=56746 -Dant.home=C:\Users\Andreas\.p2\pool\plugins\org.apache.ant_1.10.14.v20230922-1200 -Djava.security.manager=allow -logger org.eclipse.ant.internal.launching.remote.logger.RemoteAntBuildLogger -inputhandler org.eclipse.ant.internal.ui.antsupport.inputhandler.ProxyInputHandler -buildfile C:\Users\Andreas\git\JSON\build.xml" />
+    <property name="sun.java.command" value="org.eclipse.ant.internal.launching.remote.InternalAntRunner -Dorg.eclipse.ant.core.ANT_PROCESS_ID=1704236330386 -Declipse.connect.port=57198 -Dant.home=C:\Users\Andreas\.p2\pool\plugins\org.apache.ant_1.10.14.v20230922-1200 -Djava.security.manager=allow -logger org.eclipse.ant.internal.launching.remote.logger.RemoteAntBuildLogger -inputhandler org.eclipse.ant.internal.ui.antsupport.inputhandler.ProxyInputHandler -buildfile C:\Users\Andreas\git\JSON\build.xml" />
     <property name="ant.file.type.Create all Jars for Project JsonReader" value="file" />
     <property name="jdk.debug" value="release" />
     <property name="sun.cpu.endian" value="little" />
@@ -25,7 +25,7 @@
     <property name="java.specification.vendor" value="Oracle Corporation" />
     <property name="java.version.date" value="2022-01-18" />
     <property name="java.home" value="C:\Program Files\Java\openjdk\jdk-17.0.2" />
-    <property name="version" value="23.3.0" />
+    <property name="version" value="23.4.0" />
     <property name="basedir" value="C:\Users\Andreas\git\JSON" />
     <property name="file.separator" value="\" />
     <property name="java.vm.compressedOopsMode" value="Zero based" />
@@ -70,7 +70,7 @@
     <property name="ant.file.Create all Jars for Project JsonReader" value="C:\Users\Andreas\git\JSON\build.xml" />
     <property name="ant.project.default-target" value="build_jar" />
   </properties>
-  <testcase classname="de.soderer.utilities.json.JsonSchemaSuiteGitHubTest" name="testGitHubTestSuite" time="0.779" />
+  <testcase classname="de.soderer.utilities.json.JsonSchemaSuiteGitHubTest" name="testGitHubTestSuite" time="0.774" />
   <system-out><![CDATA[Directory: JSON-Schema-Test-Suite-23.1.0/tests/draft3
 File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/additionalItems.json PASSED: 13
 File: JSON-Schema-Test-Suite-23.1.0/tests/draft3/additionalProperties.json PASSED: 16
