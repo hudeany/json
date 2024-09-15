@@ -181,7 +181,7 @@ public class JsonWriter implements Closeable {
 					write(separator + "\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (ZonedDateTime) propertyValue) + "\"", false);
 				}
 			} else if (propertyValue instanceof Number) {
-				write(separator + ((Number) propertyValue).toString(), false);
+				write(separator + propertyValue.toString(), false);
 			} else {
 				write(separator + "\"" + formatStringOutput(propertyValue.toString()) + "\"", false);
 			}
@@ -269,7 +269,7 @@ public class JsonWriter implements Closeable {
 					write("\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (ZonedDateTime) arrayValue) + "\"", true);
 				}
 			} else if (arrayValue instanceof Number) {
-				write(((Number) arrayValue).toString(), true);
+				write(arrayValue.toString(), true);
 			} else {
 				write("\"" + formatStringOutput(arrayValue.toString()) + "\"", true);
 			}
@@ -301,7 +301,7 @@ public class JsonWriter implements Closeable {
 					write("\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (ZonedDateTime) value) + "\"", true);
 				}
 			} else if (value instanceof Number) {
-				write(((Number) value).toString(), true);
+				write(value.toString(), true);
 			} else {
 				write("\"" + value.toString().replace("\"", "\\\"") + "\"", true);
 			}

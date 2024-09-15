@@ -26,7 +26,7 @@ public class PatternValidator extends BaseJsonSchemaValidator {
 		final Pattern pattern = Pattern.compile((String) validatorData);
 		if (jsonNode.isNumber()) {
 			if (jsonSchemaDependencyResolver.isSimpleMode()) {
-				if (!pattern.matcher(((Number) jsonNode.getValue()).toString()).find()) {
+				if (!pattern.matcher(jsonNode.getValue().toString()).find()) {
 					throw new JsonSchemaDataValidationError("RegEx pattern '" + (String) validatorData + "' is not matched by data number '" + jsonNode.getValue() + "'", jsonPath);
 				}
 			}

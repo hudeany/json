@@ -96,9 +96,9 @@ public class DisallowValidator extends BaseJsonSchemaValidator {
 			if (jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV3Mode() || jsonSchemaDependencyResolver.isDraftV4Mode()) {
 				return false;
 			} else {
-				String stringRepresentation = ((Number) jsonNode.getValue()).toString();
+				String stringRepresentation = jsonNode.getValue().toString();
 				if (stringRepresentation.contains("E")) {
-					final BigDecimal bigDecimal = new BigDecimal(((Number) jsonNode.getValue()).toString());
+					final BigDecimal bigDecimal = new BigDecimal(jsonNode.getValue().toString());
 					return bigDecimal.stripTrailingZeros().scale() <= 0;
 				} else {
 					while (stringRepresentation.contains(".0")) {
