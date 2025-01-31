@@ -7,6 +7,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import de.soderer.utilities.TestObjectComplex;
+import de.soderer.utilities.TestObjectComplexForSimpleJson;
 import de.soderer.utilities.TestObjectSimple;
 
 @SuppressWarnings("static-method")
@@ -44,10 +45,19 @@ public class JsonSerializerTest {
 		final TestObjectComplex deserializedObject = (TestObjectComplex) JsonSerializer.deserialize(JsonReader.readJsonItemString(jsonStringOriginal));
 		final JsonNode dataNodeSerialized = JsonSerializer.serialize(deserializedObject, false, false, false, true);
 		@SuppressWarnings("unused")
-		final
-		String jsonStringDeserialized = JsonWriter.getJsonItemString(dataNodeSerialized);
+		final String jsonStringDeserialized = JsonWriter.getJsonItemString(dataNodeSerialized);
 		// Hashset item order may have changed
 		//Assert.assertEquals(jsonStringOriginal, jsonStringDeserialized);
+	}
+
+	@Test
+	public void testComplexWithTypeDataInSimpleJson() throws Exception {
+		final JsonNode dataNodeOriginal = JsonSerializer.serialize(new TestObjectComplexForSimpleJson());
+		final String jsonStringOriginal = JsonWriter.getJsonItemString(dataNodeOriginal);
+		final TestObjectComplexForSimpleJson deserializedObject = (TestObjectComplexForSimpleJson) JsonSerializer.deserialize(TestObjectComplexForSimpleJson.class, JsonReader.readJsonItemString(jsonStringOriginal));
+		final JsonNode dataNodeSerialized = JsonSerializer.serialize(deserializedObject);
+		final String jsonStringDeserialized = JsonWriter.getJsonItemString(dataNodeSerialized);
+		Assert.assertEquals(jsonStringOriginal, jsonStringDeserialized);
 	}
 
 	@Test

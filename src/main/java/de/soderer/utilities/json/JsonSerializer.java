@@ -5,6 +5,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
@@ -256,7 +257,11 @@ public class JsonSerializer {
 					}
 
 					if (serializeField) {
-						dataField.setAccessible(true);
+						try {
+							dataField.setAccessible(true);
+						} catch (final Exception e) {
+							throw new Exception("Unserializable object found", e);
+						}
 						final String fieldName = dataField.getName();
 						final Object fieldData = dataField.get(dataObject);
 						if (fieldData != null || !excludeNull) {
@@ -543,6 +548,30 @@ public class JsonSerializer {
 		}
 	}
 
+	public static Object deserialize(final Class<?> classType, final Object objectData) throws Exception {
+		if (objectData == null) {
+			return null;
+		} else if (classType == Object.class) {
+			return objectData;
+		} else if (objectData instanceof JsonNode) {
+			return deserialize(classType, (JsonNode) objectData);
+		} else if (objectData instanceof JsonObject) {
+			return deserialize(classType, (JsonObject) objectData);
+		} else {
+			return objectData;
+		}
+	}
+
+	public static Object deserialize(final Class<?> classType, final JsonNode jsonData) throws Exception {
+		if (jsonData == null) {
+			throw new Exception("JSON data is null");
+		} else if (jsonData.isJsonObject()) {
+			return deserialize(classType, (JsonObject) jsonData.getValue());
+		} else {
+			throw new Exception("JSON data is not an object");
+		}
+	}
+
 	public static Object deserialize(final Class<?> classType, final JsonObject jsonObject) throws Exception {
 		try {
 			if (classType == null) {
@@ -757,25 +786,32 @@ public class JsonSerializer {
 							} else {
 								final Object[] arrayValue = (Object[]) Array.newInstance(clazz.getComponentType(), jsonArray.size());
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = deserialize(Object.class, (JsonObject) jsonArray.get(i));
+									final Object item = deserialize(clazz.getComponentType(), jsonArray.get(i));
+									arrayValue[i] = item;
 								}
 								field.set(object, arrayValue);
 							}
 						} else if (List.class.isAssignableFrom(clazz)) {
 							final List<Object> listOfItems = new ArrayList<>();
-							for (final Object item : (JsonArray) value) {
+							final Class<?> genericType = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+							for (final Object arrayItem : (JsonArray) value) {
+								final Object item = deserialize(genericType, arrayItem);
 								listOfItems.add(item);
 							}
 							field.set(object, listOfItems);
 						} else if (Set.class.isAssignableFrom(clazz)) {
 							final Set<Object> setOfItems = new HashSet<>();
-							for (final Object item : (JsonArray) value) {
+							final Class<?> genericType = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+							for (final Object arrayItem : (JsonArray) value) {
+								final Object item = deserialize(genericType, arrayItem);
 								setOfItems.add(item);
 							}
 							field.set(object, setOfItems);
 						} else if (Collection.class.isAssignableFrom(clazz)) {
 							final Collection<Object> collectionOfItems = new ArrayList<>();
-							for (final Object item : (JsonArray) value) {
+							final Class<?> genericType = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+							for (final Object arrayItem : (JsonArray) value) {
+								final Object item = deserialize(genericType, arrayItem);
 								collectionOfItems.add(item);
 							}
 							field.set(object, collectionOfItems);
