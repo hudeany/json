@@ -10,10 +10,17 @@ import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.Test;
 
-import de.soderer.utilities.json.JsonReader.JsonToken;
-import de.soderer.utilities.json.utilities.DateUtilities;
-import de.soderer.utilities.json.utilities.TextUtilities;
-import de.soderer.utilities.json.utilities.Utilities;
+import de.soderer.json.Json5Reader;
+import de.soderer.json.JsonArray;
+import de.soderer.json.JsonNode;
+import de.soderer.json.JsonObject;
+import de.soderer.json.JsonReader;
+import de.soderer.json.JsonUtilities;
+import de.soderer.json.JsonWriter;
+import de.soderer.json.JsonReader.JsonToken;
+import de.soderer.json.utilities.DateUtilities;
+import de.soderer.json.utilities.TextUtilities;
+import de.soderer.json.utilities.Utilities;
 
 @SuppressWarnings("static-method")
 public class JsonTest {
@@ -1106,7 +1113,7 @@ public class JsonTest {
 			Assert.fail("Missing an expected exception");
 		} catch (final Exception e) {
 			// Expected Exception
-			Assert.assertEquals("Invalid unicode sequence at character: 6", e.getMessage());
+			Assert.assertEquals("Invalid unicode sequence at character index 3 in line 1 ('0c\"')", e.getMessage());
 		}
 	}
 
@@ -1121,7 +1128,7 @@ public class JsonTest {
 			Assert.fail("Missing an expected exception");
 		} catch (final Exception e) {
 			// Expected Exception
-			Assert.assertEquals("Invalid unicode sequence at character: 4", e.getMessage());
+			Assert.assertEquals("Invalid unicode sequence at character index 3 in line 1 ('0')", e.getMessage());
 		}
 	}
 
@@ -1136,7 +1143,7 @@ public class JsonTest {
 			Assert.fail("Missing an expected exception");
 		} catch (final Exception e) {
 			// Expected Exception
-			Assert.assertEquals("Invalid unicode sequence at character: 7", e.getMessage());
+			Assert.assertEquals("Invalid unicode sequence at character index 3 in line 1 ('00FG')", e.getMessage());
 		}
 	}
 

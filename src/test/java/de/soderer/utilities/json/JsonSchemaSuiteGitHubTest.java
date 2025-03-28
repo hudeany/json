@@ -20,14 +20,17 @@ import java.util.zip.ZipInputStream;
 import org.junit.Assert;
 import org.junit.Test;
 
-import de.soderer.utilities.json.schema.JsonSchema;
-import de.soderer.utilities.json.schema.JsonSchemaConfiguration;
-import de.soderer.utilities.json.schema.JsonSchemaDataValidationError;
-import de.soderer.utilities.json.schema.JsonSchemaDefinitionError;
-import de.soderer.utilities.json.schema.JsonSchemaPath;
-import de.soderer.utilities.json.schema.JsonSchemaVersion;
-import de.soderer.utilities.json.utilities.Triple;
-import de.soderer.utilities.json.utilities.Utilities;
+import de.soderer.json.JsonArray;
+import de.soderer.json.JsonObject;
+import de.soderer.json.JsonReader;
+import de.soderer.json.schema.JsonSchema;
+import de.soderer.json.schema.JsonSchemaConfiguration;
+import de.soderer.json.schema.JsonSchemaDataValidationError;
+import de.soderer.json.schema.JsonSchemaDefinitionError;
+import de.soderer.json.schema.JsonSchemaPath;
+import de.soderer.json.schema.JsonSchemaVersion;
+import de.soderer.json.utilities.Triple;
+import de.soderer.json.utilities.Utilities;
 
 @SuppressWarnings("static-method")
 public class JsonSchemaSuiteGitHubTest {

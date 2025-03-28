@@ -1,0 +1,114 @@
+%YAML 1.2
+%TAG !u! testtag:              # Tags !u!abc to testtag:abc
+%TAG !! tag:yaml.org,2002:     # Default Tag for !!, it is always active. Tags !!int to tag:yaml.org,2002:int
+--- # starting a new YAML document. Basically optional, when not using directives
+sequence1: # using 1-space indentation, tab indentation is not allowed
+  - Sequence item 1
+  - Sequence item 2
+  - Sequence item 3
+sequence2: #Sequence without indentation
+- Sequence item 1
+- Sequence item 2
+- Sequence item 3
+sequence3: [Sequence item 1, Sequence item 2, Sequence item 3]
+sequence4: [Sequence item 1,
+Sequence item 2,
+Sequence item 3
+  ]
+mapping1:
+  property1	:	Value 1 # Separation by tab is allowed
+  property2:  22
+mapping2:
+  property1: Value 1
+  property2: 22
+mapping3:
+  {property1: Value 1, property2: 22}
+mapping4: {property1: Value 1, property2: 22}
+mapping5:
+  no: prob{lem,
+  also: f]ine
+mapping6: {
+  must: 'quo{te,',
+  this: 't]oo'
+  }
+mapping7: # Mapping with complex mapping keys
+  ? - Detroit Tigers
+    - Chicago cubs
+  : - 2001-07-23
+
+  ? [ New York Yankees,
+    Atlanta Braves ]
+  : [ 2001-07-02, 2001-08-12,
+    2001-08-14 ]
+data1: |
+   There once was a tall man from Ealing
+   Who got on a bus to Darjeeling
+       It said on the door
+       "Please don't sit on the floor"
+   So he carefully sat on the ceiling
+data2: >
+      Wrapped text
+      will be folded
+      into a single
+      paragraph
+
+      Blank lines denote
+      paragraph breaks
+--- # indentation by tabs is not recommended
+sequence1: # using 1-space indentation, tab indentation is not allowed
+	- Sequence item 1
+	- Sequence item 2
+	- Sequence item 3
+mapping1:
+	property1: Value 1
+	property2: 22
+--- # property keys may contain whitespaces
+mapping:
+  a property: Value for space in property key
+  my	property: Value for tab in property key
+...
+%YAML 1.2
+--- # Sequence of mappings
+- {property1: Value 1, property2: 22}
+- property1: Value 2
+  property2: 33
+- [property1, property2]: [Value 3, 44] # sequences as keys are supported
+--- # Mapping with sequences
+sequence1: [Item 1, Item 2]
+sequence2:
+  - Item 3
+  - Item 4
+--- # Using anchors (&) and references (*)
+- preitem: &id001 # anchor "&id001"
+  property1:    Text 1
+  property2:   5.4
+  property3:   12
+  property4:    1000
+  property5:    155mm
+- preitem: &id002
+  property1:    Text 2
+  property2:   5.0
+  property3:   10
+  property4:    500
+  property5:    9mm
+- selectedItem1: *id001 # references to "&id001""
+- selectedItem2: *id002
+---
+a: 123                     # an integer
+b: "123"                   # a string, disambiguated by quotes
+c: 123.0                   # a float
+d: !!float 123             # also a float via explicit data type prefixed by (!!)
+e: !!str 123               # a string, disambiguated by explicit type
+f: !!str Yes               # a string via explicit type
+g: Yes                     # a Boolean True (yaml1.1), string "Yes" (yaml1.2)
+h: Yes we have No bananas  # a string, "Yes" and "No" disambiguated by context.
+i: .inf
+j: -.Inf
+k: .NAN
+---
+base64BinaryData: !!binary |
+  R0lGODdhDQAIAIAAAAAAANn
+  Z2SwAAAAADQAIAAACF4SDGQ
+  ar3xxbJ9p0qa7R0YxwzaFME
+  1IAADs=
+... # end of all documents

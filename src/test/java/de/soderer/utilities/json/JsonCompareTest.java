@@ -5,8 +5,10 @@ import java.time.LocalDateTime;
 import org.junit.Assert;
 import org.junit.Test;
 
-import de.soderer.utilities.json.compare.JsonCompare;
-import de.soderer.utilities.json.compare.JsonCompareSettings;
+import de.soderer.json.JsonArray;
+import de.soderer.json.JsonObject;
+import de.soderer.json.compare.JsonCompare;
+import de.soderer.json.compare.JsonCompareSettings;
 
 @SuppressWarnings("static-method")
 public class JsonCompareTest {

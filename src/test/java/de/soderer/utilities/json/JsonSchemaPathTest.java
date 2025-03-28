@@ -3,7 +3,7 @@ package de.soderer.utilities.json;
 import org.junit.Assert;
 import org.junit.Test;
 
-import de.soderer.utilities.json.schema.JsonSchemaPath;
+import de.soderer.json.schema.JsonSchemaPath;
 
 @SuppressWarnings("static-method")
 public class JsonSchemaPathTest {

@@ -8,10 +8,17 @@ import java.time.ZonedDateTime;
 import org.junit.Assert;
 import org.junit.Test;
 
-import de.soderer.utilities.json.JsonReader.JsonToken;
-import de.soderer.utilities.json.utilities.DateUtilities;
-import de.soderer.utilities.json.utilities.TextUtilities;
-import de.soderer.utilities.json.utilities.Utilities;
+import de.soderer.json.Json5Reader;
+import de.soderer.json.JsonArray;
+import de.soderer.json.JsonNode;
+import de.soderer.json.JsonObject;
+import de.soderer.json.JsonReader;
+import de.soderer.json.JsonUtilities;
+import de.soderer.json.JsonWriter;
+import de.soderer.json.JsonReader.JsonToken;
+import de.soderer.json.utilities.DateUtilities;
+import de.soderer.json.utilities.TextUtilities;
+import de.soderer.json.utilities.Utilities;
 
 @SuppressWarnings("static-method")
 public class Json5Test {

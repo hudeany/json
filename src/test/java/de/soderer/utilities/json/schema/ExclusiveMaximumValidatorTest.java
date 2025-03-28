@@ -7,8 +7,12 @@ import java.nio.charset.StandardCharsets;
 import org.junit.Assert;
 import org.junit.Test;
 
-import de.soderer.utilities.json.path.JsonPath;
-import de.soderer.utilities.json.utilities.Utilities;
+import de.soderer.json.path.JsonPath;
+import de.soderer.json.schema.JsonSchema;
+import de.soderer.json.schema.JsonSchemaConfiguration;
+import de.soderer.json.schema.JsonSchemaDataValidationError;
+import de.soderer.json.schema.JsonSchemaVersion;
+import de.soderer.json.utilities.Utilities;
 
 @SuppressWarnings("static-method")
 public class ExclusiveMaximumValidatorTest {

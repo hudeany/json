@@ -1,0 +1,24 @@
+- Text with blank
+- Text with	tab
+- "Double quoted text	'\""
+- 'Single quoted text	''"'
+- 123
+- 123.456
+- 123E+10
+- 123E-10
+- true
+- True
+- TRUE
+- false
+- null
+- Null
+- NULL
+- yes
+- no
+- on
+- off
+- y
+- n
+- 2012-08-06
+- 2012-08-06T12:30
+- 12:30
