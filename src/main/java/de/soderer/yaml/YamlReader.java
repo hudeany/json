@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 
 import de.soderer.json.utilities.BasicReader;
@@ -14,10 +16,6 @@ import de.soderer.json.utilities.Utilities;
 import de.soderer.yaml.directive.TagDirective;
 import de.soderer.yaml.directive.VersionDirective;
 
-/**
- * TODO:
- * 	NumberUtitilies Update in Repo
- */
 public class YamlReader extends BasicReader {
 	protected boolean documentContentStarted = false;
 	protected YamlDocument latestDocument = null;
@@ -26,6 +24,7 @@ public class YamlReader extends BasicReader {
 	protected YamlMappingEntry currentYamlMappingEntry = null;
 	protected int currentIndentationLevel = 0;
 	protected String pendingComment = null;
+	protected Integer indentationLevelOverride = null;
 
 	protected Stack<YamlToken> openYamlItems = new Stack<>();
 	protected Stack<String> currentYamlPath = new Stack<>();
@@ -71,7 +70,7 @@ public class YamlReader extends BasicReader {
 		if (getReadCharacters() != 0) {
 			throw new Exception("YamlReader position was already initialized for other read operation");
 		}
-		
+
 		YamlObject<?> returnObject = null;
 
 		YamlToken nextToken = readNextToken();
@@ -82,7 +81,7 @@ public class YamlReader extends BasicReader {
 			if (nextToken == YamlToken.YamlDocument_Start) {
 				nextToken = readNextToken();
 			}
-			
+
 			if (nextToken == YamlToken.YamlMapping_Start) {
 				returnObject = readYamlMappingWithBrackets();
 			} else if (nextToken == YamlToken.YamlMapping_PropertyKey) {
@@ -96,15 +95,15 @@ public class YamlReader extends BasicReader {
 			} else if (nextToken == null) {
 				throw new Exception("Invalid yaml data: No YAML data found");
 			}
-			
+
 			if (latestDocument != null) {
 				latestDocument.setValue(returnObject);
 			}
-			
+
 			// Look for more YamlDocuments in a sequential Yaml file
 			nextToken = readNextToken();
 		}
-		
+
 		if (documents != null) {
 			return documents;
 		} else if (latestDocument != null) {
@@ -255,6 +254,18 @@ public class YamlReader extends BasicReader {
 					}
 					break;
 				}
+			case '>':
+			case '|':
+				// Read scalar block
+				final String blockStart = readUpToNext(false, null, '\r', '\n');
+				if (!">".equals(blockStart) && !"|".equals(blockStart) && !">-".equals(blockStart) && !"|-".equals(blockStart) && !">+".equals(blockStart) && !"|+".equals(blockStart)) {
+					throw new Exception("Invalid text block start: " + blockStart);
+				}
+				final int blockIndentationLevel = readNextIndentationLevel();
+				currentYamlSimpleObject = readScalarBlock(blockIndentationLevel, currentChar == '>');
+				currentYamlMappingEntry = null;
+				yamlToken = YamlToken.YamlSimpleValue;
+				break;
 			default: // Simple YamlMapping property value or YamlSequence item
 				String text;
 				try {
@@ -270,7 +281,7 @@ public class YamlReader extends BasicReader {
 							text = text.replace("''", "'");
 						}
 					}
-				} catch (Exception e) {
+				} catch (final Exception e) {
 					throw new Exception("Invalid yaml data in line " + getReadLines() + " at overall index " + getReadCharacters() + ": " + e.getMessage(), e);
 				}
 
@@ -279,14 +290,16 @@ public class YamlReader extends BasicReader {
 					nextCharacter = readNextNonWhitespace();
 					reuseCurrentChar();
 					currentYamlMappingEntry = new YamlMappingEntry().setKey(parseSimpleYamlValue(text)).setComment(pendingComment);
+					currentYamlSimpleObject = null;
 					yamlToken = YamlToken.YamlMapping_PropertyKey;
 					openYamlItems.push(YamlToken.YamlMapping_PropertyKey);
 				} else {
 					reuseCurrentChar();
 					currentYamlSimpleObject = new YamlSimpleValue().setValue(parseSimpleYamlValue(text)).setComment(pendingComment);
+					currentYamlMappingEntry = null;
 					yamlToken = YamlToken.YamlSimpleValue;
 				}
-				
+
 				pendingComment = null;
 				break;
 		}
@@ -297,15 +310,44 @@ public class YamlReader extends BasicReader {
 
 		return yamlToken;
 	}
-	
-	private Object parseSimpleYamlValue(final String valueString) {
+
+	private YamlSimpleValue readScalarBlock(final int blockIndentationLevel, final boolean chompLines) throws Exception {
+		final YamlSimpleValue returnValue = new YamlSimpleValue();
+		final List<String> scalarBlockLines = new ArrayList<>();
+		String nextLine = readUpToNext(true, null, '\r', '\n');
+		scalarBlockLines.add(nextLine);
+		int nextIndentationLevel = readNextIndentationLevel();
+		while (nextIndentationLevel == blockIndentationLevel) {
+			nextLine = readUpToNext(true, null, '\r', '\n');
+			scalarBlockLines.add(nextLine);
+			nextIndentationLevel = readNextIndentationLevel();
+		}
+		if (nextIndentationLevel > 0) {
+			indentationLevelOverride = nextIndentationLevel;
+		}
+		String blockString = "";
+		for (final String scalarBlockLine : scalarBlockLines) {
+			if (blockString.length() > 0) {
+				if (chompLines) {
+					blockString += " ";
+				} else {
+					blockString += "\n";
+				}
+			}
+			blockString += scalarBlockLine.trim();
+		}
+		returnValue.setValue(blockString);
+		return returnValue;
+	}
+
+	private static Object parseSimpleYamlValue(final String valueString) {
 		if (valueString == null) {
 			throw new RuntimeException("Invalid empty yaml data");
 		} else if (valueString.startsWith("\"") && valueString.endsWith("\"")) {
-			String returnValue = valueString.replace("\\\"", "\"");
+			final String returnValue = valueString.replace("\\\"", "\"");
 			return returnValue.substring(1, returnValue.length() -1);
 		} else if (valueString.startsWith("'") && valueString.endsWith("'")) {
-			String returnValue = valueString.replace("''", "'");
+			final String returnValue = valueString.replace("''", "'");
 			return returnValue.substring(1, returnValue.length() -1);
 		} else if ("null".equalsIgnoreCase(valueString)) {
 			return null;
@@ -330,19 +372,19 @@ public class YamlReader extends BasicReader {
 		} else if (valueString.contains("-") && valueString.contains(":")) {
 			try {
 				return DateUtilities.parseIso8601DateTimeString(valueString);
-			} catch (Exception e) {
+			} catch (@SuppressWarnings("unused") final Exception e) {
 				return valueString;
 			}
 		} else if (valueString.contains("-")) {
 			try {
 				return DateUtilities.parseIso8601DateTimeString(valueString).toLocalDate();
-			} catch (Exception e) {
+			} catch (@SuppressWarnings("unused") final Exception e) {
 				return valueString;
 			}
 		} else if (valueString.contains(":")) {
 			try {
 				return DateUtilities.parseLocalTime("HH:mm", valueString);
-			} catch (Exception e) {
+			} catch (@SuppressWarnings("unused") final Exception e) {
 				return valueString;
 			}
 		} else {
@@ -351,29 +393,35 @@ public class YamlReader extends BasicReader {
 	}
 
 	private int readNextIndentationLevel() throws IOException {
-		int indentationLevel = 0;
-		Character nextCharacter = readNextCharacter();
-		while (nextCharacter != null && (nextCharacter == ' ' || nextCharacter == '\t' || nextCharacter == '\r' || nextCharacter == '\n')) {
-			if (nextCharacter == '\r' || nextCharacter == '\n') {
-				indentationLevel = 0;
-			} else if (nextCharacter == ' ' || nextCharacter == '\t') {
-				indentationLevel++;
+		if (indentationLevelOverride != null) {
+			final int returnBuffer = indentationLevelOverride;
+			indentationLevelOverride = null;
+			return returnBuffer;
+		} else {
+			int indentationLevel = 0;
+			Character nextCharacter = readNextCharacter();
+			while (nextCharacter != null && (nextCharacter == ' ' || nextCharacter == '\t' || nextCharacter == '\r' || nextCharacter == '\n')) {
+				if (nextCharacter == '\r' || nextCharacter == '\n') {
+					indentationLevel = 0;
+				} else if (nextCharacter == ' ' || nextCharacter == '\t') {
+					indentationLevel++;
+				}
+				nextCharacter = readNextCharacter();
 			}
-			nextCharacter = readNextCharacter();
+			if (nextCharacter != null) {
+				reuseCurrentChar();
+			}
+			return indentationLevel;
 		}
-		if (nextCharacter != null) {
-			reuseCurrentChar();
-		}
-		return indentationLevel;
 	}
-	
+
 	private YamlSequence readYamlSequence() throws Exception {
 		final YamlSequence newYamlSequence = new YamlSequence().setStyle(YamlStyle.Standard);
-		int yamlSequenceIndentationLevel = currentIndentationLevel;
+		final int yamlSequenceIndentationLevel = currentIndentationLevel;
 		while (true) {
 			openYamlItems.push(YamlToken.YamlSequence_Item);
-			
-			YamlObject<?> nextYamlObject = readYamlObject();
+
+			final YamlObject<?> nextYamlObject = readYamlObject();
 			if (openYamlItems.peek() == YamlToken.YamlSequence_Item) {
 				newYamlSequence.add(nextYamlObject);
 			} else if (openYamlItems.peek() == YamlToken.YamlMapping_PropertyKey) {
@@ -383,8 +431,8 @@ public class YamlReader extends BasicReader {
 				throw new Exception("Invalid internal state: " + openYamlItems.peek());
 			}
 			openYamlItems.pop();
-			
-			YamlToken nextToken = readNextToken();
+
+			final YamlToken nextToken = readNextToken();
 			if (nextToken != YamlToken.YamlSequence_Item || yamlSequenceIndentationLevel != currentIndentationLevel) {
 				break;
 			}
@@ -398,11 +446,11 @@ public class YamlReader extends BasicReader {
 		} else {
 			final YamlSequence newYamlSequence = new YamlSequence();
 			while (true) {
-				YamlToken nextToken = readNextToken();
+				final YamlToken nextToken = readNextToken();
 				if (nextToken == YamlToken.YamlSequence_End) {
 					break;
 				}
-				
+
 				if (newYamlSequence.getStyle() == null) {
 					if (currentIndentationLevel > 0) {
 						newYamlSequence.setStyle(YamlStyle.Bracket);
@@ -410,11 +458,11 @@ public class YamlReader extends BasicReader {
 						newYamlSequence.setStyle(YamlStyle.Flow);
 					}
 				}
-				
+
 				openYamlItems.push(YamlToken.YamlSequence_Item);
-				
+
 				newYamlSequence.add(readYamlObject());
-	
+
 				if (openYamlItems.peek() == YamlToken.YamlSequence_Item) {
 					openYamlItems.pop();
 				} else {
@@ -431,14 +479,14 @@ public class YamlReader extends BasicReader {
 		} else {
 			final YamlMapping newYamlMapping = new YamlMapping().setComment(pendingComment);
 			pendingComment = null;
-			
-			int yamlMappingIndentationLevel = currentIndentationLevel;
-			
+
+			final int yamlMappingIndentationLevel = currentIndentationLevel;
+
 			YamlToken nextToken = YamlToken.YamlMapping_PropertyKey;
 			while (true) {
 				openYamlItems.pop();
-				YamlMappingEntry entry = currentYamlMappingEntry;
-				
+				final YamlMappingEntry entry = currentYamlMappingEntry;
+
 				nextToken = readNextToken();
 				if (nextToken == YamlToken.YamlMapping_Start) {
 					entry.setValue(readYamlMappingWithBrackets());
@@ -453,9 +501,9 @@ public class YamlReader extends BasicReader {
 				} else {
 					throw new Exception("Invalid yaml data: No YAML data found at root");
 				}
-				
+
 				newYamlMapping.add(entry);
-				
+
 				nextToken = readNextToken();
 				if (nextToken != YamlToken.YamlMapping_PropertyKey || yamlMappingIndentationLevel != currentIndentationLevel) {
 					break;
@@ -477,7 +525,7 @@ public class YamlReader extends BasicReader {
 				} else if (nextToken != YamlToken.YamlMapping_PropertyKey) {
 					throw new Exception("Invalid content for YamlMapping");
 				}
-				
+
 				if (newYamlMapping.getStyle() == null) {
 					if (currentIndentationLevel > 0) {
 						newYamlMapping.setStyle(YamlStyle.Bracket);
@@ -485,9 +533,9 @@ public class YamlReader extends BasicReader {
 						newYamlMapping.setStyle(YamlStyle.Flow);
 					}
 				}
-				
-				YamlMappingEntry entry = currentYamlMappingEntry;
-				
+
+				final YamlMappingEntry entry = currentYamlMappingEntry;
+
 				nextToken = readNextToken();
 				if (nextToken == YamlToken.YamlMapping_Start) {
 					entry.setValue(readYamlMappingWithBrackets());
@@ -502,11 +550,11 @@ public class YamlReader extends BasicReader {
 				} else {
 					throw new Exception("Invalid yaml data: No YAML data found at root");
 				}
-				
+
 				newYamlMapping.add(entry);
-				
-				
-	
+
+
+
 				if (openYamlItems.peek() == YamlToken.YamlMapping_PropertyKey) {
 					openYamlItems.pop();
 				} else {
@@ -518,7 +566,7 @@ public class YamlReader extends BasicReader {
 	}
 
 	private YamlObject<?> readYamlObject() throws Exception {
-		YamlToken nextToken = readNextTokenInternal(true);
+		final YamlToken nextToken = readNextTokenInternal(true);
 		switch(nextToken) {
 			case YamlComment:
 				break;
@@ -581,92 +629,92 @@ public class YamlReader extends BasicReader {
 		}
 	}
 
-//	private YamlSequenceItem readYamlSequenceItem(final int indentationLevel) throws Exception {
-//		if (openYamlItems.peek() != YamlToken.YamlSequence_Start) {
-//			throw new Exception("Invalid read position for YamlSequence in line " + getReadLines() + " at overall index " + getReadCharacters());
-//		} else {
-//			readNextTokenInternal(true);
-//			return null;
-//
-//			//			final Object nextObject = readYamlSequenceItem(indentationLevel);
-//			//
-//			//			YamlToken nextToken = readNextToken();
-//			//			if (nextToken == YamlToken.YamlSequence_End
-//			//					|| nextToken == YamlToken.YamlMapping_Start
-//			//					|| nextToken == YamlToken.YamlSequence_Start
-//			//					|| nextToken == YamlToken.YamlSimpleValue) {
-//			//				final YamlSequence returnSequence = new YamlSequence();
-//			//				while (nextToken != YamlToken.YamlSequence_End) {
-//			//					if (nextToken == YamlToken.YamlSequence_Start) {
-//			//						returnSequence.add(readYamlSequence());
-//			//					} else if (nextToken == YamlToken.YamlMapping_Start) {
-//			//						returnSequence.add(readYamlMapping());
-//			//					} else if (nextToken == YamlToken.YamlSimpleValue) {
-//			//						returnSequence.add(currentObject);
-//			//					}
-//			//					nextToken = readNextToken();
-//			//				}
-//			//				return returnSequence;
-//			//			} else {
-//			//				throw new Exception("Unexpected YamlToken " + nextToken + " in line " + getReadLines() + " at overall index " + getReadCharacters());
-//			//			}
-//		}
-//	}
+	//	private YamlSequenceItem readYamlSequenceItem(final int indentationLevel) throws Exception {
+	//		if (openYamlItems.peek() != YamlToken.YamlSequence_Start) {
+	//			throw new Exception("Invalid read position for YamlSequence in line " + getReadLines() + " at overall index " + getReadCharacters());
+	//		} else {
+	//			readNextTokenInternal(true);
+	//			return null;
+	//
+	//			//			final Object nextObject = readYamlSequenceItem(indentationLevel);
+	//			//
+	//			//			YamlToken nextToken = readNextToken();
+	//			//			if (nextToken == YamlToken.YamlSequence_End
+	//			//					|| nextToken == YamlToken.YamlMapping_Start
+	//			//					|| nextToken == YamlToken.YamlSequence_Start
+	//			//					|| nextToken == YamlToken.YamlSimpleValue) {
+	//			//				final YamlSequence returnSequence = new YamlSequence();
+	//			//				while (nextToken != YamlToken.YamlSequence_End) {
+	//			//					if (nextToken == YamlToken.YamlSequence_Start) {
+	//			//						returnSequence.add(readYamlSequence());
+	//			//					} else if (nextToken == YamlToken.YamlMapping_Start) {
+	//			//						returnSequence.add(readYamlMapping());
+	//			//					} else if (nextToken == YamlToken.YamlSimpleValue) {
+	//			//						returnSequence.add(currentObject);
+	//			//					}
+	//			//					nextToken = readNextToken();
+	//			//				}
+	//			//				return returnSequence;
+	//			//			} else {
+	//			//				throw new Exception("Unexpected YamlToken " + nextToken + " in line " + getReadLines() + " at overall index " + getReadCharacters());
+	//			//			}
+	//		}
+	//	}
 
-//	private YamlSequence readYamlSequence(int indentationLevel) throws Exception {
-//		final YamlSequence newYamlSequence = new YamlSequence();
-//		while (true) {
-//			YamlObject yamlObject = readYamlObject();
-//			newYamlSequence.add(new YamlSequenceItem().setValue(yamlObject).setComment(pendingComment));
-//			pendingComment = null;
-//			YamlToken nextToken = readNextToken();
-//			if (nextToken != YamlToken.YamlSequence_Item) {
-//				break;
-//			}
-//		}
-//		return newYamlSequence;
-//			
-//
-//		//			final YamlSequence newYamlSequence = new YamlSequence();
-//		//			final int sequenceIndentationLevel = currentIndentationLevel;
-//		//			final YamlSequenceItem nextSequenceItem = readYamlSequenceItem(sequenceIndentationLevel);
-//		//			while (nextSequenceItem != null) {
-//		//				newYamlSequence.add(nextSequenceItem);
-//		//				currentIndentationLevel = readNextIndentationLevel();
-//		//				if (currentIndentationLevel < sequenceIndentationLevel) {
-//		//					break;
-//		//				}
-//		//				updateYamlPath(YamlToken.YamlSequence_End);
-//		//			}
-//		//			currentObject = newYamlSequence;
-//		
-//		
-//		//		if (openYamlItems.peek() != YamlToken.YamlSequence_Start) {
-//		//			throw new Exception("Invalid read position for YamlSequence in line " + getReadLines() + " at overall index " + getReadCharacters());
-//		//		} else {
-//		//			YamlToken nextToken = readNextToken();
-//		//			if (nextToken == YamlToken.YamlSequence_End
-//		//					|| nextToken == YamlToken.YamlMapping_Start
-//		//					|| nextToken == YamlToken.YamlSequence_Start
-//		//					|| nextToken == YamlToken.YamlSimpleValue) {
-//		//				final YamlSequence returnSequence = new YamlSequence();
-//		//				while (nextToken != YamlToken.YamlSequence_End) {
-//		//					if (nextToken == YamlToken.YamlSequence_Start) {
-//		//						returnSequence.add(readYamlSequence());
-//		//					} else if (nextToken == YamlToken.YamlMapping_Start) {
-//		//						returnSequence.add(readYamlMapping());
-//		//					} else if (nextToken == YamlToken.YamlSimpleValue) {
-//		//						returnSequence.add(currentObject);
-//		//					}
-//		//					nextToken = readNextToken();
-//		//				}
-//		//				return returnSequence;
-//		//			} else {
-//		//				throw new Exception("Unexpected YamlToken " + nextToken + " in line " + getReadLines() + " at overall index " + getReadCharacters());
-//		//			}
-//		//		}
-//		return null;
-//	}
+	//	private YamlSequence readYamlSequence(int indentationLevel) throws Exception {
+	//		final YamlSequence newYamlSequence = new YamlSequence();
+	//		while (true) {
+	//			YamlObject yamlObject = readYamlObject();
+	//			newYamlSequence.add(new YamlSequenceItem().setValue(yamlObject).setComment(pendingComment));
+	//			pendingComment = null;
+	//			YamlToken nextToken = readNextToken();
+	//			if (nextToken != YamlToken.YamlSequence_Item) {
+	//				break;
+	//			}
+	//		}
+	//		return newYamlSequence;
+	//
+	//
+	//		//			final YamlSequence newYamlSequence = new YamlSequence();
+	//		//			final int sequenceIndentationLevel = currentIndentationLevel;
+	//		//			final YamlSequenceItem nextSequenceItem = readYamlSequenceItem(sequenceIndentationLevel);
+	//		//			while (nextSequenceItem != null) {
+	//		//				newYamlSequence.add(nextSequenceItem);
+	//		//				currentIndentationLevel = readNextIndentationLevel();
+	//		//				if (currentIndentationLevel < sequenceIndentationLevel) {
+	//		//					break;
+	//		//				}
+	//		//				updateYamlPath(YamlToken.YamlSequence_End);
+	//		//			}
+	//		//			currentObject = newYamlSequence;
+	//
+	//
+	//		//		if (openYamlItems.peek() != YamlToken.YamlSequence_Start) {
+	//		//			throw new Exception("Invalid read position for YamlSequence in line " + getReadLines() + " at overall index " + getReadCharacters());
+	//		//		} else {
+	//		//			YamlToken nextToken = readNextToken();
+	//		//			if (nextToken == YamlToken.YamlSequence_End
+	//		//					|| nextToken == YamlToken.YamlMapping_Start
+	//		//					|| nextToken == YamlToken.YamlSequence_Start
+	//		//					|| nextToken == YamlToken.YamlSimpleValue) {
+	//		//				final YamlSequence returnSequence = new YamlSequence();
+	//		//				while (nextToken != YamlToken.YamlSequence_End) {
+	//		//					if (nextToken == YamlToken.YamlSequence_Start) {
+	//		//						returnSequence.add(readYamlSequence());
+	//		//					} else if (nextToken == YamlToken.YamlMapping_Start) {
+	//		//						returnSequence.add(readYamlMapping());
+	//		//					} else if (nextToken == YamlToken.YamlSimpleValue) {
+	//		//						returnSequence.add(currentObject);
+	//		//					}
+	//		//					nextToken = readNextToken();
+	//		//				}
+	//		//				return returnSequence;
+	//		//			} else {
+	//		//				throw new Exception("Unexpected YamlToken " + nextToken + " in line " + getReadLines() + " at overall index " + getReadCharacters());
+	//		//			}
+	//		//		}
+	//		return null;
+	//	}
 
 	/**
 	 * This method should only be used to read small Yaml items

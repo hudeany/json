@@ -40,7 +40,7 @@ public class BasicReader implements Closeable {
 		if (inputStream == null) {
 			throw new Exception("Invalid empty inputStream");
 		} else {
-			this.countingInputStream = new CountingInputStream(inputStream);
+			countingInputStream = new CountingInputStream(inputStream);
 			encoding = encodingCharset == null ? DEFAULT_ENCODING : encodingCharset;
 			inputReader = new PushbackReader(new BufferedReader(new InputStreamReader(countingInputStream, encoding)), 2);
 			readCharacters = 0;
@@ -60,7 +60,7 @@ public class BasicReader implements Closeable {
 		return readCharactersInCurrentLine;
 	}
 
-	public void reuse(char[] charactersToReuse) throws IOException {
+	public void reuse(final char[] charactersToReuse) throws IOException {
 		if (charactersToReuse != null) {
 			inputReader.unread(charactersToReuse, 0, charactersToReuse.length);
 			readCharacters -= charactersToReuse.length;
@@ -68,7 +68,7 @@ public class BasicReader implements Closeable {
 		}
 	}
 
-	public void reuse(Character characterToReuse) throws IOException {
+	public void reuse(final Character characterToReuse) throws IOException {
 		if (characterToReuse != null) {
 			inputReader.unread(characterToReuse);
 			readCharacters -= 1;
@@ -78,6 +78,7 @@ public class BasicReader implements Closeable {
 
 	public void reuseCurrentChar() throws IOException {
 		reuse(currentChar);
+		currentChar = null;
 	}
 
 	protected Character readNextCharacter() throws IOException {
@@ -104,7 +105,7 @@ public class BasicReader implements Closeable {
 
 		//TODO: Remove
 		System.out.println(currentChar);
-		
+
 		return currentChar;
 	}
 
@@ -257,7 +258,7 @@ public class BasicReader implements Closeable {
 	}
 
 	protected String readQuotedText(final Character escapeCharacter) throws Exception {
-		char quoteChar = currentChar;
+		final char quoteChar = currentChar;
 		if (escapeCharacter == null || escapeCharacter != quoteChar) {
 			final String returnValue = readUpToNext(true, escapeCharacter, quoteChar);
 			if (currentChar == null || currentChar != quoteChar) {
@@ -268,7 +269,7 @@ public class BasicReader implements Closeable {
 		} else {
 			String returnValue = readUpToNext(true, null, quoteChar);
 			while (true) {
-				Character nextCharacter = readNextCharacter();
+				final Character nextCharacter = readNextCharacter();
 				if (nextCharacter == null) {
 					break;
 				} else if (nextCharacter == quoteChar) {
