@@ -77,9 +77,9 @@ public class SystemUtilities {
 			final List<String> data = new ArrayList<>();
 			Process p;
 			if (getOsName().toLowerCase().contains("windows")) {
-				p = Runtime.getRuntime().exec(System.getenv("windir") + "\\system32\\" + "tasklist.exe");
+				p = Runtime.getRuntime().exec(new String[] {System.getenv("windir") + "\\system32\\" + "tasklist.exe"});
 			} else {
-				p = Runtime.getRuntime().exec("ps -e");
+				p = Runtime.getRuntime().exec(new String[] {"ps", "-e"});
 			}
 			try (BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
 				String line;
