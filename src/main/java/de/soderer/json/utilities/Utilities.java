@@ -1674,4 +1674,29 @@ public class Utilities {
 		}
 		return returnList;
 	}
+
+	public static String breakTextToMaximumLinelength(String text, int maximumLinelength, Linebreak linebreakType) {
+		if (linebreakType == null) {
+			linebreakType = Linebreak.Unix;
+		}
+		
+		if (text == null) {
+			return text;
+		} else {
+			String returnValue = "";
+			int currentLineLength = 0;
+			for (char nextChar : text.toCharArray()) {
+				if (currentLineLength > maximumLinelength) {
+					returnValue += linebreakType.toString();
+					currentLineLength = 0;
+				}
+				if (nextChar == '\r' || nextChar == '\n') {
+					currentLineLength = 0;
+				}
+				returnValue += nextChar;
+			}
+			
+			return returnValue;
+		}
+	}
 }

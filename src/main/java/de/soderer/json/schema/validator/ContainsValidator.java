@@ -46,7 +46,7 @@ public class ContainsValidator extends ExtendedBaseJsonSchemaValidator {
 			for (final Object itemObject : (JsonArray) jsonNode.getValue()) {
 				JsonNode newJsonNode;
 				try {
-					newJsonNode = new JsonNode(itemObject);
+					newJsonNode = new JsonNode(false, itemObject);
 				} catch (final Exception e) {
 					throw new JsonSchemaDataValidationError("Invalid data type '" + itemObject.getClass().getSimpleName() + "'", jsonPath, e);
 				}

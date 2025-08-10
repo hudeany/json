@@ -20,12 +20,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import de.soderer.json.utilities.ClassUtilities;
 import de.soderer.json.utilities.DateUtilities;
 import de.soderer.json.utilities.Utilities;
-
-import java.util.Set;
 
 public class JsonSerializer {
 	/**
@@ -67,9 +66,9 @@ public class JsonSerializer {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", null);
 				jsonObjectWithTypeInfo.add("value", null);
-				return new JsonNode(jsonObjectWithTypeInfo);
+				return new JsonNode(true, jsonObjectWithTypeInfo);
 			} else {
-				return new JsonNode(dataObject);
+				return new JsonNode(true, dataObject);
 			}
 		} else if (dataObject instanceof Number
 				|| dataObject instanceof String
@@ -79,54 +78,54 @@ public class JsonSerializer {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", dataObject);
-				return new JsonNode(jsonObjectWithTypeInfo);
+				return new JsonNode(true, jsonObjectWithTypeInfo);
 			} else {
-				return new JsonNode(dataObject);
+				return new JsonNode(true, dataObject);
 			}
 		} else if (dataObject instanceof Charset) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", Charset.class.getName());
 				jsonObjectWithTypeInfo.add("value", ((Charset) dataObject).toString());
-				return new JsonNode(jsonObjectWithTypeInfo);
+				return new JsonNode(true, jsonObjectWithTypeInfo);
 			} else {
-				return new JsonNode(dataObject);
+				return new JsonNode(true, dataObject);
 			}
 		} else if (dataObject instanceof Date) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", dataObject);
-				return new JsonNode(jsonObjectWithTypeInfo);
+				return new JsonNode(true, jsonObjectWithTypeInfo);
 			} else {
-				return new JsonNode(dataObject);
+				return new JsonNode(true, dataObject);
 			}
 		} else if (dataObject instanceof LocalDateTime) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", dataObject);
-				return new JsonNode(jsonObjectWithTypeInfo);
+				return new JsonNode(true, jsonObjectWithTypeInfo);
 			} else {
-				return new JsonNode(dataObject);
+				return new JsonNode(true, dataObject);
 			}
 		} else if (dataObject instanceof LocalDate) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", dataObject);
-				return new JsonNode(jsonObjectWithTypeInfo);
+				return new JsonNode(true, jsonObjectWithTypeInfo);
 			} else {
-				return new JsonNode(dataObject);
+				return new JsonNode(true, dataObject);
 			}
 		} else if (dataObject instanceof ZonedDateTime) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", dataObject);
-				return new JsonNode(jsonObjectWithTypeInfo);
+				return new JsonNode(true, jsonObjectWithTypeInfo);
 			} else {
-				return new JsonNode(dataObject);
+				return new JsonNode(true, dataObject);
 			}
 		} else if (dataObject instanceof File) {
 			final File fileObject = (File) dataObject;
@@ -135,18 +134,18 @@ public class JsonSerializer {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", valueString);
-				return new JsonNode(jsonObjectWithTypeInfo);
+				return new JsonNode(true, jsonObjectWithTypeInfo);
 			} else {
-				return new JsonNode(valueString);
+				return new JsonNode(true, valueString);
 			}
 		} else if (dataObject instanceof Enum) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", dataObject.toString());
-				return new JsonNode(jsonObjectWithTypeInfo);
+				return new JsonNode(true, jsonObjectWithTypeInfo);
 			} else {
-				return new JsonNode(dataObject.toString());
+				return new JsonNode(true, dataObject.toString());
 			}
 		} else if (dataObject.getClass().isArray()) {
 			if (Utilities.containsObject(alreadyVisitedObjects, dataObject)) {
@@ -171,9 +170,9 @@ public class JsonSerializer {
 					final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 					jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 					jsonObjectWithTypeInfo.add("value", jsonArray);
-					return new JsonNode(jsonObjectWithTypeInfo);
+					return new JsonNode(true, jsonObjectWithTypeInfo);
 				} else {
-					return new JsonNode(jsonArray);
+					return new JsonNode(true, jsonArray);
 				}
 			}
 		} else if (dataObject instanceof Iterable<?>) {
@@ -197,9 +196,9 @@ public class JsonSerializer {
 					final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 					jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 					jsonObjectWithTypeInfo.add("value", jsonArray);
-					return new JsonNode(jsonObjectWithTypeInfo);
+					return new JsonNode(true, jsonObjectWithTypeInfo);
 				} else {
-					return new JsonNode(jsonArray);
+					return new JsonNode(true, jsonArray);
 				}
 			}
 		} else if (dataObject instanceof Map<?, ?>) {
@@ -235,9 +234,9 @@ public class JsonSerializer {
 					final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 					jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 					jsonObjectWithTypeInfo.add("value", jsonArray);
-					return new JsonNode(jsonObjectWithTypeInfo);
+					return new JsonNode(true, jsonObjectWithTypeInfo);
 				} else {
-					return new JsonNode(jsonArray);
+					return new JsonNode(true, jsonArray);
 				}
 			}
 		} else {
@@ -285,9 +284,9 @@ public class JsonSerializer {
 					final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 					jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 					jsonObjectWithTypeInfo.add("value", dataJsonObject);
-					return new JsonNode(jsonObjectWithTypeInfo);
+					return new JsonNode(true, jsonObjectWithTypeInfo);
 				} else {
-					return new JsonNode(dataJsonObject);
+					return new JsonNode(true, dataJsonObject);
 				}
 			}
 		}

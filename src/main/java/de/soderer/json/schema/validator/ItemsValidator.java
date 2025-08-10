@@ -108,7 +108,7 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 				for (int i = 0; i < ((JsonArray) jsonNode.getValue()).size(); i++) {
 					JsonNode jsonNodeToCheck;
 					try {
-						jsonNodeToCheck = new JsonNode(((JsonArray) jsonNode.getValue()).get(i));
+						jsonNodeToCheck = new JsonNode(false, ((JsonArray) jsonNode.getValue()).get(i));
 					} catch (final Exception e) {
 						throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonArray) jsonNode.getValue()).get(i).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(i), e);
 					}
@@ -120,7 +120,7 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 				for (int i = 0; i < indexedValidatorPacks.size() && i < ((JsonArray) jsonNode.getValue()).size(); i++) {
 					JsonNode jsonNodeToCheck;
 					try {
-						jsonNodeToCheck = new JsonNode(((JsonArray) jsonNode.getValue()).get(i));
+						jsonNodeToCheck = new JsonNode(false, ((JsonArray) jsonNode.getValue()).get(i));
 					} catch (final Exception e) {
 						throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonArray) jsonNode.getValue()).get(i).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(i), e);
 					}
@@ -139,7 +139,7 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 					for (int i = indexedValidatorPacks.size(); i < ((JsonArray) jsonNode.getValue()).size(); i++) {
 						JsonNode newJsonNode;
 						try {
-							newJsonNode = new JsonNode(((JsonArray) jsonNode.getValue()).get(i));
+							newJsonNode = new JsonNode(false, ((JsonArray) jsonNode.getValue()).get(i));
 						} catch (final Exception e) {
 							throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonArray) jsonNode.getValue()).get(i).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(i), e);
 						}
@@ -157,7 +157,7 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 					for (int i = indexedValidatorPacks.size(); i < ((JsonArray) jsonNode.getValue()).size(); i++) {
 						JsonNode newJsonNode;
 						try {
-							newJsonNode = new JsonNode(((JsonArray) jsonNode.getValue()).get(i));
+							newJsonNode = new JsonNode(false, ((JsonArray) jsonNode.getValue()).get(i));
 						} catch (final Exception e) {
 							throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonArray) jsonNode.getValue()).get(i).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(i), e);
 						}

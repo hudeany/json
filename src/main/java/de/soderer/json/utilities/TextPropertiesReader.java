@@ -3,8 +3,6 @@ package de.soderer.json.utilities;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.soderer.json.utilities.TextUtilities.LineBreak;
-
 /**
  * Scanner class for properties describing a text
  */
@@ -16,7 +14,7 @@ public class TextPropertiesReader {
 	private int nonWhitespaceCharacters = -1;
 	private int lines = -1;
 	private int words = -1;
-	private LineBreak linebreaks = LineBreak.Unknown;
+	private Linebreak linebreaks = Linebreak.Unknown;
 
 	/**
 	 * Internal constructor for derived classes
@@ -41,9 +39,9 @@ public class TextPropertiesReader {
 		int lineCount = 0;
 		int nonWhitespaceCharactersCount = 0;
 		int wordCount = 0;
-		boolean foundLineBreakUnix = false;
-		boolean foundLineBreakMac = false;
-		boolean foundLineBreakWindows = false;
+		boolean foundLinebreakUnix = false;
+		boolean foundLinebreakMac = false;
+		boolean foundLinebreakWindows = false;
 		boolean isWithinWord = false;
 
 		for (int i = 0; i < dataString.length(); i++) {
@@ -58,9 +56,9 @@ public class TextPropertiesReader {
 			if (character == '\r') {
 				if (dataString.charAt(i + 1) == '\n') {
 					i++;
-					foundLineBreakWindows = true;
+					foundLinebreakWindows = true;
 				} else {
-					foundLineBreakMac = true;
+					foundLinebreakMac = true;
 				}
 
 				if (isWithinWord) {
@@ -70,7 +68,7 @@ public class TextPropertiesReader {
 
 				lineCount++;
 			} else if (character == '\n') {
-				foundLineBreakUnix = true;
+				foundLinebreakUnix = true;
 
 				if (isWithinWord) {
 					wordCount++;
@@ -102,16 +100,16 @@ public class TextPropertiesReader {
 			wordCount++;
 		}
 
-		if ((foundLineBreakUnix && foundLineBreakMac) || (foundLineBreakWindows && foundLineBreakMac) || (foundLineBreakUnix && foundLineBreakWindows)) {
-			linebreaks = LineBreak.Mixed;
-		} else if (foundLineBreakUnix) {
-			linebreaks = LineBreak.Unix;
-		} else if (foundLineBreakMac) {
-			linebreaks = LineBreak.Mac;
-		} else if (foundLineBreakWindows) {
-			linebreaks = LineBreak.Windows;
+		if ((foundLinebreakUnix && foundLinebreakMac) || (foundLinebreakWindows && foundLinebreakMac) || (foundLinebreakUnix && foundLinebreakWindows)) {
+			linebreaks = Linebreak.Mixed;
+		} else if (foundLinebreakUnix) {
+			linebreaks = Linebreak.Unix;
+		} else if (foundLinebreakMac) {
+			linebreaks = Linebreak.Mac;
+		} else if (foundLinebreakWindows) {
+			linebreaks = Linebreak.Windows;
 		} else {
-			linebreaks = LineBreak.Unknown;
+			linebreaks = Linebreak.Unknown;
 		}
 
 		lines = lineCount;
@@ -166,11 +164,11 @@ public class TextPropertiesReader {
 	}
 
 	/**
-	 * Get the linebreak type of the text
+	 * Get the Linebreak type of the text
 	 *
 	 * @return
 	 */
-	public LineBreak getLinebreakType() {
+	public Linebreak getLinebreakType() {
 		return linebreaks;
 	}
 }

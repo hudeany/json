@@ -7,6 +7,10 @@ public class JsonPathPropertyElement implements JsonPathElement {
 		this.propertyKey = propertyKey;
 	}
 
+	public String getPropertyKey() {
+		return propertyKey;
+	}
+
 	@Override
 	public String toString() {
 		return propertyKey;

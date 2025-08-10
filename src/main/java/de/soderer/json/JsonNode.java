@@ -2,17 +2,26 @@ package de.soderer.json;
 
 import java.math.BigDecimal;
 
+import de.soderer.json.path.JsonPath;
+import de.soderer.json.path.JsonPathArrayElement;
+import de.soderer.json.path.JsonPathElement;
+import de.soderer.json.path.JsonPathException;
+import de.soderer.json.path.JsonPathPropertyElement;
+import de.soderer.json.path.JsonPathRoot;
+
 public class JsonNode {
 	private final String propertyName;
 	private final Object value;
 	private JsonDataType jsonDataType;
+	private final boolean rootNode;
 
-	public JsonNode(final Object value) throws Exception {
-		this(null, value);
+	public JsonNode(final boolean rootNode, final Object value) throws Exception {
+		this(rootNode, null, value);
 	}
 
-	public JsonNode(final String propertyName, final Object value) throws Exception {
+	public JsonNode(final boolean rootNode, final String propertyName, final Object value) throws Exception {
 		this.propertyName = propertyName;
+		this.rootNode = rootNode;
 		this.value = value;
 		if (value == null) {
 			jsonDataType = JsonDataType.NULL;
@@ -31,6 +40,10 @@ public class JsonNode {
 		} else {
 			throw new Exception("Unknown JSON data type: " + value.getClass().getSimpleName());
 		}
+	}
+
+	public boolean isRootNode() {
+		return rootNode;
 	}
 
 	public String getPropertyName() {
@@ -84,6 +97,44 @@ public class JsonNode {
 	public boolean isKomplexValue() {
 		return jsonDataType == JsonDataType.OBJECT
 				|| jsonDataType == JsonDataType.ARRAY;
+	}
+
+	public Object getDatabyJsonPath(final JsonPath jsonPath) throws JsonPathException {
+		Object nextDataObject = value;
+		for (final JsonPathElement pathPart : jsonPath.getPathParts()) {
+			if (pathPart instanceof JsonPathArrayElement) {
+				if (nextDataObject != null && nextDataObject instanceof JsonArray) {
+					final JsonArray jsonArray = (JsonArray) nextDataObject;
+					final int lookingForIndex = ((JsonPathArrayElement) pathPart).getIndex();
+					if (jsonArray.size() > lookingForIndex) {
+						nextDataObject = jsonArray.get(lookingForIndex);
+					} else {
+						throw new JsonPathException("JsonNode does noth include path", jsonPath);
+					}
+				} else {
+					throw new JsonPathException("JsonNode does not include path", jsonPath);
+				}
+			} else if (pathPart instanceof JsonPathPropertyElement) {
+				if (nextDataObject != null && nextDataObject instanceof JsonObject) {
+					final JsonObject jsonObject = (JsonObject) nextDataObject;
+					final String lookingForPropertyKey = ((JsonPathPropertyElement) pathPart).getPropertyKey();
+					if (jsonObject.containsPropertyKey(lookingForPropertyKey)) {
+						nextDataObject = jsonObject.get(lookingForPropertyKey);
+					} else {
+						throw new JsonPathException("JsonNode does noth include path", jsonPath);
+					}
+				} else {
+					throw new JsonPathException("JsonNode does not include path", jsonPath);
+				}
+			} else if (pathPart instanceof JsonPathRoot) {
+				if (!rootNode) {
+					throw new JsonPathException("JsonNode is not a root", jsonPath);
+				}
+			} else {
+				throw new JsonPathException("Unexpected JsonPathElement", jsonPath);
+			}
+		}
+		return nextDataObject;
 	}
 
 	@Override

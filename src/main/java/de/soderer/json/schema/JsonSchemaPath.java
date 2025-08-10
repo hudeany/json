@@ -165,12 +165,10 @@ public class JsonSchemaPath {
 					case '.':
 						nextJsonSchemaPathPart = readUpToNext(false, '\\', '.', '[');
 						readJsonSchemaPathElements.push(parseJsonSchemaPathElement(nextJsonSchemaPathPart.substring(1).trim()));
-						reuseCurrentChar();
 						break;
 					case '/':
 						nextJsonSchemaPathPart = readUpToNext(false, '\\', '/', '[');
 						readJsonSchemaPathElements.push(parseJsonSchemaPathElement(nextJsonSchemaPathPart.substring(1).trim()));
-						reuseCurrentChar();
 						break;
 					case '[':
 						nextJsonSchemaPathPart = readUpToNext(true, '\\', ']');

@@ -91,10 +91,17 @@ public class JsonPath {
 	public JsonPath add(final JsonPathElement jsonPathElement) {
 		if (jsonPathElement == null) {
 			throw new RuntimeException("Invalid null value for JsonPathElement");
+		} else if (jsonPathElement instanceof JsonPathRoot) {
+			throw new RuntimeException("Cannot add JsonPathRoot as element");
 		} else {
 			jsonPathElements.push(jsonPathElement);
 			return this;
 		}
+	}
+
+	public JsonPath removeLastElement() {
+		jsonPathElements.pop();
+		return this;
 	}
 
 	public JsonPath addArrayIndex(final int arrayIndex) {
@@ -132,12 +139,10 @@ public class JsonPath {
 					case '.':
 						nextJsonPathPart = readUpToNext(false, '\\', '.', '[');
 						readJsonPathElements.push(parseJsonPathElement(nextJsonPathPart.substring(1).trim()));
-						reuseCurrentChar();
 						break;
 					case '/':
 						nextJsonPathPart = readUpToNext(false, '\\', '/', '[');
 						readJsonPathElements.push(parseJsonPathElement(nextJsonPathPart.substring(1).trim()));
-						reuseCurrentChar();
 						break;
 					case '[':
 						nextJsonPathPart = readUpToNext(true, '\\', ']');
@@ -154,7 +159,6 @@ public class JsonPath {
 				nextChar = readNextNonWhitespace();
 			}
 		}
-
 
 		public Stack<JsonPathElement> getReadJsonPathElements() {
 			return readJsonPathElements;
@@ -174,6 +178,10 @@ public class JsonPath {
 
 	public Stack<JsonPathElement> getPathParts() {
 		return jsonPathElements;
+	}
+
+	public JsonPathElement getLastPathPart() {
+		return jsonPathElements.peek();
 	}
 
 	public boolean endsWith(final String trailingPart) {
@@ -199,5 +207,13 @@ public class JsonPath {
 	@Override
 	public int hashCode() {
 		return getDotFormattedPath().hashCode();
+	}
+
+	/**
+	 * Size is the number of elements within the JsonPath without the first root element
+	 * @return
+	 */
+	public int size() {
+		return jsonPathElements.size() - 1;
 	}
 }

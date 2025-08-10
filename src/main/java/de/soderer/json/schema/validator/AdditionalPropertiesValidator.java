@@ -105,7 +105,7 @@ public class AdditionalPropertiesValidator extends ExtendedBaseJsonSchemaValidat
 					for (final String propertyKey : additionalPropertyNames) {
 						JsonNode newJsonNode;
 						try {
-							newJsonNode = new JsonNode(((JsonObject) jsonNode.getValue()).get(propertyKey));
+							newJsonNode = new JsonNode(false, ((JsonObject) jsonNode.getValue()).get(propertyKey));
 						} catch (final Exception e) {
 							throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonObject) jsonNode.getValue()).get(propertyKey).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addPropertyKey(propertyKey), e);
 						}

@@ -3,5 +3,11 @@ package de.soderer.yaml;
 public enum YamlStyle {
 	Standard,
 	Bracket,
-	Flow
+	Flow,
+	
+	/** Sign '>' => converts linebreaks to blanks */
+	Block_Folded,
+	
+	/** Sign '|' => keeps linebreaks */
+	Block_Literal
 }

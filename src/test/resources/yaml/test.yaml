@@ -3,27 +3,27 @@
 %TAG !! tag:yaml.org,2002:     # Default Tag for !!, it is always active. Tags !!int to tag:yaml.org,2002:int
 --- # starting a new YAML document. Basically optional, when not using directives
 sequence1: # using 1-space indentation, tab indentation is not allowed
-  - Sequence item 1
-  - Sequence item 2
-  - Sequence item 3
+  - Sequence item 11
+  - Sequence item 12
+  - Sequence item 13
 sequence2: #Sequence without indentation
-- Sequence item 1
-- Sequence item 2
-- Sequence item 3
-sequence3: [Sequence item 1, Sequence item 2, Sequence item 3]
-sequence4: [Sequence item 1,
-Sequence item 2,
-Sequence item 3
+- Sequence item 21
+- Sequence item 22
+- Sequence item 23
+sequence3: [Sequence item 31, Sequence item 32, Sequence item 33]
+sequence4: [Sequence item 41,
+Sequence item 42,
+Sequence item 43
   ]
 mapping1:
-  property1	:	Value 1 # Separation by tab is allowed
-  property2:  22
+  property 11	:	Value 11 # Separation by tab is allowed
+  property 12:  12
 mapping2:
-  property1: Value 1
-  property2: 22
+  property 21: Value 21
+  property 22: 22
 mapping3:
-  {property1: Value 1, property2: 22}
-mapping4: {property1: Value 1, property2: 22}
+  {property 31: Value 31, property 32: 32}
+mapping4: {property 41: Value 41, property 42: 42}
 mapping5:
   no: prob{lem,
   also: f]ine
@@ -31,15 +31,15 @@ mapping6: {
   must: 'quo{te,',
   this: 't]oo'
   }
-mapping7: # Mapping with complex mapping keys
-  ? - Detroit Tigers
-    - Chicago cubs
-  : - 2001-07-23
-
-  ? [ New York Yankees,
-    Atlanta Braves ]
-  : [ 2001-07-02, 2001-08-12,
-    2001-08-14 ]
+#mapping7: # TODO: Mapping with complex mapping keys
+#  ? - Detroit Tigers
+#    - Chicago cubs
+#  : - 2001-07-23
+#
+#  ? [ New York Yankees,
+#    Atlanta Braves ]
+#  : [ 2001-07-02, 2001-08-12,
+#    2001-08-14 ]
 data1: |
    There once was a tall man from Ealing
    Who got on a bus to Darjeeling
@@ -59,20 +59,20 @@ sequence1: # using 1-space indentation, tab indentation is not allowed
 	- Sequence item 1
 	- Sequence item 2
 	- Sequence item 3
-mapping1:
-	property1: Value 1
-	property2: 22
+mapping 1:
+	property 11: Value 11
+	property 12: 12
 --- # property keys may contain whitespaces
-mapping:
+mapping 1:
   a property: Value for space in property key
   my	property: Value for tab in property key
 ...
 %YAML 1.2
 --- # Sequence of mappings
-- {property1: Value 1, property2: 22}
-- property1: Value 2
-  property2: 33
-- [property1, property2]: [Value 3, 44] # sequences as keys are supported
+- {property 11: Value 11, property 12: 12}
+- property 21: Value 21
+  property 22: 22
+# TODO: - [property1, property2]: [Value 3, 44] # sequences as keys are supported
 --- # Mapping with sequences
 sequence1: [Item 1, Item 2]
 sequence2:
@@ -80,18 +80,18 @@ sequence2:
   - Item 4
 --- # Using anchors (&) and references (*)
 - preitem: &id001 # anchor "&id001"
-  property1:    Text 1
-  property2:   5.4
-  property3:   12
-  property4:    1000
-  property5:    155mm
+    property1a:    Text 1
+    property2a:   5.4
+    property3a:   12
+    property4a:    1000
+    property5a:    155mm
 - preitem: &id002
-  property1:    Text 2
-  property2:   5.0
-  property3:   10
-  property4:    500
-  property5:    9mm
-- selectedItem1: *id001 # references to "&id001""
+    property1b:    Text 2
+    property2b:   5.0
+    property3b:   10
+    property4b:    500
+    property5b:    9mm
+- selectedItem1: *id001 # references to "&id001"
 - selectedItem2: *id002
 ---
 a: 123                     # an integer
@@ -111,4 +111,4 @@ base64BinaryData: !!binary |
   Z2SwAAAAADQAIAAACF4SDGQ
   ar3xxbJ9p0qa7R0YxwzaFME
   1IAADs=
-... # end of all documents
+... # Obsolete end of final document

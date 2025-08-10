@@ -1,72 +1,63 @@
 package de.soderer.yaml;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-public class YamlMapping extends YamlObject<YamlMapping> implements Iterable<YamlMappingEntry> {
-	private final List<YamlMappingEntry> mappingEntries = new ArrayList<>();
+public class YamlMapping extends YamlNode {
+	private int indentationLevel = -1;
 
-	public YamlMapping add(YamlMappingEntry yamlMappingEntry) throws Exception {
-		if (keySet().contains(yamlMappingEntry.getKey())) {
-			throw new Exception("Duplicate mapping key: " + yamlMappingEntry.getKey());
+	private final Map<YamlNode, YamlNode> mappingEntries = new LinkedHashMap<>();
+
+	protected int getIndentationLevel() {
+		return indentationLevel;
+	}
+
+	protected void setIndentationLevel(final int indentationLevel) {
+		this.indentationLevel = indentationLevel;
+	}
+
+	public YamlMapping put(final YamlNode key, final YamlNode newValue) throws Exception {
+		if (keySet().contains(key)) {
+			throw new Exception("Duplicate mapping key: " + key);
 		} else {
-			mappingEntries.add(yamlMappingEntry);
+			mappingEntries.put(key, newValue);
 			return this;
 		}
 	}
-	
-	public YamlMapping add(final String mappingKey, final YamlObject<?> object) throws Exception {
-		if (keySet().contains(mappingKey)) {
-			throw new Exception("Duplicate mapping key: " + mappingKey);
-		} else {
-			mappingEntries.add(new YamlMappingEntry().setKey(mappingKey).setValue(object));
-			return this;
-		}
+
+	public YamlNode remove(final YamlNode key) {
+		return mappingEntries.remove(key);
 	}
 
-	public Object remove(final String mappingKey) {
-		for (final YamlMappingEntry entry : mappingEntries) {
-			if (mappingKey != null && mappingKey.equals(entry.getKey())) {
-				mappingEntries.remove(entry);
-				return entry;
-			}
-		}
-		return null;
+	public Object get(final YamlNode key) {
+		return mappingEntries.get(key);
 	}
 
-	public Object get(final String mappingKey) {
-		for (final YamlMappingEntry entry : mappingEntries) {
-			if (mappingKey != null && mappingKey.equals(entry.getKey())) {
-				return entry;
-			}
-		}
-		return null;
+	public Object get(final String keyString) {
+		final YamlNode keyObject = new YamlSimpleValue();
+		keyObject.setValue(keyString);
+		return mappingEntries.get(keyObject);
 	}
 
-	public boolean containsMappingKey(final String mappingKey) {
-		for (final YamlMappingEntry entry : mappingEntries) {
-			if (mappingKey != null && mappingKey.equals(entry.getKey())) {
-				return true;
-			}
-		}
-		return false;
+	public boolean contains(final YamlNode key) {
+		return mappingEntries.containsKey(key);
 	}
 
-	public Set<String> keySet() {
-		return mappingEntries.stream().map(x -> (String) x.getKey()).collect(Collectors.toSet());
+	public Set<YamlNode> keySet() {
+		return mappingEntries.keySet();
 	}
 
-	public Set<Object> values() {
-		return mappingEntries.stream().map(x -> x.getKey()).collect(Collectors.toSet());
+	public Collection<YamlNode> values() {
+		return mappingEntries.values();
 	}
 
-	public Set<YamlMappingEntry> entrySet() {
-		return new LinkedHashSet<>(mappingEntries);
+	public Set<Entry<YamlNode, YamlNode>> entrySet() {
+		return mappingEntries.entrySet();
 	}
 
 	public int size() {
@@ -74,51 +65,49 @@ public class YamlMapping extends YamlObject<YamlMapping> implements Iterable<Yam
 	}
 
 	@Override
-	public Iterator<YamlMappingEntry> iterator() {
-		return entrySet().iterator();
-	}
-
-	public Stream<YamlMappingEntry> entriesStream () {
-		return entrySet().stream();
-	}
-
-	public Stream<String> keysStream () {
-		return keySet().stream();
-	}
-
-	public Stream<Object> valuesStream () {
-		return values().stream();
-	}
-
-	@Override
-	public boolean equals(final Object other) {
-		if (this == other) {
-			return true;
-		} else if (other != null && other instanceof YamlMapping) {
-			final YamlMapping otherObject = (YamlMapping) other;
-			if (size() != otherObject.size()) {
-				return false;
-			} else {
-				for (final YamlMappingEntry mappingEntry : entrySet()) {
-					final Object thisValue = mappingEntry.getValue();
-					final Object otherValue = otherObject.get((String) mappingEntry.getKey());
-					if ((thisValue != otherValue)
-							&& (thisValue != null && !thisValue.equals(otherValue))) {
-						return false;
-					}
-				}
-				return true;
-			}
-		} else {
-			return false;
-		}
-	}
-
-	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((mappingEntries == null) ? 0 : mappingEntries.hashCode());
-		return result;
+		return Objects.hash(mappingEntries, anchor, style, value, comment, inlineComment);
+	}
+
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		final YamlMapping other = (YamlMapping) obj;
+		return Objects.equals(mappingEntries, other.mappingEntries)
+				&& Objects.equals(anchor, other.anchor)
+				&& Objects.equals(style, other.style)
+				&& Objects.equals(value, other.value)
+				&& Objects.equals(comment, other.comment)
+				&& Objects.equals(inlineComment, other.inlineComment);
+	}
+
+	@Override
+	public Set<String> getAllAvailableAnchorIds() {
+		final Set<String> anchorIds = new HashSet<>();
+		if (getAnchor() != null) {
+			anchorIds.add(getAnchor());
+		}
+		//		if (mappingEntries != null) {
+		//			for (YamlMappingEntry mappingEntry : mappingEntries) {
+		//				anchorIds.addAll(((YamlObject<?>) mappingEntry).getAllAvailableAnchorIds());
+		//			}
+		//		}
+		return anchorIds;
+	}
+
+	@Override
+	public Set<String> getAllReferencedAnchorIds() {
+		final Set<String> referencedAnchorIds = new HashSet<>();
+		//		if (mappingEntries != null) {
+		//			for (YamlMappingEntry mappingEntry : mappingEntries) {
+		//				referencedAnchorIds.addAll(((YamlObject<?>) mappingEntry).getAllReferencedAnchorIds());
+		//			}
+		//		}
+		return referencedAnchorIds;
 	}
 }

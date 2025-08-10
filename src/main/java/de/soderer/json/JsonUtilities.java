@@ -191,37 +191,6 @@ public class JsonUtilities {
 		return list;
 	}
 
-	/**
-	 * JsonPath syntax:<br />
-	 *	$ : root<br />
-	 *	. or / : child separator<br />
-	 *	[n] : array operator<br />
-	 *<br />
-	 * JsonPath example:<br />
-	 * 	"$.list.customer[0].name"<br />
-	 *
-	 * @param jsonReader
-	 * @param jsonPath
-	 * @throws Exception
-	 */
-	public static void readUpToJsonPath(final JsonReader jsonReader, String jsonPath) throws Exception {
-		if (jsonPath.startsWith("/") || jsonPath.startsWith("$")) {
-			jsonPath = jsonPath.substring(1);
-		}
-		if (jsonPath.endsWith("/")) {
-			jsonPath = jsonPath.substring(0, jsonPath.length() - 1);
-		}
-		jsonPath = "$" + jsonPath.replace("/", ".");
-
-		while (jsonReader.readNextToken() != null && !jsonReader.getCurrentJsonPath().equals(jsonPath)) {
-			// Do nothing
-		}
-
-		if (!jsonReader.getCurrentJsonPath().equals(jsonPath)) {
-			throw new Exception("Path '" + jsonPath + "' is not part of the JSON data");
-		}
-	}
-
 	public static JsonNode parseJsonDataAndVerifyJsonSchemaSimple(final byte[] jsonData, final Charset encoding, final String jsonSchemaFileName) throws Exception {
 		JsonSchema jsonSchema;
 		try (InputStream jsonSchemaInputStream = new FileInputStream(jsonSchemaFileName)) {
