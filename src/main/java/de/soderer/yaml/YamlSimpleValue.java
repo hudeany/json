@@ -15,6 +15,12 @@ public class YamlSimpleValue extends YamlNode {
 	}
 
 	@Override
+	public YamlSimpleValue setValue(final Object value) {
+		super.setValue(value);
+		return this;
+	}
+
+	@Override
 	public Set<String> getAllReferencedAnchorIds() {
 		return new HashSet<>();
 	}

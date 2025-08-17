@@ -55,6 +55,10 @@ public class YamlTest {
 				testYamlValue = testsuiteReader.read();
 			}
 
+			System.out.println();
+			System.out.println(testYamlValue);
+			System.out.println();
+
 			// TODO: remove for general tests
 			Assert.assertEquals(YamlSequence.class, testYamlValue.getClass());
 			Assert.assertEquals(1, ((YamlSequence) testYamlValue).size());

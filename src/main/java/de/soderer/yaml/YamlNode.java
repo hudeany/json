@@ -10,19 +10,24 @@ public abstract class YamlNode extends YamlValue {
 		return anchor;
 	}
 
-	public void setAnchor(final String anchor) {
+	public YamlNode setAnchor(final String anchor) throws Exception {
+		if (anchor.matches("\\s+")) {
+			throw new Exception("Yaml anchor name contains invalid whitespace");
+		}
 		this.anchor = anchor;
+		return this;
 	}
 
 	public YamlStyle getStyle() {
 		return style;
 	}
 
-	public void setStyle(YamlStyle style) {
+	public YamlNode setStyle(final YamlStyle style) {
 		this.style = style;
+		return this;
 	}
-	
+
 	public abstract Set<String> getAllAvailableAnchorIds();
-	
+
 	public abstract Set<String> getAllReferencedAnchorIds();
 }

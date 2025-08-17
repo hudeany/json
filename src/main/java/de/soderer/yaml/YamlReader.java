@@ -17,6 +17,8 @@ import de.soderer.yaml.directive.VersionDirective;
 import de.soderer.yaml.directive.YamlDirective;
 
 public class YamlReader extends BasicReader {
+	private final boolean verboseLog = true;
+
 	private boolean lenient = false;
 	private boolean documentContentStarted = false;
 	private YamlDocument currentDocument = null;
@@ -470,6 +472,9 @@ public class YamlReader extends BasicReader {
 			}
 
 			currentToken = yamlToken;
+			if (verboseLog) {
+				System.out.println("next Token: " + NumberUtilities.formatNumber(currentTokenIndentationLevel, 3, '.', null) + " " + currentToken + (currentToken == YamlToken.YamlMapping_Property ? "'" + currentYamlMappingEntryKey + "'" : ""));
+			}
 		}
 	}
 

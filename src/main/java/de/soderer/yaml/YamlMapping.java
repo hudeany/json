@@ -1,6 +1,11 @@
 package de.soderer.yaml;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -17,8 +22,9 @@ public class YamlMapping extends YamlNode {
 		return indentationLevel;
 	}
 
-	protected void setIndentationLevel(final int indentationLevel) {
+	protected YamlMapping setIndentationLevel(final int indentationLevel) {
 		this.indentationLevel = indentationLevel;
+		return this;
 	}
 
 	public YamlMapping put(final YamlNode key, final YamlNode newValue) throws Exception {
@@ -109,5 +115,85 @@ public class YamlMapping extends YamlNode {
 		//			}
 		//		}
 		return referencedAnchorIds;
+	}
+
+	public YamlMapping put(final String propertyKey, final Boolean propertyValue) throws Exception {
+		put(new YamlSimpleValue().setValue(propertyKey), new YamlSimpleValue().setValue(propertyValue));
+		return this;
+	}
+
+	public YamlMapping put(final String propertyKey, final String propertyValue) throws Exception {
+		put(new YamlSimpleValue().setValue(propertyKey), new YamlSimpleValue().setValue(propertyValue));
+		return this;
+	}
+
+	public YamlMapping put(final String propertyKey, final Number propertyValue) throws Exception {
+		put(new YamlSimpleValue().setValue(propertyKey), new YamlSimpleValue().setValue(propertyValue));
+		return this;
+	}
+
+	public YamlMapping put(final String propertyKey, final Date propertyValue) throws Exception {
+		put(new YamlSimpleValue().setValue(propertyKey), new YamlSimpleValue().setValue(propertyValue));
+		return this;
+	}
+
+	public YamlMapping put(final String propertyKey, final ZonedDateTime propertyValue) throws Exception {
+		put(new YamlSimpleValue().setValue(propertyKey), new YamlSimpleValue().setValue(propertyValue));
+		return this;
+	}
+
+	public YamlMapping put(final String propertyKey, final LocalDate propertyValue) throws Exception {
+		put(new YamlSimpleValue().setValue(propertyKey), new YamlSimpleValue().setValue(propertyValue));
+		return this;
+	}
+
+	public YamlMapping put(final String propertyKey, final LocalDateTime propertyValue) throws Exception {
+		put(new YamlSimpleValue().setValue(propertyKey), new YamlSimpleValue().setValue(propertyValue));
+		return this;
+	}
+
+	public YamlMapping put(final String propertyKey, final LocalTime propertyValue) throws Exception {
+		put(new YamlSimpleValue().setValue(propertyKey), new YamlSimpleValue().setValue(propertyValue));
+		return this;
+	}
+
+	public YamlMapping put(final String propertyKey, final YamlSequence propertyValue) throws Exception {
+		put(new YamlSimpleValue().setValue(propertyKey), propertyValue);
+		return this;
+	}
+
+	public YamlMapping put(final String propertyKey, final YamlMapping propertyValue) throws Exception {
+		put(new YamlSimpleValue().setValue(propertyKey), propertyValue);
+		return this;
+	}
+
+	@Override
+	public YamlMapping setAnchor(final String anchor) throws Exception {
+		super.setAnchor(anchor);
+		return this;
+	}
+
+	@Override
+	public YamlMapping setStyle(final YamlStyle style) {
+		super.setStyle(style);
+		return this;
+	}
+
+	@Override
+	public YamlMapping setComment(final String comment) {
+		super.setComment(comment);
+		return this;
+	}
+
+	@Override
+	public YamlMapping addCommentLine(final String commentLine) {
+		super.addCommentLine(commentLine);
+		return this;
+	}
+
+	@Override
+	public YamlMapping setInlineComment(final String inlineComment) {
+		super.setInlineComment(inlineComment);
+		return this;
 	}
 }

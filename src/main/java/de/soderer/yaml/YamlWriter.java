@@ -298,6 +298,17 @@ public class YamlWriter implements Closeable {
 	}
 
 	public void add(final YamlValue yamlValue) throws Exception {
+		if (!omitComments && yamlValue.getComment() != null) {
+			for (final String commentLine : yamlValue.getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+				write("# " + commentLine + linebreakType.toString(), true);
+			}
+		}
+		String inlineCommentPart = "";
+		if (!omitComments && yamlValue.getInlineComment() != null) {
+			inlineCommentPart = "# " + yamlValue.getInlineComment();
+		}
+		write(inlineCommentPart + linebreakType.toString() + Utilities.repeat(indentation, currentIndentationLevel), true);
+
 		if (yamlValue instanceof YamlSequence) {
 			add((YamlSequence) yamlValue);
 		} else if (yamlValue instanceof YamlMapping) {
@@ -418,29 +429,61 @@ public class YamlWriter implements Closeable {
 					if (entry.getValue() == null) {
 						throw new Exception("Unexpected empty value in YamlMapping: " + entry.getValue().getClass());
 					} else if (entry.getValue() instanceof YamlSequence) {
-						write(getSimpleValueString(entry.getKey(), null) + ":" + linebreakType.toString() + Utilities.repeat(indentation, currentIndentationLevel), !skipNextIndentation);
-						currentIndentationLevel++;
-						add((YamlSequence) entry.getValue());
-						currentIndentationLevel--;
-					} else if (entry.getValue() instanceof YamlMapping) {
+						if (!omitComments && entry.getValue().getComment() != null) {
+							for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+								write("# " + commentLine + linebreakType.toString(), true);
+							}
+						}
 						String anchorPart = "";
 						if (entry.getValue().getAnchor() != null) {
 							anchorPart = " &" + entry.getValue().getAnchor();
 						}
-						write(getSimpleValueString(entry.getKey(), null) + ":" + anchorPart + linebreakType.toString() + Utilities.repeat(indentation, currentIndentationLevel), !skipNextIndentation);
+						String inlineCommentPart = "";
+						if (!omitComments && entry.getValue().getInlineComment() != null) {
+							inlineCommentPart = " # " + entry.getValue().getInlineComment();
+						}
+						write(getSimpleValueString(entry.getKey(), null) + ":" + anchorPart + inlineCommentPart + linebreakType.toString() + Utilities.repeat(indentation, currentIndentationLevel), !skipNextIndentation);
+						currentIndentationLevel++;
+						add((YamlSequence) entry.getValue());
+						currentIndentationLevel--;
+					} else if (entry.getValue() instanceof YamlMapping) {
+						if (!omitComments && entry.getValue().getComment() != null) {
+							for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+								write("# " + commentLine + linebreakType.toString(), true);
+							}
+						}
+						String anchorPart = "";
+						if (entry.getValue().getAnchor() != null) {
+							anchorPart = " &" + entry.getValue().getAnchor();
+						}
+						String inlineCommentPart = "";
+						if (!omitComments && entry.getValue().getInlineComment() != null) {
+							inlineCommentPart = " # " + entry.getValue().getInlineComment();
+						}
+						write(getSimpleValueString(entry.getKey(), null) + ":" + anchorPart + inlineCommentPart + linebreakType.toString() + Utilities.repeat(indentation, currentIndentationLevel), !skipNextIndentation);
 						currentIndentationLevel++;
 						add((YamlMapping) entry.getValue());
 						currentIndentationLevel--;
 					} else if (entry.getValue() instanceof YamlSimpleValue) {
+						if (!omitComments && entry.getValue().getComment() != null) {
+							for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+								write("# " + commentLine + linebreakType.toString(), true);
+							}
+						}
 						String anchorPart = "";
 						if (entry.getValue().getAnchor() != null) {
-							anchorPart = "&" + entry.getValue().getAnchor() + " ";
+							anchorPart = " &" + entry.getValue().getAnchor();
 						}
 						String inlineCommentPart = "";
-						if (entry.getValue().getInlineComment() != null) {
+						if (!omitComments && entry.getValue().getInlineComment() != null) {
 							inlineCommentPart = " # " + entry.getValue().getInlineComment();
 						}
-						write(getSimpleValueString(entry.getKey(), null) + ": " + anchorPart + getSimpleValueString(entry.getValue(), entry.getValue().getStyle()) + inlineCommentPart+ linebreakType.toString(), !skipNextIndentation);
+						String valuePart = "";
+						final String valueString = getSimpleValueString(entry.getValue(), entry.getValue().getStyle());
+						if (valueString != null) {
+							valuePart = " " + valueString;
+						}
+						write(getSimpleValueString(entry.getKey(), null) + ":" + anchorPart + valuePart + inlineCommentPart + linebreakType.toString(), !skipNextIndentation);
 					} else if (entry.getValue() instanceof YamlAnchorReference) {
 						write(getSimpleValueString(entry.getKey(), null) + ": *" + entry.getValue().getValue() + linebreakType.toString(), !skipNextIndentation);
 					} else {
@@ -510,18 +553,70 @@ public class YamlWriter implements Closeable {
 			} else {
 				for (final YamlNode sequenceItem : yamlSequence) {
 					if (sequenceItem instanceof YamlMapping) {
-						write("- ", true);
-						currentIndentationLevel++;
-						skipNextIndentation = true;
-						add((YamlMapping) sequenceItem);
-						currentIndentationLevel--;
+						if (!omitComments && sequenceItem.getComment() != null) {
+							for (final String commentLine : sequenceItem.getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+								write("# " + commentLine + linebreakType.toString(), true);
+							}
+						}
+						String anchorPart = "";
+						if (sequenceItem.getAnchor() != null) {
+							anchorPart = " &" + sequenceItem.getAnchor();
+						}
+						String inlineCommentPart = "";
+						if (!omitComments && sequenceItem.getInlineComment() != null) {
+							inlineCommentPart = " # " + sequenceItem.getInlineComment();
+						}
+						if (inlineCommentPart.length() == 0) {
+							write("-" + anchorPart + " ", true);
+							currentIndentationLevel++;
+							skipNextIndentation = true;
+							add((YamlMapping) sequenceItem);
+							currentIndentationLevel--;
+						} else {
+							write("-" + anchorPart + inlineCommentPart + linebreakType.toString(), true);
+							currentIndentationLevel++;
+							skipNextIndentation = false;
+							add((YamlMapping) sequenceItem);
+							currentIndentationLevel--;
+						}
 					} else if (sequenceItem instanceof YamlSequence) {
-						write("-" + linebreakType.toString(), true);
+						if (!omitComments && sequenceItem.getComment() != null) {
+							for (final String commentLine : sequenceItem.getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+								write("# " + commentLine + linebreakType.toString(), true);
+							}
+						}
+						String anchorPart = "";
+						if (sequenceItem.getAnchor() != null) {
+							anchorPart = " &" + sequenceItem.getAnchor();
+						}
+						String inlineCommentPart = "";
+						if (!omitComments && sequenceItem.getInlineComment() != null) {
+							inlineCommentPart = " # " + sequenceItem.getInlineComment();
+						}
+						write("-" + anchorPart + inlineCommentPart + linebreakType.toString(), true);
 						currentIndentationLevel++;
 						add((YamlSequence) sequenceItem);
 						currentIndentationLevel--;
 					} else if (sequenceItem instanceof YamlSimpleValue) {
-						write("- " + getSimpleValueString(sequenceItem.getValue(), sequenceItem.getStyle()) + linebreakType.toString(), true);
+						if (!omitComments && sequenceItem.getComment() != null) {
+							for (final String commentLine : sequenceItem.getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+								write("# " + commentLine + linebreakType.toString(), true);
+							}
+						}
+						String anchorPart = "";
+						if (sequenceItem.getAnchor() != null) {
+							anchorPart = " &" + sequenceItem.getAnchor();
+						}
+						String inlineCommentPart = "";
+						if (!omitComments && sequenceItem.getInlineComment() != null) {
+							inlineCommentPart = " # " + sequenceItem.getInlineComment();
+						}
+						String valuePart = "";
+						final String valueString = getSimpleValueString(sequenceItem.getValue(), sequenceItem.getStyle());
+						if (valueString != null) {
+							valuePart = " " + valueString;
+						}
+						write("-" + valuePart + anchorPart + inlineCommentPart + linebreakType.toString(), true);
 					} else {
 						throw new Exception("Unexpected object type in YamlSequence");
 					}
@@ -543,7 +638,9 @@ public class YamlWriter implements Closeable {
 				simpleValue = ((YamlSimpleValue) simpleValue).getValue();
 			}
 
-			if (simpleValue instanceof Boolean) {
+			if (simpleValue == null) {
+				return null;
+			} else if (simpleValue instanceof Boolean) {
 				return Boolean.toString((Boolean) simpleValue);
 			} else if (simpleValue instanceof Date) {
 				return DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (Date) simpleValue);

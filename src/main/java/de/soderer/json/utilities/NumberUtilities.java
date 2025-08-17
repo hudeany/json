@@ -181,4 +181,30 @@ public class NumberUtilities {
 			return numberString;
 		}
 	}
+
+	public static String formatNumber(final Number number, final int minPreSeparatorCharacters, final char decimalSeparator, final Character groupingSeparator) {
+		if (number == null) {
+			return null;
+		} else {
+			String numberString = number.toString();
+			if (decimalSeparator != '.') {
+				if (groupingSeparator != null) {
+					numberString = numberString.replace(',', groupingSeparator);
+				} else {
+					numberString = numberString.replace(",", "");
+				}
+				numberString = numberString.replace('.', decimalSeparator);
+			}
+
+			int preSeparatorCharacters = numberString.indexOf(decimalSeparator);
+			if (preSeparatorCharacters < 0)
+				preSeparatorCharacters = numberString.length();
+
+			if (preSeparatorCharacters < minPreSeparatorCharacters) {
+				numberString = Utilities.repeat(" ", minPreSeparatorCharacters - preSeparatorCharacters) + numberString;
+			}
+
+			return numberString;
+		}
+	}
 }

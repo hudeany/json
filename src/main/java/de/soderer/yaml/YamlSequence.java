@@ -17,8 +17,9 @@ public class YamlSequence extends YamlNode implements Iterable<YamlNode> {
 		return indentationLevel;
 	}
 
-	protected void setIndentationLevel(final int indentationLevel) {
+	protected YamlSequence setIndentationLevel(final int indentationLevel) {
 		this.indentationLevel = indentationLevel;
+		return this;
 	}
 
 	public YamlSequence add(final YamlNode newItem) {
@@ -98,5 +99,50 @@ public class YamlSequence extends YamlNode implements Iterable<YamlNode> {
 			}
 		}
 		return referencedAnchorIds;
+	}
+
+	public YamlSequence add(final Number propertyValue) {
+		add(new YamlSimpleValue().setValue(propertyValue));
+		return this;
+	}
+
+	public YamlSequence add(final Boolean propertyValue) {
+		add(new YamlSimpleValue().setValue(propertyValue));
+		return this;
+	}
+
+	public YamlSequence add(final String propertyValue) {
+		add(new YamlSimpleValue().setValue(propertyValue));
+		return this;
+	}
+
+	@Override
+	public YamlSequence setAnchor(final String anchor) throws Exception {
+		super.setAnchor(anchor);
+		return this;
+	}
+
+	@Override
+	public YamlSequence setStyle(final YamlStyle style) {
+		super.setStyle(style);
+		return this;
+	}
+
+	@Override
+	public YamlSequence setComment(final String comment) {
+		super.setComment(comment);
+		return this;
+	}
+
+	@Override
+	public YamlSequence addCommentLine(final String commentLine) {
+		super.addCommentLine(commentLine);
+		return this;
+	}
+
+	@Override
+	public YamlSequence setInlineComment(final String inlineComment) {
+		super.setInlineComment(inlineComment);
+		return this;
 	}
 }
