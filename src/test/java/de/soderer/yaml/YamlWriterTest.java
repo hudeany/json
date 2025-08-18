@@ -208,6 +208,55 @@ public class YamlWriterTest {
 	@Test
 	public void testYamlMappingFlow() {
 		try {
+			final YamlMapping testYamlValue = new YamlMapping().setStyle(YamlStyle.Flow);
+			testYamlValue.put(new YamlSimpleValue().setValue("property 1"), new YamlSimpleValue().setValue(null));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 2"), new YamlSimpleValue().setValue(true));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 3"), new YamlSimpleValue().setValue(1));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 4"), new YamlSimpleValue().setValue("String value 4"));
+
+			final YamlSequence otherYamlSequence = new YamlSequence().setStyle(YamlStyle.Flow);
+			otherYamlSequence.add(new YamlSimpleValue().setValue(null));
+			otherYamlSequence.add(new YamlSimpleValue().setValue(true));
+			otherYamlSequence.add(new YamlSimpleValue().setValue(23));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 24"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 25"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 26"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 27"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 28"));
+			testYamlValue.put("property 5", otherYamlSequence);
+
+			final YamlMapping otherYamlMapping = new YamlMapping().setStyle(YamlStyle.Flow);
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 31"), new YamlSimpleValue().setValue(null));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 32"), new YamlSimpleValue().setValue(true));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 33"), new YamlSimpleValue().setValue(33));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 34"), new YamlSimpleValue().setValue("String value 34"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 35"), new YamlSimpleValue().setValue("String value 35"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 36"), new YamlSimpleValue().setValue("String value 36"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 37"), new YamlSimpleValue().setValue("String value 37"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 38"), new YamlSimpleValue().setValue("String value 38"));
+			testYamlValue.put("property 6", otherYamlMapping);
+
+			testYamlValue.put(new YamlSimpleValue().setValue("property 7"), new YamlSimpleValue().setValue(null));
+
+			testYamlValue.put("property 8", new YamlSequence().setStyle(YamlStyle.Flow));
+			testYamlValue.put("property 9", new YamlMapping().setStyle(YamlStyle.Flow));
+
+			final String expectedString = ""
+					+ "{property 1: null, property 2: true, property 3: 1, property 4: String value 4, "
+					+ "property 5: [null, true, 23, String value 24, String value 25, String value 26, String value 27, String value 28], "
+					+ "property 6: {property 31: null, property 32: true, property 33: 33, property 34: String value 34, property 35: String value 35, property 36: String value 36, property 37: String value 37, property 38: String value 38}, "
+					+ "property 7: null, property 8: [], property 9: {}}";
+
+			testYamlObject(expectedString, testYamlValue);
+		} catch (final Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testYamlMappingFlowWithAnchorsAndComments() {
+		try {
 			final YamlMapping testYamlValue = new YamlMapping().setStyle(YamlStyle.Flow).setAnchor("Anchor0").setComment("Comment 0\nMultiline comment 0").setInlineComment("Inline comment 0");
 			testYamlValue.put(new YamlSimpleValue().setValue("property 1"), new YamlSimpleValue().setValue(null).setAnchor("Anchor1").setComment("Comment 1\nMultiline comment 1").setInlineComment("Inline comment 1"));
 			testYamlValue.put(new YamlSimpleValue().setValue("property 2"), new YamlSimpleValue().setValue(true).setAnchor("Anchor2").setComment("Comment 2\nMultiline comment 2").setInlineComment("Inline comment 2"));
