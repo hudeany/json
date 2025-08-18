@@ -21,12 +21,6 @@ import de.soderer.json.utilities.Linebreak;
 import de.soderer.json.utilities.Utilities;
 import de.soderer.yaml.directive.YamlDirective;
 
-/**
- * TODO
- *   Print references and anchors
- *   Print comments
- *   Utilities Repository : Linebreak enum
- */
 public class YamlWriter implements Closeable {
 	private final boolean verboseLog = true;
 
@@ -307,9 +301,9 @@ public class YamlWriter implements Closeable {
 		}
 		String inlineCommentPart = "";
 		if (!omitComments && yamlValue.getInlineComment() != null) {
-			inlineCommentPart = "# " + yamlValue.getInlineComment();
+			inlineCommentPart = "# " + yamlValue.getInlineComment() + linebreakType.toString();
 		}
-		write(inlineCommentPart + linebreakType.toString() + Utilities.repeat(indentation, currentIndentationLevel), true);
+		write(inlineCommentPart + Utilities.repeat(indentation, currentIndentationLevel), true);
 
 		if (yamlValue instanceof YamlSequence) {
 			add((YamlSequence) yamlValue, initiallyIndent);

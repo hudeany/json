@@ -38,6 +38,12 @@ public class YamlSimpleValue extends YamlNode {
 	}
 
 	@Override
+	public YamlSimpleValue setAnchor(final String anchor) throws Exception {
+		super.setAnchor(anchor);
+		return this;
+	}
+
+	@Override
 	public int hashCode() {
 		return Objects.hash(anchor, style, value, comment, inlineComment);
 	}

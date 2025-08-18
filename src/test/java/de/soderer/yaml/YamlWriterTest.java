@@ -11,35 +11,107 @@ public class YamlWriterTest {
 	@Test
 	public void testYamlMapping() {
 		try {
+			final YamlMapping testYamlValue = new YamlMapping();
+			testYamlValue.put(new YamlSimpleValue().setValue("property 1"), new YamlSimpleValue().setValue(null));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 2"), new YamlSimpleValue().setValue(true));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 3"), new YamlSimpleValue().setValue(1));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 4"), new YamlSimpleValue().setValue("String value 4"));
+
+			final YamlSequence otherYamlSequence = new YamlSequence();
+			otherYamlSequence.add(new YamlSimpleValue().setValue(null));
+			otherYamlSequence.add(new YamlSimpleValue().setValue(true));
+			otherYamlSequence.add(new YamlSimpleValue().setValue(23));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 24"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 25"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 26"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 27"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 28"));
+			testYamlValue.put("property 5", otherYamlSequence);
+
+			final YamlMapping otherYamlMapping = new YamlMapping();
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 31"), new YamlSimpleValue().setValue(null));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 32"), new YamlSimpleValue().setValue(true));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 33"), new YamlSimpleValue().setValue(33));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 34"), new YamlSimpleValue().setValue("String value 34"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 35"), new YamlSimpleValue().setValue("String value 35"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 36"), new YamlSimpleValue().setValue("String value 36"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 37"), new YamlSimpleValue().setValue("String value 37"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 38"), new YamlSimpleValue().setValue("String value 38"));
+			testYamlValue.put("property 6", otherYamlMapping);
+
+			testYamlValue.put(new YamlSimpleValue().setValue("property 7"), new YamlSimpleValue().setValue(null));
+
+			testYamlValue.put("property 8", new YamlSequence());
+			testYamlValue.put("property 9", new YamlMapping());
+
+			final String expectedString = ""
+					+ "property 1:\n"
+					+ "property 2: true\n"
+					+ "property 3: 1\n"
+					+ "property 4: String value 4\n"
+					+ "property 5:\n"
+					+ "  - null\n"
+					+ "  - true\n"
+					+ "  - 23\n"
+					+ "  - String value 24\n"
+					+ "  - String value 25\n"
+					+ "  - String value 26\n"
+					+ "  - String value 27\n"
+					+ "  - String value 28\n"
+					+ "property 6:\n"
+					+ "  property 31:\n"
+					+ "  property 32: true\n"
+					+ "  property 33: 33\n"
+					+ "  property 34: String value 34\n"
+					+ "  property 35: String value 35\n"
+					+ "  property 36: String value 36\n"
+					+ "  property 37: String value 37\n"
+					+ "  property 38: String value 38\n"
+					+ "property 7:\n"
+					+ "property 8:\n"
+					+ "  []\n"
+					+ "property 9:\n"
+					+ "  {}\n";
+
+			testYamlObject(expectedString, testYamlValue);
+		} catch (final Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testYamlMappingWithAnchorsAndComments() {
+		try {
 			final YamlMapping testYamlValue = new YamlMapping().setAnchor("Anchor0").setComment("Comment 0\nMultiline comment 0").setInlineComment("Inline comment 0");
-			testYamlValue.put(new YamlSimpleValue().setValue("property 1"), (YamlSimpleValue) new YamlSimpleValue().setValue(null).setAnchor("Anchor1").setComment("Comment 1\nMultiline comment 1").setInlineComment("Inline comment 1"));
-			testYamlValue.put(new YamlSimpleValue().setValue("property 2"), (YamlSimpleValue) new YamlSimpleValue().setValue(true).setAnchor("Anchor2").setComment("Comment 2\nMultiline comment 2").setInlineComment("Inline comment 2"));
-			testYamlValue.put(new YamlSimpleValue().setValue("property 3"), (YamlSimpleValue) new YamlSimpleValue().setValue(1).setAnchor("Anchor3").setComment("Comment 3\nMultiline comment 3").setInlineComment("Inline comment 3"));
-			testYamlValue.put(new YamlSimpleValue().setValue("property 4"), (YamlSimpleValue) new YamlSimpleValue().setValue("String value 4").setAnchor("Anchor4").setComment("Comment 4\nMultiline comment 4").setInlineComment("Inline comment 4"));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 1"), new YamlSimpleValue().setValue(null).setAnchor("Anchor1").setComment("Comment 1\nMultiline comment 1").setInlineComment("Inline comment 1"));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 2"), new YamlSimpleValue().setValue(true).setAnchor("Anchor2").setComment("Comment 2\nMultiline comment 2").setInlineComment("Inline comment 2"));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 3"), new YamlSimpleValue().setValue(1).setAnchor("Anchor3").setComment("Comment 3\nMultiline comment 3").setInlineComment("Inline comment 3"));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 4"), new YamlSimpleValue().setValue("String value 4").setAnchor("Anchor4").setComment("Comment 4\nMultiline comment 4").setInlineComment("Inline comment 4"));
 
 			final YamlSequence otherYamlSequence = new YamlSequence().setAnchor("Anchor5").setComment("Comment 5\nMultiline comment 5").setInlineComment("Inline comment 5");
-			otherYamlSequence.add((YamlSimpleValue) new YamlSimpleValue().setValue(null).setAnchor("Anchor21").setComment("Comment 21\nMultiline comment 21").setInlineComment("Inline comment 21"));
-			otherYamlSequence.add((YamlSimpleValue) new YamlSimpleValue().setValue(true).setAnchor("Anchor22").setComment("Comment 22\nMultiline comment 22").setInlineComment("Inline comment 22"));
-			otherYamlSequence.add((YamlSimpleValue) new YamlSimpleValue().setValue(23).setAnchor("Anchor23").setComment("Comment 23\nMultiline comment 23").setInlineComment("Inline comment 23"));
-			otherYamlSequence.add((YamlSimpleValue) new YamlSimpleValue().setValue("String value 24").setAnchor("Anchor24").setComment("Comment 24\nMultiline comment 24").setInlineComment("Inline comment 24"));
-			otherYamlSequence.add((YamlSimpleValue) new YamlSimpleValue().setValue("String value 25").setAnchor("Anchor25").setComment("Comment 25\nMultiline comment 25").setInlineComment("Inline comment 25"));
-			otherYamlSequence.add((YamlSimpleValue) new YamlSimpleValue().setValue("String value 26").setAnchor("Anchor26").setComment("Comment 26\nMultiline comment 26").setInlineComment("Inline comment 26"));
-			otherYamlSequence.add((YamlSimpleValue) new YamlSimpleValue().setValue("String value 27").setAnchor("Anchor27").setComment("Comment 27\nMultiline comment 27").setInlineComment("Inline comment 27"));
-			otherYamlSequence.add((YamlSimpleValue) new YamlSimpleValue().setValue("String value 28").setAnchor("Anchor28").setComment("Comment 28\nMultiline comment 28").setInlineComment("Inline comment 28"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue(null).setAnchor("Anchor21").setComment("Comment 21\nMultiline comment 21").setInlineComment("Inline comment 21"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue(true).setAnchor("Anchor22").setComment("Comment 22\nMultiline comment 22").setInlineComment("Inline comment 22"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue(23).setAnchor("Anchor23").setComment("Comment 23\nMultiline comment 23").setInlineComment("Inline comment 23"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 24").setAnchor("Anchor24").setComment("Comment 24\nMultiline comment 24").setInlineComment("Inline comment 24"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 25").setAnchor("Anchor25").setComment("Comment 25\nMultiline comment 25").setInlineComment("Inline comment 25"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 26").setAnchor("Anchor26").setComment("Comment 26\nMultiline comment 26").setInlineComment("Inline comment 26"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 27").setAnchor("Anchor27").setComment("Comment 27\nMultiline comment 27").setInlineComment("Inline comment 27"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 28").setAnchor("Anchor28").setComment("Comment 28\nMultiline comment 28").setInlineComment("Inline comment 28"));
 			testYamlValue.put("property 5", otherYamlSequence);
 
 			final YamlMapping otherYamlMapping = new YamlMapping().setAnchor("Anchor6").setComment("Comment 6\nMultiline comment 6").setInlineComment("Inline comment 6");
-			otherYamlMapping.put(new YamlSimpleValue().setValue("property 31"), (YamlSimpleValue) new YamlSimpleValue().setValue(null).setAnchor("Anchor31").setComment("Comment 31\nMultiline comment 31").setInlineComment("Inline comment 31"));
-			otherYamlMapping.put(new YamlSimpleValue().setValue("property 32"), (YamlSimpleValue) new YamlSimpleValue().setValue(true).setAnchor("Anchor32").setComment("Comment 32\nMultiline comment 32").setInlineComment("Inline comment 32"));
-			otherYamlMapping.put(new YamlSimpleValue().setValue("property 33"), (YamlSimpleValue) new YamlSimpleValue().setValue(33).setAnchor("Anchor33").setComment("Comment 33\nMultiline comment 33").setInlineComment("Inline comment 33"));
-			otherYamlMapping.put(new YamlSimpleValue().setValue("property 34"), (YamlSimpleValue) new YamlSimpleValue().setValue("String value 34").setAnchor("Anchor34").setComment("Comment 34\nMultiline comment 34").setInlineComment("Inline comment 34"));
-			otherYamlMapping.put(new YamlSimpleValue().setValue("property 35"), (YamlSimpleValue) new YamlSimpleValue().setValue("String value 35").setAnchor("Anchor35").setComment("Comment 35\nMultiline comment 35").setInlineComment("Inline comment 35"));
-			otherYamlMapping.put(new YamlSimpleValue().setValue("property 36"), (YamlSimpleValue) new YamlSimpleValue().setValue("String value 36").setAnchor("Anchor36").setComment("Comment 36\nMultiline comment 36").setInlineComment("Inline comment 36"));
-			otherYamlMapping.put(new YamlSimpleValue().setValue("property 37"), (YamlSimpleValue) new YamlSimpleValue().setValue("String value 37").setAnchor("Anchor37").setComment("Comment 37\nMultiline comment 37").setInlineComment("Inline comment 37"));
-			otherYamlMapping.put(new YamlSimpleValue().setValue("property 38"), (YamlSimpleValue) new YamlSimpleValue().setValue("String value 38").setAnchor("Anchor38").setComment("Comment 38\nMultiline comment 38").setInlineComment("Inline comment 38"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 31"), new YamlSimpleValue().setValue(null).setAnchor("Anchor31").setComment("Comment 31\nMultiline comment 31").setInlineComment("Inline comment 31"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 32"), new YamlSimpleValue().setValue(true).setAnchor("Anchor32").setComment("Comment 32\nMultiline comment 32").setInlineComment("Inline comment 32"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 33"), new YamlSimpleValue().setValue(33).setAnchor("Anchor33").setComment("Comment 33\nMultiline comment 33").setInlineComment("Inline comment 33"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 34"), new YamlSimpleValue().setValue("String value 34").setAnchor("Anchor34").setComment("Comment 34\nMultiline comment 34").setInlineComment("Inline comment 34"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 35"), new YamlSimpleValue().setValue("String value 35").setAnchor("Anchor35").setComment("Comment 35\nMultiline comment 35").setInlineComment("Inline comment 35"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 36"), new YamlSimpleValue().setValue("String value 36").setAnchor("Anchor36").setComment("Comment 36\nMultiline comment 36").setInlineComment("Inline comment 36"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 37"), new YamlSimpleValue().setValue("String value 37").setAnchor("Anchor37").setComment("Comment 37\nMultiline comment 37").setInlineComment("Inline comment 37"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 38"), new YamlSimpleValue().setValue("String value 38").setAnchor("Anchor38").setComment("Comment 38\nMultiline comment 38").setInlineComment("Inline comment 38"));
 			testYamlValue.put("property 6", otherYamlMapping);
 
-			testYamlValue.put(new YamlSimpleValue().setValue("property 7"), (YamlSimpleValue) new YamlSimpleValue().setValue(null).setAnchor("Anchor7").setComment("Comment 7\nMultiline comment 7").setInlineComment("Inline comment 7"));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 7"), new YamlSimpleValue().setValue(null).setAnchor("Anchor7").setComment("Comment 7\nMultiline comment 7").setInlineComment("Inline comment 7"));
 
 			testYamlValue.put("property 8", new YamlSequence().setAnchor("Anchor8").setComment("Comment 8\nMultiline comment 8").setInlineComment("Inline comment 8"));
 			testYamlValue.put("property 9", new YamlMapping().setAnchor("Anchor9").setComment("Comment 9\nMultiline comment 9").setInlineComment("Inline comment 9"));
@@ -132,14 +204,15 @@ public class YamlWriterTest {
 			Assert.fail(e.getMessage());
 		}
 	}
+
 	@Test
 	public void testYamlMappingFlow() {
 		try {
 			final YamlMapping testYamlValue = new YamlMapping().setStyle(YamlStyle.Flow).setAnchor("Anchor0").setComment("Comment 0\nMultiline comment 0").setInlineComment("Inline comment 0");
-			testYamlValue.put(new YamlSimpleValue().setValue("property 1"), (YamlSimpleValue) new YamlSimpleValue().setValue(null).setAnchor("Anchor1").setComment("Comment 1\nMultiline comment 1").setInlineComment("Inline comment 1"));
-			testYamlValue.put(new YamlSimpleValue().setValue("property 2"), (YamlSimpleValue) new YamlSimpleValue().setValue(true).setAnchor("Anchor2").setComment("Comment 2\nMultiline comment 2").setInlineComment("Inline comment 2"));
-			testYamlValue.put(new YamlSimpleValue().setValue("property 3"), (YamlSimpleValue) new YamlSimpleValue().setValue(1).setAnchor("Anchor3").setComment("Comment 3\nMultiline comment 3").setInlineComment("Inline comment 3"));
-			testYamlValue.put(new YamlSimpleValue().setValue("property 4"), (YamlSimpleValue) new YamlSimpleValue().setValue("String value 4").setAnchor("Anchor4").setComment("Comment 4\nMultiline comment 4").setInlineComment("Inline comment 4"));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 1"), new YamlSimpleValue().setValue(null).setAnchor("Anchor1").setComment("Comment 1\nMultiline comment 1").setInlineComment("Inline comment 1"));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 2"), new YamlSimpleValue().setValue(true).setAnchor("Anchor2").setComment("Comment 2\nMultiline comment 2").setInlineComment("Inline comment 2"));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 3"), new YamlSimpleValue().setValue(1).setAnchor("Anchor3").setComment("Comment 3\nMultiline comment 3").setInlineComment("Inline comment 3"));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 4"), new YamlSimpleValue().setValue("String value 4").setAnchor("Anchor4").setComment("Comment 4\nMultiline comment 4").setInlineComment("Inline comment 4"));
 
 			final YamlSequence otherYamlSequence = new YamlSequence().setStyle(YamlStyle.Flow).setAnchor("Anchor5").setComment("Comment 5\nMultiline comment 5").setInlineComment("Inline comment 5");
 			otherYamlSequence.add(new YamlSimpleValue().setValue(null).setAnchor("Anchor21"));
@@ -163,7 +236,7 @@ public class YamlWriterTest {
 			otherYamlMapping.put(new YamlSimpleValue().setValue("property 38"), new YamlSimpleValue().setValue("String value 38").setAnchor("Anchor38"));
 			testYamlValue.put("property 6", otherYamlMapping);
 
-			testYamlValue.put(new YamlSimpleValue().setValue("property 7"), (YamlSimpleValue) new YamlSimpleValue().setValue(null).setAnchor("Anchor7").setComment("Comment 7\nMultiline comment 7").setInlineComment("Inline comment 7"));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 7"), new YamlSimpleValue().setValue(null).setAnchor("Anchor7").setComment("Comment 7\nMultiline comment 7").setInlineComment("Inline comment 7"));
 
 			testYamlValue.put("property 8", new YamlSequence().setStyle(YamlStyle.Flow).setAnchor("Anchor8").setComment("Comment 8\nMultiline comment 8").setInlineComment("Inline comment 8"));
 			testYamlValue.put("property 9", new YamlMapping().setStyle(YamlStyle.Flow).setAnchor("Anchor9").setComment("Comment 9\nMultiline comment 9").setInlineComment("Inline comment 9"));
@@ -212,34 +285,34 @@ public class YamlWriterTest {
 	public void testYamlMappingBracket() {
 		try {
 			final YamlMapping testYamlValue = new YamlMapping().setStyle(YamlStyle.Bracket).setAnchor("Anchor0").setComment("Comment 0\nMultiline comment 0").setInlineComment("Inline comment 0");
-			testYamlValue.put(new YamlSimpleValue().setValue("property 1"), (YamlSimpleValue) new YamlSimpleValue().setValue(null).setAnchor("Anchor1").setComment("Comment 1\nMultiline comment 1").setInlineComment("Inline comment 1"));
-			testYamlValue.put(new YamlSimpleValue().setValue("property 2"), (YamlSimpleValue) new YamlSimpleValue().setValue(true).setAnchor("Anchor2").setComment("Comment 2\nMultiline comment 2").setInlineComment("Inline comment 2"));
-			testYamlValue.put(new YamlSimpleValue().setValue("property 3"), (YamlSimpleValue) new YamlSimpleValue().setValue(1).setAnchor("Anchor3").setComment("Comment 3\nMultiline comment 3").setInlineComment("Inline comment 3"));
-			testYamlValue.put(new YamlSimpleValue().setValue("property 4"), (YamlSimpleValue) new YamlSimpleValue().setValue("String value 4").setAnchor("Anchor4").setComment("Comment 4\nMultiline comment 4").setInlineComment("Inline comment 4"));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 1"), new YamlSimpleValue().setValue(null).setAnchor("Anchor1").setComment("Comment 1\nMultiline comment 1").setInlineComment("Inline comment 1"));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 2"), new YamlSimpleValue().setValue(true).setAnchor("Anchor2").setComment("Comment 2\nMultiline comment 2").setInlineComment("Inline comment 2"));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 3"), new YamlSimpleValue().setValue(1).setAnchor("Anchor3").setComment("Comment 3\nMultiline comment 3").setInlineComment("Inline comment 3"));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 4"), new YamlSimpleValue().setValue("String value 4").setAnchor("Anchor4").setComment("Comment 4\nMultiline comment 4").setInlineComment("Inline comment 4"));
 
 			final YamlSequence otherYamlSequence = new YamlSequence().setStyle(YamlStyle.Bracket).setAnchor("Anchor5").setComment("Comment 5\nMultiline comment 5").setInlineComment("Inline comment 5");
-			otherYamlSequence.add((YamlSimpleValue) new YamlSimpleValue().setValue(null).setAnchor("Anchor21").setComment("Comment 21\nMultiline comment 21").setInlineComment("Inline comment 21"));
-			otherYamlSequence.add((YamlSimpleValue) new YamlSimpleValue().setValue(true).setAnchor("Anchor22").setComment("Comment 22\nMultiline comment 22").setInlineComment("Inline comment 22"));
-			otherYamlSequence.add((YamlSimpleValue) new YamlSimpleValue().setValue(23).setAnchor("Anchor23").setComment("Comment 23\nMultiline comment 23").setInlineComment("Inline comment 23"));
-			otherYamlSequence.add((YamlSimpleValue) new YamlSimpleValue().setValue("String value 24").setAnchor("Anchor24").setComment("Comment 24\nMultiline comment 24").setInlineComment("Inline comment 24"));
-			otherYamlSequence.add((YamlSimpleValue) new YamlSimpleValue().setValue("String value 25").setAnchor("Anchor25").setComment("Comment 25\nMultiline comment 25").setInlineComment("Inline comment 25"));
-			otherYamlSequence.add((YamlSimpleValue) new YamlSimpleValue().setValue("String value 26").setAnchor("Anchor26").setComment("Comment 26\nMultiline comment 26").setInlineComment("Inline comment 26"));
-			otherYamlSequence.add((YamlSimpleValue) new YamlSimpleValue().setValue("String value 27").setAnchor("Anchor27").setComment("Comment 27\nMultiline comment 27").setInlineComment("Inline comment 27"));
-			otherYamlSequence.add((YamlSimpleValue) new YamlSimpleValue().setValue("String value 28").setAnchor("Anchor28").setComment("Comment 28\nMultiline comment 28").setInlineComment("Inline comment 28"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue(null).setAnchor("Anchor21").setComment("Comment 21\nMultiline comment 21").setInlineComment("Inline comment 21"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue(true).setAnchor("Anchor22").setComment("Comment 22\nMultiline comment 22").setInlineComment("Inline comment 22"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue(23).setAnchor("Anchor23").setComment("Comment 23\nMultiline comment 23").setInlineComment("Inline comment 23"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 24").setAnchor("Anchor24").setComment("Comment 24\nMultiline comment 24").setInlineComment("Inline comment 24"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 25").setAnchor("Anchor25").setComment("Comment 25\nMultiline comment 25").setInlineComment("Inline comment 25"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 26").setAnchor("Anchor26").setComment("Comment 26\nMultiline comment 26").setInlineComment("Inline comment 26"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 27").setAnchor("Anchor27").setComment("Comment 27\nMultiline comment 27").setInlineComment("Inline comment 27"));
+			otherYamlSequence.add(new YamlSimpleValue().setValue("String value 28").setAnchor("Anchor28").setComment("Comment 28\nMultiline comment 28").setInlineComment("Inline comment 28"));
 			testYamlValue.put("property 5", otherYamlSequence);
 
 			final YamlMapping otherYamlMapping = new YamlMapping().setStyle(YamlStyle.Bracket).setAnchor("Anchor6").setComment("Comment 6\nMultiline comment 6").setInlineComment("Inline comment 6");
-			otherYamlMapping.put(new YamlSimpleValue().setValue("property 31"), (YamlSimpleValue) new YamlSimpleValue().setValue(null).setAnchor("Anchor31").setComment("Comment 31\nMultiline comment 31").setInlineComment("Inline comment 31"));
-			otherYamlMapping.put(new YamlSimpleValue().setValue("property 32"), (YamlSimpleValue) new YamlSimpleValue().setValue(true).setAnchor("Anchor32").setComment("Comment 32\nMultiline comment 32").setInlineComment("Inline comment 32"));
-			otherYamlMapping.put(new YamlSimpleValue().setValue("property 33"), (YamlSimpleValue) new YamlSimpleValue().setValue(33).setAnchor("Anchor33").setComment("Comment 33\nMultiline comment 33").setInlineComment("Inline comment 33"));
-			otherYamlMapping.put(new YamlSimpleValue().setValue("property 34"), (YamlSimpleValue) new YamlSimpleValue().setValue("String value 34").setAnchor("Anchor34").setComment("Comment 34\nMultiline comment 34").setInlineComment("Inline comment 34"));
-			otherYamlMapping.put(new YamlSimpleValue().setValue("property 35"), (YamlSimpleValue) new YamlSimpleValue().setValue("String value 35").setAnchor("Anchor35").setComment("Comment 35\nMultiline comment 35").setInlineComment("Inline comment 35"));
-			otherYamlMapping.put(new YamlSimpleValue().setValue("property 36"), (YamlSimpleValue) new YamlSimpleValue().setValue("String value 36").setAnchor("Anchor36").setComment("Comment 36\nMultiline comment 36").setInlineComment("Inline comment 36"));
-			otherYamlMapping.put(new YamlSimpleValue().setValue("property 37"), (YamlSimpleValue) new YamlSimpleValue().setValue("String value 37").setAnchor("Anchor37").setComment("Comment 37\nMultiline comment 37").setInlineComment("Inline comment 37"));
-			otherYamlMapping.put(new YamlSimpleValue().setValue("property 38"), (YamlSimpleValue) new YamlSimpleValue().setValue("String value 38").setAnchor("Anchor38").setComment("Comment 38\nMultiline comment 38").setInlineComment("Inline comment 38"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 31"), new YamlSimpleValue().setValue(null).setAnchor("Anchor31").setComment("Comment 31\nMultiline comment 31").setInlineComment("Inline comment 31"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 32"), new YamlSimpleValue().setValue(true).setAnchor("Anchor32").setComment("Comment 32\nMultiline comment 32").setInlineComment("Inline comment 32"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 33"), new YamlSimpleValue().setValue(33).setAnchor("Anchor33").setComment("Comment 33\nMultiline comment 33").setInlineComment("Inline comment 33"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 34"), new YamlSimpleValue().setValue("String value 34").setAnchor("Anchor34").setComment("Comment 34\nMultiline comment 34").setInlineComment("Inline comment 34"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 35"), new YamlSimpleValue().setValue("String value 35").setAnchor("Anchor35").setComment("Comment 35\nMultiline comment 35").setInlineComment("Inline comment 35"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 36"), new YamlSimpleValue().setValue("String value 36").setAnchor("Anchor36").setComment("Comment 36\nMultiline comment 36").setInlineComment("Inline comment 36"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 37"), new YamlSimpleValue().setValue("String value 37").setAnchor("Anchor37").setComment("Comment 37\nMultiline comment 37").setInlineComment("Inline comment 37"));
+			otherYamlMapping.put(new YamlSimpleValue().setValue("property 38"), new YamlSimpleValue().setValue("String value 38").setAnchor("Anchor38").setComment("Comment 38\nMultiline comment 38").setInlineComment("Inline comment 38"));
 			testYamlValue.put("property 6", otherYamlMapping);
 
-			testYamlValue.put(new YamlSimpleValue().setValue("property 7"), (YamlSimpleValue) new YamlSimpleValue().setValue(null).setAnchor("Anchor7").setComment("Comment 7\nMultiline comment 7").setInlineComment("Inline comment 7"));
+			testYamlValue.put(new YamlSimpleValue().setValue("property 7"), new YamlSimpleValue().setValue(null).setAnchor("Anchor7").setComment("Comment 7\nMultiline comment 7").setInlineComment("Inline comment 7"));
 
 			testYamlValue.put("property 8", new YamlSequence().setStyle(YamlStyle.Bracket).setAnchor("Anchor8").setComment("Comment 8\nMultiline comment 8").setInlineComment("Inline comment 8"));
 			testYamlValue.put("property 9", new YamlMapping().setStyle(YamlStyle.Bracket).setAnchor("Anchor9").setComment("Comment 9\nMultiline comment 9").setInlineComment("Inline comment 9"));
