@@ -44,26 +44,26 @@ public class YamlUtilities {
 			return yamlReader.read();
 		}
 	}
-	
-	public static void checkReferencedAnchors(YamlNode yamlObject) throws Exception {
-		Set<String> availableAnchors = yamlObject.getAllAvailableAnchorIds();
-		Set<String> referencedAnchors = yamlObject.getAllReferencedAnchorIds();
-		for (String referencedAnchor : referencedAnchors) {
+
+	public static void checkReferencedAnchors(final YamlNode yamlObject) throws Exception {
+		final Set<String> availableAnchors = yamlObject.getAllAvailableAnchorIds();
+		final Set<String> referencedAnchors = yamlObject.getAllReferencedAnchorIds();
+		for (final String referencedAnchor : referencedAnchors) {
 			if (!availableAnchors.contains(referencedAnchor)) {
 				throw new Exception("Anchor id '" + referencedAnchor + "' is referenced but not defined");
 			}
 		}
 	}
 
-	public static String createMultiLineComment(String comment, Linebreak linebreakType) {
+	public static String createMultiLineComment(final String comment, final Linebreak linebreakType) {
 		String multiLineComment = "";
-		for (String commentLine : comment.replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+		for (final String commentLine : comment.replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
 			multiLineComment += "# " + commentLine + linebreakType.toString();
 		}
 		return multiLineComment;
 	}
 
-	public static String createSingleLineComment(String comment) {
+	public static String createSingleLineComment(final String comment) {
 		return "# " + comment.replaceAll("\r\n", " ").replaceAll("\r", " ").replaceAll("\r", " ");
 	}
 }

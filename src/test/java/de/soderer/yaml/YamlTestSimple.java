@@ -32,22 +32,22 @@ public class YamlTestSimple {
 	public void testSimpleSequenceEmpty() {
 		testYamlFile("simpleSequenceEmpty.yaml", YamlSequence.class);
 	}
-	
+
 	@Test
 	public void testSimpleMapping() {
 		testYamlFile("simpleMapping.yaml", YamlMapping.class);
 	}
-	
+
 	@Test
 	public void testSimpleMappingBracket() {
 		testYamlFile("simpleMappingBracket.yaml", YamlMapping.class);
 	}
-	
+
 	@Test
 	public void testSimpleMappingFlow() {
 		testYamlFile("simpleMappingFlow.yaml", YamlMapping.class);
 	}
-	
+
 	@Test
 	public void testSimpleMappingEmpty() {
 		testYamlFile("simpleMappingEmpty.yaml", YamlMapping.class);
@@ -97,7 +97,7 @@ public class YamlTestSimple {
 	public void testAnchorWithComment() {
 		testYamlFile("anchorWithComment.yaml", YamlSequence.class);
 	}
-	
+
 	@Test
 	public void testSimpleValues() {
 		try {
@@ -105,23 +105,23 @@ public class YamlTestSimple {
 			try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream("yaml/" + "simpleValues.yaml")) {
 				testData = IoUtilities.toByteArray(testDataStream);
 			}
-			
+
 			YamlValue testYamlValue;
 			try (YamlReader testsuiteReader = new YamlReader(new ByteArrayInputStream(testData))) {
 				testYamlValue = testsuiteReader.read();
 			}
-		
+
 			Assert.assertTrue(YamlSequence.class.isInstance(testYamlValue));
-			
+
 			String newString;
 			try (ByteArrayOutputStream output = new ByteArrayOutputStream();
 					YamlWriter writer = new YamlWriter(output, StandardCharsets.UTF_8);) {
 				writer.setAlwaysQuoteStringValues(true);
-				writer.add(testYamlValue);
+				writer.add(testYamlValue, false);
 				writer.flush();
 				newString = new String(output.toByteArray(), StandardCharsets.UTF_8);
 			}
-					
+
 			if (PRINT_TESTDATA) {
 				System.out.println("simpleValues.yaml" + " (" + YamlSequence.class.getSimpleName() + ")");
 				System.out.println(newString);
@@ -133,30 +133,30 @@ public class YamlTestSimple {
 		}
 	}
 
-	private void testYamlFile(String yamlTestFileName, Class<?> yamlType) {
+	private void testYamlFile(final String yamlTestFileName, final Class<?> yamlType) {
 		try {
 			byte[] testData;
 			try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream("yaml/" + yamlTestFileName)) {
 				testData = IoUtilities.toByteArray(testDataStream);
 			}
-			
+
 			YamlValue testYamlValue;
 			try (YamlReader testsuiteReader = new YamlReader(new ByteArrayInputStream(testData))) {
 				testYamlValue = testsuiteReader.read();
 			}
-			
+
 			Assert.assertTrue("Expected type " + yamlType + " but was " + testYamlValue.getClass(), yamlType.isInstance(testYamlValue));
-			
+
 			String newString;
 			try (ByteArrayOutputStream output = new ByteArrayOutputStream();
 					YamlWriter writer = new YamlWriter(output, StandardCharsets.UTF_8);) {
-				writer.add(testYamlValue);
+				writer.add(testYamlValue, false);
 				writer.flush();
 				newString = new String(output.toByteArray(), StandardCharsets.UTF_8);
 			}
-			
-			String oldString = new String(testData, StandardCharsets.UTF_8);
-			
+
+			final String oldString = new String(testData, StandardCharsets.UTF_8);
+
 			if (PRINT_TESTDATA) {
 				System.out.println(yamlTestFileName + " (" + yamlType.getSimpleName() + ")");
 				System.out.println(newString);

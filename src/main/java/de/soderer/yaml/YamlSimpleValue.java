@@ -26,6 +26,18 @@ public class YamlSimpleValue extends YamlNode {
 	}
 
 	@Override
+	public YamlSimpleValue setComment(final String comment) {
+		super.setComment(comment);
+		return this;
+	}
+
+	@Override
+	public YamlSimpleValue setInlineComment(final String inlineComment) {
+		super.setInlineComment(inlineComment);
+		return this;
+	}
+
+	@Override
 	public int hashCode() {
 		return Objects.hash(anchor, style, value, comment, inlineComment);
 	}
