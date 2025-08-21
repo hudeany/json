@@ -877,6 +877,8 @@ public class YamlReader extends BasicReader {
 				pendingAnchorId = null;
 			}
 
+			final long mappingStartLine = getReadLines();
+
 			while (true) {
 				readNextToken();
 				if (currentToken == YamlToken.YamlMapping_End) {
@@ -888,9 +890,9 @@ public class YamlReader extends BasicReader {
 
 					if (newYamlMapping.getStyle() == null) {
 						if (currentTokenIndentationLevel > 0) {
-							newYamlMapping.setStyle(YamlStyle.Bracket);
-						} else {
 							newYamlMapping.setStyle(YamlStyle.Flow);
+						} else {
+							newYamlMapping.setStyle(YamlStyle.Bracket);
 						}
 					}
 
@@ -916,6 +918,11 @@ public class YamlReader extends BasicReader {
 				}
 			}
 			checkTokenStack(YamlToken.YamlMapping_Start);
+			if (newYamlMapping.getStyle() == YamlStyle.Flow) {
+				if (mappingStartLine != getReadLines()) {
+					newYamlMapping.setStyle(YamlStyle.Bracket);
+				}
+			}
 			return newYamlMapping;
 		}
 	}

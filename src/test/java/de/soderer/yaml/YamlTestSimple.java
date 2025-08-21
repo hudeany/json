@@ -6,10 +6,13 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.Assert;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 import de.soderer.json.utilities.IoUtilities;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class YamlTestSimple {
 	public static boolean PRINT_TESTDATA = false;
 
@@ -59,8 +62,19 @@ public class YamlTestSimple {
 	}
 
 	@Test
+	public void testSimpleMappingWithBracketSequenceWithNewLine() {
+		testYamlFile("simpleMappingWithBracketSequence.yaml", YamlMapping.class);
+		testYamlFile("simpleMappingWithBracketSequenceWithNewLine.yaml", "simpleMappingWithBracketSequence.yaml", YamlMapping.class);
+	}
+
+	@Test
 	public void testSimpleMappingWithBracketSequence() {
 		testYamlFile("simpleMappingWithBracketSequence.yaml", YamlMapping.class);
+	}
+
+	@Test
+	public void testSimpleMappingWithBracketMappingWithNewLine() {
+		testYamlFile("simpleMappingWithBracketMappingWithNewLine.yaml", "simpleMappingWithBracketMapping.yaml", YamlMapping.class);
 	}
 
 	@Test
@@ -149,7 +163,7 @@ public class YamlTestSimple {
 
 			String newString;
 			try (ByteArrayOutputStream output = new ByteArrayOutputStream();
-					YamlWriter writer = new YamlWriter(output, StandardCharsets.UTF_8);) {
+					YamlWriter writer = new YamlWriter(output, StandardCharsets.UTF_8)) {
 				writer.add(testYamlValue, false);
 				writer.flush();
 				newString = new String(output.toByteArray(), StandardCharsets.UTF_8);
@@ -163,6 +177,50 @@ public class YamlTestSimple {
 				System.out.println();
 			}
 			Assert.assertEquals(oldString.replace("\r\n", "\n").replace("\r", "\n"), newString);
+		} catch (final Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		}
+	}
+
+	private void testYamlFile(final String yamlTestFileNameInput, final String yamlTestFileNameOutput, final Class<?> yamlType) {
+		try {
+			if (PRINT_TESTDATA) {
+				System.out.println(yamlTestFileNameInput + " (" + yamlType.getSimpleName() + ")");
+			}
+
+			byte[] testDataIn;
+			try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream("yaml/" + yamlTestFileNameInput)) {
+				testDataIn = IoUtilities.toByteArray(testDataStream);
+			}
+
+			byte[] testDataOut;
+			try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream("yaml/" + yamlTestFileNameOutput)) {
+				testDataOut = IoUtilities.toByteArray(testDataStream);
+			}
+
+			YamlValue testYamlValue;
+			try (YamlReader testsuiteReader = new YamlReader(new ByteArrayInputStream(testDataIn))) {
+				testYamlValue = testsuiteReader.read();
+			}
+
+			Assert.assertTrue("Expected type " + yamlType + " but was " + testYamlValue.getClass(), yamlType.isInstance(testYamlValue));
+
+			String newString;
+			try (ByteArrayOutputStream output = new ByteArrayOutputStream();
+					YamlWriter writer = new YamlWriter(output, StandardCharsets.UTF_8)) {
+				writer.add(testYamlValue, false);
+				writer.flush();
+				newString = new String(output.toByteArray(), StandardCharsets.UTF_8);
+			}
+
+			final String oldString = new String(testDataOut, StandardCharsets.UTF_8);
+
+			if (PRINT_TESTDATA) {
+				System.out.println(newString);
+				System.out.println();
+			}
+			Assert.assertEquals(oldString.replace("\r\n", "\n").replace("\r", "\n"), newString.replace("\r\n", "\n").replace("\r", "\n"));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());

@@ -476,18 +476,24 @@ public class YamlWriter implements Closeable {
 						if (!omitComments && entry.getValue().getInlineComment() != null) {
 							inlineCommentPart = " # " + entry.getValue().getInlineComment();
 						}
-						write(getSimpleValueString(entry.getKey(), null) + ":" + anchorPart + inlineCommentPart + linebreakType.toString() + Utilities.repeat(indentation, currentIndentationLevel), !skipNextIndentation);
-						currentIndentationLevel++;
-						if (!omitComments && entry.getValue().getComment() != null) {
-							for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
-								write("# " + commentLine + linebreakType.toString(), true);
-							}
-						}
-						add(entry.getValue(), true);
-						if (((YamlSequence) entry.getValue()).size() == 0) {
+						if ((entry.getValue().getStyle() == YamlStyle.Flow || entry.getValue().getStyle() == YamlStyle.Bracket) && !entry.getValue().hasComments()) {
+							write(getSimpleValueString(entry.getKey(), null) + ":" + anchorPart + inlineCommentPart + " ", isFirstProperty ? initiallyIndent : true);
+							add((YamlSequence) entry.getValue(), false);
 							write(linebreakType.toString(), false);
+						} else {
+							write(getSimpleValueString(entry.getKey(), null) + ":" + anchorPart + inlineCommentPart + linebreakType.toString() + Utilities.repeat(indentation, currentIndentationLevel), !skipNextIndentation);
+							currentIndentationLevel++;
+							if (!omitComments && entry.getValue().getComment() != null) {
+								for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+									write("# " + commentLine + linebreakType.toString(), true);
+								}
+							}
+							add(entry.getValue(), true);
+							if (((YamlSequence) entry.getValue()).size() == 0) {
+								write(linebreakType.toString(), false);
+							}
+							currentIndentationLevel--;
 						}
-						currentIndentationLevel--;
 					} else if (entry.getValue() instanceof YamlMapping) {
 						String anchorPart = "";
 						if (entry.getValue().getAnchor() != null) {
@@ -497,18 +503,24 @@ public class YamlWriter implements Closeable {
 						if (!omitComments && entry.getValue().getInlineComment() != null) {
 							inlineCommentPart = " # " + entry.getValue().getInlineComment();
 						}
-						write(getSimpleValueString(entry.getKey(), null) + ":" + anchorPart + inlineCommentPart + linebreakType.toString(), isFirstProperty ? initiallyIndent : true);
-						currentIndentationLevel++;
-						if (!omitComments && entry.getValue().getComment() != null) {
-							for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
-								write("# " + commentLine + linebreakType.toString(), true);
-							}
-						}
-						add((YamlMapping) entry.getValue(), true);
-						if (((YamlMapping) entry.getValue()).size() == 0) {
+						if ((entry.getValue().getStyle() == YamlStyle.Flow || entry.getValue().getStyle() == YamlStyle.Bracket) && !entry.getValue().hasComments()) {
+							write(getSimpleValueString(entry.getKey(), null) + ":" + anchorPart + inlineCommentPart + " ", isFirstProperty ? initiallyIndent : true);
+							add((YamlMapping) entry.getValue(), false);
 							write(linebreakType.toString(), false);
+						} else {
+							write(getSimpleValueString(entry.getKey(), null) + ":" + anchorPart + inlineCommentPart + linebreakType.toString(), isFirstProperty ? initiallyIndent : true);
+							currentIndentationLevel++;
+							if (!omitComments && entry.getValue().getComment() != null) {
+								for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+									write("# " + commentLine + linebreakType.toString(), true);
+								}
+							}
+							add((YamlMapping) entry.getValue(), true);
+							if (((YamlMapping) entry.getValue()).size() == 0) {
+								write(linebreakType.toString(), false);
+							}
+							currentIndentationLevel--;
 						}
-						currentIndentationLevel--;
 					} else if (entry.getValue() instanceof YamlSimpleValue) {
 						if (!omitComments && entry.getValue().getComment() != null) {
 							for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
