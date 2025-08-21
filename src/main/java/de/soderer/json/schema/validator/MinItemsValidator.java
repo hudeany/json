@@ -42,7 +42,9 @@ public class MinItemsValidator extends BaseJsonSchemaValidator {
 				throw new JsonSchemaDataValidationError("Expected data type 'array' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {
-			if (((JsonArray) jsonNode.getValue()).size() < ((Integer) validatorData)) {
+			if (!(validatorData instanceof Integer)) {
+				throw new JsonSchemaDataValidationError("Minimum limit value is not an integer", jsonPath);
+			} else if (((JsonArray) jsonNode.getValue()).size() < ((Integer) validatorData)) {
 				throw new JsonSchemaDataValidationError("Required minimum number of items is '" + validatorData + "' but was '" + ((JsonArray) jsonNode.getValue()).size() + "'", jsonPath);
 			}
 		}

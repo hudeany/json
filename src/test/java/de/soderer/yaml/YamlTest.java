@@ -59,15 +59,15 @@ public class YamlTest {
 			System.out.println(testYamlValue);
 			System.out.println();
 
-			// TODO: remove for general tests
-			Assert.assertEquals(YamlSequence.class, testYamlValue.getClass());
-			Assert.assertEquals(1, ((YamlSequence) testYamlValue).size());
-			final Object yamlObject = ((YamlSequence) testYamlValue).get(0);
-			Assert.assertEquals(YamlMapping.class, yamlObject.getClass());
-			Assert.assertEquals(1, ((YamlMapping) yamlObject).size());
-			Assert.assertNull(((YamlMapping) yamlObject).get("preitem"));
-			Assert.assertEquals("Text 1", ((YamlMapping) yamlObject).get("property1a"));
-			// TODO: remove for general tests
+			//			// TODO: remove for general tests
+			//			Assert.assertEquals(YamlSequence.class, testYamlValue.getClass());
+			//			Assert.assertEquals(1, ((YamlSequence) testYamlValue).size());
+			//			final Object yamlObject = ((YamlSequence) testYamlValue).get(0);
+			//			Assert.assertEquals(YamlMapping.class, yamlObject.getClass());
+			//			Assert.assertEquals(1, ((YamlMapping) yamlObject).size());
+			//			Assert.assertNull(((YamlMapping) yamlObject).get("preitem"));
+			//			Assert.assertEquals("Text 1", ((YamlMapping) yamlObject).get("property1a"));
+			//			// TODO: remove for general tests
 
 			Assert.assertTrue("Expected type " + yamlType + " but was " + testYamlValue.getClass(), yamlType.isInstance(testYamlValue));
 

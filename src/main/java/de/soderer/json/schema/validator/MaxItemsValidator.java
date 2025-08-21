@@ -43,10 +43,8 @@ public class MaxItemsValidator extends BaseJsonSchemaValidator {
 			}
 		} else {
 			if (!(validatorData instanceof Integer)) {
-				System.out.println(); // TODO
-			}
-
-			if (((JsonArray) jsonNode.getValue()).size() > ((Integer) validatorData)) {
+				throw new JsonSchemaDataValidationError("Maximum limit value is not an integer", jsonPath);
+			} else if (((JsonArray) jsonNode.getValue()).size() > ((Integer) validatorData)) {
 				throw new JsonSchemaDataValidationError("Required maximum number of items is '" + validatorData + "' but was '" + ((JsonArray) jsonNode.getValue()).size() + "'", jsonPath);
 			}
 		}
