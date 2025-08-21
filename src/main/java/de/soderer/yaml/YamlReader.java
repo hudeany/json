@@ -17,7 +17,10 @@ import de.soderer.yaml.directive.VersionDirective;
 import de.soderer.yaml.directive.YamlDirective;
 
 public class YamlReader extends BasicReader {
-	private final boolean verboseLog = false;
+	private boolean verboseLog = false;
+	public void setVerboseLog(final boolean verboseLog) {
+		this.verboseLog = verboseLog;
+	}
 
 	private boolean lenient = false;
 	private boolean documentContentStarted = false;

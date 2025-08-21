@@ -22,7 +22,10 @@ import de.soderer.json.utilities.Utilities;
 import de.soderer.yaml.directive.YamlDirective;
 
 public class YamlWriter implements Closeable {
-	private final boolean verboseLog = true;
+	private boolean verboseLog = false;
+	public void setVerboseLog(final boolean verboseLog) {
+		this.verboseLog = verboseLog;
+	}
 
 	/** Default output encoding. */
 	public static final Charset DEFAULT_ENCODING = StandardCharsets.UTF_8;
@@ -634,7 +637,6 @@ public class YamlWriter implements Closeable {
 				}
 			} else {
 				for (final YamlNode sequenceItem : yamlSequence) {
-					// TODO
 					if (!omitComments && sequenceItem.getComment() != null) {
 						for (final String commentLine : sequenceItem.getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
 							write("# " + commentLine + linebreakType.toString(), true);
