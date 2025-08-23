@@ -27,7 +27,8 @@ public class YamlReader extends BasicReader {
 	private YamlDocument currentDocument = null;
 	private YamlDocumentList documents = null;
 	private YamlToken currentToken = null;
-	private int currentTokenIndentationLevel = -1;
+	private int currentMappingTokenIndentationLevel = -1;
+	private int currentSequenceTokenIndentationLevel = -1;
 	private YamlSimpleValue currentYamlSimpleObject = null;
 	private YamlNode currentYamlMappingEntryKey = null;
 	private String pendingComment = null;
@@ -122,12 +123,12 @@ public class YamlReader extends BasicReader {
 				returnObject = readYamlMappingWithBrackets();
 				readNextToken();
 			} else if (currentToken == YamlToken.YamlMapping_Property) {
-				returnObject = readYamlMapping(currentTokenIndentationLevel);
+				returnObject = readYamlMapping(currentMappingTokenIndentationLevel);
 			} else if (currentToken == YamlToken.YamlSequence_Start) {
 				returnObject = readYamlSequenceWithBrackets();
 				readNextToken();
 			} else if (currentToken == YamlToken.YamlSequence_Item) {
-				returnObject = readYamlSequence();
+				returnObject = readYamlSequence(currentSequenceTokenIndentationLevel);
 			} else if (currentToken == YamlToken.YamlSimpleValue) {
 				returnObject = currentYamlSimpleObject;
 			} else if (currentToken == null) {
@@ -234,6 +235,7 @@ public class YamlReader extends BasicReader {
 				case '-':
 					nextChar = readNextCharacter();
 					if (nextChar == ' ' || nextChar == '\n' || nextChar == '\r' || nextChar == '\t') {
+						currentSequenceTokenIndentationLevel = (int) getReadCharactersInCurrentLine() - 2;
 						yamlToken = YamlToken.YamlSequence_Item;
 					} else if (nextChar == '-') {
 						nextChar = readNextCharacter();
@@ -399,8 +401,6 @@ public class YamlReader extends BasicReader {
 					throw new Exception("YamlNode as Mapping key not implemented yet");
 					//					break;
 				default: // YamlMapping simple property key or simple YamlSequence item
-					currentTokenIndentationLevel = (int) getReadCharactersInCurrentLine() - 1;
-
 					String text;
 					try {
 						if (currentChar == '"') {
@@ -425,6 +425,7 @@ public class YamlReader extends BasicReader {
 
 					nextChar = readNextNonWhitespaceWithinLine();
 					if (nextChar != null && nextChar == ':') {
+						currentMappingTokenIndentationLevel = (int) getReadCharactersInCurrentLine() - 1;
 						currentYamlMappingEntryKey = parseSimpleYamlValue(text);
 						currentYamlSimpleObject = null;
 
@@ -476,7 +477,7 @@ public class YamlReader extends BasicReader {
 
 			currentToken = yamlToken;
 			if (verboseLog) {
-				System.out.println("next Token: " + NumberUtilities.formatNumber(currentTokenIndentationLevel, 3, '.', null) + " " + currentToken + (currentToken == YamlToken.YamlMapping_Property ? "'" + currentYamlMappingEntryKey + "'" : ""));
+				System.out.println("next Token: " + NumberUtilities.formatNumber(currentMappingTokenIndentationLevel, 3, '.', null) + " " + currentToken + (currentToken == YamlToken.YamlMapping_Property ? "'" + currentYamlMappingEntryKey + "'" : ""));
 			}
 		}
 	}
@@ -614,7 +615,7 @@ public class YamlReader extends BasicReader {
 		return returnValue;
 	}
 
-	private YamlSequence readYamlSequence() throws Exception {
+	private YamlSequence readYamlSequence(final int yamlSeqenceIndentationLevel) throws Exception {
 		if (currentToken != YamlToken.YamlSequence_Item) {
 			throw new Exception("Invalid read position for YamlSequence in line " + (getReadLines() + 1) +" starting at position " + (getReadCharactersInCurrentLine() -1) + " at overall index " + (getReadCharacters() - 1));
 		} else {
@@ -629,7 +630,7 @@ public class YamlReader extends BasicReader {
 				pendingAnchorId = null;
 			}
 
-			final int yamlSequenceIndentationLevel = currentTokenIndentationLevel;
+			final int yamlSequenceIndentationLevel = currentSequenceTokenIndentationLevel;
 			long yamlSequenceStartLine = getReadLines();
 			if (getCurrentChar() == '\n') {
 				yamlSequenceStartLine--;
@@ -644,7 +645,7 @@ public class YamlReader extends BasicReader {
 					newYamlSequence.add(readYamlMappingWithBrackets());
 					readNextToken();
 				} else if (currentToken == YamlToken.YamlMapping_Property) {
-					newYamlSequence.add(readYamlMapping(currentTokenIndentationLevel));
+					newYamlSequence.add(readYamlMapping(currentMappingTokenIndentationLevel));
 				} else if (currentToken == YamlToken.YamlSequence_Start) {
 					newYamlSequence.add(readYamlSequenceWithBrackets());
 					readNextToken();
@@ -652,7 +653,7 @@ public class YamlReader extends BasicReader {
 					if (yamlSequenceStartLine == getReadLines()) {
 						throw new Exception("Invalid complex property value in same line as sequence start");
 					} else {
-						newYamlSequence.add(readYamlSequence());
+						newYamlSequence.add(readYamlSequence(currentSequenceTokenIndentationLevel));
 					}
 				} else if (currentToken == YamlToken.YamlSimpleValue) {
 					newYamlSequence.add(currentYamlSimpleObject);
@@ -668,7 +669,7 @@ public class YamlReader extends BasicReader {
 
 				checkTokenStack(YamlToken.YamlSequence_Item);
 
-				if (currentToken != YamlToken.YamlSequence_Item || yamlSequenceIndentationLevel != currentTokenIndentationLevel) {
+				if (currentToken != YamlToken.YamlSequence_Item || yamlSequenceIndentationLevel != currentSequenceTokenIndentationLevel) {
 					break;
 				}
 			}
@@ -710,7 +711,7 @@ public class YamlReader extends BasicReader {
 					if (currentToken == YamlToken.YamlSimpleValue) {
 						newYamlSequence.add(currentYamlSimpleObject);
 					} else if (currentToken == YamlToken.YamlMapping_Property) {
-						newYamlSequence.add(readYamlMapping(currentTokenIndentationLevel));
+						newYamlSequence.add(readYamlMapping(currentMappingTokenIndentationLevel));
 					} else {
 						throw new Exception("Invalid internal state: " + currentToken);
 					}
@@ -784,7 +785,7 @@ public class YamlReader extends BasicReader {
 						if (yamlMappingStartLine == getReadLines()) {
 							throw new Exception("Invalid complex property value in same line as property key");
 						} else {
-							entryValue = readYamlMapping(currentTokenIndentationLevel);
+							entryValue = readYamlMapping(currentMappingTokenIndentationLevel);
 						}
 						break;
 					case YamlMapping_End:
@@ -802,7 +803,7 @@ public class YamlReader extends BasicReader {
 						if (yamlMappingStartLine == getReadLines()) {
 							throw new Exception("Invalid complex property value in same line as property key");
 						} else {
-							final YamlSequence yamlSequence = readYamlSequence();
+							final YamlSequence yamlSequence = readYamlSequence(currentSequenceTokenIndentationLevel);
 							if (pendingComment != null) {
 								yamlSequence.setInlineComment(pendingComment);
 								pendingComment = null;
@@ -853,7 +854,7 @@ public class YamlReader extends BasicReader {
 						readNextToken();
 					}
 
-					if (currentToken != YamlToken.YamlMapping_Property || yamlMappingIndentationLevel != currentTokenIndentationLevel) {
+					if (currentToken != YamlToken.YamlMapping_Property || yamlMappingIndentationLevel != currentMappingTokenIndentationLevel) {
 						break;
 					}
 				}
@@ -889,7 +890,7 @@ public class YamlReader extends BasicReader {
 					checkTokenStackWithoutPop(YamlToken.YamlMapping_Start);
 
 					if (newYamlMapping.getStyle() == null) {
-						if (currentTokenIndentationLevel > 0) {
+						if (mappingStartLine == getReadLines()) {
 							newYamlMapping.setStyle(YamlStyle.Flow);
 						} else {
 							newYamlMapping.setStyle(YamlStyle.Bracket);
@@ -903,11 +904,11 @@ public class YamlReader extends BasicReader {
 					if (currentToken == YamlToken.YamlMapping_Start) {
 						entryValue = readYamlMappingWithBrackets();
 					} else if (currentToken == YamlToken.YamlMapping_Property) {
-						entryValue = readYamlMapping(currentTokenIndentationLevel);
+						entryValue = readYamlMapping(currentMappingTokenIndentationLevel);
 					} else if (currentToken == YamlToken.YamlSequence_Start) {
 						entryValue = readYamlSequenceWithBrackets();
 					} else if (currentToken == YamlToken.YamlSequence_Item) {
-						entryValue = readYamlSequence();
+						entryValue = readYamlSequence(currentSequenceTokenIndentationLevel);
 					} else if (currentToken == YamlToken.YamlSimpleValue) {
 						entryValue = currentYamlSimpleObject;
 					} else {
@@ -939,7 +940,7 @@ public class YamlReader extends BasicReader {
 		readNextToken();
 		switch (currentToken) {
 			case YamlMapping_Start:
-				return readYamlMapping(currentTokenIndentationLevel);
+				return readYamlMapping(currentMappingTokenIndentationLevel);
 			case YamlSequence_Start:
 				return readYamlSequenceWithBrackets();
 			case YamlSimpleValue:

@@ -248,7 +248,7 @@ public class YamlWriterTest {
 					+ "{property 1: null, property 2: true, property 3: 1, property 4: String value 4, "
 					+ "property 5: [null, true, 23, String value 24, String value 25, String value 26, String value 27, String value 28], "
 					+ "property 6: {property 31: null, property 32: true, property 33: 33, property 34: String value 34, property 35: String value 35, property 36: String value 36, property 37: String value 37, property 38: String value 38}, "
-					+ "property 7: null, property 8: [], property 9: {}}";
+					+ "property 7: null, property 8: [], property 9: {}}\n";
 
 			testYamlObject(expectedString, testYamlValue);
 		} catch (final Exception e) {
@@ -325,7 +325,7 @@ public class YamlWriterTest {
 					+ "  # Comment 9\n"
 					+ "  # Multiline comment 9\n"
 					+ "  property 9: {} &Anchor9 # Inline comment 9\n"
-					+ "}";
+					+ "}\n";
 
 			testYamlObject(expectedString, testYamlValue);
 		} catch (final Exception e) {
@@ -451,7 +451,7 @@ public class YamlWriterTest {
 					+ "  # Comment 9\n"
 					+ "  # Multiline comment 9\n"
 					+ "  property 9: {} &Anchor9 # Inline comment 9\n"
-					+ "}";
+					+ "}\n";
 
 			testYamlObject(expectedString, testYamlValue);
 		} catch (final Exception e) {
@@ -875,17 +875,17 @@ public class YamlWriterTest {
 	@Test
 	public void testSimple10() {
 		try {
-			final YamlSequence yamlSubSequnce1 = new YamlSequence().setStyle(YamlStyle.Bracket);
-			yamlSubSequnce1.add("value 11");
-			yamlSubSequnce1.add("value 12");
+			final YamlSequence yamlSubSequence1 = new YamlSequence().setStyle(YamlStyle.Bracket);
+			yamlSubSequence1.add("value 11");
+			yamlSubSequence1.add("value 12");
 
-			final YamlSequence yamlSubSequnce2 = new YamlSequence().setStyle(YamlStyle.Bracket);
-			yamlSubSequnce2.add("value 21");
-			yamlSubSequnce2.add("value 22");
+			final YamlSequence yamlSubSequence2 = new YamlSequence().setStyle(YamlStyle.Bracket);
+			yamlSubSequence2.add("value 21");
+			yamlSubSequence2.add("value 22");
 
 			final YamlMapping yamlMapping = new YamlMapping();
-			yamlMapping.put("property 1", yamlSubSequnce1);
-			yamlMapping.put("property 2", yamlSubSequnce2);
+			yamlMapping.put("property 1", yamlSubSequence1);
+			yamlMapping.put("property 2", yamlSubSequence2);
 
 			final String expectedString = ""
 					+ "property 1: [\n"
@@ -904,12 +904,72 @@ public class YamlWriterTest {
 		}
 	}
 
+	@Test
+	public void testSimple11() {
+		try {
+			final YamlMapping yamlMapping1 = new YamlMapping().setStyle(YamlStyle.Bracket);
+			yamlMapping1.put("property 11", "value 11");
+			yamlMapping1.put("property 12", "value 12");
+
+			final YamlMapping yamlMapping2 = new YamlMapping().setStyle(YamlStyle.Bracket);
+			yamlMapping2.put("property 21", "value 21");
+			yamlMapping2.put("property 22", "value 22");
+
+			final YamlSequence yamlSequence = new YamlSequence();
+			yamlSequence.add(yamlMapping1);
+			yamlSequence.add(yamlMapping2);
+
+			final String expectedString = ""
+					+ "- {\n"
+					+ "    property 11: value 11,\n"
+					+ "    property 12: value 12\n"
+					+ "  }\n"
+					+ "- {\n"
+					+ "    property 21: value 21,\n"
+					+ "    property 22: value 22\n"
+					+ "  }\n";
+
+			testYamlObject(expectedString, yamlSequence);
+		} catch (final Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testSimple12() {
+		try {
+			final YamlMapping yamlMapping1 = new YamlMapping();
+			yamlMapping1.put("property 11", "value 11");
+			yamlMapping1.put("property 12", "value 12");
+
+			final YamlMapping yamlMapping2 = new YamlMapping();
+			yamlMapping2.put("property 21", "value 21");
+			yamlMapping2.put("property 22", "value 22");
+
+			final YamlSequence yamlSequence = new YamlSequence();
+			yamlSequence.add(yamlMapping1);
+			yamlSequence.add(yamlMapping2);
+
+			final String expectedString = ""
+					+ "- property 11: value 11\n"
+					+ "  property 12: value 12\n"
+					+ "- property 21: value 21\n"
+					+ "  property 22: value 22\n";
+
+			testYamlObject(expectedString, yamlSequence);
+		} catch (final Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		}
+	}
+
 	private static void testYamlObject(final String expectedString, final YamlValue testYamlValue) throws Exception {
 		String newString;
 		try (ByteArrayOutputStream output = new ByteArrayOutputStream();
 				YamlWriter writer = new YamlWriter(output, StandardCharsets.UTF_8)) {
 			writer.setVerboseLog(true);
-			writer.add(testYamlValue, false);
+			writer.write(testYamlValue);
 			writer.flush();
 			newString = new String(output.toByteArray(), StandardCharsets.UTF_8);
 		}

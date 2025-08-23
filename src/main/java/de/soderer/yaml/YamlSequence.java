@@ -145,4 +145,13 @@ public class YamlSequence extends YamlNode implements Iterable<YamlNode> {
 		super.setInlineComment(inlineComment);
 		return this;
 	}
+
+	public boolean hasComplexChild() {
+		for (final YamlNode item : this) {
+			if (!(item instanceof YamlSimpleValue)) {
+				return true;
+			}
+		}
+		return false;
+	}
 }

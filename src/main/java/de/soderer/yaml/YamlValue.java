@@ -48,7 +48,7 @@ public abstract class YamlValue {
 	public String toString() {
 		try (ByteArrayOutputStream output = new ByteArrayOutputStream();
 				YamlWriter writer = new YamlWriter(output, StandardCharsets.UTF_8);) {
-			writer.add(this, false);
+			writer.write(this);
 			writer.flush();
 			return new String(output.toByteArray(), StandardCharsets.UTF_8);
 		} catch (final Exception e) {

@@ -131,7 +131,7 @@ public class YamlTestSimple {
 			try (ByteArrayOutputStream output = new ByteArrayOutputStream();
 					YamlWriter writer = new YamlWriter(output, StandardCharsets.UTF_8);) {
 				writer.setAlwaysQuoteStringValues(true);
-				writer.add(testYamlValue, false);
+				writer.write(testYamlValue);
 				writer.flush();
 				newString = new String(output.toByteArray(), StandardCharsets.UTF_8);
 			}
@@ -156,6 +156,7 @@ public class YamlTestSimple {
 
 			YamlValue testYamlValue;
 			try (YamlReader testsuiteReader = new YamlReader(new ByteArrayInputStream(testData))) {
+				testsuiteReader.setVerboseLog(true);
 				testYamlValue = testsuiteReader.read();
 			}
 
@@ -164,7 +165,7 @@ public class YamlTestSimple {
 			String newString;
 			try (ByteArrayOutputStream output = new ByteArrayOutputStream();
 					YamlWriter writer = new YamlWriter(output, StandardCharsets.UTF_8)) {
-				writer.add(testYamlValue, false);
+				writer.write(testYamlValue);
 				writer.flush();
 				newString = new String(output.toByteArray(), StandardCharsets.UTF_8);
 			}
@@ -209,7 +210,7 @@ public class YamlTestSimple {
 			String newString;
 			try (ByteArrayOutputStream output = new ByteArrayOutputStream();
 					YamlWriter writer = new YamlWriter(output, StandardCharsets.UTF_8)) {
-				writer.add(testYamlValue, false);
+				writer.write(testYamlValue);
 				writer.flush();
 				newString = new String(output.toByteArray(), StandardCharsets.UTF_8);
 			}
