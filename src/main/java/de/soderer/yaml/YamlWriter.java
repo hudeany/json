@@ -23,8 +23,9 @@ import de.soderer.yaml.directive.YamlDirective;
 
 public class YamlWriter implements Closeable {
 	private boolean verboseLog = false;
-	public void setVerboseLog(final boolean verboseLog) {
+	public YamlWriter setVerboseLog(final boolean verboseLog) {
 		this.verboseLog = verboseLog;
+		return this;
 	}
 
 	/** Default output encoding. */
@@ -145,7 +146,7 @@ public class YamlWriter implements Closeable {
 		return writtenCharacters;
 	}
 
-	public void openYamlMapping() throws Exception {
+	public YamlWriter openYamlMapping() throws Exception {
 		if (outputWriter == null) {
 			write("{", true);
 			openYamlStackItems.push(YamlStackItem.Mapping_Empty);
@@ -172,9 +173,10 @@ public class YamlWriter implements Closeable {
 				openYamlStackItems.push(YamlStackItem.Mapping_Empty);
 			}
 		}
+		return this;
 	}
 
-	public void openYamlObjectProperty(final String propertyName) throws Exception {
+	public YamlWriter openYamlObjectProperty(final String propertyName) throws Exception {
 		final YamlStackItem latestOpenYamlItem = openYamlStackItems.pop();
 		if (latestOpenYamlItem != YamlStackItem.Mapping_Empty && latestOpenYamlItem != YamlStackItem.Mapping) {
 			openYamlStackItems.push(latestOpenYamlItem);
@@ -189,9 +191,10 @@ public class YamlWriter implements Closeable {
 			write(formatPropertyNameOutput(propertyName) + ":", true);
 			openYamlStackItems.push(YamlStackItem.Mapping_Value);
 		}
+		return this;
 	}
 
-	public void addSimpleYamlObjectPropertyValue(final Object propertyValue) throws Exception {
+	public YamlWriter addSimpleYamlObjectPropertyValue(final Object propertyValue) throws Exception {
 		final YamlStackItem latestOpenYamlItem = openYamlStackItems.pop();
 		if (latestOpenYamlItem != YamlStackItem.Mapping_Value) {
 			openYamlStackItems.push(latestOpenYamlItem);
@@ -223,9 +226,10 @@ public class YamlWriter implements Closeable {
 				write(separator + "\"" + formatStringValueOutput(propertyValue.toString()) + "\"", false);
 			}
 		}
+		return this;
 	}
 
-	public void closeYamlMapping() throws Exception {
+	public YamlWriter closeYamlMapping() throws Exception {
 		final YamlStackItem latestOpenYamlItem = openYamlStackItems.pop();
 		if (latestOpenYamlItem != YamlStackItem.Mapping_Empty && latestOpenYamlItem != YamlStackItem.Mapping) {
 			openYamlStackItems.push(latestOpenYamlItem);
@@ -240,9 +244,10 @@ public class YamlWriter implements Closeable {
 		if (openYamlStackItems.size() > 0 && openYamlStackItems.peek() == YamlStackItem.Mapping_Value) {
 			openYamlStackItems.pop();
 		}
+		return this;
 	}
 
-	public void addSimpleYamlArrayValue(final Object arrayValue) throws Exception {
+	public YamlWriter addSimpleYamlArrayValue(final Object arrayValue) throws Exception {
 		final YamlStackItem latestOpenYamlItem = openYamlStackItems.pop();
 		if (latestOpenYamlItem != YamlStackItem.Sequence_Empty && latestOpenYamlItem != YamlStackItem.Sequence) {
 			openYamlStackItems.push(latestOpenYamlItem);
@@ -257,17 +262,19 @@ public class YamlWriter implements Closeable {
 
 			write(getSimpleValueString(arrayValue, null), true);
 		}
+		return this;
 	}
 
-	public void addSimpleValue(final Object value, final boolean initiallyIndent) throws Exception {
+	public YamlWriter addSimpleValue(final Object value, final boolean initiallyIndent) throws Exception {
 		if (writtenCharacters > 0 || openYamlStackItems.size() != 0) {
 			throw new Exception("Not matching empty Yaml output for adding simple value");
 		} else {
 			write(getSimpleValueString(value, null), initiallyIndent);
 		}
+		return this;
 	}
 
-	public void closeYamlSequence() throws Exception {
+	public YamlWriter closeYamlSequence() throws Exception {
 		final YamlStackItem latestOpenYamlItem = openYamlStackItems.pop();
 		if (latestOpenYamlItem != YamlStackItem.Sequence_Empty && latestOpenYamlItem != YamlStackItem.Sequence) {
 			openYamlStackItems.push(latestOpenYamlItem);
@@ -282,9 +289,10 @@ public class YamlWriter implements Closeable {
 		if (openYamlStackItems.size() > 0 && openYamlStackItems.peek() == YamlStackItem.Mapping_Value) {
 			openYamlStackItems.pop();
 		}
+		return this;
 	}
 
-	private void add(final YamlNode yamlNode, final boolean initiallyIndent) throws Exception {
+	private YamlWriter add(final YamlNode yamlNode, final boolean initiallyIndent) throws Exception {
 		if (yamlNode instanceof YamlSequence) {
 			add((YamlSequence) yamlNode, initiallyIndent);
 		} else if (yamlNode instanceof YamlMapping) {
@@ -294,14 +302,16 @@ public class YamlWriter implements Closeable {
 		} else {
 			throw new Exception("Unknown yaml object type to add");
 		}
+		return this;
 	}
 
-	public void write(final YamlValue yamlValue) throws Exception {
+	public YamlWriter write(final YamlValue yamlValue) throws Exception {
 		add(yamlValue, true);
 		write(linebreakType.toString(), false);
+		return this;
 	}
 
-	private void add(final YamlValue yamlValue, final boolean initiallyIndent) throws Exception {
+	private YamlWriter add(final YamlValue yamlValue, final boolean initiallyIndent) throws Exception {
 		if (!omitComments && yamlValue.getComment() != null) {
 			for (final String commentLine : yamlValue.getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
 				write("# " + commentLine + linebreakType.toString(), true);
@@ -320,15 +330,16 @@ public class YamlWriter implements Closeable {
 		} else if (yamlValue instanceof YamlSimpleValue) {
 			add((YamlSimpleValue) yamlValue, initiallyIndent);
 		} else if (yamlValue instanceof YamlDocument) {
-			add((YamlDocument) yamlValue);
+			write((YamlDocument) yamlValue);
 		} else if (yamlValue instanceof YamlDocumentList) {
-			add((YamlDocumentList) yamlValue);
+			write((YamlDocumentList) yamlValue);
 		} else {
 			throw new Exception("Unknown yaml object type to add");
 		}
+		return this;
 	}
 
-	public void add(final YamlDocument yamlDocument) throws Exception {
+	public YamlWriter write(final YamlDocument yamlDocument) throws Exception {
 		YamlUtilities.checkReferencedAnchors((YamlNode) yamlDocument.getValue());
 
 		if (yamlDocument.getDirectives() != null && yamlDocument.getDirectives().size() > 0) {
@@ -351,9 +362,10 @@ public class YamlWriter implements Closeable {
 			write("---" + linebreakType.toString(), false);
 		}
 		add((YamlNode) yamlDocument.getValue(), true);
+		return this;
 	}
 
-	public void add(final YamlDocumentList yamlDocumentList) throws Exception {
+	public YamlWriter write(final YamlDocumentList yamlDocumentList) throws Exception {
 		final boolean documentIsOpen = false;
 		for (final YamlDocument yamlDocument : yamlDocumentList) {
 			if (documentIsOpen) {
@@ -373,16 +385,18 @@ public class YamlWriter implements Closeable {
 					write("--- " + YamlUtilities.createSingleLineComment(yamlDocument.getInlineComment()) + linebreakType.toString(), false);
 				}
 			}
-			add(yamlDocument);
+			write(yamlDocument);
 		}
+		return this;
 	}
 
-	public void write(final YamlMapping yamlMapping) throws Exception {
+	public YamlWriter write(final YamlMapping yamlMapping) throws Exception {
 		add(yamlMapping, true);
 		write(linebreakType.toString(), false);
+		return this;
 	}
 
-	private void add(final YamlMapping yamlMapping, final boolean initiallyIndent) throws Exception {
+	private YamlWriter add(final YamlMapping yamlMapping, final boolean initiallyIndent) throws Exception {
 		if (yamlMapping == null) {
 			throw new Exception("Invalid null value added via 'add'. If done by intention use 'addSimpleYamlArrayValue' or 'addSimpleYamlObjectPropertyValue'");
 		} else {
@@ -561,14 +575,16 @@ public class YamlWriter implements Closeable {
 				throw new Exception("Invalid internal state: " + openYamlStackItems.peek());
 			}
 		}
+		return this;
 	}
 
-	public void write(final YamlSequence yamlSequence) throws Exception {
+	public YamlWriter write(final YamlSequence yamlSequence) throws Exception {
 		add(yamlSequence, true);
 		write(linebreakType.toString(), false);
+		return this;
 	}
 
-	private void add(final YamlSequence yamlSequence, final boolean initiallyIndent) throws Exception {
+	private YamlWriter add(final YamlSequence yamlSequence, final boolean initiallyIndent) throws Exception {
 		if (yamlSequence == null) {
 			throw new Exception("Invalid null value added via 'add'. If done by intention use 'addSimpleYamlArrayValue' or 'addSimpleYamlObjectPropertyValue'");
 		} else {
@@ -743,6 +759,7 @@ public class YamlWriter implements Closeable {
 				throw new Exception("Invalid internal state: " + openYamlStackItems.peek());
 			}
 		}
+		return this;
 	}
 
 	private String getSimpleValueString(Object simpleValue, final YamlStyle style) {
@@ -795,7 +812,7 @@ public class YamlWriter implements Closeable {
 		}
 	}
 
-	private void add(final YamlSimpleValue yamlSimpleValue, final boolean initiallyIndent) throws Exception {
+	private YamlWriter add(final YamlSimpleValue yamlSimpleValue, final boolean initiallyIndent) throws Exception {
 		if (yamlSimpleValue == null) {
 			throw new Exception("Invalid null value added via 'add'. If done by intention use 'addSimpleYamlArrayValue' or 'addSimpleYamlObjectPropertyValue'");
 		} else {
@@ -804,9 +821,10 @@ public class YamlWriter implements Closeable {
 			}
 			addSimpleValue(yamlSimpleValue.getValue(), initiallyIndent);
 		}
+		return this;
 	}
 
-	public void closeAllOpenYamlItems() throws Exception {
+	public YamlWriter closeAllOpenYamlItems() throws Exception {
 		while (!openYamlStackItems.isEmpty()) {
 			final YamlStackItem openYamlItem = openYamlStackItems.pop();
 			switch(openYamlItem) {
@@ -826,6 +844,7 @@ public class YamlWriter implements Closeable {
 					throw new Exception("Invalid open yaml item");
 			}
 		}
+		return this;
 	}
 
 	/**
@@ -834,10 +853,11 @@ public class YamlWriter implements Closeable {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public void flush() throws IOException {
+	public YamlWriter flush() throws IOException {
 		if (outputWriter != null) {
 			outputWriter.flush();
 		}
+		return this;
 	}
 
 	/**
@@ -859,7 +879,7 @@ public class YamlWriter implements Closeable {
 		}
 	}
 
-	private void write(final String text, final boolean indent) throws IOException {
+	private YamlWriter write(final String text, final boolean indent) throws IOException {
 		if (outputWriter == null) {
 			if (outputStream == null) {
 				throw new IllegalStateException("YamlWriter is already closed");
@@ -873,6 +893,7 @@ public class YamlWriter implements Closeable {
 		if (verboseLog) {
 			System.out.print(dataToWrite);
 		}
+		return this;
 	}
 
 	/**
