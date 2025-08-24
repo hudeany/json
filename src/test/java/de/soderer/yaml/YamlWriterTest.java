@@ -8,6 +8,8 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
+import de.soderer.json.utilities.Utilities;
+
 @SuppressWarnings("static-method")
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class YamlWriterTest {
@@ -958,6 +960,24 @@ public class YamlWriterTest {
 					+ "  property 22: value 22\n";
 
 			testYamlObject(expectedString, yamlSequence);
+		} catch (final Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testBinaryData() {
+		try {
+			final YamlMapping yamlMapping = new YamlMapping();
+			yamlMapping.put("base64BinaryData", Utilities.decodeBase64("R0lGODdhDQAIAIAAAAAAANnZ2SwAAAAADQAIAAACF4SDGQar3xxbJ9p0qa7R0YxwzYxwzYxwzYxwzYxwzYxwzaFME1IAADs="));
+
+			final String expectedString = ""
+					+ "base64BinaryData: !!binary |\n"
+					+ "  R0lGODdhDQAIAIAAAAAAANnZ2SwAAAAADQAIAAACF4SDGQar3xxbJ9p0qa7R0YxwzYxwzYxwzYxwzYxw\n"
+					+ "  zYxwzaFME1IAADs=\n";
+
+			testYamlObject(expectedString, yamlMapping);
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());

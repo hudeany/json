@@ -16,7 +16,7 @@ public class YamlTest {
 	// TODO
 	@Test
 	public void test() {
-		testYamlFile("test_IN.yaml", "test_OUT.yaml", YamlDocumentList.class);
+		testYamlFile("test_IN.yaml", "test_IN.yaml", YamlDocumentList.class);
 	}
 
 	//	@Test

@@ -152,7 +152,7 @@ public class Utilities {
 			returnString.append(dataBase64.substring(i * maxCharactersPerLine, (i * maxCharactersPerLine) + maxCharactersPerLine));
 			returnString.append(splitCharacters);
 		}
-		returnString.append(dataBase64.substring(fullLines * 64, (fullLines * 64) + (dataBase64.length() % 64)));
+		returnString.append(dataBase64.substring(fullLines * maxCharactersPerLine, (fullLines * maxCharactersPerLine) + (dataBase64.length() % maxCharactersPerLine)));
 		return returnString.toString();
 	}
 
@@ -163,7 +163,7 @@ public class Utilities {
 	 * @return
 	 */
 	public static byte[] decodeBase64(final String base64String) {
-		return Base64.getDecoder().decode(base64String.getBytes(StandardCharsets.UTF_8));
+		return Base64.getDecoder().decode(base64String.replace("\r", "").replace("\n", "").replace("\t", "").replace(" ", "").getBytes(StandardCharsets.UTF_8));
 	}
 
 	/**
@@ -1675,17 +1675,17 @@ public class Utilities {
 		return returnList;
 	}
 
-	public static String breakTextToMaximumLinelength(String text, int maximumLinelength, Linebreak linebreakType) {
+	public static String breakTextToMaximumLinelength(final String text, final int maximumLinelength, Linebreak linebreakType) {
 		if (linebreakType == null) {
 			linebreakType = Linebreak.Unix;
 		}
-		
+
 		if (text == null) {
 			return text;
 		} else {
 			String returnValue = "";
 			int currentLineLength = 0;
-			for (char nextChar : text.toCharArray()) {
+			for (final char nextChar : text.toCharArray()) {
 				if (currentLineLength > maximumLinelength) {
 					returnValue += linebreakType.toString();
 					currentLineLength = 0;
@@ -1695,7 +1695,7 @@ public class Utilities {
 				}
 				returnValue += nextChar;
 			}
-			
+
 			return returnValue;
 		}
 	}

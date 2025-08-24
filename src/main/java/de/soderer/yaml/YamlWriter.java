@@ -558,7 +558,14 @@ public class YamlWriter implements Closeable {
 						String valuePart = "";
 						final String valueString = getSimpleValueString(entry.getValue(), entry.getValue().getStyle());
 						if (valueString != null) {
-							valuePart = " " + valueString;
+							final YamlDataType explicitDataType = ((YamlSimpleValue) entry.getValue()).getExplicitDataType();
+							if (explicitDataType == YamlDataType.Binary) {
+								valuePart = " !!" + explicitDataType.getStorageCode() + " |" + linebreakType.toString() + indentMultilineText(valueString,  Utilities.repeat(indentation, currentIndentationLevel + 1));
+							} else if (explicitDataType != null) {
+								valuePart = " !!" + explicitDataType.getStorageCode() + " " + valueString;
+							} else {
+								valuePart = " " + valueString;
+							}
 						}
 						write(getSimpleValueString(entry.getKey(), null) + ":" + anchorPart + valuePart + inlineCommentPart, isFirstProperty ? initiallyIndent : true);
 					} else if (entry.getValue() instanceof YamlAnchorReference) {
@@ -576,6 +583,10 @@ public class YamlWriter implements Closeable {
 			}
 		}
 		return this;
+	}
+
+	private static String indentMultilineText(final String valueString, final String indentation) {
+		return indentation + valueString.replace("\n", "\n" + indentation);
 	}
 
 	public YamlWriter write(final YamlSequence yamlSequence) throws Exception {
@@ -806,6 +817,8 @@ public class YamlWriter implements Closeable {
 				} else {
 					return formatStringValueOutput((String) simpleValue);
 				}
+			} else if (simpleValue instanceof byte[]) {
+				return Utilities.encodeBase64((byte[]) simpleValue, 80, linebreakType.toString());
 			} else {
 				return formatStringValueOutput(simpleValue.toString());
 			}
@@ -1043,7 +1056,11 @@ public class YamlWriter implements Closeable {
 					|| stringValue.contains(",")
 					|| stringValue.contains("#")
 					|| stringValue.contains("\r")
-					|| stringValue.contains("\n")) {
+					|| stringValue.contains("\n")
+					|| stringValue.contains("{")
+					|| stringValue.contains("}")
+					|| stringValue.contains("[")
+					|| stringValue.contains("]")) {
 				quoteString = true;
 			}
 		}

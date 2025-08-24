@@ -5,6 +5,8 @@ import java.util.Objects;
 import java.util.Set;
 
 public class YamlSimpleValue extends YamlNode {
+	private YamlDataType explicitDataType;
+
 	@Override
 	public Set<String> getAllAvailableAnchorIds() {
 		final Set<String> anchorIds = new HashSet<>();
@@ -64,5 +66,15 @@ public class YamlSimpleValue extends YamlNode {
 					&& Objects.equals(comment, other.comment)
 					&& Objects.equals(inlineComment, other.inlineComment);
 		}
+	}
+
+	public YamlSimpleValue setExplicitDataType(final YamlDataType explicitDataType) {
+		this.explicitDataType = explicitDataType;
+		return this;
+	}
+
+	// TODO: use this information in YamlWriter
+	public YamlDataType getExplicitDataType() {
+		return explicitDataType;
 	}
 }

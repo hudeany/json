@@ -157,6 +157,11 @@ public class YamlMapping extends YamlNode {
 		return this;
 	}
 
+	public YamlMapping put(final String propertyKey, final byte[] data) throws Exception {
+		put(new YamlSimpleValue().setValue(propertyKey), new YamlSimpleValue().setValue(data).setExplicitDataType(YamlDataType.Binary).setStyle(YamlStyle.Block_Folded));
+		return this;
+	}
+
 	public YamlMapping put(final String propertyKey, final YamlSequence propertyValue) throws Exception {
 		put(new YamlSimpleValue().setValue(propertyKey), propertyValue);
 		return this;

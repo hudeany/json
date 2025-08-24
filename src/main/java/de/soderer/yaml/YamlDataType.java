@@ -21,4 +21,8 @@ public enum YamlDataType {
 		}
 		throw new Exception("Unknown Yaml data type: " + typeString);
 	}
+
+	public String getStorageCode() {
+		return typeString;
+	}
 }

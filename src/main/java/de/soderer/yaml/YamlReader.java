@@ -682,7 +682,9 @@ public class YamlReader extends BasicReader {
 				} else if (currentToken == YamlToken.YamlDataType) {
 					readNextToken();
 					currentYamlSimpleObject.setValue(convertSimpleData(currentYamlSimpleObject.getValue(), nextYamlDataType));
+					currentYamlSimpleObject.setExplicitDataType(nextYamlDataType);
 					nextYamlDataType = null;
+					readNextToken();
 				} else {
 					throw new Exception("Invalid internal state: " + currentToken);
 				}
@@ -948,7 +950,9 @@ public class YamlReader extends BasicReader {
 						skipForNextToken = entryKey;
 						readNextToken();
 						currentYamlSimpleObject.setValue(convertSimpleData(currentYamlSimpleObject.getValue(), nextYamlDataType));
+						currentYamlSimpleObject.setExplicitDataType(nextYamlDataType);
 						nextYamlDataType = null;
+						readNextToken();
 						break;
 					default:
 						throw new Exception("Invalid yaml data: No YAML data found at root");
