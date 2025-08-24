@@ -33,6 +33,7 @@ public class YamlReader extends BasicReader {
 	private YamlNode currentYamlMappingEntryKey = null;
 	private String pendingComment = null;
 	private String pendingAnchorId = null;
+	private YamlDataType nextYamlDataType = null;
 
 	private final Stack<YamlToken> openYamlItems = new Stack<>();
 	private final Stack<String> currentYamlPath = new Stack<>();
@@ -50,7 +51,8 @@ public class YamlReader extends BasicReader {
 		YamlDocument_End,
 		YamlComment,
 		YamlAnchor,
-		YamlReference
+		YamlReference,
+		YamlDataType
 	}
 
 	public YamlReader(final InputStream inputStream) throws Exception {
@@ -397,11 +399,21 @@ public class YamlReader extends BasicReader {
 					yamlToken = YamlToken.YamlReference;
 					pendingAnchorId = referencedAnchorId;
 					break;
+				case '!': // Explicit yaml data type
+					final String yamlDatatypeString = readUpToNext(false, null, ' ', '\t', '\r', '\n', '#');
+					if (yamlDatatypeString.startsWith("!!")) {
+						nextYamlDataType = YamlDataType.getYamlDataTypeFromString(yamlDatatypeString.substring(2));
+						yamlToken = YamlToken.YamlDataType;
+						break;
+					} else {
+						throw new Exception("YamlNode as Mapping key not implemented yet");
+					}
 				case '?': // YamlNode as Mapping key
 					throw new Exception("YamlNode as Mapping key not implemented yet");
 					//					break;
 				default: // YamlMapping simple property key or simple YamlSequence item
 					String text;
+					final int textStartLineIndex = (int) getReadCharactersInCurrentLine() - 1;
 					try {
 						if (currentChar == '"') {
 							text = readQuotedText('\\');
@@ -425,7 +437,7 @@ public class YamlReader extends BasicReader {
 
 					nextChar = readNextNonWhitespaceWithinLine();
 					if (nextChar != null && nextChar == ':') {
-						currentMappingTokenIndentationLevel = (int) getReadCharactersInCurrentLine() - 1;
+						currentMappingTokenIndentationLevel = textStartLineIndex;
 						currentYamlMappingEntryKey = parseSimpleYamlValue(text);
 						currentYamlSimpleObject = null;
 
@@ -477,7 +489,11 @@ public class YamlReader extends BasicReader {
 
 			currentToken = yamlToken;
 			if (verboseLog) {
-				System.out.println("next Token: " + NumberUtilities.formatNumber(currentMappingTokenIndentationLevel, 3, '.', null) + " " + currentToken + (currentToken == YamlToken.YamlMapping_Property ? "'" + currentYamlMappingEntryKey + "'" : ""));
+				if (currentToken == YamlToken.YamlMapping_Property) {
+					System.out.println("next Token: " + NumberUtilities.formatNumber(currentMappingTokenIndentationLevel, 3, '.', null) + " " + currentToken + " '" + currentYamlMappingEntryKey.getValue() + "'");
+				} else {
+					System.out.println("next Token: " + NumberUtilities.formatNumber(currentSequenceTokenIndentationLevel, 3, '.', null) + " " + currentToken);
+				}
 			}
 		}
 	}
@@ -663,6 +679,10 @@ public class YamlReader extends BasicReader {
 				} else if (currentToken == YamlToken.YamlReference) {
 					newYamlSequence.add(new YamlAnchorReference().setValue(pendingAnchorId));
 					readNextToken();
+				} else if (currentToken == YamlToken.YamlDataType) {
+					readNextToken();
+					currentYamlSimpleObject.setValue(convertSimpleData(currentYamlSimpleObject.getValue(), nextYamlDataType));
+					nextYamlDataType = null;
 				} else {
 					throw new Exception("Invalid internal state: " + currentToken);
 				}
@@ -674,6 +694,84 @@ public class YamlReader extends BasicReader {
 				}
 			}
 			return newYamlSequence;
+		}
+	}
+
+	private static Object convertSimpleData(final Object value, final YamlDataType nextYamlDataType) {
+		switch (nextYamlDataType) {
+			case Bool:
+				if (value == null) {
+					return false;
+				} else if (value instanceof Boolean) {
+					return value;
+				} else if (value instanceof String) {
+					return Utilities.interpretAsBool((String) value);
+				} else if (value instanceof Number) {
+					return ((Number) value).doubleValue() != 0;
+				} else {
+					// TODO
+					throw new RuntimeException();
+				}
+			case Integer:
+				// TODO
+				if (value == null) {
+					return null;
+				} else if (value instanceof Boolean) {
+					return ((Boolean) value) ? 1f : 0f;
+				} else if (value instanceof String) {
+					// TODO: parse Number
+					return value;
+				} else if (value instanceof Number) {
+					return ((Number) value).doubleValue();
+				} else {
+					// TODO
+					throw new RuntimeException();
+				}
+			case Float:
+				if (value == null) {
+					return null;
+				} else if (value instanceof Boolean) {
+					return ((Boolean) value) ? 1f : 0f;
+				} else if (value instanceof String) {
+					// TODO: parse Number
+					return value;
+				} else if (value instanceof Number) {
+					return ((Number) value).doubleValue();
+				} else {
+					// TODO
+					throw new RuntimeException();
+				}
+			case String:
+				if (value == null) {
+					return null;
+				} else if (value instanceof Boolean) {
+					return ((Boolean) value) ? "true" : "false";
+				} else if (value instanceof String) {
+					return value;
+				} else if (value instanceof Number) {
+					return value.toString();
+				} else {
+					value.toString();
+				}
+			case Binary:
+				if (value == null) {
+					return null;
+				} else if (value instanceof Boolean) {
+					// TODO
+					throw new RuntimeException();
+				} else if (value instanceof String) {
+					// Base64 String{
+					return Utilities.decodeBase64(((String) value).replace("\t", "").replace("\r", "").replace("\n", ""));
+				} else if (value instanceof Number) {
+					// TODO
+					throw new RuntimeException();
+				} else {
+					// TODO
+					throw new RuntimeException();
+				}
+			default:
+				// TODO
+				throw new RuntimeException();
 		}
 	}
 
@@ -784,6 +882,17 @@ public class YamlReader extends BasicReader {
 					case YamlMapping_Property:
 						if (yamlMappingStartLine == getReadLines()) {
 							throw new Exception("Invalid complex property value in same line as property key");
+						} else if (yamlMappingIndentationLevel == currentMappingTokenIndentationLevel) {
+							// There is no value for this property, so use null value
+							entryValue = new YamlSimpleValue().setValue(null);
+							if (pendingAnchorId != null) {
+								entryValue.setAnchor(pendingAnchorId);
+								pendingAnchorId = null;
+							}
+							if (pendingComment != null) {
+								entryValue.setInlineComment(pendingComment);
+								pendingComment = null;
+							}
 						} else {
 							entryValue = readYamlMapping(currentMappingTokenIndentationLevel);
 						}
@@ -834,6 +943,12 @@ public class YamlReader extends BasicReader {
 						}
 						entryValue = yamlAnchorReference;
 						readNextToken();
+						break;
+					case YamlDataType:
+						skipForNextToken = entryKey;
+						readNextToken();
+						currentYamlSimpleObject.setValue(convertSimpleData(currentYamlSimpleObject.getValue(), nextYamlDataType));
+						nextYamlDataType = null;
 						break;
 					default:
 						throw new Exception("Invalid yaml data: No YAML data found at root");
@@ -963,6 +1078,7 @@ public class YamlReader extends BasicReader {
 			case YamlDocument_Start:
 			case YamlReference:
 			case YamlSequence_Item:
+			case YamlDataType:
 			default:
 				throw new Exception("Invalid data in line " + (getReadLines() + 1) +" starting at position " + (getReadCharactersInCurrentLine() -1) + " at overall index " + (getReadCharacters() - 1));
 		}
@@ -1126,6 +1242,8 @@ public class YamlReader extends BasicReader {
 				case YamlAnchor:
 					break;
 				case YamlReference:
+					break;
+				case YamlDataType:
 					break;
 				default:
 					throw new Exception("Invalid yamlToken: " + yamlToken);

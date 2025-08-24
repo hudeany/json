@@ -14,15 +14,15 @@ public class YamlTest {
 	public static boolean PRINT_TESTDATA = true;
 
 	// TODO
-	//	@Test
-	//	public void test() {
-	//		testYamlFile("test.yaml", "test.yaml", YamlSequence.class);
-	//	}
-
 	@Test
-	public void test2() {
-		testYamlFile("test2.yaml", "test2.yaml", YamlSequence.class);
+	public void test() {
+		testYamlFile("test_IN.yaml", "test_OUT.yaml", YamlDocumentList.class);
 	}
+
+	//	@Test
+	//	public void test2() {
+	//		testYamlFile("test2_IN.yaml", "test2_OUT.yaml", YamlSequence.class);
+	//	}
 
 	//	@Test
 	//	public void testReceipt() {
@@ -52,22 +52,9 @@ public class YamlTest {
 
 			YamlValue testYamlValue;
 			try (YamlReader testsuiteReader = new YamlReader(new ByteArrayInputStream(testDataIn))) {
+				testsuiteReader.setVerboseLog(true);
 				testYamlValue = testsuiteReader.read();
 			}
-
-			System.out.println();
-			System.out.println(testYamlValue);
-			System.out.println();
-
-			//			// TODO: remove for general tests
-			//			Assert.assertEquals(YamlSequence.class, testYamlValue.getClass());
-			//			Assert.assertEquals(1, ((YamlSequence) testYamlValue).size());
-			//			final Object yamlObject = ((YamlSequence) testYamlValue).get(0);
-			//			Assert.assertEquals(YamlMapping.class, yamlObject.getClass());
-			//			Assert.assertEquals(1, ((YamlMapping) yamlObject).size());
-			//			Assert.assertNull(((YamlMapping) yamlObject).get("preitem"));
-			//			Assert.assertEquals("Text 1", ((YamlMapping) yamlObject).get("property1a"));
-			//			// TODO: remove for general tests
 
 			Assert.assertTrue("Expected type " + yamlType + " but was " + testYamlValue.getClass(), yamlType.isInstance(testYamlValue));
 
