@@ -727,7 +727,7 @@ public class YamlWriter implements Closeable {
 								write("-" + anchorPart, true);
 								write(linebreakType.toString(), false);
 								currentIndentationLevel++;
-								add((YamlSequence) sequenceItem, false);
+								add((YamlSequence) sequenceItem, true);
 								currentIndentationLevel--;
 							}
 						} else {
