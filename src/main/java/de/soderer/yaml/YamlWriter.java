@@ -452,10 +452,13 @@ public class YamlWriter implements Closeable {
 							write("# " + commentLine + linebreakType.toString(), true);
 						}
 					}
-
-					String anchorPart = "";
+					String keyAnchorPart = "";
+					if (entry.getKey().getAnchor() != null) {
+						keyAnchorPart = " &" + entry.getKey().getAnchor();
+					}
+					String valueAnchorPart = "";
 					if (entry.getValue().getAnchor() != null) {
-						anchorPart = " &" + entry.getValue().getAnchor();
+						valueAnchorPart = " &" + entry.getValue().getAnchor();
 					}
 
 					String separatorPart = "";
@@ -463,21 +466,32 @@ public class YamlWriter implements Closeable {
 						separatorPart = ",";
 					}
 
-					String inlineCommentPart = "";
+					String keyInlineCommentPart = null;
+					if (!omitComments && entry.getKey().getInlineComment() != null) {
+						keyInlineCommentPart = " # " + entry.getKey().getInlineComment() + linebreakType.toString();
+					}
+					String valueInlineCommentPart = "";
 					if (!omitComments && entry.getValue().getInlineComment() != null) {
-						inlineCommentPart = " # " + entry.getValue().getInlineComment();
+						valueInlineCommentPart = " # " + entry.getValue().getInlineComment() + linebreakType.toString();
 					}
 
-					if (entry.getValue() instanceof YamlSequence) {
-						write(getSimpleValueString(entry.getKey(), null) + ": ", true);
-						add(entry.getValue(), false);
-					} else if (entry.getValue() instanceof YamlMapping) {
-						write(getSimpleValueString(entry.getKey(), null) + ": ", true);
-						add(entry.getValue(), false);
-					} else if (entry.getValue() instanceof YamlSimpleValue) {
-						write(getSimpleValueString(entry.getKey(), null) + ": " + getSimpleValueString(entry.getValue(), entry.getValue().getStyle()), true);
+					write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ": ", true);
+					if (keyInlineCommentPart != null) {
+						write(keyInlineCommentPart, false);
+						if (entry.getValue() instanceof YamlSimpleValue) {
+							write(getSimpleValueString(entry.getValue(), entry.getValue().getStyle()), true);
+						} else {
+							add(entry.getValue(), true);
+						}
+						write(valueAnchorPart + separatorPart + valueInlineCommentPart, false);
+					} else {
+						if (entry.getValue() instanceof YamlSimpleValue) {
+							write(getSimpleValueString(entry.getValue(), entry.getValue().getStyle()), false);
+						} else {
+							add(entry.getValue(), false);
+						}
+						write(valueAnchorPart + separatorPart + valueInlineCommentPart, false);
 					}
-					write(anchorPart + separatorPart + inlineCommentPart, false);
 				}
 				currentIndentationLevel--;
 				if (yamlMapping.size() > 0) {
@@ -496,50 +510,110 @@ public class YamlWriter implements Closeable {
 					if (entry.getValue() == null) {
 						throw new Exception("Unexpected empty value in YamlMapping: " + entry.getValue().getClass());
 					} else if (entry.getValue() instanceof YamlSequence) {
-						String anchorPart = "";
+						String keyAnchorPart = "";
+						if (entry.getKey().getAnchor() != null) {
+							keyAnchorPart = " &" + entry.getKey().getAnchor();
+						}
+						String valueAnchorPart = "";
 						if (entry.getValue().getAnchor() != null) {
-							anchorPart = " &" + entry.getValue().getAnchor();
+							valueAnchorPart = " &" + entry.getValue().getAnchor();
 						}
-						String inlineCommentPart = "";
+						String keyInlineCommentPart = null;
+						if (!omitComments && entry.getKey().getInlineComment() != null) {
+							keyInlineCommentPart = " # " + entry.getKey().getInlineComment() + linebreakType.toString();
+						}
+						String valueInlineCommentPart = "";
 						if (!omitComments && entry.getValue().getInlineComment() != null) {
-							inlineCommentPart = " # " + entry.getValue().getInlineComment();
+							valueInlineCommentPart = " # " + entry.getValue().getInlineComment() + linebreakType.toString();
 						}
-						if ((entry.getValue().getStyle() == YamlStyle.Flow || entry.getValue().getStyle() == YamlStyle.Bracket) && !entry.getValue().hasComments()) {
-							write(getSimpleValueString(entry.getKey(), null) + ":" + anchorPart + inlineCommentPart + " ", isFirstProperty ? initiallyIndent : true);
-							add((YamlSequence) entry.getValue(), false);
-						} else {
-							write(getSimpleValueString(entry.getKey(), null) + ":" + anchorPart + inlineCommentPart + linebreakType.toString() + Utilities.repeat(indentation, currentIndentationLevel), !skipNextIndentation);
-							currentIndentationLevel++;
-							if (!omitComments && entry.getValue().getComment() != null) {
-								for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
-									write("# " + commentLine + linebreakType.toString(), true);
+
+						if (keyInlineCommentPart != null) {
+							if ((entry.getValue().getStyle() == YamlStyle.Flow || entry.getValue().getStyle() == YamlStyle.Bracket) && !entry.getValue().hasComments()) {
+								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":", true);
+								write(keyInlineCommentPart, false);
+								write(valueAnchorPart + valueInlineCommentPart, isFirstProperty ? initiallyIndent : true);
+								add((YamlSequence) entry.getValue(), false);
+							} else {
+								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":", !skipNextIndentation);
+								write(keyInlineCommentPart, false);
+								write(valueAnchorPart + valueInlineCommentPart + Utilities.repeat(indentation, currentIndentationLevel), true);
+								currentIndentationLevel++;
+								if (!omitComments && entry.getValue().getComment() != null) {
+									for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+										write("# " + commentLine + linebreakType.toString(), true);
+									}
 								}
+								add(entry.getValue(), true);
+								currentIndentationLevel--;
 							}
-							add(entry.getValue(), true);
-							currentIndentationLevel--;
+						} else {
+							if ((entry.getValue().getStyle() == YamlStyle.Flow || entry.getValue().getStyle() == YamlStyle.Bracket) && !entry.getValue().hasComments()) {
+								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueAnchorPart + valueInlineCommentPart + " ", isFirstProperty ? initiallyIndent : true);
+								add((YamlSequence) entry.getValue(), false);
+							} else {
+								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueAnchorPart + valueInlineCommentPart + Utilities.repeat(indentation, currentIndentationLevel), !skipNextIndentation);
+								currentIndentationLevel++;
+								if (!omitComments && entry.getValue().getComment() != null) {
+									for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+										write("# " + commentLine + linebreakType.toString(), true);
+									}
+								}
+								add(entry.getValue(), true);
+								currentIndentationLevel--;
+							}
 						}
 					} else if (entry.getValue() instanceof YamlMapping) {
-						String anchorPart = "";
+						String keyAnchorPart = "";
+						if (entry.getKey().getAnchor() != null) {
+							keyAnchorPart = " &" + entry.getKey().getAnchor();
+						}
+						String valueAnchorPart = "";
 						if (entry.getValue().getAnchor() != null) {
-							anchorPart = " &" + entry.getValue().getAnchor();
+							valueAnchorPart = " &" + entry.getValue().getAnchor();
 						}
-						String inlineCommentPart = "";
+						String keyInlineCommentPart = null;
+						if (!omitComments && entry.getKey().getInlineComment() != null) {
+							keyInlineCommentPart = " # " + entry.getKey().getInlineComment() + linebreakType.toString();
+						}
+						String valueInlineCommentPart = "";
 						if (!omitComments && entry.getValue().getInlineComment() != null) {
-							inlineCommentPart = " # " + entry.getValue().getInlineComment();
+							valueInlineCommentPart = " # " + entry.getValue().getInlineComment();
 						}
-						if ((entry.getValue().getStyle() == YamlStyle.Flow || entry.getValue().getStyle() == YamlStyle.Bracket) && !entry.getValue().hasComments()) {
-							write(getSimpleValueString(entry.getKey(), null) + ":" + anchorPart + inlineCommentPart + " ", isFirstProperty ? initiallyIndent : true);
-							add((YamlMapping) entry.getValue(), false);
-						} else {
-							write(getSimpleValueString(entry.getKey(), null) + ":" + anchorPart + inlineCommentPart + linebreakType.toString(), isFirstProperty ? initiallyIndent : true);
-							currentIndentationLevel++;
-							if (!omitComments && entry.getValue().getComment() != null) {
-								for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
-									write("# " + commentLine + linebreakType.toString(), true);
+
+						if (keyInlineCommentPart != null) {
+							if ((entry.getValue().getStyle() == YamlStyle.Flow || entry.getValue().getStyle() == YamlStyle.Bracket) && !entry.getValue().hasComments()) {
+								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":", isFirstProperty ? initiallyIndent : true);
+								write(keyInlineCommentPart, false);
+								write(valueAnchorPart + valueInlineCommentPart, true);
+								add((YamlMapping) entry.getValue(), false);
+							} else {
+								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":", isFirstProperty ? initiallyIndent : true);
+								write(keyInlineCommentPart, false);
+								write(valueAnchorPart + valueInlineCommentPart + linebreakType.toString(), true);
+								currentIndentationLevel++;
+								if (!omitComments && entry.getValue().getComment() != null) {
+									for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+										write("# " + commentLine + linebreakType.toString(), true);
+									}
 								}
+								add((YamlMapping) entry.getValue(), true);
+								currentIndentationLevel--;
 							}
-							add((YamlMapping) entry.getValue(), true);
-							currentIndentationLevel--;
+						} else {
+							if ((entry.getValue().getStyle() == YamlStyle.Flow || entry.getValue().getStyle() == YamlStyle.Bracket) && !entry.getValue().hasComments()) {
+								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueAnchorPart + valueInlineCommentPart + " ", isFirstProperty ? initiallyIndent : true);
+								add((YamlMapping) entry.getValue(), false);
+							} else {
+								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueAnchorPart + valueInlineCommentPart + linebreakType.toString(), isFirstProperty ? initiallyIndent : true);
+								currentIndentationLevel++;
+								if (!omitComments && entry.getValue().getComment() != null) {
+									for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+										write("# " + commentLine + linebreakType.toString(), true);
+									}
+								}
+								add((YamlMapping) entry.getValue(), true);
+								currentIndentationLevel--;
+							}
 						}
 					} else if (entry.getValue() instanceof YamlSimpleValue) {
 						if (!omitComments && entry.getValue().getComment() != null) {
@@ -547,13 +621,21 @@ public class YamlWriter implements Closeable {
 								write("# " + commentLine + linebreakType.toString(), true);
 							}
 						}
-						String anchorPart = "";
-						if (entry.getValue().getAnchor() != null) {
-							anchorPart = " &" + entry.getValue().getAnchor();
+						String keyAnchorPart = "";
+						if (entry.getKey().getAnchor() != null) {
+							keyAnchorPart = " &" + entry.getKey().getAnchor();
 						}
-						String inlineCommentPart = "";
+						String valueAnchorPart = "";
+						if (entry.getValue().getAnchor() != null) {
+							valueAnchorPart = " &" + entry.getValue().getAnchor();
+						}
+						String keyInlineCommentPart = null;
+						if (!omitComments && entry.getKey().getInlineComment() != null) {
+							keyInlineCommentPart = " # " + entry.getKey().getInlineComment() + linebreakType.toString();
+						}
+						String valueInlineCommentPart = "";
 						if (!omitComments && entry.getValue().getInlineComment() != null) {
-							inlineCommentPart = " # " + entry.getValue().getInlineComment();
+							valueInlineCommentPart = " # " + entry.getValue().getInlineComment();
 						}
 						String valuePart = "";
 						final String valueString = getSimpleValueString(entry.getValue(), entry.getValue().getStyle());
@@ -567,9 +649,40 @@ public class YamlWriter implements Closeable {
 								valuePart = " " + valueString;
 							}
 						}
-						write(getSimpleValueString(entry.getKey(), null) + ":" + anchorPart + valuePart + inlineCommentPart, isFirstProperty ? initiallyIndent : true);
+						if (keyInlineCommentPart != null) {
+							write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":", isFirstProperty ? initiallyIndent : true);
+							write(keyInlineCommentPart, false);
+							write(valueAnchorPart + valuePart + valueInlineCommentPart, true);
+						} else {
+							write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueAnchorPart + valuePart + valueInlineCommentPart, isFirstProperty ? initiallyIndent : true);
+						}
 					} else if (entry.getValue() instanceof YamlAnchorReference) {
-						write(getSimpleValueString(entry.getKey(), null) + ": *" + entry.getValue().getValue() + linebreakType.toString(), isFirstProperty ? initiallyIndent : true);
+						String keyAnchorPart = "";
+						if (entry.getKey().getAnchor() != null) {
+							keyAnchorPart = " &" + entry.getKey().getAnchor();
+						}
+						String valueAnchorPart = "";
+						if (entry.getValue().getAnchor() != null) {
+							valueAnchorPart = " &" + entry.getValue().getAnchor();
+						}
+						String keyInlineCommentPart = null;
+						if (!omitComments && entry.getKey().getInlineComment() != null) {
+							keyInlineCommentPart = " # " + entry.getKey().getInlineComment() + linebreakType.toString();
+						}
+						String valueInlineCommentPart = "";
+						if (!omitComments && entry.getValue().getInlineComment() != null) {
+							valueInlineCommentPart = " # " + entry.getValue().getInlineComment();
+						}
+
+						final String valuePart = " *" + entry.getValue().getValue();
+
+						if (keyInlineCommentPart != null) {
+							write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":", isFirstProperty ? initiallyIndent : true);
+							write(keyInlineCommentPart, false);
+							write(valueAnchorPart + valuePart + valueInlineCommentPart, true);
+						} else {
+							write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueAnchorPart + valuePart + valueInlineCommentPart, isFirstProperty ? initiallyIndent : true);
+						}
 					} else {
 						throw new Exception("Unexpected object type in YamlMapping: " + entry.getValue().getClass());
 					}

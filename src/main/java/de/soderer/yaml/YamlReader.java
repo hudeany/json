@@ -344,7 +344,7 @@ public class YamlReader extends BasicReader {
 					}
 					break;
 				case '{': // Start YamlMapping
-					pushToTokenStack(YamlToken.YamlMapping_Start, null);
+					pushToTokenStack(YamlToken.YamlMapping_Start);
 					yamlToken = YamlToken.YamlMapping_Start;
 					break;
 				case '}': // End YamlMapping
@@ -352,7 +352,7 @@ public class YamlReader extends BasicReader {
 					yamlToken = YamlToken.YamlMapping_End;
 					break;
 				case '[': // Start YamlSequence
-					pushToTokenStack(YamlToken.YamlSequence_Start, null);
+					pushToTokenStack(YamlToken.YamlSequence_Start);
 					yamlToken = YamlToken.YamlSequence_Start;
 					break;
 				case ']': // End YamlSequence
@@ -461,6 +461,10 @@ public class YamlReader extends BasicReader {
 						if (readLinesBeforeComment == getReadLines()) {
 							if (currentYamlSimpleObject != null) {
 								currentYamlSimpleObject.setInlineComment(nextCommentLine);
+							} else if (currentYamlMappingEntryKey != null) {
+								currentYamlMappingEntryKey.setInlineComment(nextCommentLine);
+							} else {
+								throw new Exception("Found inline comment but have no object to assign it to");
 							}
 						} else {
 							if (pendingComment == null) {
@@ -653,7 +657,7 @@ public class YamlReader extends BasicReader {
 			}
 
 			while (true) {
-				pushToTokenStack(YamlToken.YamlSequence_Item, null);
+				pushToTokenStack(YamlToken.YamlSequence_Item);
 
 				readNextToken();
 
@@ -753,7 +757,7 @@ public class YamlReader extends BasicReader {
 				} else if (value instanceof Number) {
 					return value.toString();
 				} else {
-					value.toString();
+					return value.toString();
 				}
 			case Binary:
 				if (value == null) {
@@ -851,7 +855,7 @@ public class YamlReader extends BasicReader {
 
 				if (skipForNextToken == null) {
 					entryKey = currentYamlMappingEntryKey;
-					pushToTokenStack(YamlToken.YamlMapping_Property, currentYamlMappingEntryKey.toString());
+					pushToTokenStack(YamlToken.YamlMapping_Property);
 					readNextToken();
 				} else {
 					entryKey = skipForNextToken;
@@ -931,6 +935,10 @@ public class YamlReader extends BasicReader {
 							currentYamlSimpleObject.setInlineComment(pendingComment);
 							pendingComment = null;
 						}
+						if (pendingAnchorId != null) {
+							currentYamlSimpleObject.setAnchor(pendingAnchorId);
+							pendingAnchorId = null;
+						}
 						readNextToken();
 						break;
 					case YamlAnchor:
@@ -947,10 +955,18 @@ public class YamlReader extends BasicReader {
 						readNextToken();
 						break;
 					case YamlDataType:
-						skipForNextToken = entryKey;
 						readNextToken();
 						currentYamlSimpleObject.setValue(convertSimpleData(currentYamlSimpleObject.getValue(), nextYamlDataType));
 						currentYamlSimpleObject.setExplicitDataType(nextYamlDataType);
+						entryValue = currentYamlSimpleObject;
+						if (pendingComment != null) {
+							currentYamlSimpleObject.setInlineComment(pendingComment);
+							pendingComment = null;
+						}
+						if (pendingAnchorId != null) {
+							currentYamlSimpleObject.setAnchor(pendingAnchorId);
+							pendingAnchorId = null;
+						}
 						nextYamlDataType = null;
 						readNextToken();
 						break;
@@ -1225,7 +1241,7 @@ public class YamlReader extends BasicReader {
 					}
 					break;
 				case YamlMapping_Property:
-					currentYamlPath.push("." + currentYamlMappingEntryKey);
+					currentYamlPath.push("." + currentYamlMappingEntryKey.getValue());
 					break;
 				case YamlSimpleValue:
 					if (currentYamlPath.size() > 0) {
@@ -1303,7 +1319,7 @@ public class YamlReader extends BasicReader {
 		}
 	}
 
-	private void pushToTokenStack(final YamlToken newYamlToken, @SuppressWarnings("unused") final String propertyName) throws Exception {
+	private void pushToTokenStack(final YamlToken newYamlToken) throws Exception {
 		openYamlItems.push(newYamlToken);
 	}
 }

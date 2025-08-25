@@ -41,7 +41,9 @@ public abstract class YamlNode extends YamlValue {
 	public boolean hasChildComments() {
 		if (this instanceof YamlMapping) {
 			for (final Entry<YamlNode, YamlNode> entry : ((YamlMapping) this).entrySet()) {
-				if (entry.getValue().hasComments()) {
+				if (entry.getKey().hasComments()) {
+					return true;
+				} else if (entry.getValue().hasComments()) {
 					return true;
 				}
 			}
