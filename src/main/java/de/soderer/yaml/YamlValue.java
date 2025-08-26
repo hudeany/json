@@ -22,7 +22,7 @@ public abstract class YamlValue {
 	}
 
 	public YamlValue setComment(final String comment) {
-		this.comment = comment;
+		this.comment = comment.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
 		return this;
 	}
 
@@ -30,7 +30,7 @@ public abstract class YamlValue {
 		if (comment == null) {
 			comment = commentLine;
 		} else {
-			comment = comment + "\n" + commentLine;
+			comment = comment + "\n" + commentLine.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
 		}
 		return this;
 	}
@@ -40,7 +40,7 @@ public abstract class YamlValue {
 	}
 
 	public YamlValue setInlineComment(final String inlineComment) {
-		this.inlineComment = inlineComment;
+		this.inlineComment = inlineComment.replaceAll("\r\n", " ").replaceAll("\r", " ").replaceAll("\n", " ");
 		return this;
 	}
 

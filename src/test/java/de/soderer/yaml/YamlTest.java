@@ -61,6 +61,7 @@ public class YamlTest {
 			String newString;
 			try (ByteArrayOutputStream output = new ByteArrayOutputStream();
 					YamlWriter writer = new YamlWriter(output, StandardCharsets.UTF_8)) {
+				writer.setVerboseLog(true);
 				writer.write(testYamlValue);
 				writer.flush();
 				newString = new String(output.toByteArray(), StandardCharsets.UTF_8);

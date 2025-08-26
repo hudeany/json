@@ -4,8 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
 import java.util.Set;
 
-import de.soderer.json.utilities.Linebreak;
-
 public class YamlUtilities {
 	/**
 	 * YamlPath syntax:<br />
@@ -53,17 +51,5 @@ public class YamlUtilities {
 				throw new Exception("Anchor id '" + referencedAnchor + "' is referenced but not defined");
 			}
 		}
-	}
-
-	public static String createMultiLineComment(final String comment, final Linebreak linebreakType) {
-		String multiLineComment = "";
-		for (final String commentLine : comment.replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
-			multiLineComment += "# " + commentLine + linebreakType.toString();
-		}
-		return multiLineComment;
-	}
-
-	public static String createSingleLineComment(final String comment) {
-		return "# " + comment.replaceAll("\r\n", " ").replaceAll("\r", " ").replaceAll("\r", " ");
 	}
 }

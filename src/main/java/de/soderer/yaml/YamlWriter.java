@@ -345,47 +345,39 @@ public class YamlWriter implements Closeable {
 		if (yamlDocument.getDirectives() != null && yamlDocument.getDirectives().size() > 0) {
 			for (final YamlDirective<?> yamlDirective : yamlDocument.getDirectives()) {
 				if (yamlDirective.getComment() != null) {
-					write(YamlUtilities.createMultiLineComment(yamlDirective.getComment(), linebreakType), false);
+					for (final String commentLine : yamlDirective.getComment().split("\n")) {
+						write("# " + commentLine + linebreakType.toString(), false);
+					}
 				}
 				if (yamlDirective.getInlineComment() != null) {
-					write(yamlDirective.toString() + " " + YamlUtilities.createSingleLineComment(yamlDirective.getInlineComment()) + linebreakType.toString(), false);
+					write(yamlDirective.toString() + " # " + yamlDirective.getInlineComment() + linebreakType.toString(), false);
 				} else {
 					write(yamlDirective.toString() + linebreakType.toString(), false);
 				}
 			}
-			if (yamlDocument.getInlineComment() == null) {
-				write("---" + linebreakType.toString(), false);
-			} else {
-				write("--- " + YamlUtilities.createSingleLineComment(yamlDocument.getInlineComment()) + linebreakType.toString(), false);
-			}
-		} else {
-			write("---" + linebreakType.toString(), false);
 		}
+
+		if (yamlDocument.getInlineComment() == null) {
+			write("---" + linebreakType.toString(), false);
+		} else {
+			write("--- # " + yamlDocument.getInlineComment() + linebreakType.toString(), false);
+		}
+
 		add((YamlNode) yamlDocument.getValue(), true);
 		return this;
 	}
 
 	public YamlWriter write(final YamlDocumentList yamlDocumentList) throws Exception {
-		final boolean documentIsOpen = false;
+		boolean documentIsOpen = false;
 		for (final YamlDocument yamlDocument : yamlDocumentList) {
 			if (documentIsOpen) {
 				if (yamlDocument.getDirectives() != null && yamlDocument.getDirectives().size() > 0) {
-					write("..." + linebreakType.toString(), false);
-				} else {
-					if (yamlDocument.getInlineComment() == null) {
-						write("---" + linebreakType.toString(), false);
-					} else {
-						write("--- " + YamlUtilities.createSingleLineComment(yamlDocument.getInlineComment()) + linebreakType.toString(), false);
-					}
+					write("...", false);
 				}
-			} else if (yamlDocument.getDirectives() == null || yamlDocument.getDirectives().size() == 0) {
-				if (yamlDocument.getInlineComment() == null) {
-					write("---" + linebreakType.toString(), false);
-				} else {
-					write("--- " + YamlUtilities.createSingleLineComment(yamlDocument.getInlineComment()) + linebreakType.toString(), false);
-				}
+				write(linebreakType.toString(), false);
 			}
 			write(yamlDocument);
+			documentIsOpen = true;
 		}
 		return this;
 	}
@@ -396,7 +388,7 @@ public class YamlWriter implements Closeable {
 		return this;
 	}
 
-	private YamlWriter add(final YamlMapping yamlMapping, final boolean initiallyIndent) throws Exception {
+	private YamlWriter add(final YamlMapping yamlMapping, boolean initiallyIndent) throws Exception {
 		if (yamlMapping == null) {
 			throw new Exception("Invalid null value added via 'add'. If done by intention use 'addSimpleYamlArrayValue' or 'addSimpleYamlObjectPropertyValue'");
 		} else {
@@ -501,10 +493,34 @@ public class YamlWriter implements Closeable {
 					write("}", false);
 				}
 			} else {
+				if (!omitComments && yamlMapping.getComment() != null) {
+					if (!initiallyIndent) {
+						write(linebreakType.toString(), false);
+						initiallyIndent = true;
+					}
+					for (final String commentLine : yamlMapping.getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+						write("# " + commentLine + linebreakType.toString(), initiallyIndent);
+					}
+				}
+
+				if (yamlMapping.getAnchor() != null) {
+					write("&" + yamlMapping.getAnchor(), initiallyIndent);
+				}
+
 				boolean isFirstProperty = true;
 				for (final Entry<YamlNode, YamlNode> entry : yamlMapping.entrySet()) {
 					if (!isFirstProperty) {
 						write(linebreakType.toString(), false);
+					}
+
+					if (!omitComments && entry.getKey().getComment() != null) {
+						if (!initiallyIndent) {
+							write(linebreakType.toString(), false);
+							initiallyIndent = true;
+						}
+						for (final String commentLine : entry.getKey().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+							write("# " + commentLine + linebreakType.toString(), initiallyIndent);
+						}
 					}
 
 					if (entry.getValue() == null) {
@@ -1203,7 +1219,8 @@ public class YamlWriter implements Closeable {
 	}
 
 	public String formatStringBlockFolded(final String stringValue) {
-		return (">\n" + Utilities.breakTextToMaximumLinelength(stringValue, 80, linebreakType))
+		// TODO break at blank char or let text be longer than 80 chars
+		return (">\n" + Utilities.breakTextToMaximumLinelength(stringValue.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "\n\n"), 80, linebreakType))
 				.replace("\r\n", "\n")
 				.replace("\r", "\n")
 				.replace("\n", "\n" + Utilities.repeat(indentation, currentIndentationLevel + 1));

@@ -106,7 +106,10 @@ public class YamlReader extends BasicReader {
 			if (currentToken == YamlToken.YamlDocument_Start) {
 				final String yamlDocumentStartLine = readUpToNext(true, null, '\r', '\n');
 				if (yamlDocumentStartLine.contains("#")) {
-					documentStartComment = yamlDocumentStartLine.substring(yamlDocumentStartLine.indexOf("#") + 1).trim();
+					documentStartComment = yamlDocumentStartLine.substring(yamlDocumentStartLine.indexOf("#") + 1);
+					if (documentStartComment != null && documentStartComment.startsWith(" ")) {
+						documentStartComment = documentStartComment.substring(1);
+					}
 				}
 				readNextToken();
 			}
@@ -197,7 +200,10 @@ public class YamlReader extends BasicReader {
 					yamlToken = currentToken;
 					break;
 				case '#': // Comment
-					final String commentLine = readUpToNext(false, null, '\r', '\n').substring(1).trim();
+					String commentLine = readUpToNext(false, null, '\r', '\n').substring(1);
+					if (commentLine != null && commentLine.startsWith(" ")) {
+						commentLine = commentLine.substring(1);
+					}
 					if (pendingComment == null) {
 						pendingComment = commentLine;
 					} else {
@@ -457,7 +463,10 @@ public class YamlReader extends BasicReader {
 					final long readLinesBeforeComment = getReadLines();
 					nextChar = readNextNonWhitespaceWithinLine();
 					if (nextChar != null && nextChar == '#') {
-						final String nextCommentLine = readUpToNext(false, null, '\r', '\n').substring(1).trim();
+						String nextCommentLine = readUpToNext(false, null, '\r', '\n').substring(1);
+						if (nextCommentLine != null && nextCommentLine.startsWith(" ")) {
+							nextCommentLine = nextCommentLine.substring(1);
+						}
 						if (readLinesBeforeComment == getReadLines()) {
 							if (currentYamlSimpleObject != null) {
 								currentYamlSimpleObject.setInlineComment(nextCommentLine);
@@ -556,10 +565,18 @@ public class YamlReader extends BasicReader {
 
 		String blockString = "";
 		boolean isFirstLine = true; // Watch out for leading blank lines
+		boolean skipNextSeparator = false;
 		for (final String scalarBlockLine : scalarBlockLines) {
 			if (!isFirstLine) {
-				if (blockType.startsWith(">")) {
-					blockString += " ";
+				if (skipNextSeparator){
+					skipNextSeparator = false;
+				} else if (blockType.startsWith(">")) {
+					if (Utilities.isBlank(scalarBlockLine)) {
+						blockString += "\n";
+						skipNextSeparator = true;
+					} else {
+						blockString += " ";
+					}
 				} else {
 					blockString += "\n";
 				}
@@ -862,6 +879,11 @@ public class YamlReader extends BasicReader {
 					skipForNextToken = null;
 				}
 
+				if (pendingComment != null && entryKey != null) {
+					entryKey.setComment(pendingComment);
+					pendingComment = null;
+				}
+
 				switch (currentToken) {
 					case YamlComment:
 						if (yamlMappingStartLine == getReadLines()) {
@@ -931,7 +953,7 @@ public class YamlReader extends BasicReader {
 						//						break;
 					case YamlSimpleValue:
 						entryValue = currentYamlSimpleObject;
-						if (pendingComment != null) {
+						if (pendingComment != null && currentYamlMappingEntryKey == null) {
 							currentYamlSimpleObject.setInlineComment(pendingComment);
 							pendingComment = null;
 						}
