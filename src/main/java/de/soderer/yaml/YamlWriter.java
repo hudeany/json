@@ -312,11 +312,7 @@ public class YamlWriter implements Closeable {
 	}
 
 	private YamlWriter add(final YamlValue yamlValue, final boolean initiallyIndent) throws Exception {
-		if (!omitComments && yamlValue.getComment() != null) {
-			for (final String commentLine : yamlValue.getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
-				write("# " + commentLine + linebreakType.toString(), true);
-			}
-		}
+		writeComment(yamlValue);
 		String inlineCommentPart = "";
 		if (!omitComments && yamlValue.getInlineComment() != null) {
 			inlineCommentPart = "# " + yamlValue.getInlineComment() + linebreakType.toString();
@@ -357,6 +353,8 @@ public class YamlWriter implements Closeable {
 			}
 		}
 
+		writeComment(yamlDocument);
+
 		if (yamlDocument.getInlineComment() == null) {
 			write("---" + linebreakType.toString(), false);
 		} else {
@@ -372,6 +370,7 @@ public class YamlWriter implements Closeable {
 		for (final YamlDocument yamlDocument : yamlDocumentList) {
 			if (documentIsOpen) {
 				if (yamlDocument.getDirectives() != null && yamlDocument.getDirectives().size() > 0) {
+					write(linebreakType.toString(), false);
 					write("...", false);
 				}
 				write(linebreakType.toString(), false);
@@ -439,11 +438,8 @@ public class YamlWriter implements Closeable {
 
 					write(linebreakType.toString(), false);
 
-					if (!omitComments && entry.getValue().getComment() != null) {
-						for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
-							write("# " + commentLine + linebreakType.toString(), true);
-						}
-					}
+					writeComment(entry.getValue());
+
 					String keyAnchorPart = "";
 					if (entry.getKey().getAnchor() != null) {
 						keyAnchorPart = " &" + entry.getKey().getAnchor();
@@ -499,12 +495,16 @@ public class YamlWriter implements Closeable {
 						initiallyIndent = true;
 					}
 					for (final String commentLine : yamlMapping.getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
-						write("# " + commentLine + linebreakType.toString(), initiallyIndent);
+						if (Utilities.isEmpty(commentLine)) {
+							write("#" + linebreakType.toString(), initiallyIndent);
+						} else {
+							write("# " + commentLine + linebreakType.toString(), initiallyIndent);
+						}
 					}
 				}
 
 				if (yamlMapping.getAnchor() != null) {
-					write("&" + yamlMapping.getAnchor(), initiallyIndent);
+					write("&" + yamlMapping.getAnchor() + linebreakType.toString(), initiallyIndent);
 				}
 
 				boolean isFirstProperty = true;
@@ -519,7 +519,11 @@ public class YamlWriter implements Closeable {
 							initiallyIndent = true;
 						}
 						for (final String commentLine : entry.getKey().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
-							write("# " + commentLine + linebreakType.toString(), initiallyIndent);
+							if (Utilities.isEmpty(commentLine)) {
+								write("#" + linebreakType.toString(), initiallyIndent);
+							} else {
+								write("# " + commentLine + linebreakType.toString(), initiallyIndent);
+							}
 						}
 					}
 
@@ -554,11 +558,9 @@ public class YamlWriter implements Closeable {
 								write(keyInlineCommentPart, false);
 								write(valueAnchorPart + valueInlineCommentPart + Utilities.repeat(indentation, currentIndentationLevel), true);
 								currentIndentationLevel++;
-								if (!omitComments && entry.getValue().getComment() != null) {
-									for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
-										write("# " + commentLine + linebreakType.toString(), true);
-									}
-								}
+
+								writeComment(entry.getValue());
+
 								add(entry.getValue(), true);
 								currentIndentationLevel--;
 							}
@@ -567,13 +569,11 @@ public class YamlWriter implements Closeable {
 								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueAnchorPart + valueInlineCommentPart + " ", isFirstProperty ? initiallyIndent : true);
 								add((YamlSequence) entry.getValue(), false);
 							} else {
-								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueAnchorPart + valueInlineCommentPart + Utilities.repeat(indentation, currentIndentationLevel), !skipNextIndentation);
+								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueAnchorPart + valueInlineCommentPart + linebreakType.toString(), isFirstProperty ? initiallyIndent : true);
 								currentIndentationLevel++;
-								if (!omitComments && entry.getValue().getComment() != null) {
-									for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
-										write("# " + commentLine + linebreakType.toString(), true);
-									}
-								}
+
+								writeComment(entry.getValue());
+
 								add(entry.getValue(), true);
 								currentIndentationLevel--;
 							}
@@ -585,7 +585,7 @@ public class YamlWriter implements Closeable {
 						}
 						String valueAnchorPart = "";
 						if (entry.getValue().getAnchor() != null) {
-							valueAnchorPart = " &" + entry.getValue().getAnchor();
+							valueAnchorPart = " &2" + entry.getValue().getAnchor();
 						}
 						String keyInlineCommentPart = null;
 						if (!omitComments && entry.getKey().getInlineComment() != null) {
@@ -607,11 +607,9 @@ public class YamlWriter implements Closeable {
 								write(keyInlineCommentPart, false);
 								write(valueAnchorPart + valueInlineCommentPart + linebreakType.toString(), true);
 								currentIndentationLevel++;
-								if (!omitComments && entry.getValue().getComment() != null) {
-									for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
-										write("# " + commentLine + linebreakType.toString(), true);
-									}
-								}
+
+								writeComment(entry.getValue());
+
 								add((YamlMapping) entry.getValue(), true);
 								currentIndentationLevel--;
 							}
@@ -622,21 +620,16 @@ public class YamlWriter implements Closeable {
 							} else {
 								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueAnchorPart + valueInlineCommentPart + linebreakType.toString(), isFirstProperty ? initiallyIndent : true);
 								currentIndentationLevel++;
-								if (!omitComments && entry.getValue().getComment() != null) {
-									for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
-										write("# " + commentLine + linebreakType.toString(), true);
-									}
-								}
+
+								writeComment(entry.getValue());
+
 								add((YamlMapping) entry.getValue(), true);
 								currentIndentationLevel--;
 							}
 						}
 					} else if (entry.getValue() instanceof YamlSimpleValue) {
-						if (!omitComments && entry.getValue().getComment() != null) {
-							for (final String commentLine : entry.getValue().getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
-								write("# " + commentLine + linebreakType.toString(), true);
-							}
-						}
+						writeComment(entry.getValue());
+
 						String keyAnchorPart = "";
 						if (entry.getKey().getAnchor() != null) {
 							keyAnchorPart = " &" + entry.getKey().getAnchor();
@@ -777,11 +770,7 @@ public class YamlWriter implements Closeable {
 
 					write(linebreakType.toString(), false);
 
-					if (!omitComments && sequenceItem.getComment() != null) {
-						for (final String commentLine : sequenceItem.getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
-							write("# " + commentLine + linebreakType.toString(), true);
-						}
-					}
+					writeComment(sequenceItem);
 
 					String anchorPart = "";
 					if (sequenceItem.getAnchor() != null) {
@@ -821,11 +810,7 @@ public class YamlWriter implements Closeable {
 						write(linebreakType.toString(), false);
 					}
 
-					if (!omitComments && sequenceItem.getComment() != null) {
-						for (final String commentLine : sequenceItem.getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
-							write("# " + commentLine + linebreakType.toString(), true);
-						}
-					}
+					writeComment(sequenceItem);
 
 					String anchorPart = "";
 					if (sequenceItem.getAnchor() != null) {
@@ -1231,5 +1216,17 @@ public class YamlWriter implements Closeable {
 				.replace("\r\n", "\n")
 				.replace("\r", "\n")
 				.replace("\n", "\n" + Utilities.repeat(indentation, currentIndentationLevel + 1));
+	}
+
+	private void writeComment(final YamlValue yamlValue) throws IOException {
+		if (!omitComments && yamlValue.getComment() != null) {
+			for (final String commentLine : yamlValue.getComment().replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
+				if (Utilities.isEmpty(commentLine)) {
+					write("#" + linebreakType.toString(), true);
+				} else {
+					write("# " + commentLine + linebreakType.toString(), true);
+				}
+			}
+		}
 	}
 }

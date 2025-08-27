@@ -33,6 +33,7 @@ public class YamlReader extends BasicReader {
 	private YamlNode currentYamlMappingEntryKey = null;
 	private String pendingComment = null;
 	private String pendingAnchorId = null;
+	private String pendingReferencedAnchorId = null;
 	private YamlDataType nextYamlDataType = null;
 
 	private final Stack<YamlToken> openYamlItems = new Stack<>();
@@ -104,7 +105,7 @@ public class YamlReader extends BasicReader {
 				readNextToken();
 			}
 			if (currentToken == YamlToken.YamlDocument_Start) {
-				final String yamlDocumentStartLine = readUpToNext(true, null, '\r', '\n');
+				final String yamlDocumentStartLine = readUpToNext(false, null, '\r', '\n');
 				if (yamlDocumentStartLine.contains("#")) {
 					documentStartComment = yamlDocumentStartLine.substring(yamlDocumentStartLine.indexOf("#") + 1);
 					if (documentStartComment != null && documentStartComment.startsWith(" ")) {
@@ -156,9 +157,13 @@ public class YamlReader extends BasicReader {
 				}
 				currentDocument = new YamlDocument();
 				documents.add(currentDocument);
+				if (pendingComment != null) {
+					currentDocument.setComment(pendingComment);
+					pendingComment = null;
+				}
 				documentContentStarted = true;
 			} else if (currentToken == YamlToken.YamlDocument_End) {
-				currentDocument = new YamlDocument();
+				currentDocument = null;
 				documentContentStarted = false;
 				readNextToken();
 			}
@@ -218,6 +223,13 @@ public class YamlReader extends BasicReader {
 					} else {
 						if (currentDocument == null) {
 							currentDocument = new YamlDocument();
+							if (pendingComment != null) {
+								currentDocument.setComment(pendingComment);
+								pendingComment = null;
+							}
+							if (documents != null) {
+								documents.add(currentDocument);
+							}
 						}
 						yamlToken = YamlToken.YamlDirective;
 						try {
@@ -251,6 +263,10 @@ public class YamlReader extends BasicReader {
 							// End of directives
 							if (currentDocument == null) {
 								currentDocument = new YamlDocument();
+								if (pendingComment != null) {
+									currentDocument.setComment(pendingComment);
+									pendingComment = null;
+								}
 							}
 							documentContentStarted = true;
 							yamlToken = YamlToken.YamlDocument_Start;
@@ -403,7 +419,7 @@ public class YamlReader extends BasicReader {
 				case '*': // Reference to anchor
 					final String referencedAnchorId = readUpToNext(false, null, '\r', '\n', '#').substring(1);
 					yamlToken = YamlToken.YamlReference;
-					pendingAnchorId = referencedAnchorId;
+					pendingReferencedAnchorId = referencedAnchorId;
 					break;
 				case '!': // Explicit yaml data type
 					final String yamlDatatypeString = readUpToNext(false, null, ' ', '\t', '\r', '\n', '#');
@@ -698,7 +714,7 @@ public class YamlReader extends BasicReader {
 				} else if (currentToken == YamlToken.YamlAnchor) {
 					readNextToken();
 				} else if (currentToken == YamlToken.YamlReference) {
-					newYamlSequence.add(new YamlAnchorReference().setValue(pendingAnchorId));
+					newYamlSequence.add(new YamlAnchorReference().setValue(pendingReferencedAnchorId));
 					readNextToken();
 				} else if (currentToken == YamlToken.YamlDataType) {
 					readNextToken();
@@ -968,7 +984,7 @@ public class YamlReader extends BasicReader {
 						readNextToken();
 						break;
 					case YamlReference:
-						final YamlAnchorReference yamlAnchorReference = new YamlAnchorReference().setValue(pendingAnchorId);
+						final YamlAnchorReference yamlAnchorReference = new YamlAnchorReference().setValue(pendingReferencedAnchorId);
 						if (pendingComment != null) {
 							yamlAnchorReference.setInlineComment(pendingComment);
 							pendingComment = null;

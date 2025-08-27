@@ -6,6 +6,7 @@ import java.util.Set;
 import de.soderer.json.utilities.Utilities;
 
 public class YamlAnchorReference extends YamlNode {
+	@Override
 	public Set<String> getAllAvailableAnchorIds() {
 		return new HashSet<>();
 	}
@@ -18,9 +19,10 @@ public class YamlAnchorReference extends YamlNode {
 			return this;
 		}
 	}
-	
+
+	@Override
 	public Set<String> getAllReferencedAnchorIds() {
-		Set<String> referencedAnchorIds = new HashSet<>();
+		final Set<String> referencedAnchorIds = new HashSet<>();
 		if (getValue() != null) {
 			referencedAnchorIds.add((String) getValue());
 		}

@@ -118,6 +118,11 @@ public class YamlSequence extends YamlNode implements Iterable<YamlNode> {
 
 	@Override
 	public YamlSequence setAnchor(final String anchor) throws Exception {
+		// TODO
+		if ("id005".equals(anchor)) {
+			System.out.println("Anchor found");
+		}
+
 		super.setAnchor(anchor);
 		return this;
 	}
