@@ -8,25 +8,16 @@ public abstract class YamlNode extends YamlValue {
 	protected YamlStyle style = null;
 
 	public String getAnchor() {
-		if ("id005".equals(anchor)) {
-			System.out.println("Anchor found");
-		}
-
 		return anchor;
 	}
 
 	public YamlNode setAnchor(final String anchor) throws Exception {
-
-		// TODO
-		if ("id005".equals(anchor)) {
-			System.out.println("Anchor found");
-		}
-
 		if (anchor.matches("\\s+")) {
 			throw new Exception("Yaml anchor name contains invalid whitespace");
+		} else {
+			this.anchor = anchor;
+			return this;
 		}
-		this.anchor = anchor;
-		return this;
 	}
 
 	public YamlStyle getStyle() {

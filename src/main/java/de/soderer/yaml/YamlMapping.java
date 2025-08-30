@@ -174,11 +174,6 @@ public class YamlMapping extends YamlNode {
 
 	@Override
 	public YamlMapping setAnchor(final String anchor) throws Exception {
-		// TODO
-		if ("id005".equals(anchor)) {
-			System.out.println("Anchor found");
-		}
-
 		super.setAnchor(anchor);
 		return this;
 	}

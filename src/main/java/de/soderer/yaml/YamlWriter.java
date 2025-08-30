@@ -18,6 +18,7 @@ import java.util.Stack;
 
 import de.soderer.json.utilities.DateUtilities;
 import de.soderer.json.utilities.Linebreak;
+import de.soderer.json.utilities.NumberUtilities;
 import de.soderer.json.utilities.Utilities;
 import de.soderer.yaml.directive.YamlDirective;
 
@@ -266,11 +267,7 @@ public class YamlWriter implements Closeable {
 	}
 
 	public YamlWriter addSimpleValue(final Object value, final boolean initiallyIndent) throws Exception {
-		if (writtenCharacters > 0 || openYamlStackItems.size() != 0) {
-			throw new Exception("Not matching empty Yaml output for adding simple value");
-		} else {
-			write(getSimpleValueString(value, null), initiallyIndent);
-		}
+		write(getSimpleValueString(value, null), initiallyIndent);
 		return this;
 	}
 
@@ -444,10 +441,6 @@ public class YamlWriter implements Closeable {
 					if (entry.getKey().getAnchor() != null) {
 						keyAnchorPart = " &" + entry.getKey().getAnchor();
 					}
-					String valueAnchorPart = "";
-					if (entry.getValue().getAnchor() != null) {
-						valueAnchorPart = " &" + entry.getValue().getAnchor();
-					}
 
 					String separatorPart = "";
 					if (itemIndex < yamlMapping.size()) {
@@ -471,14 +464,14 @@ public class YamlWriter implements Closeable {
 						} else {
 							add(entry.getValue(), true);
 						}
-						write(valueAnchorPart + separatorPart + valueInlineCommentPart, false);
+						write(separatorPart + valueInlineCommentPart, false);
 					} else {
 						if (entry.getValue() instanceof YamlSimpleValue) {
 							write(getSimpleValueString(entry.getValue(), entry.getValue().getStyle()), false);
 						} else {
 							add(entry.getValue(), false);
 						}
-						write(valueAnchorPart + separatorPart + valueInlineCommentPart, false);
+						write(separatorPart + valueInlineCommentPart, false);
 					}
 				}
 				currentIndentationLevel--;
@@ -534,10 +527,6 @@ public class YamlWriter implements Closeable {
 						if (entry.getKey().getAnchor() != null) {
 							keyAnchorPart = " &" + entry.getKey().getAnchor();
 						}
-						String valueAnchorPart = "";
-						if (entry.getValue().getAnchor() != null) {
-							valueAnchorPart = " &" + entry.getValue().getAnchor();
-						}
 						String keyInlineCommentPart = null;
 						if (!omitComments && entry.getKey().getInlineComment() != null) {
 							keyInlineCommentPart = " # " + entry.getKey().getInlineComment() + linebreakType.toString();
@@ -551,12 +540,12 @@ public class YamlWriter implements Closeable {
 							if ((entry.getValue().getStyle() == YamlStyle.Flow || entry.getValue().getStyle() == YamlStyle.Bracket) && !entry.getValue().hasComments()) {
 								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":", true);
 								write(keyInlineCommentPart, false);
-								write(valueAnchorPart + valueInlineCommentPart, isFirstProperty ? initiallyIndent : true);
+								write(valueInlineCommentPart, isFirstProperty ? initiallyIndent : true);
 								add((YamlSequence) entry.getValue(), false);
 							} else {
 								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":", !skipNextIndentation);
 								write(keyInlineCommentPart, false);
-								write(valueAnchorPart + valueInlineCommentPart + Utilities.repeat(indentation, currentIndentationLevel), true);
+								write(valueInlineCommentPart + Utilities.repeat(indentation, currentIndentationLevel), true);
 								currentIndentationLevel++;
 
 								writeComment(entry.getValue());
@@ -566,10 +555,10 @@ public class YamlWriter implements Closeable {
 							}
 						} else {
 							if ((entry.getValue().getStyle() == YamlStyle.Flow || entry.getValue().getStyle() == YamlStyle.Bracket) && !entry.getValue().hasComments()) {
-								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueAnchorPart + valueInlineCommentPart + " ", isFirstProperty ? initiallyIndent : true);
+								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueInlineCommentPart + " ", isFirstProperty ? initiallyIndent : true);
 								add((YamlSequence) entry.getValue(), false);
 							} else {
-								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueAnchorPart + valueInlineCommentPart + linebreakType.toString(), isFirstProperty ? initiallyIndent : true);
+								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueInlineCommentPart + linebreakType.toString(), isFirstProperty ? initiallyIndent : true);
 								currentIndentationLevel++;
 
 								writeComment(entry.getValue());
@@ -583,29 +572,25 @@ public class YamlWriter implements Closeable {
 						if (entry.getKey().getAnchor() != null) {
 							keyAnchorPart = " &" + entry.getKey().getAnchor();
 						}
-						String valueAnchorPart = "";
-						if (entry.getValue().getAnchor() != null) {
-							valueAnchorPart = " &2" + entry.getValue().getAnchor();
-						}
 						String keyInlineCommentPart = null;
 						if (!omitComments && entry.getKey().getInlineComment() != null) {
 							keyInlineCommentPart = " # " + entry.getKey().getInlineComment() + linebreakType.toString();
 						}
 						String valueInlineCommentPart = "";
 						if (!omitComments && entry.getValue().getInlineComment() != null) {
-							valueInlineCommentPart = " # " + entry.getValue().getInlineComment();
+							valueInlineCommentPart = " # " + entry.getValue().getInlineComment() + linebreakType.toString();
 						}
 
 						if (keyInlineCommentPart != null) {
 							if ((entry.getValue().getStyle() == YamlStyle.Flow || entry.getValue().getStyle() == YamlStyle.Bracket) && !entry.getValue().hasComments()) {
 								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":", isFirstProperty ? initiallyIndent : true);
 								write(keyInlineCommentPart, false);
-								write(valueAnchorPart + valueInlineCommentPart, true);
+								write(valueInlineCommentPart, false);
 								add((YamlMapping) entry.getValue(), false);
 							} else {
 								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":", isFirstProperty ? initiallyIndent : true);
 								write(keyInlineCommentPart, false);
-								write(valueAnchorPart + valueInlineCommentPart + linebreakType.toString(), true);
+								write(valueInlineCommentPart, false);
 								currentIndentationLevel++;
 
 								writeComment(entry.getValue());
@@ -615,10 +600,10 @@ public class YamlWriter implements Closeable {
 							}
 						} else {
 							if ((entry.getValue().getStyle() == YamlStyle.Flow || entry.getValue().getStyle() == YamlStyle.Bracket) && !entry.getValue().hasComments()) {
-								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueAnchorPart + valueInlineCommentPart + " ", isFirstProperty ? initiallyIndent : true);
+								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueInlineCommentPart + " ", isFirstProperty ? initiallyIndent : true);
 								add((YamlMapping) entry.getValue(), false);
 							} else {
-								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueAnchorPart + valueInlineCommentPart + linebreakType.toString(), isFirstProperty ? initiallyIndent : true);
+								write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueInlineCommentPart + linebreakType.toString(), isFirstProperty ? initiallyIndent : true);
 								currentIndentationLevel++;
 
 								writeComment(entry.getValue());
@@ -633,10 +618,6 @@ public class YamlWriter implements Closeable {
 						String keyAnchorPart = "";
 						if (entry.getKey().getAnchor() != null) {
 							keyAnchorPart = " &" + entry.getKey().getAnchor();
-						}
-						String valueAnchorPart = "";
-						if (entry.getValue().getAnchor() != null) {
-							valueAnchorPart = " &" + entry.getValue().getAnchor();
 						}
 						String keyInlineCommentPart = null;
 						if (!omitComments && entry.getKey().getInlineComment() != null) {
@@ -661,18 +642,14 @@ public class YamlWriter implements Closeable {
 						if (keyInlineCommentPart != null) {
 							write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":", isFirstProperty ? initiallyIndent : true);
 							write(keyInlineCommentPart, false);
-							write(valueAnchorPart + valuePart + valueInlineCommentPart, true);
+							write(valuePart + valueInlineCommentPart, true);
 						} else {
-							write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueAnchorPart + valuePart + valueInlineCommentPart, isFirstProperty ? initiallyIndent : true);
+							write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valuePart + valueInlineCommentPart, isFirstProperty ? initiallyIndent : true);
 						}
 					} else if (entry.getValue() instanceof YamlAnchorReference) {
 						String keyAnchorPart = "";
 						if (entry.getKey().getAnchor() != null) {
 							keyAnchorPart = " &" + entry.getKey().getAnchor();
-						}
-						String valueAnchorPart = "";
-						if (entry.getValue().getAnchor() != null) {
-							valueAnchorPart = " &" + entry.getValue().getAnchor();
 						}
 						String keyInlineCommentPart = null;
 						if (!omitComments && entry.getKey().getInlineComment() != null) {
@@ -688,9 +665,9 @@ public class YamlWriter implements Closeable {
 						if (keyInlineCommentPart != null) {
 							write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":", isFirstProperty ? initiallyIndent : true);
 							write(keyInlineCommentPart, false);
-							write(valueAnchorPart + valuePart + valueInlineCommentPart, true);
+							write(valuePart + valueInlineCommentPart, true);
 						} else {
-							write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valueAnchorPart + valuePart + valueInlineCommentPart, isFirstProperty ? initiallyIndent : true);
+							write(getSimpleValueString(entry.getKey(), null) + keyAnchorPart + ":" + valuePart + valueInlineCommentPart, isFirstProperty ? initiallyIndent : true);
 						}
 					} else {
 						throw new Exception("Unexpected object type in YamlMapping: " + entry.getValue().getClass());
@@ -1176,8 +1153,11 @@ public class YamlWriter implements Closeable {
 					|| stringValue.contains("[")
 					|| stringValue.contains("]")) {
 				quoteString = true;
+			} else if (NumberUtilities.isNumber(stringValue)) {
+				quoteString = true;
 			}
 		}
+
 		if (quoteString) {
 			return "\"" + stringValue
 					.replace("\\", "\\\\")

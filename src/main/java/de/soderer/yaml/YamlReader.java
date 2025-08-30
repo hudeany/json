@@ -278,12 +278,12 @@ public class YamlReader extends BasicReader {
 							final String negativeNumberString = "-" + readUpToNext(false, null, ' ', '\t', ':', '#', '\r', '\n');
 							nextChar = readNextNonWhitespaceWithinLine();
 							if (nextChar != null && nextChar == ':') {
-								currentYamlMappingEntryKey = parseSimpleYamlValue(negativeNumberString);
+								currentYamlMappingEntryKey = parseSimpleYamlValue(negativeNumberString, false);
 								currentYamlSimpleObject = null;
 								yamlToken = YamlToken.YamlMapping_Property;
 							} else {
 								reuseCurrentChar();
-								currentYamlSimpleObject = parseSimpleYamlValue(negativeNumberString);
+								currentYamlSimpleObject = parseSimpleYamlValue(negativeNumberString, false);
 								if (pendingComment != null) {
 									currentYamlSimpleObject.setComment(pendingComment);
 									pendingComment = null;
@@ -295,12 +295,12 @@ public class YamlReader extends BasicReader {
 							final String infinityNumberString = "-" + readUpToNext(false, null, ' ', '\t', ':', '#', '\r', '\n');
 							nextChar = readNextNonWhitespaceWithinLine();
 							if (nextChar != null && nextChar == ':') {
-								currentYamlMappingEntryKey = parseSimpleYamlValue(infinityNumberString);
+								currentYamlMappingEntryKey = parseSimpleYamlValue(infinityNumberString, false);
 								currentYamlSimpleObject = null;
 								yamlToken = YamlToken.YamlMapping_Property;
 							} else {
 								reuseCurrentChar();
-								currentYamlSimpleObject = parseSimpleYamlValue(infinityNumberString);
+								currentYamlSimpleObject = parseSimpleYamlValue(infinityNumberString, false);
 								if (pendingComment != null) {
 									currentYamlSimpleObject.setComment(pendingComment);
 									pendingComment = null;
@@ -331,12 +331,12 @@ public class YamlReader extends BasicReader {
 						final String infinityNumberString = "-" + readUpToNext(false, null, ' ', '\t', ':', '#', '\r', '\n');
 						nextChar = readNextNonWhitespaceWithinLine();
 						if (nextChar != null && nextChar == ':') {
-							currentYamlMappingEntryKey = parseSimpleYamlValue(infinityNumberString);
+							currentYamlMappingEntryKey = parseSimpleYamlValue(infinityNumberString, false);
 							currentYamlSimpleObject = null;
 							yamlToken = YamlToken.YamlMapping_Property;
 						} else {
 							reuseCurrentChar();
-							currentYamlSimpleObject = parseSimpleYamlValue(infinityNumberString);
+							currentYamlSimpleObject = parseSimpleYamlValue(infinityNumberString, false);
 							if (pendingComment != null) {
 								currentYamlSimpleObject.setComment(pendingComment);
 								pendingComment = null;
@@ -348,12 +348,12 @@ public class YamlReader extends BasicReader {
 						final String notNumberString = "-" + readUpToNext(false, null, ' ', '\t', ':', '#', '\r', '\n');
 						nextChar = readNextNonWhitespaceWithinLine();
 						if (nextChar != null && nextChar == ':') {
-							currentYamlMappingEntryKey = parseSimpleYamlValue(notNumberString);
+							currentYamlMappingEntryKey = parseSimpleYamlValue(notNumberString, false);
 							currentYamlSimpleObject = null;
 							yamlToken = YamlToken.YamlMapping_Property;
 						} else {
 							reuseCurrentChar();
-							currentYamlSimpleObject = parseSimpleYamlValue(notNumberString);
+							currentYamlSimpleObject = parseSimpleYamlValue(notNumberString, false);
 							if (pendingComment != null) {
 								currentYamlSimpleObject.setComment(pendingComment);
 								pendingComment = null;
@@ -435,12 +435,15 @@ public class YamlReader extends BasicReader {
 					//					break;
 				default: // YamlMapping simple property key or simple YamlSequence item
 					String text;
+					boolean wasQuoted = false;
 					final int textStartLineIndex = (int) getReadCharactersInCurrentLine() - 1;
 					try {
 						if (currentChar == '"') {
 							text = readQuotedText('\\');
+							wasQuoted = true;
 						} else if (currentChar == '\'') {
 							text = readQuotedText('\'');
+							wasQuoted = true;
 						} else {
 							if (openYamlItems.size() > 0 && openYamlItems.peek() == YamlToken.YamlSequence_Start) {
 								text = readUpToNextString(false, '\\', ",", "\"", "]", ": ", ":\t", ":\r", ":\n", "}", "#", "\r", "\n").trim();
@@ -460,13 +463,13 @@ public class YamlReader extends BasicReader {
 					nextChar = readNextNonWhitespaceWithinLine();
 					if (nextChar != null && nextChar == ':') {
 						currentMappingTokenIndentationLevel = textStartLineIndex;
-						currentYamlMappingEntryKey = parseSimpleYamlValue(text);
+						currentYamlMappingEntryKey = parseSimpleYamlValue(text, wasQuoted);
 						currentYamlSimpleObject = null;
 
 						yamlToken = YamlToken.YamlMapping_Property;
 					} else {
 						reuseCurrentChar();
-						currentYamlSimpleObject = parseSimpleYamlValue(text);
+						currentYamlSimpleObject = parseSimpleYamlValue(text, wasQuoted);
 						if (pendingComment != null) {
 							currentYamlSimpleObject.setComment(pendingComment);
 							pendingComment = null;
@@ -478,6 +481,13 @@ public class YamlReader extends BasicReader {
 
 					final long readLinesBeforeComment = getReadLines();
 					nextChar = readNextNonWhitespaceWithinLine();
+
+					if (nextChar != null && nextChar == '&') {
+						final String anchorId = readUpToNext(false, null, ' ', '\t', '\r', '\n').substring(1);
+						pendingAnchorId = anchorId;
+						nextChar = readNextNonWhitespaceWithinLine();
+					}
+
 					if (nextChar != null && nextChar == '#') {
 						String nextCommentLine = readUpToNext(false, null, '\r', '\n').substring(1);
 						if (nextCommentLine != null && nextCommentLine.startsWith(" ")) {
@@ -502,11 +512,9 @@ public class YamlReader extends BasicReader {
 						reuseCurrentChar();
 					}
 
-					if (pendingAnchorId != null) {
-						if (currentYamlSimpleObject != null) {
-							currentYamlSimpleObject.setAnchor(pendingAnchorId);
-							pendingAnchorId = null;
-						}
+					if (pendingAnchorId != null && currentYamlSimpleObject != null) {
+						currentYamlSimpleObject.setAnchor(pendingAnchorId);
+						pendingAnchorId = null;
 					}
 
 					break;
@@ -604,11 +612,13 @@ public class YamlReader extends BasicReader {
 		return returnValue;
 	}
 
-	private static YamlSimpleValue parseSimpleYamlValue(final String valueString) {
+	private static YamlSimpleValue parseSimpleYamlValue(final String valueString, final boolean wasQuoted) {
 		Object value;
 
 		if (valueString == null) {
 			throw new RuntimeException("Invalid empty yaml data");
+		} else if (wasQuoted) {
+			value = valueString;
 		} else if (valueString.startsWith("\"") && valueString.endsWith("\"")) {
 			final String returnValue = valueString.replace("\\\"", "\"");
 			value = returnValue.substring(1, returnValue.length() -1);
@@ -674,13 +684,13 @@ public class YamlReader extends BasicReader {
 		} else {
 			final YamlSequence newYamlSequence = new YamlSequence();
 			newYamlSequence.setStyle(YamlStyle.Standard);
-			if (pendingComment != null) {
-				newYamlSequence.setComment(pendingComment);
-				pendingComment = null;
-			}
 			if (pendingAnchorId != null) {
 				newYamlSequence.setAnchor(pendingAnchorId);
 				pendingAnchorId = null;
+			}
+			if (pendingComment != null) {
+				newYamlSequence.setComment(pendingComment);
+				pendingComment = null;
 			}
 
 			final int yamlSequenceIndentationLevel = currentSequenceTokenIndentationLevel;
@@ -819,13 +829,13 @@ public class YamlReader extends BasicReader {
 			throw new Exception("Invalid read position for YamlSequence in line " + (getReadLines() + 1) +" starting at position " + (getReadCharactersInCurrentLine() -1) + " at overall index " + (getReadCharacters() - 1));
 		} else {
 			final YamlSequence newYamlSequence = new YamlSequence();
-			if (pendingComment != null) {
-				newYamlSequence.setComment(pendingComment);
-				pendingComment = null;
-			}
 			if (pendingAnchorId != null) {
 				newYamlSequence.setAnchor(pendingAnchorId);
 				pendingAnchorId = null;
+			}
+			if (pendingComment != null) {
+				newYamlSequence.setComment(pendingComment);
+				pendingComment = null;
 			}
 
 			final long sequenceStartLine = getReadLines();
@@ -870,13 +880,13 @@ public class YamlReader extends BasicReader {
 		} else {
 			final YamlMapping newYamlMapping = new YamlMapping();
 			newYamlMapping.setIndentationLevel(yamlMappingIndentationLevel);
-			if (pendingComment != null) {
-				newYamlMapping.setComment(pendingComment);
-				pendingComment = null;
-			}
 			if (pendingAnchorId != null) {
 				newYamlMapping.setAnchor(pendingAnchorId);
 				pendingAnchorId = null;
+			}
+			if (pendingComment != null) {
+				newYamlMapping.setComment(pendingComment);
+				pendingComment = null;
 			}
 
 			final long yamlMappingStartLine = getReadLines();
@@ -969,13 +979,13 @@ public class YamlReader extends BasicReader {
 						//						break;
 					case YamlSimpleValue:
 						entryValue = currentYamlSimpleObject;
-						if (pendingComment != null && currentYamlMappingEntryKey == null) {
-							currentYamlSimpleObject.setInlineComment(pendingComment);
-							pendingComment = null;
-						}
 						if (pendingAnchorId != null) {
 							currentYamlSimpleObject.setAnchor(pendingAnchorId);
 							pendingAnchorId = null;
+						}
+						if (pendingComment != null && currentYamlSimpleObject != null) {
+							currentYamlSimpleObject.setInlineComment(pendingComment);
+							pendingComment = null;
 						}
 						readNextToken();
 						break;
@@ -997,13 +1007,13 @@ public class YamlReader extends BasicReader {
 						currentYamlSimpleObject.setValue(convertSimpleData(currentYamlSimpleObject.getValue(), nextYamlDataType));
 						currentYamlSimpleObject.setExplicitDataType(nextYamlDataType);
 						entryValue = currentYamlSimpleObject;
-						if (pendingComment != null) {
-							currentYamlSimpleObject.setInlineComment(pendingComment);
-							pendingComment = null;
-						}
 						if (pendingAnchorId != null) {
 							currentYamlSimpleObject.setAnchor(pendingAnchorId);
 							pendingAnchorId = null;
+						}
+						if (pendingComment != null) {
+							currentYamlSimpleObject.setInlineComment(pendingComment);
+							pendingComment = null;
 						}
 						nextYamlDataType = null;
 						readNextToken();
@@ -1042,13 +1052,13 @@ public class YamlReader extends BasicReader {
 			throw new Exception("Invalid read position for YamlMapping in line " + (getReadLines() + 1) +" starting at position " + (getReadCharactersInCurrentLine() -1) + " at overall index " + (getReadCharacters() - 1));
 		} else {
 			final YamlMapping newYamlMapping = new YamlMapping();
-			if (pendingComment != null) {
-				newYamlMapping.setComment(pendingComment);
-				pendingComment = null;
-			}
 			if (pendingAnchorId != null) {
 				newYamlMapping.setAnchor(pendingAnchorId);
 				pendingAnchorId = null;
+			}
+			if (pendingComment != null) {
+				newYamlMapping.setComment(pendingComment);
+				pendingComment = null;
 			}
 
 			final long mappingStartLine = getReadLines();
