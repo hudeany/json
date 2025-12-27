@@ -19,11 +19,16 @@ import de.soderer.yaml.data.YamlSequence;
 
 public class YamlRoundTripTestWithYamlReader {
 	@Test
-	public void testRoundTrip() throws Exception {
-		roundTrip("yaml/standard/sample.yaml", "yaml/standard/result.yaml");
+	public void testStandard() throws Exception {
+		roundTrip("yaml/standard/sample.yaml", "yaml/standard/result.yaml", true);
 	}
 
-	public void roundTrip(final String inputDataFileNamem, final String outputDataFileName) throws Exception {
+	@Test
+	public void testBig() throws Exception {
+		roundTrip("yaml/big/sample.yaml", "yaml/big/result.yaml", false);
+	}
+
+	public void roundTrip(final String inputDataFileNamem, final String outputDataFileName, final boolean alwaysQuote) throws Exception {
 		String resultYamlFileString;
 		try (InputStream resultDataStream = getClass().getClassLoader().getResourceAsStream(outputDataFileName)) {
 			resultYamlFileString = IoUtilities.toString(resultDataStream, StandardCharsets.UTF_8);
@@ -40,7 +45,7 @@ public class YamlRoundTripTestWithYamlReader {
 
 		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
 		try (final YamlWriter writer = new YamlWriter(testOutputStream)) {
-			writer.setAlwaysQuoteStringValues(true);
+			writer.setAlwaysQuoteStringValues(alwaysQuote);
 			writer.writeDocument(testDocument1);
 		}
 
