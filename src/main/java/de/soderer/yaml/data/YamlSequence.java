@@ -29,8 +29,32 @@ public class YamlSequence extends YamlNode implements Iterable<YamlNode> {
 		this.flowStyle = flowStyle;
 	}
 
-	public void add(final YamlNode node) {
-		items.add(node);
+	public void add(final String item) {
+		if (item == null) {
+			add(new YamlScalar("null", YamlScalarType.NULL_VALUE));
+		} else {
+			add(new YamlScalar(item.toString(), YamlScalarType.STRING));
+		}
+	}
+
+	public void add(final Number item) {
+		if (item == null) {
+			add(new YamlScalar("null", YamlScalarType.NULL_VALUE));
+		} else {
+			add(new YamlScalar(item.toString(), YamlScalarType.NUMBER));
+		}
+	}
+
+	public void add(final Boolean item) {
+		if (item == null) {
+			add(new YamlScalar("null", YamlScalarType.NULL_VALUE));
+		} else {
+			add(new YamlScalar(item.toString(), YamlScalarType.BOOLEAN));
+		}
+	}
+
+	public void add(final YamlNode item) {
+		items.add(item);
 	}
 
 	public Object remove(final Object item) {
