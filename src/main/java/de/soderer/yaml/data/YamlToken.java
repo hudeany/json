@@ -1,7 +1,6 @@
 package de.soderer.yaml.data;
 
 public class YamlToken {
-
 	private final YamlTokenType type;
 	private final String value;
 	private final long line;
