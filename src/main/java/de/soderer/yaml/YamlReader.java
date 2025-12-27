@@ -681,6 +681,7 @@ public class YamlReader extends BasicReadAheadReader {
 			} while (match(YamlTokenType.COMMA));
 		}
 
+		consumeNewLineAndIndentsAndDedents();
 		consume(YamlTokenType.FLOW_MAP_END, "} expected");
 		return map;
 	}
@@ -701,6 +702,7 @@ public class YamlReader extends BasicReadAheadReader {
 			} while (match(YamlTokenType.COMMA));
 		}
 
+		consumeNewLineAndIndentsAndDedents();
 		consume(YamlTokenType.FLOW_SEQ_END, "] expected");
 		return seq;
 	}
@@ -931,6 +933,26 @@ public class YamlReader extends BasicReadAheadReader {
 						match(YamlTokenType.NEWLINE);
 					}
 				}
+			}
+		} while (progressed);
+	}
+
+	private void consumeNewLineAndIndentsAndDedents() {
+		boolean progressed;
+		do {
+			progressed = false;
+			while (match(YamlTokenType.NEWLINE) || match(YamlTokenType.INDENT) || match(YamlTokenType.DEDENT)) {
+				progressed = true;
+			}
+		} while (progressed);
+	}
+
+	private void consumeNewLineAndDedents() {
+		boolean progressed;
+		do {
+			progressed = false;
+			while (match(YamlTokenType.NEWLINE) || match(YamlTokenType.DEDENT)) {
+				progressed = true;
 			}
 		} while (progressed);
 	}

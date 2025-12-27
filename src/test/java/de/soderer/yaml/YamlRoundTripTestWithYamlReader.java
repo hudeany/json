@@ -29,6 +29,11 @@ public class YamlRoundTripTestWithYamlReader {
 		roundTrip("yaml/big/sample.yaml", "yaml/big/result.yaml", false);
 	}
 
+	//	@Test
+	//	public void testTest() throws Exception {
+	//		roundTrip("yaml/test/sample.yaml", "yaml/test/result.yaml", false);
+	//	}
+
 	@Test
 	public void testMultipleDocuments() throws Exception {
 		roundTripMultipleDocuments("yaml/multiple/sample.yaml", "yaml/multiple/result.yaml");
