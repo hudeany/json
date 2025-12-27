@@ -92,7 +92,7 @@ public class NetworkUtilities {
 	public static boolean ping(final String ipOrHostname) {
 		try {
 			if (ipOrHostname.toLowerCase().trim().startsWith("http://")) {
-				final URL url = new URL("http://" + getHostnameFromRequestString(ipOrHostname));
+				final URL url = URI.create("http://" + getHostnameFromRequestString(ipOrHostname)).toURL();
 				final HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
 				httpURLConnection.setConnectTimeout(2000);
 				httpURLConnection.setReadTimeout(2000);
@@ -100,7 +100,7 @@ public class NetworkUtilities {
 				httpURLConnection.connect();
 				return true;
 			} else if (ipOrHostname.toLowerCase().trim().startsWith("https://")) {
-				final URL url = new URL("https://" + getHostnameFromRequestString(ipOrHostname));
+				final URL url = URI.create("https://" + getHostnameFromRequestString(ipOrHostname)).toURL();
 				final HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
 				httpURLConnection.setConnectTimeout(2000);
 				httpURLConnection.setReadTimeout(2000);
@@ -298,7 +298,7 @@ public class NetworkUtilities {
 		final SSLContext context = SSLContext.getInstance("TLS");
 		context.init(null, tmf.getTrustManagers(), null);
 
-		final URL url = new URL(urlString);
+		final URL url = URI.create(urlString).toURL();
 
 		final HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
 		connection.setSSLSocketFactory(context.getSocketFactory());

@@ -21,7 +21,7 @@ public class BasicReader implements Closeable {
 
 	/** Input encoding. */
 	private final Charset encoding;
-	
+
 	/** Normalize linebreaks (\r\n, \n, \r) to unix style (\n) */
 	public boolean normalizeLinebreaks = false;
 
@@ -53,14 +53,14 @@ public class BasicReader implements Closeable {
 		}
 	}
 
-	public boolean isNormalizeLinebreaks() {
+	protected boolean isNormalizeLinebreaks() {
 		return normalizeLinebreaks;
 	}
 
-	public void setNormalizeLinebreaks(boolean normalizeLinebreaks) {
+	protected void setNormalizeLinebreaks(final boolean normalizeLinebreaks) {
 		this.normalizeLinebreaks = normalizeLinebreaks;
 	}
-	
+
 	public Character getCurrentChar() {
 		return currentChar;
 	}
@@ -76,17 +76,17 @@ public class BasicReader implements Closeable {
 	public long getReadCharactersInCurrentLine() {
 		return readCharactersInCurrentLine;
 	}
-	
+
 	public int getCurrentIndentationLevel() {
 		return currentIndentationLevel;
 	}
 
-	public void reuse(final char[] charactersToReuse) throws IOException {
+	protected void reuse(final char[] charactersToReuse) throws IOException {
 		if (charactersToReuse != null) {
 			inputReader.unread(charactersToReuse, 0, charactersToReuse.length);
 			readCharacters -= charactersToReuse.length;
 			readCharactersInCurrentLine -= charactersToReuse.length;
-			for (char characterToReuse : charactersToReuse) {
+			for (final char characterToReuse : charactersToReuse) {
 				if (characterToReuse == '\n') {
 					readLines--;
 				}
@@ -94,7 +94,7 @@ public class BasicReader implements Closeable {
 		}
 	}
 
-	public void reuse(final Character characterToReuse) throws IOException {
+	protected void reuse(final Character characterToReuse) throws IOException {
 		if (characterToReuse != null) {
 			inputReader.unread(characterToReuse);
 			readCharacters -= 1;
@@ -105,14 +105,14 @@ public class BasicReader implements Closeable {
 		}
 	}
 
-	public void reuseCurrentChar() throws IOException {
+	protected void reuseCurrentChar() throws IOException {
 		reuse(currentChar);
 		currentChar = null;
 	}
 
 	protected Character readNextCharacter() throws IOException {
 		final int nextCharInt = inputReader.read();
-		
+
 		if (nextCharInt != -1) {
 			// Check for UTF-8 BOM at data start
 			if (readCharacters == 0 && nextCharInt == BOM_UTF_8_CHAR && encoding == StandardCharsets.UTF_8) {
@@ -123,10 +123,10 @@ public class BasicReader implements Closeable {
 				char nextChar = (char) nextCharInt;
 				readCharacters++;
 				readCharactersInCurrentLine++;
-				
+
 				// Normalize linebreaks (\r\n, \n, \r) to unix style (\n)
 				if (nextChar == '\r' && normalizeLinebreaks) {
-					int checkLinefeedChar = inputReader.read();
+					final int checkLinefeedChar = inputReader.read();
 					if (checkLinefeedChar != '\n') {
 						reuse((char) checkLinefeedChar);
 					} else {
@@ -134,7 +134,7 @@ public class BasicReader implements Closeable {
 					}
 					nextChar = '\n';
 				}
-				
+
 				if ((nextChar == '\n' && (currentChar == null || currentChar != '\r'))
 						|| nextChar == '\r') {
 					readLines++;
@@ -328,7 +328,7 @@ public class BasicReader implements Closeable {
 	}
 
 	protected String readQuotedText(final Character escapeCharacter) throws Exception {
-		boolean previousSettingNormalizeLinebreaks = normalizeLinebreaks;
+		final boolean previousSettingNormalizeLinebreaks = normalizeLinebreaks;
 		try {
 			normalizeLinebreaks = false;
 			final char quoteChar = currentChar;
@@ -471,5 +471,31 @@ public class BasicReader implements Closeable {
 		} else {
 			return 0;
 		}
+	}
+
+	protected Character peek() throws IOException {
+		final Character nextChar = readNextCharacter();
+		if (nextChar != null) {
+			reuse(nextChar);
+		}
+		return nextChar;
+	}
+
+	protected Character peekAhead() throws IOException {
+		final Character nextChar1 = readNextCharacter();
+		final Character nextChar2 = readNextCharacter();
+		if (nextChar2 != null) {
+			reuse(nextChar2);
+		}
+		if (nextChar1 != null) {
+			reuse(nextChar1);
+		}
+		return nextChar2;
+	}
+
+	protected boolean isEOF() throws IOException {
+		final Character nextChar = readNextCharacter();
+		reuseCurrentChar();
+		return nextChar == null;
 	}
 }

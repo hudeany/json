@@ -833,7 +833,7 @@ public class Utilities {
 	 * @throws Exception
 	 */
 	public static void downloadFile(final String url, final String localeDestionationPath) throws Exception {
-		try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new URL(url).openStream());
+		try (BufferedInputStream bufferedInputStream = new BufferedInputStream(URI.create(url).toURL().openStream());
 				FileOutputStream fileOutputStream = new FileOutputStream(localeDestionationPath)) {
 			IoUtilities.copy(bufferedInputStream, fileOutputStream);
 		} catch (final Exception e) {
@@ -1061,6 +1061,29 @@ public class Utilities {
 		}
 	}
 
+	public static String join(final char[] array, String glue) {
+		if (array == null) {
+			return null;
+		} else if (array.length == 0) {
+			return "";
+		} else {
+			if (glue == null) {
+				glue = "";
+			}
+
+			String returnValue = "";
+			boolean isFirst = true;
+			for (final char nextChar : array) {
+				if (!isFirst) {
+					returnValue += glue;
+				}
+				returnValue += nextChar;
+				isFirst = false;
+			}
+			return returnValue;
+		}
+	}
+
 	public static String join(final Iterable<?> iterableObject, String glue) {
 		if (iterableObject == null) {
 			return null;
@@ -1248,7 +1271,7 @@ public class Utilities {
 		try {
 			final Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
 			method.setAccessible(true);
-			method.invoke(ClassLoader.getSystemClassLoader(), new Object[] { new URL(new File(filePath).toURI().toString()) });
+			method.invoke(ClassLoader.getSystemClassLoader(), new Object[] { URI.create(new File(filePath).toURI().toString()).toURL() });
 		} catch (final Throwable t) {
 			throw new IOException("Error, could not add file to system classloader: " + t.getMessage(), t);
 		}

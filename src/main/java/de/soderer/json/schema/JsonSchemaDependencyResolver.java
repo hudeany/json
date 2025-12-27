@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
@@ -179,7 +179,7 @@ public class JsonSchemaDependencyResolver {
 		String downloadUrl = packageName;
 		int redirectsFollowed = 0;
 		while (redirectsFollowed < 10) {
-			final URLConnection urlConnection = new URL(downloadUrl).openConnection();
+			final URLConnection urlConnection = URI.create(downloadUrl).toURL().openConnection();
 			final int statusCode = ((HttpURLConnection) urlConnection).getResponseCode();
 			if (statusCode >= 300 && statusCode < 400) {
 				downloadUrl = urlConnection.getHeaderField("Location");

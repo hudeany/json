@@ -1,6 +1,0 @@
-- preitem: &id001 # anchor "&id001"
-  property1a: Text 1
-  property2a: 5.4
-  property3a: 12
-  property4a: 1000
-  property5a: 155mm

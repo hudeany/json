@@ -6,7 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -392,7 +392,7 @@ public class JsonSchemaSuiteGitHubTest {
 		if (DOWNLOADED_TESTSUITE_FILE.exists()) {
 			return new FileInputStream(DOWNLOADED_TESTSUITE_FILE);
 		} else if (DOWNLOAD) {
-			return new URL(TESTSUITE_DOWNLOADURL).openStream();
+			return URI.create(TESTSUITE_DOWNLOADURL).toURL().openStream();
 		} else {
 			return null;
 		}
