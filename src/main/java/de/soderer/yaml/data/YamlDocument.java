@@ -4,10 +4,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.soderer.yaml.YamlWriter;
+import de.soderer.yaml.data.directive.YamlDirective;
 
 public class YamlDocument {
+	private final List<YamlDirective<?>> directives = new ArrayList<>();
 	private final List<String> leadingComments = new ArrayList<>();
 	private YamlNode root;
+
+	public void addDirective(final YamlDirective<?> directive) {
+		directives.add(directive);
+	}
+
+	public List<YamlDirective<?>> getDirectives() {
+		return directives;
+	}
 
 	public void addLeadingComment(final String comment) {
 		if (comment != null && !comment.isEmpty()) {

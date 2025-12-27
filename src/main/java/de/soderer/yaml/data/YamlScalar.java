@@ -1,7 +1,6 @@
 package de.soderer.yaml.data;
 
 public class YamlScalar extends YamlNode {
-
 	private final String value;
 	private final YamlScalarType type;
 

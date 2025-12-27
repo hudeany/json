@@ -30,5 +30,11 @@ public enum YamlTokenType {
 	ALIAS,          // *id
 
 	// Comments
-	COMMENT
+	COMMENT,
+	COMMENT_INLINE,
+
+	// Document controls
+	DIRECTIVE,
+	DOCUMENT_START, // --- (= Directives end)
+	DOCUMENT_END,   // ...
 }

@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -28,7 +29,12 @@ public class YamlRoundTripTestWithYamlReader {
 		roundTrip("yaml/big/sample.yaml", "yaml/big/result.yaml", false);
 	}
 
-	public void roundTrip(final String inputDataFileNamem, final String outputDataFileName, final boolean alwaysQuote) throws Exception {
+	@Test
+	public void testMultipleDocuments() throws Exception {
+		roundTripMultipleDocuments("yaml/multiple/sample.yaml", "yaml/multiple/result.yaml");
+	}
+
+	private void roundTrip(final String inputDataFileNamem, final String outputDataFileName, final boolean alwaysQuote) throws Exception {
 		String resultYamlFileString;
 		try (InputStream resultDataStream = getClass().getClassLoader().getResourceAsStream(outputDataFileName)) {
 			resultYamlFileString = IoUtilities.toString(resultDataStream, StandardCharsets.UTF_8);
@@ -61,6 +67,51 @@ public class YamlRoundTripTestWithYamlReader {
 		Assert.assertNotNull("Round-trip root should not be null", testDocument2.getRoot());
 
 		Assert.assertTrue( "AST should be equal after round trip", astEquals(testDocument1.getRoot(), testDocument2.getRoot()));
+	}
+
+	private void roundTripMultipleDocuments(final String inputDataFileNamem, final String outputDataFileName) throws Exception {
+		String resultYamlFileString;
+		try (InputStream resultDataStream = getClass().getClassLoader().getResourceAsStream(outputDataFileName)) {
+			resultYamlFileString = IoUtilities.toString(resultDataStream, StandardCharsets.UTF_8);
+		}
+
+		final List<YamlDocument> yamlDocumentList1;
+		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream(inputDataFileNamem)) {
+			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
+				try {
+					yamlReader.readYamlDocument();
+					Assert.fail("Missing expected expection for multiple documents");
+				} catch (@SuppressWarnings("unused") final Exception e) {
+					// Expected expection
+				}
+				yamlDocumentList1 = yamlReader.readYamlDocumentList();
+			}
+		}
+
+		Assert.assertEquals(2, yamlDocumentList1.size());
+		Assert.assertNotNull("Root node of document 1 should not be null", yamlDocumentList1.get(0).getRoot());
+		Assert.assertNotNull("Root node of document 2 should not be null", yamlDocumentList1.get(1).getRoot());
+
+		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
+		try (final YamlWriter writer = new YamlWriter(testOutputStream)) {
+			writer.writeDocument(yamlDocumentList1.get(0));
+			writer.writeDocument(yamlDocumentList1.get(1));
+		}
+
+		final String serializedYaml = new String(testOutputStream.toByteArray(), StandardCharsets.UTF_8);
+		Assert.assertFalse("Serialized YAML should not be empty", serializedYaml.isEmpty());
+		Assert.assertEquals(resultYamlFileString, serializedYaml);
+
+		final List<YamlDocument> yamlDocumentList2;
+		try (final YamlReader yamlReader = new YamlReader(new ByteArrayInputStream(serializedYaml.getBytes(StandardCharsets.UTF_8)))) {
+			yamlDocumentList2 = yamlReader.readYamlDocumentList();
+		}
+
+		Assert.assertNotNull("Root node of document 1 should not be null", yamlDocumentList2.get(0).getRoot());
+		Assert.assertNotNull("Root node of document 2 should not be null", yamlDocumentList2.get(1).getRoot());
+
+		Assert.assertTrue( "AST should be equal after round trip", astEquals(yamlDocumentList1.get(0).getRoot(), yamlDocumentList2.get(0).getRoot()));
+		Assert.assertTrue( "AST should be equal after round trip", astEquals(yamlDocumentList1.get(1).getRoot(), yamlDocumentList2.get(1).getRoot()));
 	}
 
 	private boolean astEquals(final YamlNode a, final YamlNode b) {

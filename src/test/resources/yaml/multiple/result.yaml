@@ -1,0 +1,23 @@
+%YAML 1.2
+%TAG !yaml! tag:yaml.org,2002:
+---
+# First YAML document
+first: &p1
+  name: John Doe
+  age: 42
+  active: true
+  hobbies:
+    - Reading
+    - Programming
+...
+%YAML 1.2
+%TAG !yaml! tag:yaml.org,2002:
+---
+# Second YAML document
+second: &p1
+  name: Jane Doe
+  age: 40
+  active: true
+  hobbies:
+    - Reading
+    - Swiming
