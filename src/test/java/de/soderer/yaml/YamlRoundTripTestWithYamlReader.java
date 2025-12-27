@@ -150,12 +150,12 @@ public class YamlRoundTripTestWithYamlReader {
 			if (seqA.isFlowStyle() != seqB.isFlowStyle()) {
 				return false;
 			}
-			if (seqA.getItems().size() != seqB.getItems().size()) {
+			if (seqA.size() != seqB.size()) {
 				return false;
 			}
 
-			for (int i = 0; i < seqA.getItems().size(); i++) {
-				if (!astEquals(seqA.getItems().get(i), seqB.getItems().get(i))) {
+			for (int i = 0; i < seqA.size(); i++) {
+				if (!astEquals(seqA.get(i), seqB.get(i))) {
 					return false;
 				}
 			}

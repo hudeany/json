@@ -134,7 +134,7 @@ public class JsonValidationTest {
 				final JsonObject schema = (JsonObject) testItem.get("schema");
 				final Object data = testItem.get("data");
 				final Boolean validSchema;
-				if (testItem.containsPropertyKey("validSchema")) {
+				if (testItem.containsKey("validSchema")) {
 					validSchema = (Boolean) testItem.get("validSchema");
 				} else {
 					validSchema = true;
@@ -186,7 +186,7 @@ public class JsonValidationTest {
 				final JsonObject schema = (JsonObject) testItem.get("schema");
 				final Object data = testItem.get("data");
 				final Boolean validSchema;
-				if (testItem.containsPropertyKey("validSchema")) {
+				if (testItem.containsKey("validSchema")) {
 					validSchema = (Boolean) testItem.get("validSchema");
 				} else {
 					validSchema = true;
@@ -235,7 +235,7 @@ public class JsonValidationTest {
 				final JsonObject schema = (JsonObject) testItem.get("schema");
 				final Object data = testItem.get("data");
 				final Boolean validSchema;
-				if (testItem.containsPropertyKey("validSchema")) {
+				if (testItem.containsKey("validSchema")) {
 					validSchema = (Boolean) testItem.get("validSchema");
 				} else {
 					validSchema = true;
@@ -284,7 +284,7 @@ public class JsonValidationTest {
 				final JsonObject schema = (JsonObject) testItem.get("schema");
 				final Object data = testItem.get("data");
 				final Boolean validSchema;
-				if (testItem.containsPropertyKey("validSchema")) {
+				if (testItem.containsKey("validSchema")) {
 					validSchema = (Boolean) testItem.get("validSchema");
 				} else {
 					validSchema = true;

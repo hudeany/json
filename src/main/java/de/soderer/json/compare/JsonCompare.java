@@ -38,7 +38,7 @@ public class JsonCompare {
 	private JsonArray compare(final JsonObject jsonObjectLeft, final JsonObject jsonObjectRight) {
 		final JsonArray differences = new JsonArray();
 		for (final String key : jsonObjectLeft.keySet()) {
-			if (!jsonObjectRight.containsPropertyKey(key)) {
+			if (!jsonObjectRight.containsKey(key)) {
 				differences.add("jsonObjectRight misses property key '" + key + "'");
 			} else {
 				final JsonArray propertyDifferences = compare(jsonObjectLeft.get(key), jsonObjectRight.get(key));
@@ -48,7 +48,7 @@ public class JsonCompare {
 			}
 		}
 		for (final String key : jsonObjectRight.keySet()) {
-			if (!jsonObjectLeft.containsPropertyKey(key)) {
+			if (!jsonObjectLeft.containsKey(key)) {
 				differences.add("jsonObjectLeft misses property key '" + key + "'");
 			}
 		}

@@ -47,7 +47,7 @@ public class JsonSchemaDependencyResolver {
 		if (reference != null) {
 			if (!reference.contains("#")) {
 				// Dereference simple reference without '#'
-				if (schemaDocumentNode.get("definitions") != null && schemaDocumentNode.get("definitions") instanceof JsonObject && ((JsonObject) schemaDocumentNode.get("definitions")).containsPropertyKey(reference)) {
+				if (schemaDocumentNode.get("definitions") != null && schemaDocumentNode.get("definitions") instanceof JsonObject && ((JsonObject) schemaDocumentNode.get("definitions")).containsKey(reference)) {
 					final Object dereferencedValue = ((JsonObject) schemaDocumentNode.get("definitions")).get(reference);
 					if (!(dereferencedValue instanceof JsonObject)) {
 						throw new JsonSchemaDefinitionError("Invalid JSON schema reference data type for key '" + reference + "'. Expected 'object' but was '" + dereferencedValue.getClass().getSimpleName() + "'", jsonSchemaPath);
@@ -56,7 +56,7 @@ public class JsonSchemaDependencyResolver {
 					}
 				} else {
 					for (final JsonObject indirectJsonDefinitions : additionalSchemaDocumentNodes.values()) {
-						if (indirectJsonDefinitions.get("definitions") != null && indirectJsonDefinitions.get("definitions") instanceof JsonObject && ((JsonObject) indirectJsonDefinitions.get("definitions")).containsPropertyKey(reference)) {
+						if (indirectJsonDefinitions.get("definitions") != null && indirectJsonDefinitions.get("definitions") instanceof JsonObject && ((JsonObject) indirectJsonDefinitions.get("definitions")).containsKey(reference)) {
 							final Object dereferencedValue = ((JsonObject) indirectJsonDefinitions.get("definitions")).get(reference);
 							if (!(dereferencedValue instanceof JsonObject)) {
 								throw new JsonSchemaDefinitionError("Invalid JSON schema reference data type for key '" + reference + "'. Expected 'object' but was '" + dereferencedValue.getClass().getSimpleName() + "'", jsonSchemaPath);
@@ -81,7 +81,7 @@ public class JsonSchemaDependencyResolver {
 							throw new JsonSchemaDefinitionError("Referenced JsonSchema does not contain the reference path '" + reference + "'", jsonSchemaPath);
 						} else {
 							final JsonObject referencedJsonObject = (JsonObject) referencedObject;
-							if (!referencedJsonObject.containsPropertyKey(jsonPathElement.toString())) {
+							if (!referencedJsonObject.containsKey(jsonPathElement.toString())) {
 								throw new JsonSchemaDefinitionError("Referenced JsonSchema does not contain the reference path '" + reference + "'", jsonSchemaPath);
 							} else if (referencedJsonObject.get(jsonPathElement.toString()) == null) {
 								throw new JsonSchemaDefinitionError("Invalid data type 'null' for reference path '" + reference + "'", jsonSchemaPath);
@@ -156,7 +156,7 @@ public class JsonSchemaDependencyResolver {
 						if (jsonPathElement == null) {
 							throw new JsonSchemaDefinitionError("Invalid JSON reference path contains null value", jsonSchemaPath);
 						} else if (jsonPathElement instanceof JsonPathPropertyElement) {
-							if (!referencedObject.containsPropertyKey(jsonPathElement.toString())) {
+							if (!referencedObject.containsKey(jsonPathElement.toString())) {
 								throw new JsonSchemaDefinitionError("Referenced JsonSchema does not contain the reference path '" + reference + "'", jsonSchemaPath);
 							} else if (referencedObject.get(jsonPathElement.toString()) == null) {
 								throw new JsonSchemaDefinitionError("Invalid data type 'null' for reference path '" + reference + "'", jsonSchemaPath);
@@ -199,7 +199,7 @@ public class JsonSchemaDependencyResolver {
 		if (reference != null) {
 			if (!reference.contains("#")) {
 				// Dereference simple reference without '#'
-				if (schemaDocumentNode.get("definitions") != null && schemaDocumentNode.get("definitions") instanceof JsonObject && ((JsonObject) schemaDocumentNode.get("definitions")).containsPropertyKey(reference)) {
+				if (schemaDocumentNode.get("definitions") != null && schemaDocumentNode.get("definitions") instanceof JsonObject && ((JsonObject) schemaDocumentNode.get("definitions")).containsKey(reference)) {
 					final Object dereferencedValue = ((JsonObject) schemaDocumentNode.get("definitions")).get(reference);
 					if (!(dereferencedValue instanceof JsonObject)) {
 						throw new JsonSchemaDefinitionError("Invalid JSON schema reference data type for key '" + reference + "'. Expected 'object' but was '" + dereferencedValue.getClass().getSimpleName() + "'", jsonSchemaPath);
@@ -209,7 +209,7 @@ public class JsonSchemaDependencyResolver {
 				} else {
 					for (final Entry<String, JsonObject> additionalSchemaDocuments : additionalSchemaDocumentNodes.entrySet()) {
 						final JsonObject indirectJsonDefinitions = additionalSchemaDocuments.getValue();
-						if (indirectJsonDefinitions.get("definitions") != null && indirectJsonDefinitions.get("definitions") instanceof JsonObject && ((JsonObject) indirectJsonDefinitions.get("definitions")).containsPropertyKey(reference)) {
+						if (indirectJsonDefinitions.get("definitions") != null && indirectJsonDefinitions.get("definitions") instanceof JsonObject && ((JsonObject) indirectJsonDefinitions.get("definitions")).containsKey(reference)) {
 							final Object dereferencedValue = ((JsonObject) indirectJsonDefinitions.get("definitions")).get(reference);
 							if (!(dereferencedValue instanceof JsonObject)) {
 								throw new JsonSchemaDefinitionError("Invalid JSON schema reference data type for key '" + reference + "'. Expected 'object' but was '" + dereferencedValue.getClass().getSimpleName() + "'", jsonSchemaPath);
@@ -228,7 +228,7 @@ public class JsonSchemaDependencyResolver {
 					if (jsonPathElement == null) {
 						throw new JsonSchemaDefinitionError("Invalid JSON reference path contains null value", jsonSchemaPath);
 					} else if (jsonPathElement instanceof JsonPathPropertyElement) {
-						if (!referencedObject.containsPropertyKey(jsonPathElement.toString())) {
+						if (!referencedObject.containsKey(jsonPathElement.toString())) {
 							throw new JsonSchemaDefinitionError("Referenced JsonSchema does not contain the reference path '" + reference + "'", jsonSchemaPath);
 						} else if (referencedObject.get(jsonPathElement.toString()) == null) {
 							throw new JsonSchemaDefinitionError("Invalid data type 'null' for reference path '" + reference + "'", jsonSchemaPath);
@@ -271,7 +271,7 @@ public class JsonSchemaDependencyResolver {
 						if (jsonPathElement == null) {
 							throw new JsonSchemaDefinitionError("Invalid JSON reference path contains null value", jsonSchemaPath);
 						} else if (jsonPathElement instanceof JsonPathPropertyElement) {
-							if (!referencedObject.containsPropertyKey(jsonPathElement.toString())) {
+							if (!referencedObject.containsKey(jsonPathElement.toString())) {
 								throw new JsonSchemaDefinitionError("Referenced JsonSchema does not contain the reference path '" + reference + "'", jsonSchemaPath);
 							} else if (referencedObject.get(jsonPathElement.toString()) == null) {
 								throw new JsonSchemaDefinitionError("Invalid data type 'null' for reference path '" + reference + "'", jsonSchemaPath);

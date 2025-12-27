@@ -48,7 +48,7 @@ public class ContentMediaTypeValidator extends ExtendedBaseJsonSchemaValidator {
 		} else {
 			Object value = jsonNode.getValue();
 
-			if (parentValidatorData.containsPropertyKey("contentEncoding")) {
+			if (parentValidatorData.containsKey("contentEncoding")) {
 				if ("base64".equalsIgnoreCase((String) parentValidatorData.get("contentEncoding"))) {
 					try {
 						value = Base64.getDecoder().decode((String) jsonNode.getValue());

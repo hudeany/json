@@ -147,7 +147,7 @@ public class JsonSchema {
 			throw new JsonSchemaDefinitionError("Contains null data", null);
 		}
 
-		if (jsonSchemaDefinitionObject.containsPropertyKey("id")) {
+		if (jsonSchemaDefinitionObject.containsKey("id")) {
 			if (jsonSchemaDefinitionObject.get("id") == null) {
 				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key 'id'", new JsonSchemaPath());
 			} else if (!(jsonSchemaDefinitionObject.get("id") instanceof String)) {
@@ -159,7 +159,7 @@ public class JsonSchema {
 			}
 		}
 
-		if (jsonSchemaDefinitionObject.containsPropertyKey("$id")) {
+		if (jsonSchemaDefinitionObject.containsKey("$id")) {
 			if (jsonSchemaDefinitionObject.get("$id") == null) {
 				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key '$id'", new JsonSchemaPath());
 			} else if (!(jsonSchemaDefinitionObject.get("$id") instanceof String)) {
@@ -171,7 +171,7 @@ public class JsonSchema {
 			}
 		}
 
-		if (jsonSchemaDefinitionObject.containsPropertyKey("$schema")) {
+		if (jsonSchemaDefinitionObject.containsKey("$schema")) {
 			if (jsonSchemaDefinitionObject.get("$schema") == null) {
 				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key '$schema'", new JsonSchemaPath());
 			} else if (!(jsonSchemaDefinitionObject.get("$schema") instanceof String)) {
@@ -186,7 +186,7 @@ public class JsonSchema {
 			}
 		}
 
-		if (jsonSchemaDefinitionObject.containsPropertyKey("$comment")) {
+		if (jsonSchemaDefinitionObject.containsKey("$comment")) {
 			if (jsonSchemaDefinitionObject.get("$comment") == null) {
 				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key '$comment'", new JsonSchemaPath());
 			} else if (!(jsonSchemaDefinitionObject.get("$comment") instanceof String)) {
@@ -198,7 +198,7 @@ public class JsonSchema {
 			}
 		}
 
-		if (jsonSchemaDefinitionObject.containsPropertyKey("title")) {
+		if (jsonSchemaDefinitionObject.containsKey("title")) {
 			if (jsonSchemaDefinitionObject.get("title") == null) {
 				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key 'title'", new JsonSchemaPath());
 			} else if (!(jsonSchemaDefinitionObject.get("title") instanceof String)) {
@@ -210,7 +210,7 @@ public class JsonSchema {
 			}
 		}
 
-		if (jsonSchemaDefinitionObject.containsPropertyKey("description")) {
+		if (jsonSchemaDefinitionObject.containsKey("description")) {
 			if (jsonSchemaDefinitionObject.get("description") == null) {
 				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key 'description'", new JsonSchemaPath());
 			} else if (!(jsonSchemaDefinitionObject.get("description") instanceof String)) {
@@ -394,7 +394,7 @@ public class JsonSchema {
 					// Do nothing, because this is validated by MinimumValidator, too
 					// Value must be of boolean type and "minimum" value item must exist in simpleMode and draft v3/v4.
 					if ((jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV3Mode() || jsonSchemaDependencyResolver.isDraftV4Mode())
-							&& !jsonSchemaDefinitionObject.containsPropertyKey("minimum")) {
+							&& !jsonSchemaDefinitionObject.containsKey("minimum")) {
 						throw new JsonSchemaDefinitionError("Missing 'minimum' rule for 'exclusiveMinimum'", currentJsonSchemaPath);
 					} else if (!jsonSchemaDependencyResolver.isSimpleMode() && !jsonSchemaDependencyResolver.isDraftV3Mode() && !jsonSchemaDependencyResolver.isDraftV4Mode()) {
 						validators.add(new ExclusiveMinimumValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
@@ -404,7 +404,7 @@ public class JsonSchema {
 					// Do nothing, because this is validated by MaximumValidator, too
 					// Value must be of boolean type and "maximum" value item must exist in simpleMode and draft v3/v4.
 					if ((jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV3Mode() || jsonSchemaDependencyResolver.isDraftV4Mode())
-							&& !jsonSchemaDefinitionObject.containsPropertyKey("maximum")) {
+							&& !jsonSchemaDefinitionObject.containsKey("maximum")) {
 						throw new JsonSchemaDefinitionError("Missing 'maximum' rule for 'exclusiveMaximum'", currentJsonSchemaPath);
 					} else if (!jsonSchemaDependencyResolver.isSimpleMode() && !jsonSchemaDependencyResolver.isDraftV3Mode() && !jsonSchemaDependencyResolver.isDraftV4Mode()) {
 						validators.add(new ExclusiveMaximumValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));

@@ -31,7 +31,7 @@ public class MinimumValidator extends ExtendedBaseJsonSchemaValidator {
 			throw new JsonSchemaDefinitionError("Data for minimum '" + validatorData + "' is not a number", jsonSchemaPath);
 		}
 
-		if (parentValidatorData.containsPropertyKey("exclusiveMinimum")) {
+		if (parentValidatorData.containsKey("exclusiveMinimum")) {
 			final Object exclusiveMinimumRaw = parentValidatorData.get("exclusiveMinimum");
 			if (exclusiveMinimumRaw == null) {
 				throw new JsonSchemaDefinitionError("Property 'exclusiveMinimum' is 'null'", jsonSchemaPath);

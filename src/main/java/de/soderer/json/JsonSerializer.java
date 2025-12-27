@@ -307,14 +307,14 @@ public class JsonSerializer {
 			if (jsonObject == null) {
 				throw new Exception("JSON object is null");
 			} else {
-				if (!jsonObject.containsPropertyKey("class")) {
+				if (!jsonObject.containsKey("class")) {
 					throw new Exception("JSON object is missing mandatory type information");
 				} else if (jsonObject.get("class") == null) {
 					// Null value that has no class info
 					return null;
 				} else if (!(jsonObject.get("class") instanceof String)) {
 					throw new Exception("JSON object has invalid type information");
-				} else if (!jsonObject.containsPropertyKey("value")) {
+				} else if (!jsonObject.containsKey("value")) {
 					throw new Exception("JSON object is missing mandatory value information");
 				}
 

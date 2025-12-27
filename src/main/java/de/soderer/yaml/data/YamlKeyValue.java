@@ -1,9 +1,10 @@
 package de.soderer.yaml.data;
 
-public class YamlKeyValue {
+import java.util.Map.Entry;
 
+public class YamlKeyValue implements Entry<YamlNode, YamlNode> {
 	private final YamlNode key;
-	private final YamlNode value;
+	private YamlNode value;
 
 	public YamlKeyValue(final YamlNode key, final YamlNode value) {
 		if (key == null) {
@@ -16,12 +17,21 @@ public class YamlKeyValue {
 		this.value = value;
 	}
 
+	@Override
 	public YamlNode getKey() {
 		return key;
 	}
 
+	@Override
 	public YamlNode getValue() {
 		return value;
+	}
+
+	@Override
+	public YamlNode setValue(final YamlNode value) {
+		final YamlNode oldValue = this.value;
+		this.value = value;
+		return oldValue;
 	}
 
 	@Override

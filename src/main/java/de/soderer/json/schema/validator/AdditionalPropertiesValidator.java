@@ -38,7 +38,7 @@ public class AdditionalPropertiesValidator extends ExtendedBaseJsonSchemaValidat
 			throw new JsonSchemaDefinitionError("AdditionalProperties data is not a 'boolean' or 'object'", jsonSchemaPath);
 		}
 
-		if (parentValidatorData.containsPropertyKey("properties")) {
+		if (parentValidatorData.containsKey("properties")) {
 			if (parentValidatorData.get("properties") == null) {
 				throw new JsonSchemaDefinitionError("Properties data is 'null'", jsonSchemaPath);
 			} else if (!(parentValidatorData.get("properties") instanceof JsonObject)) {
@@ -48,7 +48,7 @@ public class AdditionalPropertiesValidator extends ExtendedBaseJsonSchemaValidat
 			}
 		}
 
-		if (parentValidatorData.containsPropertyKey("patternProperties")) {
+		if (parentValidatorData.containsKey("patternProperties")) {
 			if (parentValidatorData.get("patternProperties") == null) {
 				throw new JsonSchemaDefinitionError("PatternProperties data is 'null'", jsonSchemaPath);
 			} else if (!(parentValidatorData.get("patternProperties") instanceof JsonObject)) {

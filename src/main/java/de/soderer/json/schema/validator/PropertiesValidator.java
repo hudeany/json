@@ -39,7 +39,7 @@ public class PropertiesValidator extends BaseJsonSchemaValidator {
 				final List<BaseJsonSchemaValidator> subValidators = JsonSchema.createValidators((JsonObject) entry.getValue(), jsonSchemaDependencyResolver, new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()));
 				propertiesDefinitions.put(entry.getKey(), subValidators);
 
-				if (jsonSchemaDependencyResolver.isDraftV3Mode() && ((JsonObject) entry.getValue()).containsPropertyKey("required") && ((JsonObject) entry.getValue()).get("required") instanceof Boolean && (Boolean) ((JsonObject) entry.getValue()).get("required")) {
+				if (jsonSchemaDependencyResolver.isDraftV3Mode() && ((JsonObject) entry.getValue()).containsKey("required") && ((JsonObject) entry.getValue()).get("required") instanceof Boolean && (Boolean) ((JsonObject) entry.getValue()).get("required")) {
 					if (requiredKeysV3 == null) {
 						requiredKeysV3 = new ArrayList<>();
 					}
@@ -72,7 +72,7 @@ public class PropertiesValidator extends BaseJsonSchemaValidator {
 
 			if (requiredKeysV3 != null) {
 				for (final String propertyKey : requiredKeysV3) {
-					if (!((JsonObject) jsonNode.getValue()).containsPropertyKey(propertyKey)) {
+					if (!((JsonObject) jsonNode.getValue()).containsKey(propertyKey)) {
 						throw new JsonSchemaDataValidationError("Invalid property key. Missing required property '" + propertyKey + "'", jsonPath);
 					}
 				}

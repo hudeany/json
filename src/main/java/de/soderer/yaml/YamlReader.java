@@ -560,8 +560,7 @@ public class YamlReader extends BasicReadAheadReader {
 		final YamlNode keyNode = parseScalarWithAnchorOrAlias();
 
 		if (match(YamlTokenType.COLON)) {
-			// Mapping
-			final YamlMapping map = new YamlMapping(false);
+			final YamlMapping yamlMapping = new YamlMapping(false);
 
 			YamlNode valueNode;
 
@@ -580,7 +579,7 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 
 			attachPendingComments(keyNode);
-			map.addEntry(keyNode, valueNode);
+			yamlMapping.add(keyNode, valueNode);
 
 			consumeOptionalNewlinesAndComments();
 
@@ -609,15 +608,15 @@ public class YamlReader extends BasicReadAheadReader {
 				}
 
 				attachPendingComments(possibleKey);
-				map.addEntry(possibleKey, val);
+				yamlMapping.add(possibleKey, val);
 
 				consumeOptionalNewlinesAndComments();
 			}
 
-			return map;
+			return yamlMapping;
 		}
 
-		// Rollback map pre-readings and start reading a scalar
+		// Rollback YamlMapping pre-readings and start reading a YamlScalar
 		yamlTokenIndex = startIndex;
 		pendingLeadingComments.clear();
 		pendingLeadingComments.addAll(savedComments);
@@ -626,20 +625,20 @@ public class YamlReader extends BasicReadAheadReader {
 	}
 
 	private YamlSequence parseBlockSequence() {
-		final YamlSequence seq = new YamlSequence(false);
+		final YamlSequence yamlSequence = new YamlSequence(false);
 
 		while (match(YamlTokenType.DASH)) {
 
 			if (!check(YamlTokenType.NEWLINE) && !check(YamlTokenType.EOF)) {
 				final YamlNode item = parseNode(false);
 				attachPendingComments(item);
-				seq.addItem(item);
+				yamlSequence.add(item);
 			} else {
 				consumeOptionalNewlinesAndComments();
 				if (match(YamlTokenType.INDENT)) {
 					final YamlNode item = parseNode(false);
 					attachPendingComments(item);
-					seq.addItem(item);
+					yamlSequence.add(item);
 
 					if (check(YamlTokenType.DEDENT)) {
 						advance();
@@ -647,7 +646,7 @@ public class YamlReader extends BasicReadAheadReader {
 				} else {
 					final YamlScalar empty = new YamlScalar("null", YamlScalarType.NULL_VALUE);
 					attachPendingComments(empty);
-					seq.addItem(empty);
+					yamlSequence.add(empty);
 				}
 			}
 
@@ -656,12 +655,12 @@ public class YamlReader extends BasicReadAheadReader {
 			if (!check(YamlTokenType.DASH)) break;
 		}
 
-		return seq;
+		return yamlSequence;
 	}
 
 	private YamlMapping parseFlowMapping() {
 		consume(YamlTokenType.FLOW_MAP_START, "{ expected");
-		final YamlMapping map = new YamlMapping(true);
+		final YamlMapping yamlMapping = new YamlMapping(true);
 
 		consumeOptionalNewlinesAndComments();
 
@@ -675,7 +674,7 @@ public class YamlReader extends BasicReadAheadReader {
 				final YamlNode value = parseNode(true);
 
 				attachPendingComments(key);
-				map.addEntry(key, value);
+				yamlMapping.add(key, value);
 
 				consumeOptionalNewlinesAndComments();
 			} while (match(YamlTokenType.COMMA));
@@ -683,12 +682,12 @@ public class YamlReader extends BasicReadAheadReader {
 
 		consumeNewLineAndIndentsAndDedents();
 		consume(YamlTokenType.FLOW_MAP_END, "} expected");
-		return map;
+		return yamlMapping;
 	}
 
 	private YamlSequence parseFlowSequence() {
 		consume(YamlTokenType.FLOW_SEQ_START, "[ expected");
-		final YamlSequence seq = new YamlSequence(true);
+		final YamlSequence yamlSequence = new YamlSequence(true);
 
 		consumeOptionalNewlinesAndComments();
 
@@ -697,14 +696,14 @@ public class YamlReader extends BasicReadAheadReader {
 				consumeOptionalNewlinesAndComments();
 				final YamlNode item = parseNode(true);
 				attachPendingComments(item);
-				seq.addItem(item);
+				yamlSequence.add(item);
 				consumeOptionalNewlinesAndComments();
 			} while (match(YamlTokenType.COMMA));
 		}
 
 		consumeNewLineAndIndentsAndDedents();
 		consume(YamlTokenType.FLOW_SEQ_END, "] expected");
-		return seq;
+		return yamlSequence;
 	}
 
 	private YamlNode parseScalarWithAnchorOrAlias() {

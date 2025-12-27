@@ -118,7 +118,7 @@ public class JsonNode {
 				if (nextDataObject != null && nextDataObject instanceof JsonObject) {
 					final JsonObject jsonObject = (JsonObject) nextDataObject;
 					final String lookingForPropertyKey = ((JsonPathPropertyElement) pathPart).getPropertyKey();
-					if (jsonObject.containsPropertyKey(lookingForPropertyKey)) {
+					if (jsonObject.containsKey(lookingForPropertyKey)) {
 						nextDataObject = jsonObject.get(lookingForPropertyKey);
 					} else {
 						throw new JsonPathException("JsonNode does noth include path", jsonPath);

@@ -37,7 +37,7 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 			} else {
 				singleValidatorPack = JsonSchema.createValidators((JsonObject) validatorData, jsonSchemaDependencyResolver, jsonSchemaPath);
 
-				if (parentValidatorData.containsPropertyKey("additionalItems") && jsonSchemaDependencyResolver.isSimpleMode()) {
+				if (parentValidatorData.containsKey("additionalItems") && jsonSchemaDependencyResolver.isSimpleMode()) {
 					throw new JsonSchemaDefinitionError("'additionalItems' is only allowed for 'items' with 'array' data value", jsonSchemaPath);
 				}
 			}
@@ -60,7 +60,7 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 				}
 			}
 
-			if (parentValidatorData.containsPropertyKey("additionalItems")) {
+			if (parentValidatorData.containsKey("additionalItems")) {
 				final Object additionalItemsRaw = parentValidatorData.get("additionalItems");
 				if (additionalItemsRaw == null) {
 					throw new JsonSchemaDefinitionError("Property 'additionalItems' is 'null'", jsonSchemaPath);

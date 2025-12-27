@@ -1,5 +1,7 @@
 package de.soderer.yaml.data;
 
+import java.util.Objects;
+
 public class YamlScalar extends YamlNode {
 	private final String value;
 	private final YamlScalarType type;
@@ -23,9 +25,29 @@ public class YamlScalar extends YamlNode {
 
 	@Override
 	public String toString() {
-		return "YamlScalar{" +
-				"type=" + type +
-				", value='" + value + '\'' +
-				'}';
+		if (value == null) {
+			return "null";
+		} else {
+			return value.toString();
+		}
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(type, value);
+	}
+
+	@Override
+	public boolean equals(final Object otherObject) {
+		if (this == otherObject) {
+			return true;
+		} else if (otherObject == null) {
+			return false;
+		} else if (getClass() != otherObject.getClass()) {
+			return false;
+		} else {
+			final YamlScalar other = (YamlScalar) otherObject;
+			return type == other.type && Objects.equals(value, other.value);
+		}
 	}
 }

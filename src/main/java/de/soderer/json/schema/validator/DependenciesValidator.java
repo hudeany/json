@@ -70,7 +70,7 @@ public class DependenciesValidator extends BaseJsonSchemaValidator {
 			}
 		} else {
 			for (final Entry<String, List<BaseJsonSchemaValidator>> validatorEntry : validators.entrySet()) {
-				if (((JsonObject) jsonNode.getValue()).containsPropertyKey(validatorEntry.getKey())) {
+				if (((JsonObject) jsonNode.getValue()).containsKey(validatorEntry.getKey())) {
 					final List<BaseJsonSchemaValidator> subValidators = validatorEntry.getValue();
 					for (final BaseJsonSchemaValidator validator : subValidators) {
 						validator.validate(jsonNode, jsonPath);
@@ -79,9 +79,9 @@ public class DependenciesValidator extends BaseJsonSchemaValidator {
 			}
 
 			for (final Entry<String, List<String>> mandatoryPropertyEntry : mandatoryProperties.entrySet()) {
-				if (((JsonObject) jsonNode.getValue()).containsPropertyKey(mandatoryPropertyEntry.getKey())) {
+				if (((JsonObject) jsonNode.getValue()).containsKey(mandatoryPropertyEntry.getKey())) {
 					for (final String item : mandatoryPropertyEntry.getValue()) {
-						if (!((JsonObject) jsonNode.getValue()).containsPropertyKey(item)) {
+						if (!((JsonObject) jsonNode.getValue()).containsKey(item)) {
 							throw new JsonSchemaDataValidationError("Dependent property key '" + item + "' for existing parent key '" + mandatoryPropertyEntry.getKey() + "' is missing", jsonPath);
 						}
 					}

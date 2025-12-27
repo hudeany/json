@@ -15,7 +15,7 @@ public class JsonArray implements Iterable<Object> {
 		return this;
 	}
 
-	public Object remove(final Object value) {
+	public boolean remove(final Object value) {
 		return items.remove(value);
 	}
 

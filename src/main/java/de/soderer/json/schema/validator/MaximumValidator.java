@@ -31,7 +31,7 @@ public class MaximumValidator extends ExtendedBaseJsonSchemaValidator {
 			throw new JsonSchemaDefinitionError("Data for maximum '" + validatorData + "' is not a number", jsonSchemaPath);
 		}
 
-		if (parentValidatorData.containsPropertyKey("exclusiveMaximum")) {
+		if (parentValidatorData.containsKey("exclusiveMaximum")) {
 			final Object exclusiveMaximumRaw = parentValidatorData.get("exclusiveMaximum");
 			if (exclusiveMaximumRaw == null) {
 				throw new JsonSchemaDefinitionError("Property 'exclusiveMaximum' is 'null'", jsonSchemaPath);

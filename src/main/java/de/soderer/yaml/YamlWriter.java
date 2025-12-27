@@ -9,11 +9,11 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map.Entry;
 
 import de.soderer.json.utilities.Utilities;
 import de.soderer.yaml.data.YamlAlias;
 import de.soderer.yaml.data.YamlDocument;
-import de.soderer.yaml.data.YamlKeyValue;
 import de.soderer.yaml.data.YamlMapping;
 import de.soderer.yaml.data.YamlNode;
 import de.soderer.yaml.data.YamlScalar;
@@ -264,8 +264,8 @@ public class YamlWriter implements Closeable {
 		}
 	}
 
-	private void writeBlockSequence(final YamlSequence seq, final int indentLevel) throws IOException {
-		for (final YamlNode item : seq.getItems()) {
+	private void writeBlockSequence(final YamlSequence yamlSequence, final int indentLevel) throws IOException {
+		for (final YamlNode item : yamlSequence) {
 			writeLeadingComments(item, indentLevel);
 
 			writeIndent(indentLevel);
@@ -304,10 +304,10 @@ public class YamlWriter implements Closeable {
 		}
 	}
 
-	private void writeBlockMapping(final YamlMapping map, final int indentLevel) throws IOException {
-		for (final YamlKeyValue kv : map.getEntries()) {
-			final YamlNode key = kv.getKey();
-			final YamlNode value = kv.getValue();
+	private void writeBlockMapping(final YamlMapping yamlMapping, final int indentLevel) throws IOException {
+		for (final Entry<YamlNode, YamlNode> entry : yamlMapping.entryList()) {
+			final YamlNode key = entry.getKey();
+			final YamlNode value = entry.getValue();
 
 			writeLeadingComments(key, indentLevel);
 
@@ -361,12 +361,12 @@ public class YamlWriter implements Closeable {
 		}
 	}
 
-	private void writeFlowSequence(final YamlSequence seq, final int indentLevel) throws IOException {
-		if (!seq.getLeadingComments().isEmpty()) {
+	private void writeFlowSequence(final YamlSequence yamlSequence, final int indentLevel) throws IOException {
+		if (!yamlSequence.getLeadingComments().isEmpty()) {
 			if (charactersWritten > 0) {
 				write("\n");
 			}
-			writeLeadingComments(seq, indentLevel);
+			writeLeadingComments(yamlSequence, indentLevel);
 
 			writeIndent(indentLevel);
 		} else {
@@ -377,7 +377,7 @@ public class YamlWriter implements Closeable {
 		write("[");
 
 		boolean first = true;
-		for (final YamlNode item : seq.getItems()) {
+		for (final YamlNode item : yamlSequence) {
 			if (!first) write(", ");
 			first = false;
 
@@ -397,12 +397,12 @@ public class YamlWriter implements Closeable {
 		write("]\n");
 	}
 
-	private void writeFlowMapping(final YamlMapping map, final int indentLevel) throws IOException {
-		if (!map.getLeadingComments().isEmpty()) {
+	private void writeFlowMapping(final YamlMapping yamlMapping, final int indentLevel) throws IOException {
+		if (!yamlMapping.getLeadingComments().isEmpty()) {
 			if (charactersWritten > 0) {
 				write("\n");
 			}
-			writeLeadingComments(map, indentLevel);
+			writeLeadingComments(yamlMapping, indentLevel);
 
 			writeIndent(indentLevel);
 		} else {
@@ -413,12 +413,12 @@ public class YamlWriter implements Closeable {
 		write("{");
 
 		boolean first = true;
-		for (final YamlKeyValue kv : map.getEntries()) {
+		for (final Entry<YamlNode, YamlNode> entry : yamlMapping.entryList()) {
 			if (!first) write(", ");
 			first = false;
 
-			final YamlNode key = kv.getKey();
-			final YamlNode value = kv.getValue();
+			final YamlNode key = entry.getKey();
+			final YamlNode value = entry.getValue();
 
 			if (key instanceof final YamlScalar scalarKey
 					&& scalarKey.getType() == YamlScalarType.STRING

@@ -35,7 +35,7 @@ public class RequiredValidator extends BaseJsonSchemaValidator {
 					throw new JsonSchemaDataValidationError("Data entry for required property key name must be 'string' but was 'null'", jsonPath);
 				} else if (!(propertyKey instanceof String)) {
 					throw new JsonSchemaDataValidationError("Data entry for required property key name must be 'string' but was '" + propertyKey.getClass().getSimpleName() + "'", jsonPath);
-				} else if (!((JsonObject) jsonNode.getValue()).containsPropertyKey((String) propertyKey)) {
+				} else if (!((JsonObject) jsonNode.getValue()).containsKey((String) propertyKey)) {
 					throw new JsonSchemaDataValidationError("Invalid property key. Missing required property '" + propertyKey + "'", jsonPath);
 				}
 			}

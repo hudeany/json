@@ -37,4 +37,10 @@ public abstract class YamlNode {
 	public void setAnchorName(final String anchorName) {
 		this.anchorName = anchorName;
 	}
+
+	@Override
+	public abstract boolean equals(Object otherObject);
+
+	@Override
+	public abstract int hashCode();
 }

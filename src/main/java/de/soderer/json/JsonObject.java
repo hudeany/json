@@ -2,12 +2,13 @@ package de.soderer.json;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.Stream;
 
 public class JsonObject implements Iterable<Map.Entry<String, Object>> {
 	private final Map<String, Object> properties = new LinkedHashMap<>();
@@ -16,10 +17,10 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>> {
 	 * When using the same key multiple times only the last value will be stored
 	 *
 	 * @param key
-	 * @param object
+	 * @param value
 	 */
-	public JsonObject add(final String key, final Object object) {
-		properties.put(key, object);
+	public JsonObject add(final String key, final Object value) {
+		properties.put(key, value);
 		return this;
 	}
 
@@ -31,16 +32,20 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>> {
 		return properties.get(key);
 	}
 
-	public boolean containsPropertyKey(final String propertyKey) {
-		return properties.containsKey(propertyKey);
+	public boolean containsKey(final String key) {
+		return properties.containsKey(key);
 	}
 
 	public Set<String> keySet() {
-		return properties.keySet();
+		return Collections.unmodifiableSet(properties.keySet());
+	}
+
+	public Collection<Object> values () {
+		return Collections.unmodifiableCollection(properties.values());
 	}
 
 	public Set<Entry<String, Object>> entrySet() {
-		return properties.entrySet();
+		return Collections.unmodifiableSet(properties.entrySet());
 	}
 
 	public int size() {
@@ -50,18 +55,6 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>> {
 	@Override
 	public Iterator<Entry<String, Object>> iterator() {
 		return properties.entrySet().iterator();
-	}
-
-	public Stream<Entry<String, Object>> entriesStream () {
-		return properties.entrySet().stream();
-	}
-
-	public Stream<String> keysStream () {
-		return properties.keySet().stream();
-	}
-
-	public Stream<Object> valuesStream () {
-		return properties.values().stream();
 	}
 
 	@Override
