@@ -21,6 +21,12 @@ import de.soderer.yaml.data.YamlScalarType;
 import de.soderer.yaml.data.YamlSequence;
 import de.soderer.yaml.data.directive.YamlDirective;
 
+/**
+ * TODOs:
+ * - Write inline comments for anchors and aliases
+ * - Write with ignore settings for flow style
+ * - Write with resolving aliases
+ */
 public class YamlWriter implements Closeable {
 	/** Default output encoding. */
 	public static final Charset DEFAULT_ENCODING = StandardCharsets.UTF_8;
@@ -133,25 +139,25 @@ public class YamlWriter implements Closeable {
 			writeAlias(alias, indentLevel);
 		} else if (node instanceof final YamlSequence seq) {
 			if (seq.isFlowStyle() || inFlow) {
-				writeFlowSequence(seq, indentLevel, Utilities.join(node.getInlineComments(), " "));
+				writeFlowSequence(seq, indentLevel);
 			} else {
 				if (charactersWritten > 0) {
 					write("\n");
 				}
 				writeLeadingComments(node, indentLevel);
 
-				writeBlockSequence(seq, indentLevel, Utilities.join(node.getInlineComments(), " "));
+				writeBlockSequence(seq, indentLevel);
 			}
 		} else if (node instanceof final YamlMapping map) {
 			if (map.isFlowStyle() || inFlow) {
-				writeFlowMapping(map, indentLevel, Utilities.join(node.getInlineComments(), " "));
+				writeFlowMapping(map, indentLevel);
 			} else {
 				if (charactersWritten > 0) {
 					write("\n");
 				}
 				writeLeadingComments(node, indentLevel);
 
-				writeBlockMapping(map, indentLevel, Utilities.join(node.getInlineComments(), " "));
+				writeBlockMapping(map, indentLevel);
 			}
 		} else {
 			throw new IllegalStateException("Unbekannter Node-Typ: " + node.getClass());
@@ -258,7 +264,7 @@ public class YamlWriter implements Closeable {
 		}
 	}
 
-	private void writeBlockSequence(final YamlSequence seq, final int indentLevel, final String inlineComment) throws IOException {
+	private void writeBlockSequence(final YamlSequence seq, final int indentLevel) throws IOException {
 		for (final YamlNode item : seq.getItems()) {
 			writeLeadingComments(item, indentLevel);
 
@@ -298,7 +304,7 @@ public class YamlWriter implements Closeable {
 		}
 	}
 
-	private void writeBlockMapping(final YamlMapping map, final int indentLevel, final String inlineComment) throws IOException {
+	private void writeBlockMapping(final YamlMapping map, final int indentLevel) throws IOException {
 		for (final YamlKeyValue kv : map.getEntries()) {
 			final YamlNode key = kv.getKey();
 			final YamlNode value = kv.getValue();
@@ -322,11 +328,7 @@ public class YamlWriter implements Closeable {
 				continue;
 			}
 
-			if (Utilities.isNotBlank(keyInlineComment)) {
-				write(":" + " # " + keyInlineComment);
-			} else {
-				write(":");
-			}
+			write(":");
 
 			if (value instanceof final YamlScalar scalarVal
 					&& scalarVal.getType() != YamlScalarType.MULTILINE_LITERAL
@@ -361,7 +363,7 @@ public class YamlWriter implements Closeable {
 		}
 	}
 
-	private void writeFlowSequence(final YamlSequence seq, final int indentLevel, final String inlineComment) throws IOException {
+	private void writeFlowSequence(final YamlSequence seq, final int indentLevel) throws IOException {
 		if (!seq.getLeadingComments().isEmpty()) {
 			if (charactersWritten > 0) {
 				write("\n");
@@ -394,10 +396,10 @@ public class YamlWriter implements Closeable {
 			}
 		}
 
-		write("]" + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + "\n");
+		write("]\n");
 	}
 
-	private void writeFlowMapping(final YamlMapping map, final int indentLevel, final String inlineComment) throws IOException {
+	private void writeFlowMapping(final YamlMapping map, final int indentLevel) throws IOException {
 		if (!map.getLeadingComments().isEmpty()) {
 			if (charactersWritten > 0) {
 				write("\n");
@@ -444,7 +446,7 @@ public class YamlWriter implements Closeable {
 			}
 		}
 
-		write("}" + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + "\n");
+		write("}\n");
 	}
 
 	private void writeScalarInlineInFlow(final YamlScalar scalar) throws IOException {
@@ -504,9 +506,9 @@ public class YamlWriter implements Closeable {
 		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		try (final YamlWriter writer = new YamlWriter(outputStream)) {
 			if (yamlMapping.isFlowStyle()) {
-				writer.writeFlowMapping(yamlMapping, 0, Utilities.join(yamlMapping.getInlineComments(), " "));
+				writer.writeFlowMapping(yamlMapping, 0);
 			} else {
-				writer.writeBlockMapping(yamlMapping, 0, Utilities.join(yamlMapping.getInlineComments(), " "));
+				writer.writeBlockMapping(yamlMapping, 0);
 			}
 		}
 		return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
@@ -516,9 +518,9 @@ public class YamlWriter implements Closeable {
 		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		try (final YamlWriter writer = new YamlWriter(outputStream)) {
 			if (yamlSequence.isFlowStyle()) {
-				writer.writeFlowSequence(yamlSequence, 0, Utilities.join(yamlSequence.getInlineComments(), " "));
+				writer.writeFlowSequence(yamlSequence, 0);
 			} else {
-				writer.writeBlockSequence(yamlSequence, 0, Utilities.join(yamlSequence.getInlineComments(), " "));
+				writer.writeBlockSequence(yamlSequence, 0);
 			}
 		}
 		return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);

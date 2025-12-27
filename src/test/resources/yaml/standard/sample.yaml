@@ -3,7 +3,7 @@
 
 title with blank: Example document
 
-person: &p1
+person: &p1 # Anchor p1 comment
   name: "John Doe" # Name of team leader
   age: 42
   active: true
@@ -14,7 +14,7 @@ person: &p1
 
 team:
 # Descriptive comment for team
-  leader: *p1 # Anchor p1 comment
+  leader: *p1 # Alias p1 comment
   members: # Members comment
     - &p2 # Anchor p2 comment
       name: "Jane Doe" # Name of team first employee

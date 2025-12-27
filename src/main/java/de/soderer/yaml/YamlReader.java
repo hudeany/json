@@ -23,6 +23,10 @@ import de.soderer.yaml.data.directive.YamlDirective;
 import de.soderer.yaml.data.directive.YamlTagDirective;
 import de.soderer.yaml.data.directive.YamlVersionDirective;
 
+/**
+ * TODOs:
+ * - Read complex mapping keys
+ */
 public class YamlReader extends BasicReadAheadReader {
 	private final List<YamlToken> yamlTokens = new ArrayList<>();
 	private int yamlTokenIndex = 0;

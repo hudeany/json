@@ -3,7 +3,7 @@
 
 "title with blank": "Example document"
 "person": &p1
-  "name": "John Doe"
+  "name": "John Doe" # Name of team leader
   "age": 42
   "active": true
   "hobbies":
@@ -15,7 +15,7 @@
   "leader": *p1
   "members":
     - &p2
-      "name": "Jane Doe"
+      "name": "Jane Doe" # Name of team first employee
       "age": 37
     - *p2
 "description": |
