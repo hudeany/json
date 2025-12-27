@@ -1,0 +1,8 @@
+property 1: [
+  sequenceItem 11,
+  sequenceItem 12
+]
+property 2: [
+  sequenceItem 21,
+  sequenceItem 22
+]

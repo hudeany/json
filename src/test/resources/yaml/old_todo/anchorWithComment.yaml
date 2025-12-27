@@ -1,0 +1,2 @@
+- property1: &id001 Text 1 # anchor "&id001"
+  property2: Text 2

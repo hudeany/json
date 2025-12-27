@@ -1,0 +1,42 @@
+# Beispiel‑YAML für Round‑Trip‑Tests
+# Enthält viele YAML‑Features
+
+title: Beispiel Dokument
+
+person: &p1
+  name: "Max Mustermann"
+  age: 42
+  active: true
+  hobbies:
+    - Lesen
+    - Schwimmen
+    - Programmieren
+
+team:
+  leader: *p1
+  members:
+    - &p2
+      name: "Erika Musterfrau"
+      age: 37
+    - *p2
+
+beschreibung: |
+  Dies ist ein mehrzeiliger
+  Literal-String.
+  Zeilenumbrüche bleiben erhalten.
+
+notizen: >
+  Dies ist ein gefalteter
+  mehrzeiliger String,
+  der beim Schreiben
+  zusammengefaltet wird.
+
+einstellungen:
+  modus: "standard"
+  flags: [debug, verbose, safe]
+  werte: { a: 1, b: 2, c: 3 }
+
+liste:
+  - eins
+  - zwei
+  - drei
