@@ -311,13 +311,11 @@ public class YamlWriter implements Closeable {
 
 			writeLeadingComments(key, indentLevel);
 
-			String keyInlineComment = null;
 			if (key instanceof final YamlScalar scalarKey
 					&& scalarKey.getType() == YamlScalarType.STRING
 					&& scalarKey.getAnchorName() == null) {
 				writeIndent(indentLevel);
 				write(escapePlainString(scalarKey.getValue()));
-				keyInlineComment = Utilities.join(scalarKey.getInlineComments(), " ");
 			} else {
 				writeIndent(indentLevel);
 				write("?\n");
