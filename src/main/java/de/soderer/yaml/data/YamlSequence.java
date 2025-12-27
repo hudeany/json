@@ -57,17 +57,27 @@ public class YamlSequence extends YamlNode implements Iterable<YamlNode> {
 		items.add(item);
 	}
 
-	public Object remove(final Object item) {
+	public boolean remove(final String item) {
 		if (item == null) {
 			return remove(new YamlScalar("null", YamlScalarType.NULL_VALUE));
-		} else if (item instanceof String) {
-			return remove(new YamlScalar(item.toString(), YamlScalarType.STRING));
-		} else if (item instanceof Number) {
-			return remove(new YamlScalar(item.toString(), YamlScalarType.NUMBER));
-		} else if (item instanceof Boolean) {
-			return remove(new YamlScalar(item.toString(), YamlScalarType.BOOLEAN));
 		} else {
-			throw new RuntimeException("Unsupported type of value object: '" + item.getClass().getSimpleName() + "'. Use method remove(YamlNode) instead");
+			return remove(new YamlScalar(item.toString(), YamlScalarType.STRING));
+		}
+	}
+
+	public boolean remove(final Number item) {
+		if (item == null) {
+			return remove(new YamlScalar("null", YamlScalarType.NULL_VALUE));
+		} else {
+			return remove(new YamlScalar(item.toString(), YamlScalarType.NUMBER));
+		}
+	}
+
+	public boolean remove(final Boolean item) {
+		if (item == null) {
+			return remove(new YamlScalar("null", YamlScalarType.NULL_VALUE));
+		} else {
+			return remove(new YamlScalar(item.toString(), YamlScalarType.BOOLEAN));
 		}
 	}
 
