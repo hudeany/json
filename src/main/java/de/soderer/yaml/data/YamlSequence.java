@@ -31,25 +31,25 @@ public class YamlSequence extends YamlNode implements Iterable<YamlNode> {
 
 	public void add(final String item) {
 		if (item == null) {
-			add(new YamlScalar("null", YamlScalarType.NULL_VALUE));
+			add(new YamlScalar(null, YamlScalarType.NULL_VALUE));
 		} else {
-			add(new YamlScalar(item.toString(), YamlScalarType.STRING));
+			add(new YamlScalar(item, YamlScalarType.STRING));
 		}
 	}
 
 	public void add(final Number item) {
 		if (item == null) {
-			add(new YamlScalar("null", YamlScalarType.NULL_VALUE));
+			add(new YamlScalar(null, YamlScalarType.NULL_VALUE));
 		} else {
-			add(new YamlScalar(item.toString(), YamlScalarType.NUMBER));
+			add(new YamlScalar(item, YamlScalarType.NUMBER));
 		}
 	}
 
 	public void add(final Boolean item) {
 		if (item == null) {
-			add(new YamlScalar("null", YamlScalarType.NULL_VALUE));
+			add(new YamlScalar(null, YamlScalarType.NULL_VALUE));
 		} else {
-			add(new YamlScalar(item.toString(), YamlScalarType.BOOLEAN));
+			add(new YamlScalar(item, YamlScalarType.BOOLEAN));
 		}
 	}
 
@@ -59,25 +59,25 @@ public class YamlSequence extends YamlNode implements Iterable<YamlNode> {
 
 	public boolean remove(final String item) {
 		if (item == null) {
-			return remove(new YamlScalar("null", YamlScalarType.NULL_VALUE));
+			return remove(new YamlScalar(null, YamlScalarType.NULL_VALUE));
 		} else {
-			return remove(new YamlScalar(item.toString(), YamlScalarType.STRING));
+			return remove(new YamlScalar(item, YamlScalarType.STRING));
 		}
 	}
 
 	public boolean remove(final Number item) {
 		if (item == null) {
-			return remove(new YamlScalar("null", YamlScalarType.NULL_VALUE));
+			return remove(new YamlScalar(null, YamlScalarType.NULL_VALUE));
 		} else {
-			return remove(new YamlScalar(item.toString(), YamlScalarType.NUMBER));
+			return remove(new YamlScalar(item, YamlScalarType.NUMBER));
 		}
 	}
 
 	public boolean remove(final Boolean item) {
 		if (item == null) {
-			return remove(new YamlScalar("null", YamlScalarType.NULL_VALUE));
+			return remove(new YamlScalar(null, YamlScalarType.NULL_VALUE));
 		} else {
-			return remove(new YamlScalar(item.toString(), YamlScalarType.BOOLEAN));
+			return remove(new YamlScalar(item, YamlScalarType.BOOLEAN));
 		}
 	}
 

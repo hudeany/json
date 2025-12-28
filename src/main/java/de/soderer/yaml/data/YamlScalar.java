@@ -3,10 +3,10 @@ package de.soderer.yaml.data;
 import java.util.Objects;
 
 public class YamlScalar extends YamlNode {
-	private final String value;
+	private final Object value;
 	private final YamlScalarType type;
 
-	public YamlScalar(final String value, final YamlScalarType type) {
+	public YamlScalar(final Object value, final YamlScalarType type) {
 		if (type == null) {
 			throw new IllegalArgumentException("ScalarType must not be null");
 		}
@@ -15,7 +15,7 @@ public class YamlScalar extends YamlNode {
 		this.type = type;
 	}
 
-	public String getValue() {
+	public Object getValue() {
 		return value;
 	}
 

@@ -38,7 +38,8 @@ public class YamlWriter implements Closeable {
 	private final Charset encoding;
 
 	private int indentSize = 2;
-	private boolean alwaysQuoteStringValues = false; // TODO
+	private boolean alwaysQuoteStringKeys = false;
+	private boolean alwaysQuoteStringValues = false;
 
 	private BufferedWriter outputWriter = null;
 	private long charactersWritten = 0;
@@ -60,6 +61,21 @@ public class YamlWriter implements Closeable {
 
 	public YamlWriter setIndentSize(final int indentSize) {
 		this.indentSize = indentSize;
+		return this;
+	}
+
+	public YamlWriter setAlwaysQuoteAllStrings() {
+		alwaysQuoteStringKeys = true;
+		alwaysQuoteStringValues = true;
+		return this;
+	}
+
+	public boolean isAlwaysQuoteStringKeys() {
+		return alwaysQuoteStringKeys;
+	}
+
+	public YamlWriter setAlwaysQuoteStringKeys(final boolean alwaysQuoteStringKeys) {
+		this.alwaysQuoteStringKeys = alwaysQuoteStringKeys;
 		return this;
 	}
 
@@ -179,7 +195,7 @@ public class YamlWriter implements Closeable {
 
 	private void writeScalar(final YamlScalar scalar, final int indentLevel, final boolean inFlow, final boolean isKeyContext) throws IOException {
 		final YamlScalarType type = scalar.getType();
-		final String value = scalar.getValue();
+		final Object value = scalar.getValue();
 		final String inlineComment = Utilities.join(scalar.getInlineComments(), " ");
 
 		switch (type) {
@@ -193,15 +209,15 @@ public class YamlWriter implements Closeable {
 			case NUMBER:
 			case NULL_VALUE:
 				writeIndent(indentLevel);
-				write(value + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + "\n");
+				write((value == null ? "null" : value.toString()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + "\n");
 				break;
 			case STRING:
 				if (inFlow || isKeyContext) {
 					writeIndent(indentLevel);
-					write(escapePlainString(value));
+					write(escapePlainStringValue((String) value));
 				} else {
 					writeIndent(indentLevel);
-					write(escapePlainString(value) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + "\n");
+					write(escapePlainStringValue((String) value) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + "\n");
 				}
 				break;
 			default:
@@ -220,7 +236,7 @@ public class YamlWriter implements Closeable {
 		}
 		write("|\n");
 
-		for (final String line : scalar.getValue().split("\n", -1)) {
+		for (final String line : ((String) scalar.getValue()).split("\n", -1)) {
 			writeIndent(indentLevel);
 			write(line + "\n");
 		}
@@ -232,13 +248,39 @@ public class YamlWriter implements Closeable {
 		}
 		write(">\n");
 
-		for (final String line : scalar.getValue().split("\n", -1)) {
+		for (final String line : ((String) scalar.getValue()).split("\n", -1)) {
 			writeIndent(indentLevel);
 			write(line + "\n");
 		}
 	}
 
-	private String escapePlainString(final String value) {
+	private String escapePlainStringKey(final String key) {
+		if (key.isEmpty()) {
+			return "\"\"";
+		} else {
+			boolean needsQuotes = false;
+
+			if (alwaysQuoteStringKeys) {
+				needsQuotes = true;
+			} else {
+				for (final char c : key.toCharArray()) {
+					if ((Character.isWhitespace(c) && c != ' ')
+							|| ":{}[],#&*!|>'\"%@`".indexOf(c) > -1) {
+						needsQuotes = true;
+						break;
+					}
+				}
+			}
+
+			if (!needsQuotes) {
+				return key;
+			} else {
+				return "\"" + key.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+			}
+		}
+	}
+
+	private String escapePlainStringValue(final String value) {
 		if (value.isEmpty()) {
 			return "\"\"";
 		} else {
@@ -292,15 +334,15 @@ public class YamlWriter implements Closeable {
 			case BOOLEAN:
 			case NUMBER:
 			case NULL_VALUE:
-				write(scalar.getValue() + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + "\n");
+				write((scalar.getValue() == null ? "null" : scalar.getValue().toString()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + "\n");
 				break;
 			case STRING:
-				write(escapePlainString(scalar.getValue()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + "\n");
+				write(escapePlainStringValue((String) scalar.getValue()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + "\n");
 				break;
 			case MULTILINE_FOLDED:
 			case MULTILINE_LITERAL:
 			default:
-				write(escapePlainString(scalar.getValue()) + "\n");
+				write(escapePlainStringValue((String) scalar.getValue()) + "\n");
 		}
 	}
 
@@ -315,7 +357,7 @@ public class YamlWriter implements Closeable {
 					&& scalarKey.getType() == YamlScalarType.STRING
 					&& scalarKey.getAnchorName() == null) {
 				writeIndent(indentLevel);
-				write(escapePlainString(scalarKey.getValue()));
+				write(escapePlainStringKey((String) scalarKey.getValue()));
 			} else {
 				writeIndent(indentLevel);
 				write("?\n");
@@ -349,15 +391,15 @@ public class YamlWriter implements Closeable {
 			case BOOLEAN:
 			case NUMBER:
 			case NULL_VALUE:
-				write(scalar.getValue() + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + "\n");
+				write((scalar.getValue() == null ? "null" : scalar.getValue().toString()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + "\n");
 				break;
 			case STRING:
-				write(escapePlainString(scalar.getValue()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + "\n");
+				write(escapePlainStringValue((String) scalar.getValue()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + "\n");
 				break;
 			case MULTILINE_FOLDED:
 			case MULTILINE_LITERAL:
 			default:
-				write(escapePlainString(scalar.getValue()) + "\n");
+				write(escapePlainStringValue((String) scalar.getValue()) + "\n");
 		}
 	}
 
@@ -453,15 +495,15 @@ public class YamlWriter implements Closeable {
 			case BOOLEAN:
 			case NUMBER:
 			case NULL_VALUE:
-				write(scalar.getValue() + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : ""));
+				write((scalar.getValue() == null ? "null" : scalar.getValue().toString()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : ""));
 				break;
 			case STRING:
-				write(escapePlainString(scalar.getValue()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : ""));
+				write(escapePlainStringValue((String) scalar.getValue()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : ""));
 				break;
 			case MULTILINE_FOLDED:
 			case MULTILINE_LITERAL:
 			default:
-				write(escapePlainString(scalar.getValue()));
+				write(escapePlainStringValue((String) scalar.getValue()));
 		}
 	}
 

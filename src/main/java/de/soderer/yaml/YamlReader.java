@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import de.soderer.json.utilities.BasicReadAheadReader;
+import de.soderer.json.utilities.NumberUtilities;
 import de.soderer.yaml.data.YamlAlias;
 import de.soderer.yaml.data.YamlDocument;
 import de.soderer.yaml.data.YamlMapping;
@@ -574,7 +575,7 @@ public class YamlReader extends BasicReadAheadReader {
 						advance();
 					}
 				} else {
-					valueNode = new YamlScalar("null", YamlScalarType.NULL_VALUE);
+					valueNode = new YamlScalar(null, YamlScalarType.NULL_VALUE);
 				}
 			}
 
@@ -603,7 +604,7 @@ public class YamlReader extends BasicReadAheadReader {
 							advance();
 						}
 					} else {
-						val = new YamlScalar("null", YamlScalarType.NULL_VALUE);
+						val = new YamlScalar(null, YamlScalarType.NULL_VALUE);
 					}
 				}
 
@@ -644,7 +645,7 @@ public class YamlReader extends BasicReadAheadReader {
 						advance();
 					}
 				} else {
-					final YamlScalar empty = new YamlScalar("null", YamlScalarType.NULL_VALUE);
+					final YamlScalar empty = new YamlScalar(null, YamlScalarType.NULL_VALUE);
 					attachPendingComments(empty);
 					yamlSequence.add(empty);
 				}
@@ -749,7 +750,20 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 
 		if (match(YamlTokenType.BOOLEAN)) {
-			final YamlScalar scalar = new YamlScalar(previousYamlToken().getValue(), YamlScalarType.BOOLEAN);
+			final YamlScalar scalar;
+			final String booleanString = previousYamlToken().getValue();
+			if ("true".equalsIgnoreCase(booleanString)
+					|| "yes".equalsIgnoreCase(booleanString)
+					|| "on".equalsIgnoreCase(booleanString)) {
+				scalar = new YamlScalar(true, YamlScalarType.BOOLEAN);
+			} else if ("false".equalsIgnoreCase(booleanString)
+					|| "no".equalsIgnoreCase(booleanString)
+					|| "off".equalsIgnoreCase(booleanString)) {
+				scalar = new YamlScalar(false, YamlScalarType.BOOLEAN);
+			} else {
+				throw new RuntimeException("Invalid boolean token found: '" + booleanString + "'");
+			}
+
 			if (anchorName != null) {
 				scalar.setAnchorName(anchorName);
 				anchorTable.put(anchorName, scalar);
@@ -761,7 +775,8 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 
 		if (match(YamlTokenType.NUMBER)) {
-			final YamlScalar scalar = new YamlScalar(previousYamlToken().getValue(), YamlScalarType.NUMBER);
+			final String numberString = previousYamlToken().getValue();
+			final YamlScalar scalar = new YamlScalar(NumberUtilities.parseNumber(numberString), YamlScalarType.NUMBER);
 			if (anchorName != null) {
 				scalar.setAnchorName(anchorName);
 				anchorTable.put(anchorName, scalar);
@@ -773,7 +788,7 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 
 		if (match(YamlTokenType.NULL_VALUE)) {
-			final YamlScalar scalar = new YamlScalar(previousYamlToken().getValue(), YamlScalarType.NULL_VALUE);
+			final YamlScalar scalar = new YamlScalar(null, YamlScalarType.NULL_VALUE);
 			if (anchorName != null) {
 				scalar.setAnchorName(anchorName);
 				anchorTable.put(anchorName, scalar);

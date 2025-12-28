@@ -56,7 +56,9 @@ public class YamlRoundTripTestWithYamlReader {
 
 		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
 		try (final YamlWriter writer = new YamlWriter(testOutputStream)) {
-			writer.setAlwaysQuoteStringValues(alwaysQuote);
+			if (alwaysQuote) {
+				writer.setAlwaysQuoteAllStrings();
+			}
 			writer.writeDocument(testDocument1);
 		}
 
