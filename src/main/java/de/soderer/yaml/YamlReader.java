@@ -23,6 +23,7 @@ import de.soderer.yaml.data.YamlTokenType;
 import de.soderer.yaml.data.directive.YamlDirective;
 import de.soderer.yaml.data.directive.YamlTagDirective;
 import de.soderer.yaml.data.directive.YamlVersionDirective;
+import de.soderer.yaml.exception.YamlDuplicateKeyException;
 
 /**
  * TODOs:
@@ -504,7 +505,7 @@ public class YamlReader extends BasicReadAheadReader {
 		return characterToCheck == ' ' || characterToCheck == '\t';
 	}
 
-	private YamlNode parseNode(final boolean inFlow) {
+	private YamlNode parseNode(final boolean inFlow) throws YamlDuplicateKeyException {
 		consumeOptionalNewlinesAndComments();
 
 		String anchorName = null;
@@ -554,7 +555,7 @@ public class YamlReader extends BasicReadAheadReader {
 				|| check(YamlTokenType.ALIAS);
 	}
 
-	private YamlNode parseBlockPossiblyMappingOrScalar() {
+	private YamlNode parseBlockPossiblyMappingOrScalar() throws YamlDuplicateKeyException {
 		final int startIndex = yamlTokenIndex;
 		final List<String> savedComments = new ArrayList<>(pendingLeadingComments);
 
@@ -625,7 +626,7 @@ public class YamlReader extends BasicReadAheadReader {
 		return parseScalarWithAnchorOrAlias();
 	}
 
-	private YamlSequence parseBlockSequence() {
+	private YamlSequence parseBlockSequence() throws YamlDuplicateKeyException {
 		final YamlSequence yamlSequence = new YamlSequence(false);
 
 		while (match(YamlTokenType.DASH)) {
@@ -659,7 +660,7 @@ public class YamlReader extends BasicReadAheadReader {
 		return yamlSequence;
 	}
 
-	private YamlMapping parseFlowMapping() {
+	private YamlMapping parseFlowMapping() throws YamlDuplicateKeyException {
 		consume(YamlTokenType.FLOW_MAP_START, "{ expected");
 		final YamlMapping yamlMapping = new YamlMapping(true);
 
@@ -686,7 +687,7 @@ public class YamlReader extends BasicReadAheadReader {
 		return yamlMapping;
 	}
 
-	private YamlSequence parseFlowSequence() {
+	private YamlSequence parseFlowSequence() throws YamlDuplicateKeyException {
 		consume(YamlTokenType.FLOW_SEQ_START, "[ expected");
 		final YamlSequence yamlSequence = new YamlSequence(true);
 

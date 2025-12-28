@@ -26,7 +26,7 @@ public class JsonCompare {
 		return this;
 	}
 
-	public JsonObject compare() {
+	public JsonObject compare() throws Exception {
 		final JsonArray differences = compare(objectLeft, objectRight);
 		if (differences != null) {
 			return new JsonObject().add("differences", differences);
@@ -35,7 +35,7 @@ public class JsonCompare {
 		}
 	}
 
-	private JsonArray compare(final JsonObject jsonObjectLeft, final JsonObject jsonObjectRight) {
+	private JsonArray compare(final JsonObject jsonObjectLeft, final JsonObject jsonObjectRight) throws Exception {
 		final JsonArray differences = new JsonArray();
 		for (final String key : jsonObjectLeft.keySet()) {
 			if (!jsonObjectRight.containsKey(key)) {
@@ -60,7 +60,7 @@ public class JsonCompare {
 		}
 	}
 
-	private JsonArray compare(final JsonArray jsonArrayLeft, final JsonArray jsonArrayRight) {
+	private JsonArray compare(final JsonArray jsonArrayLeft, final JsonArray jsonArrayRight) throws Exception {
 		final JsonArray differences = new JsonArray();
 
 		if (jsonArrayLeft.size() > jsonArrayRight.size()) {
@@ -118,7 +118,7 @@ public class JsonCompare {
 		}
 	}
 
-	private JsonArray compare(final Object valueObjectLeft, final Object valueObjectRight) {
+	private JsonArray compare(final Object valueObjectLeft, final Object valueObjectRight) throws Exception {
 		if (valueObjectLeft == null && valueObjectRight == null) {
 			return null;
 		} else if (valueObjectLeft == null) {

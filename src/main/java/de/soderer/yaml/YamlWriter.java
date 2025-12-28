@@ -347,7 +347,7 @@ public class YamlWriter implements Closeable {
 	}
 
 	private void writeBlockMapping(final YamlMapping yamlMapping, final int indentLevel) throws IOException {
-		for (final Entry<YamlNode, YamlNode> entry : yamlMapping.entryList()) {
+		for (final Entry<YamlNode, YamlNode> entry : yamlMapping.entrySet()) {
 			final YamlNode key = entry.getKey();
 			final YamlNode value = entry.getValue();
 
@@ -455,7 +455,7 @@ public class YamlWriter implements Closeable {
 		write("{");
 
 		boolean first = true;
-		for (final Entry<YamlNode, YamlNode> entry : yamlMapping.entryList()) {
+		for (final Entry<YamlNode, YamlNode> entry : yamlMapping.entrySet()) {
 			if (!first) write(", ");
 			first = false;
 

@@ -4,7 +4,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -12,7 +14,6 @@ import org.junit.Test;
 import de.soderer.json.utilities.IoUtilities;
 import de.soderer.yaml.data.YamlAlias;
 import de.soderer.yaml.data.YamlDocument;
-import de.soderer.yaml.data.YamlKeyValue;
 import de.soderer.yaml.data.YamlMapping;
 import de.soderer.yaml.data.YamlNode;
 import de.soderer.yaml.data.YamlScalar;
@@ -168,18 +169,21 @@ public class YamlRoundTripTestWithYamlReader {
 			if (mapA.isFlowStyle() != mapB.isFlowStyle()) {
 				return false;
 			}
-			if (mapA.getEntries().size() != mapB.getEntries().size()) {
+			if (mapA.size() != mapB.size()) {
 				return false;
 			}
 
-			for (int i = 0; i < mapA.getEntries().size(); i++) {
-				final YamlKeyValue kvA = mapA.getEntries().get(i);
-				final YamlKeyValue kvB = mapB.getEntries().get(i);
+			final Iterator<Entry<YamlNode, YamlNode>> mapA_Iterator = mapA.iterator();
+			final Iterator<Entry<YamlNode, YamlNode>> mapB_Iterator = mapB.iterator();
 
-				if (!astEquals(kvA.getKey(), kvB.getKey())) {
+			for (int i = 0; i < mapA.size(); i++) {
+				final Entry<YamlNode, YamlNode> kvAEntry = mapA_Iterator.next();
+				final Entry<YamlNode, YamlNode> kvBEntry = mapB_Iterator.next();
+
+				if (!astEquals(kvAEntry.getKey(), kvAEntry.getKey())) {
 					return false;
 				}
-				if (!astEquals(kvA.getValue(), kvB.getValue())) {
+				if (!astEquals(kvBEntry.getValue(), kvBEntry.getValue())) {
 					return false;
 				}
 			}

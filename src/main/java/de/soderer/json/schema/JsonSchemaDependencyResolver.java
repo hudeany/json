@@ -33,7 +33,7 @@ public class JsonSchemaDependencyResolver {
 	private boolean downloadReferencedSchemas = false;
 	private boolean lazyFailOnMissingExternalSchemas = true;
 
-	public JsonSchemaDependencyResolver(final JsonObject schemaDocumentNode, final JsonSchemaDependency... dependencies) throws JsonSchemaDefinitionError {
+	public JsonSchemaDependencyResolver(final JsonObject schemaDocumentNode, final JsonSchemaDependency... dependencies) throws Exception {
 		if (schemaDocumentNode == null) {
 			throw new JsonSchemaDefinitionError("Invalid data type 'null' for JsonSchemaDependencyResolver", new JsonSchemaPath());
 		}
@@ -313,7 +313,7 @@ public class JsonSchemaDependencyResolver {
 		}
 	}
 
-	public void addJsonSchemaDefinition(final String jsonSchemaReferenceName, final JsonObject jsonSchemaReferenceObject) throws JsonSchemaDefinitionError {
+	public void addJsonSchemaDefinition(final String jsonSchemaReferenceName, final JsonObject jsonSchemaReferenceObject) throws Exception {
 		if (Utilities.isBlank(jsonSchemaReferenceName)) {
 			throw new JsonSchemaDefinitionError("Invalid empty JSON schema definition package name", null);
 		} else if (additionalSchemaDocumentNodes.containsKey(jsonSchemaReferenceName)) {
@@ -324,7 +324,7 @@ public class JsonSchemaDependencyResolver {
 		}
 	}
 
-	private void redirectReferences(final JsonObject jsonObject, final String referenceDefinitionStart, final String referenceDefinitionReplacement) {
+	private void redirectReferences(final JsonObject jsonObject, final String referenceDefinitionStart, final String referenceDefinitionReplacement) throws Exception {
 		for (final Entry<String, Object> entry : jsonObject.entrySet()) {
 			if ("$ref".equals(entry.getKey()) && entry.getValue() != null && entry.getValue() instanceof String && ((String) entry.getValue()).startsWith(referenceDefinitionStart)) {
 				jsonObject.add("$ref", referenceDefinitionReplacement + ((String) entry.getValue()).substring(referenceDefinitionStart.length()));
@@ -336,7 +336,7 @@ public class JsonSchemaDependencyResolver {
 		}
 	}
 
-	private void redirectReferences(final JsonArray jsonArray, final String referenceDefinitionStart, final String referenceDefinitionReplacement) {
+	private void redirectReferences(final JsonArray jsonArray, final String referenceDefinitionStart, final String referenceDefinitionReplacement) throws Exception {
 		for (final Object item : jsonArray) {
 			if (item instanceof JsonObject) {
 				redirectReferences((JsonObject) item, referenceDefinitionStart, referenceDefinitionReplacement);

@@ -34,7 +34,7 @@ public class JsonUtilities {
 		}
 	}
 
-	public static JsonObject convertXmlNode(final Node xmlNode) {
+	public static JsonObject convertXmlNode(final Node xmlNode) throws Exception {
 		final JsonObject jsonObject = new JsonObject();
 		if (xmlNode.getAttributes() != null && xmlNode.getAttributes().getLength() > 0) {
 			for (int attributeIndex = 0; attributeIndex < xmlNode.getAttributes().getLength(); attributeIndex++) {

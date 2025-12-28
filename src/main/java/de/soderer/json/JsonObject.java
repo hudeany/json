@@ -10,18 +10,18 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-public class JsonObject implements Iterable<Map.Entry<String, Object>> {
-	private final Map<String, Object> properties = new LinkedHashMap<>();
+import de.soderer.json.exception.JsonDuplicateKeyException;
 
-	/**
-	 * When using the same key multiple times only the last value will be stored
-	 *
-	 * @param key
-	 * @param value
-	 */
-	public JsonObject add(final String key, final Object value) {
-		properties.put(key, value);
-		return this;
+public class JsonObject implements Iterable<Map.Entry<String, Object>> {
+	private final LinkedHashMap<String, Object> properties = new LinkedHashMap<>();
+
+	public JsonObject add(final String key, final Object value) throws JsonDuplicateKeyException {
+		if (properties.containsKey(key)) {
+			throw new JsonDuplicateKeyException(key);
+		} else {
+			properties.put(key, value);
+			return this;
+		}
 	}
 
 	public Object remove(final String key) {

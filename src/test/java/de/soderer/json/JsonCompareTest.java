@@ -11,7 +11,7 @@ import de.soderer.json.compare.JsonCompareSettings;
 @SuppressWarnings("static-method")
 public class JsonCompareTest {
 	@Test
-	public void testOk() {
+	public void testOk() throws Exception {
 		final LocalDateTime now = LocalDateTime.now();
 
 		final JsonObject jsonObjectLeft = new JsonObject();
@@ -58,7 +58,7 @@ public class JsonCompareTest {
 	}
 
 	@Test
-	public void testPropertyKeyError() {
+	public void testPropertyKeyError() throws Exception {
 		final LocalDateTime now = LocalDateTime.now();
 
 		final JsonObject jsonObjectLeft = new JsonObject();
@@ -83,7 +83,7 @@ public class JsonCompareTest {
 	}
 
 	@Test
-	public void testPropertyValueError() {
+	public void testPropertyValueError() throws Exception {
 		final LocalDateTime now = LocalDateTime.now();
 
 		final JsonObject jsonObjectLeft = new JsonObject();
@@ -108,7 +108,7 @@ public class JsonCompareTest {
 	}
 
 	@Test
-	public void testPropertyValueErrorJsonObject() {
+	public void testPropertyValueErrorJsonObject() throws Exception {
 		final LocalDateTime now = LocalDateTime.now();
 
 		final JsonObject jsonObjectLeft = new JsonObject();
@@ -138,7 +138,7 @@ public class JsonCompareTest {
 	}
 
 	@Test
-	public void testArrayError() {
+	public void testArrayError() throws Exception {
 		final LocalDateTime now = LocalDateTime.now();
 
 		final JsonArray jsonArrayLeft = new JsonArray();
@@ -165,7 +165,7 @@ public class JsonCompareTest {
 	}
 
 	@Test
-	public void testArrayOrderError() {
+	public void testArrayOrderError() throws Exception {
 		final JsonArray jsonArrayLeft = new JsonArray();
 		jsonArrayLeft.add("value1");
 		jsonArrayLeft.add("value2");
@@ -182,7 +182,7 @@ public class JsonCompareTest {
 	}
 
 	@Test
-	public void testArrayOrderMixed() {
+	public void testArrayOrderMixed() throws Exception {
 		final JsonArray jsonArrayLeft = new JsonArray();
 		jsonArrayLeft.add("value1");
 		jsonArrayLeft.add("value2");
@@ -199,7 +199,7 @@ public class JsonCompareTest {
 	}
 
 	@Test
-	public void testArrayOrderMixedError() {
+	public void testArrayOrderMixedError() throws Exception {
 		final JsonArray jsonArrayLeft = new JsonArray();
 		jsonArrayLeft.add("value1");
 		jsonArrayLeft.add("value2");

@@ -63,7 +63,7 @@ public class JsonSchemaDependency {
 		return jsonSchemaReferenceObject;
 	}
 
-	private void redirectReferences(final JsonObject jsonObject, final String referenceDefinitionStart, final String referenceDefinitionReplacement) {
+	private void redirectReferences(final JsonObject jsonObject, final String referenceDefinitionStart, final String referenceDefinitionReplacement) throws Exception {
 		for (final Entry<String, Object> entry : jsonObject.entrySet()) {
 			if ("$ref".equals(entry.getKey()) && entry.getValue() != null && entry.getValue() instanceof String && ((String) entry.getValue()).startsWith(referenceDefinitionStart)) {
 				jsonObject.add("$ref", referenceDefinitionReplacement + ((String) entry.getValue()).substring(referenceDefinitionStart.length()));
@@ -75,7 +75,7 @@ public class JsonSchemaDependency {
 		}
 	}
 
-	private void redirectReferences(final JsonArray jsonArray, final String referenceDefinitionStart, final String referenceDefinitionReplacement) {
+	private void redirectReferences(final JsonArray jsonArray, final String referenceDefinitionStart, final String referenceDefinitionReplacement) throws Exception {
 		for (final Object item : jsonArray) {
 			if (item instanceof JsonObject) {
 				redirectReferences((JsonObject) item, referenceDefinitionStart, referenceDefinitionReplacement);

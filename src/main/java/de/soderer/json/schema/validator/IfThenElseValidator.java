@@ -2,6 +2,7 @@ package de.soderer.json.schema.validator;
 
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
+import de.soderer.json.exception.JsonDuplicateKeyException;
 import de.soderer.json.path.JsonPath;
 import de.soderer.json.schema.JsonSchema;
 import de.soderer.json.schema.JsonSchemaDataValidationError;
@@ -21,7 +22,7 @@ public class IfThenElseValidator extends BaseJsonSchemaValidator {
 	private Boolean elseBoolean = null;
 	private JsonSchema elseJsonSchema = null;
 
-	public IfThenElseValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object ifJsonObject, final Object thenObject, final Object elseObject) throws JsonSchemaDefinitionError {
+	public IfThenElseValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object ifJsonObject, final Object thenObject, final Object elseObject) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, ifJsonObject);
 
 		if (!jsonSchemaDependencyResolver.isDraftV7Mode()) {
