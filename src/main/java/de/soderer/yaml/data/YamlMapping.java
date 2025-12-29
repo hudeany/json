@@ -33,7 +33,7 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<YamlNode
 		this.flowStyle = flowStyle;
 	}
 
-	public void add(final String key, final Object value) throws Exception {
+	public void add(final String key, final Object value) throws YamlDuplicateKeyException {
 		if (key == null) {
 			if (value == null) {
 				add(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(null, YamlScalarType.NULL_VALUE));
@@ -61,7 +61,7 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<YamlNode
 		}
 	}
 
-	public void add(final Number key, final Object value) throws Exception {
+	public void add(final Number key, final Object value) throws YamlDuplicateKeyException {
 		if (key == null) {
 			if (value == null) {
 				add(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(null, YamlScalarType.NULL_VALUE));
@@ -89,7 +89,7 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<YamlNode
 		}
 	}
 
-	public void add(final Boolean key, final Object value) throws Exception {
+	public void add(final Boolean key, final Object value) throws YamlDuplicateKeyException {
 		if (key == null) {
 			if (value == null) {
 				add(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(null, YamlScalarType.NULL_VALUE));
