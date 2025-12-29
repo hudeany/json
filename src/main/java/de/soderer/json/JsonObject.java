@@ -363,7 +363,7 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 		} else if (value instanceof JsonValueBoolean) {
 			return ((JsonValueBoolean) value).getValue();
 		} else {
-			throw new RuntimeException("Selected value for property key '" + key + "' is not a simple value: '" + value.getClass().getSimpleName() + "'");
+			return value;
 		}
 	}
 

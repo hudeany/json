@@ -244,20 +244,20 @@ public class JsonArray extends JsonNode implements Iterable<Object> {
 		return items.get(index);
 	}
 
-	public Object getSimpleValue(final int index) {
-		final Object value = get(index);
-		if (value == null || value instanceof JsonValueNull) {
+	public Object getSimpleItem(final int index) {
+		final Object item = get(index);
+		if (item == null || item instanceof JsonValueNull) {
 			return null;
-		} else if (value instanceof JsonValueString) {
-			return ((JsonValueString) value).getValue();
-		} else if (value instanceof JsonValueInteger) {
-			return ((JsonValueInteger) value).getValue();
-		} else if (value instanceof JsonValueNumber) {
-			return ((JsonValueNumber) value).getValue();
-		} else if (value instanceof JsonValueBoolean) {
-			return ((JsonValueBoolean) value).getValue();
+		} else if (item instanceof JsonValueString) {
+			return ((JsonValueString) item).getValue();
+		} else if (item instanceof JsonValueInteger) {
+			return ((JsonValueInteger) item).getValue();
+		} else if (item instanceof JsonValueNumber) {
+			return ((JsonValueNumber) item).getValue();
+		} else if (item instanceof JsonValueBoolean) {
+			return ((JsonValueBoolean) item).getValue();
 		} else {
-			throw new RuntimeException("Selected item at index '" + index + "' is not a simple value: '" + value.getClass().getSimpleName() + "'");
+			return item;
 		}
 	}
 
