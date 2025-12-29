@@ -307,7 +307,7 @@ public class YamlWriter implements Closeable {
 	}
 
 	private void writeBlockSequence(final YamlSequence yamlSequence, final int indentLevel) throws IOException {
-		for (final YamlNode item : yamlSequence) {
+		for (final YamlNode item : yamlSequence.items()) {
 			writeLeadingComments(item, indentLevel);
 
 			writeIndent(indentLevel);
@@ -419,7 +419,7 @@ public class YamlWriter implements Closeable {
 		write("[");
 
 		boolean first = true;
-		for (final YamlNode item : yamlSequence) {
+		for (final YamlNode item : yamlSequence.items()) {
 			if (!first) write(", ");
 			first = false;
 

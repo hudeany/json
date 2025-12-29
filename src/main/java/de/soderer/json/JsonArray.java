@@ -6,14 +6,15 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Stream;
 
 import de.soderer.json.utilities.DateUtilities;
 
-public class JsonArray extends JsonNode implements Iterable<JsonNode> {
+public class JsonArray extends JsonNode implements Iterable<Object> {
 	private final List<JsonNode> items = new ArrayList<>();
 
 	public JsonArray() {
@@ -264,13 +265,33 @@ public class JsonArray extends JsonNode implements Iterable<JsonNode> {
 		return items.size();
 	}
 
-	@Override
-	public Iterator<JsonNode> iterator() {
-		return items.iterator();
+	public Collection<JsonNode> items() {
+		return Collections.unmodifiableCollection(items);
 	}
 
-	public Stream<JsonNode> stream() {
-		return items.stream();
+	public Collection<Object> simpleItems() {
+		final List<Object> simpleItems = new ArrayList<>();
+		for (final JsonNode item : items) {
+			if (item.isNull()) {
+				simpleItems.add(null);
+			} else if (item.isString()) {
+				simpleItems.add(((JsonValueString) item).getValue());
+			} else if (item.isInteger()) {
+				simpleItems.add(((JsonValueInteger) item).getValue());
+			} else if (item.isNumber()) {
+				simpleItems.add(((JsonValueNumber) item).getValue());
+			} else if (item.isBoolean()) {
+				simpleItems.add(((JsonValueBoolean) item).getValue());
+			} else {
+				simpleItems.add(item);
+			}
+		}
+		return Collections.unmodifiableCollection(simpleItems);
+	}
+
+	@Override
+	public Iterator<Object> iterator() {
+		return simpleItems().iterator();
 	}
 
 	@Override

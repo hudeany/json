@@ -603,7 +603,7 @@ public class JsonWriter implements Closeable {
 			throw new Exception("Invalid null value added via 'add'. If done by intention use 'addSimpleJsonArrayValue' or 'addSimpleJsonObjectPropertyValue'");
 		} else {
 			openJsonObject();
-			for (final Entry<String, JsonNode> property : jsonObject) {
+			for (final Entry<String, JsonNode> property : jsonObject.entrySet()) {
 				openJsonObjectProperty(property.getKey());
 				final JsonNode propertyValue = property.getValue();
 				if (propertyValue instanceof JsonObject) {
@@ -623,7 +623,7 @@ public class JsonWriter implements Closeable {
 			throw new Exception("Invalid null value added via 'add'. If done by intention use 'addSimpleJsonArrayValue' or 'addSimpleJsonObjectPropertyValue'");
 		} else {
 			openJsonArray();
-			for (final JsonNode arrayValue : jsonArray) {
+			for (final JsonNode arrayValue : jsonArray.items()) {
 				if (arrayValue instanceof JsonObject) {
 					add((JsonObject) arrayValue);
 				} else if (arrayValue instanceof JsonArray) {

@@ -42,7 +42,7 @@ public class DependenciesValidator extends BaseJsonSchemaValidator {
 				validators.put(entry.getKey(), subValidators);
 			} else if (entry.getValue().isJsonArray()) {
 				final List<String> propertiesList = new ArrayList<>();
-				for (final JsonNode item : ((JsonArray) entry.getValue())) {
+				for (final JsonNode item : ((JsonArray) entry.getValue()).items()) {
 					if (item == null || !(item.isString())) {
 						throw new JsonSchemaDefinitionError("Dependencies value for key '" + entry.getKey() + "' contains invalid data that is not 'string'", jsonSchemaPath);
 					} else {

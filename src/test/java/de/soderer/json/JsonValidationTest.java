@@ -127,7 +127,7 @@ public class JsonValidationTest {
 		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteSimpleMode.json"))) {
 			int testCount = 0;
 			final JsonNode testsuiteNode = testsuiteReader.read();
-			for (final JsonNode item : ((JsonArray) testsuiteNode)) {
+			for (final JsonNode item : ((JsonArray) testsuiteNode).items()) {
 				testCount++;
 				final JsonObject testItem = (JsonObject) item;
 				final String description = (String) testItem.getSimpleValue("description");
@@ -179,7 +179,7 @@ public class JsonValidationTest {
 		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteDraftV4.json"))) {
 			int testCount = 0;
 			final JsonNode testsuiteNode = testsuiteReader.read();
-			for (final JsonNode item : ((JsonArray) testsuiteNode)) {
+			for (final JsonNode item : ((JsonArray) testsuiteNode).items()) {
 				testCount++;
 				final JsonObject testItem = (JsonObject) item;
 				final String description = (String) testItem.getSimpleValue("description");
@@ -228,7 +228,7 @@ public class JsonValidationTest {
 		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteDraftV6.json"))) {
 			int testCount = 0;
 			final JsonNode testsuiteNode = testsuiteReader.read();
-			for (final JsonNode item : ((JsonArray) testsuiteNode)) {
+			for (final JsonNode item : ((JsonArray) testsuiteNode).items()) {
 				testCount++;
 				final JsonObject testItem = (JsonObject) item;
 				final String description = (String) testItem.getSimpleValue("description");
@@ -277,7 +277,7 @@ public class JsonValidationTest {
 		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteDraftV7.json"))) {
 			int testCount = 0;
 			final JsonNode testsuiteNode = testsuiteReader.read();
-			for (final JsonNode item : ((JsonArray) testsuiteNode)) {
+			for (final JsonNode item : ((JsonArray) testsuiteNode).items()) {
 				testCount++;
 				final JsonObject testItem = (JsonObject) item;
 				final String description = (String) testItem.getSimpleValue("description");

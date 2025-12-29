@@ -46,7 +46,7 @@ public class TypeValidator extends BaseJsonSchemaValidator {
 				typeStrings.add(((JsonValueString) validatorData).getValue());
 			}
 		} else if (validatorData.isJsonArray()) {
-			for (final JsonNode typeData : ((JsonArray) validatorData)) {
+			for (final JsonNode typeData : ((JsonArray) validatorData).items()) {
 				if (typeData == null) {
 					throw new JsonSchemaDefinitionError("Type data array contains a 'null' item", jsonSchemaPath);
 				} else if (typeData.isString()) {

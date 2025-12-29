@@ -560,7 +560,7 @@ public class JsonSerializer {
 						final Constructor<?> constructor = clazz.getConstructor();
 						@SuppressWarnings("unchecked")
 						final Map<Object, Object> mapObject = (Map<Object, Object>) constructor.newInstance();
-						for (final JsonNode keyValueObject : (JsonArray) value) {
+						for (final JsonNode keyValueObject : ((JsonArray) value).items()) {
 							if (!(keyValueObject instanceof JsonObject)) {
 								throw new Exception("Invalid value type serialization value");
 							}
@@ -576,7 +576,7 @@ public class JsonSerializer {
 						return mapObject;
 					} else {
 						final List<Object> listOfItems = new ArrayList<>();
-						for (final JsonNode item : (JsonArray) value) {
+						for (final JsonNode item : ((JsonArray) value).items()) {
 							if (!(item instanceof JsonObject)) {
 								throw new Exception("Invalid value type serialization value");
 							}
@@ -869,7 +869,7 @@ public class JsonSerializer {
 						} else if (List.class.isAssignableFrom(clazz)) {
 							final List<Object> listOfItems = new ArrayList<>();
 							final Class<?> genericType = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
-							for (final JsonNode arrayItem : (JsonArray) value) {
+							for (final JsonNode arrayItem : ((JsonArray) value).items()) {
 								final Object item = deserialize(genericType, arrayItem);
 								listOfItems.add(item);
 							}
@@ -877,7 +877,7 @@ public class JsonSerializer {
 						} else if (Set.class.isAssignableFrom(clazz)) {
 							final Set<Object> setOfItems = new HashSet<>();
 							final Class<?> genericType = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
-							for (final JsonNode arrayItem : (JsonArray) value) {
+							for (final JsonNode arrayItem : ((JsonArray) value).items()) {
 								final Object item = deserialize(genericType, arrayItem);
 								setOfItems.add(item);
 							}
@@ -885,7 +885,7 @@ public class JsonSerializer {
 						} else if (Collection.class.isAssignableFrom(clazz)) {
 							final Collection<Object> collectionOfItems = new ArrayList<>();
 							final Class<?> genericType = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
-							for (final JsonNode arrayItem : (JsonArray) value) {
+							for (final JsonNode arrayItem : ((JsonArray) value).items()) {
 								final Object item = deserialize(genericType, arrayItem);
 								collectionOfItems.add(item);
 							}
@@ -895,7 +895,7 @@ public class JsonSerializer {
 							if (!(value instanceof JsonArray)) {
 								throw new Exception("Invalid value type serialization value");
 							}
-							for (final JsonNode keyValueObject : (JsonArray) value) {
+							for (final JsonNode keyValueObject : ((JsonArray) value).items()) {
 								if (!(keyValueObject instanceof JsonObject)) {
 									throw new Exception("Invalid value type serialization value");
 								}

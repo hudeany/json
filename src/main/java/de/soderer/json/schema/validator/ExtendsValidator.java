@@ -26,7 +26,7 @@ public class ExtendsValidator extends BaseJsonSchemaValidator {
 			if (validatorData == null || validatorData.isNull()) {
 				throw new JsonSchemaDefinitionError("Extended JSON schema value is 'null'", jsonSchemaPath);
 			} else if (validatorData.isJsonArray()) {
-				for (final JsonNode subSchemaObject : (JsonArray) validatorData) {
+				for (final JsonNode subSchemaObject : ((JsonArray) validatorData).items()) {
 					if (subSchemaObject == null) {
 						throw new JsonSchemaDefinitionError("Extended JSON schema value is 'null'", jsonSchemaPath);
 					} else if (subSchemaObject.isJsonObject()) {

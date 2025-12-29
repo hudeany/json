@@ -28,6 +28,7 @@ import de.soderer.yaml.exception.YamlDuplicateKeyException;
 /**
  * TODOs:
  * - Read complex mapping keys
+ * - Improve comment handling
  */
 public class YamlReader extends BasicReadAheadReader {
 	private final List<YamlToken> yamlTokens = new ArrayList<>();

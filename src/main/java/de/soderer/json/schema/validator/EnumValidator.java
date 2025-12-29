@@ -4,8 +4,8 @@ import de.soderer.json.JsonArray;
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
 import de.soderer.json.JsonValueBoolean;
-import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueInteger;
+import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.path.JsonPath;
 import de.soderer.json.schema.JsonSchemaDataValidationError;
@@ -33,7 +33,7 @@ public class EnumValidator extends BaseJsonSchemaValidator {
 
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
-		for (final JsonNode enumObject : ((JsonArray) validatorData)) {
+		for (final JsonNode enumObject : ((JsonArray) validatorData).items()) {
 			if (enumObject == null && jsonNode.isNull()) {
 				return;
 			} else if (enumObject != null && jsonNode != null) {
@@ -72,7 +72,7 @@ public class EnumValidator extends BaseJsonSchemaValidator {
 				}
 			}
 		}
-		throw new JsonSchemaDataValidationError("Enumeration expected one of '" + Utilities.join((JsonArray) validatorData, "', '") + "' but was '" + getJsonNodeDisplayString(jsonNode, jsonPath) + "'", jsonPath);
+		throw new JsonSchemaDataValidationError("Enumeration expected one of '" + Utilities.join(((JsonArray) validatorData).items(), "', '") + "' but was '" + getJsonNodeDisplayString(jsonNode, jsonPath) + "'", jsonPath);
 	}
 
 	private static String getJsonNodeDisplayString(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {

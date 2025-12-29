@@ -78,7 +78,7 @@ public class JsonSchemaDependency {
 	}
 
 	private void redirectReferences(final JsonArray jsonArray, final String referenceDefinitionStart, final String referenceDefinitionReplacement) throws Exception {
-		for (final JsonNode item : jsonArray) {
+		for (final JsonNode item : jsonArray.items()) {
 			if (item instanceof JsonObject) {
 				redirectReferences((JsonObject) item, referenceDefinitionStart, referenceDefinitionReplacement);
 			} else if (item instanceof JsonArray) {

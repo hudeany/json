@@ -8,8 +8,8 @@ import de.soderer.json.JsonArray;
 import de.soderer.json.JsonDataType;
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
-import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueInteger;
+import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.exception.JsonDuplicateKeyException;
 import de.soderer.json.path.JsonPath;
@@ -43,7 +43,7 @@ public class DisallowValidator extends BaseJsonSchemaValidator {
 			}
 			typeStrings.add(((JsonValueString) validatorData).getValue());
 		} else if (validatorData.isJsonArray()) {
-			for (final JsonNode typeData : ((JsonArray) validatorData)) {
+			for (final JsonNode typeData : ((JsonArray) validatorData).items()) {
 				if (typeData == null) {
 					throw new JsonSchemaDefinitionError("Type data array contains a 'null' item", jsonSchemaPath);
 				} else if (typeData.isString()) {

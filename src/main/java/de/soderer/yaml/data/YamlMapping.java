@@ -1,9 +1,11 @@
 package de.soderer.yaml.data;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -12,7 +14,7 @@ import java.util.Set;
 import de.soderer.yaml.YamlWriter;
 import de.soderer.yaml.exception.YamlDuplicateKeyException;
 
-public class YamlMapping extends YamlNode implements Iterable<Map.Entry<YamlNode, YamlNode>> {
+public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, Object>> {
 	private final LinkedHashMap<YamlNode, YamlNode> entries = new LinkedHashMap<>();
 
 	private boolean flowStyle;
@@ -301,12 +303,53 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<YamlNode
 		return Collections.unmodifiableSet(entries.keySet());
 	}
 
-	public Collection<Object> values () {
+	public Collection<Object> values() {
 		return Collections.unmodifiableCollection(entries.values());
+	}
+
+	public Collection<Object> simpleValues() {
+		final List<Object> simpleValues = new ArrayList<>();
+		for (final YamlNode value : entries.values()) {
+			if (value instanceof YamlScalar) {
+				if (((YamlScalar) value).getType() == YamlScalarType.NULL_VALUE) {
+					simpleValues.add(null);
+				} else {
+					simpleValues.add(((YamlScalar) value).getValue());
+				}
+			} else {
+				simpleValues.add(value);
+			}
+		}
+		return Collections.unmodifiableCollection(simpleValues);
 	}
 
 	public Set<Entry<YamlNode, YamlNode>> entrySet() {
 		return Collections.unmodifiableSet(entries.entrySet());
+	}
+
+	public Set<Entry<String, Object>> simpleEntrySet() {
+		final LinkedHashMap<String, Object> simpleProperties = new LinkedHashMap<>();
+		for (final Entry<YamlNode, YamlNode> entry : entries.entrySet()) {
+			if (entry.getKey() instanceof YamlScalar) {
+				final YamlScalar keyScalar = (YamlScalar) entry.getKey();
+				if (keyScalar.getType() == YamlScalarType.STRING) {
+					if (entry.getValue() instanceof YamlScalar) {
+						if (((YamlScalar) entry.getValue()).getType() == YamlScalarType.NULL_VALUE) {
+							simpleProperties.put((String) keyScalar.getValue(), null);
+						} else {
+							simpleProperties.put((String) keyScalar.getValue(), ((YamlScalar) entry.getValue()).getValue());
+						}
+					} else {
+						simpleProperties.put((String) keyScalar.getValue(), entry.getValue());
+					}
+				} else {
+					throw new RuntimeException("Cannot create simpleEntrySet, because YamlMapping contains non-String keys");
+				}
+			} else {
+				throw new RuntimeException("Cannot create simpleEntrySet, because YamlMapping contains non-String keys");
+			}
+		}
+		return Collections.unmodifiableSet(simpleProperties.entrySet());
 	}
 
 	public int size() {
@@ -314,8 +357,8 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<YamlNode
 	}
 
 	@Override
-	public Iterator<Entry<YamlNode, YamlNode>> iterator() {
-		return entrySet().iterator();
+	public Iterator<Entry<String, Object>> iterator() {
+		return simpleEntrySet().iterator();
 	}
 
 	@Override

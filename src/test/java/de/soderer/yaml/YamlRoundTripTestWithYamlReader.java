@@ -173,8 +173,8 @@ public class YamlRoundTripTestWithYamlReader {
 				return false;
 			}
 
-			final Iterator<Entry<YamlNode, YamlNode>> mapA_Iterator = mapA.iterator();
-			final Iterator<Entry<YamlNode, YamlNode>> mapB_Iterator = mapB.iterator();
+			final Iterator<Entry<YamlNode, YamlNode>> mapA_Iterator = mapA.entrySet().iterator();
+			final Iterator<Entry<YamlNode, YamlNode>> mapB_Iterator = mapB.entrySet().iterator();
 
 			for (int i = 0; i < mapA.size(); i++) {
 				final Entry<YamlNode, YamlNode> kvAEntry = mapA_Iterator.next();

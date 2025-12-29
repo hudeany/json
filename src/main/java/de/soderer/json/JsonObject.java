@@ -5,11 +5,13 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -17,7 +19,7 @@ import java.util.Set;
 import de.soderer.json.exception.JsonDuplicateKeyException;
 import de.soderer.json.utilities.DateUtilities;
 
-public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, JsonNode>> {
+public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, Object>> {
 	private final LinkedHashMap<String, JsonNode> properties = new LinkedHashMap<>();
 
 	public JsonObject() {
@@ -373,12 +375,52 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, J
 		return Collections.unmodifiableSet(properties.keySet());
 	}
 
-	public Collection<Object> values () {
+	public Collection<JsonNode> values () {
 		return Collections.unmodifiableCollection(properties.values());
+	}
+
+	public Collection<Object> simpleValues() {
+		final List<Object> simpleValues = new ArrayList<>();
+		for (final JsonNode value : properties.values()) {
+			if (value.isNull()) {
+				simpleValues.add(null);
+			} else if (value.isString()) {
+				simpleValues.add(((JsonValueString) value).getValue());
+			} else if (value.isInteger()) {
+				simpleValues.add(((JsonValueInteger) value).getValue());
+			} else if (value.isNumber()) {
+				simpleValues.add(((JsonValueNumber) value).getValue());
+			} else if (value.isBoolean()) {
+				simpleValues.add(((JsonValueBoolean) value).getValue());
+			} else {
+				simpleValues.add(value);
+			}
+		}
+		return Collections.unmodifiableCollection(simpleValues);
 	}
 
 	public Set<Entry<String, JsonNode>> entrySet() {
 		return Collections.unmodifiableSet(properties.entrySet());
+	}
+
+	public Set<Entry<String, Object>> simpleEntrySet() {
+		final LinkedHashMap<String, Object> simpleProperties = new LinkedHashMap<>();
+		for (final Entry<String, JsonNode> entry : properties.entrySet()) {
+			if (entry.getValue().isNull()) {
+				simpleProperties.put(entry.getKey(), null);
+			} else if (entry.getValue().isString()) {
+				simpleProperties.put(entry.getKey(), ((JsonValueString) entry.getValue()).getValue());
+			} else if (entry.getValue().isInteger()) {
+				simpleProperties.put(entry.getKey(), ((JsonValueInteger) entry.getValue()).getValue());
+			} else if (entry.getValue().isNumber()) {
+				simpleProperties.put(entry.getKey(), ((JsonValueNumber) entry.getValue()).getValue());
+			} else if (entry.getValue().isBoolean()) {
+				simpleProperties.put(entry.getKey(), ((JsonValueBoolean) entry.getValue()).getValue());
+			} else {
+				simpleProperties.put(entry.getKey(), entry.getValue());
+			}
+		}
+		return Collections.unmodifiableSet(simpleProperties.entrySet());
 	}
 
 	public int size() {
@@ -386,8 +428,8 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, J
 	}
 
 	@Override
-	public Iterator<Entry<String, JsonNode>> iterator() {
-		return properties.entrySet().iterator();
+	public Iterator<Entry<String, Object>> iterator() {
+		return simpleEntrySet().iterator();
 	}
 
 	@Override

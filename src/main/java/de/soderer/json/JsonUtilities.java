@@ -182,7 +182,7 @@ public class JsonUtilities {
 		final List<Node> list = new ArrayList<>();
 
 		if (jsonArray.size() > 0) {
-			for (final JsonNode subItem : jsonArray) {
+			for (final JsonNode subItem : jsonArray.items()) {
 				if (subItem instanceof JsonObject) {
 					final Node newNode = xmlDocument.createElement(nodeName);
 					list.add(newNode);

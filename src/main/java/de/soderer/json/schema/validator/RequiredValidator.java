@@ -31,7 +31,7 @@ public class RequiredValidator extends BaseJsonSchemaValidator {
 				throw new JsonSchemaDataValidationError("Expected data type 'object' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {
-			for (final JsonNode propertyKey : (JsonArray) validatorData) {
+			for (final JsonNode propertyKey : ((JsonArray) validatorData).items()) {
 				if (propertyKey == null) {
 					throw new JsonSchemaDataValidationError("Data entry for required property key name must be 'string' but was 'null'", jsonPath);
 				} else if (!(propertyKey.isString())) {

@@ -1186,7 +1186,7 @@ public class JsonTest {
 							+ "]\n";
 			try (JsonReader jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)))) {
 				final JsonArray jsonArray = ((JsonArray) jsonReader.read());
-				final List<String> properties = jsonArray.stream().map(x -> (JsonObject) x).map(x -> x.getSimpleValue("property")).map(x -> (String) x).collect(Collectors.toList());
+				final List<String> properties = jsonArray.items().stream().map(x -> (JsonObject) x).map(x -> x.getSimpleValue("property")).map(x -> (String) x).collect(Collectors.toList());
 				Assert.assertEquals(6, properties.size());
 				Assert.assertEquals("value3", properties.get(2));
 				Assert.assertEquals(null, properties.get(4));

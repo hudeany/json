@@ -27,7 +27,7 @@ public class OneOfValidator extends BaseJsonSchemaValidator {
 			throw new JsonSchemaDefinitionError("OneOf array is 'null'", jsonSchemaPath);
 		} else if (validatorData.isJsonArray()) {
 			subValidatorPackages = new ArrayList<>();
-			for (final JsonNode subValidationData : (JsonArray) validatorData) {
+			for (final JsonNode subValidationData : ((JsonArray) validatorData).items()) {
 				if (subValidationData.isBoolean()) {
 					final List<BaseJsonSchemaValidator> subValidators = new ArrayList<>();
 					subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, subValidationData));

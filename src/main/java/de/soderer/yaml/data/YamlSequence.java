@@ -1,14 +1,15 @@
 package de.soderer.yaml.data;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import de.soderer.yaml.YamlWriter;
 
-public class YamlSequence extends YamlNode implements Iterable<YamlNode> {
+public class YamlSequence extends YamlNode implements Iterable<Object> {
 	private final List<YamlNode> items = new ArrayList<>();
 
 	private boolean flowStyle;
@@ -93,13 +94,29 @@ public class YamlSequence extends YamlNode implements Iterable<YamlNode> {
 		return items.size();
 	}
 
-	@Override
-	public Iterator<YamlNode> iterator() {
-		return items.iterator();
+	public Collection<YamlNode> items() {
+		return Collections.unmodifiableCollection(items);
 	}
 
-	public Stream<YamlNode> stream() {
-		return items.stream();
+	public Collection<Object> simpleItems() {
+		final List<Object> simpleItems = new ArrayList<>();
+		for (final YamlNode item : items) {
+			if (item instanceof YamlScalar) {
+				if (((YamlScalar) item).getType() == YamlScalarType.NULL_VALUE) {
+					simpleItems.add(null);
+				} else {
+					simpleItems.add(((YamlScalar) item).getValue());
+				}
+			} else {
+				simpleItems.add(item);
+			}
+		}
+		return Collections.unmodifiableCollection(simpleItems);
+	}
+
+	@Override
+	public Iterator<Object> iterator() {
+		return simpleItems().iterator();
 	}
 
 	@Override
