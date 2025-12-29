@@ -337,7 +337,7 @@ public class JsonSchemaSuiteGitHubTest {
 							}
 
 							try (JsonReader jsonReader = new JsonReader(new ByteArrayInputStream(testFileContent.toByteArray()))) {
-								for (final Object jsonSchemaTest : (JsonArray) jsonReader.read().getValue()) {
+								for (final JsonNode jsonSchemaTest : (JsonArray) jsonReader.read()) {
 									final Triple<Integer, Integer, Integer> nextResult = executeJsonSchemaTestCollection((JsonObject) jsonSchemaTest, TESTVERSIONMAP.get(parentPath), entry.getName().replace("\\", "/"));
 									result = new Triple<>(result.getFirst() + nextResult.getFirst(), result.getSecond() + nextResult.getSecond(), result.getThird() + nextResult.getThird());
 								}
@@ -399,7 +399,7 @@ public class JsonSchemaSuiteGitHubTest {
 	}
 
 	private Triple<Integer, Integer, Integer> executeJsonSchemaTestCollection(final JsonObject jsonSchemaTest, final JsonSchemaVersion jsonSchemaVersion, final String filename) throws Exception {
-		final String collectionDescription = ((String) jsonSchemaTest.get("description")).trim();
+		final String collectionDescription = ((String) jsonSchemaTest.getSimpleValue("description")).trim();
 		final Object schemaJsonObject = jsonSchemaTest.get("schema");
 		final JsonArray schemaTestsArray = (JsonArray) jsonSchemaTest.get("tests");
 
@@ -438,8 +438,8 @@ public class JsonSchemaSuiteGitHubTest {
 			}
 
 			Triple<Integer, Integer, Integer> result = new Triple<>(0, 0, 0);
-			for (final Object test : schemaTestsArray) {
-				final String description = ((String) ((JsonObject) test).get("description")).trim();
+			for (final JsonNode test : schemaTestsArray) {
+				final String description = ((String) ((JsonObject) test).getSimpleValue("description")).trim();
 
 				if (KNOWN_TEST_ISSUES_TO_SKIP.contains(filename + ":" + collectionDescription)
 						|| KNOWN_TEST_ISSUES_TO_SKIP.contains(filename + ":" + collectionDescription + ":")
@@ -464,14 +464,14 @@ public class JsonSchemaSuiteGitHubTest {
 	}
 
 	private void executeJsonSchemaTest(final String collectionDescription, final JsonSchema jsonSchema, final String filename, final Object schemaJsonObject, final JsonObject test) throws Exception {
-		final String description = ((String) test.get("description")).trim();
+		final String description = ((String) test.getSimpleValue("description")).trim();
 
 		if (SINGLE_TEST_TO_EXECUTE != null && !(filename + ":" + collectionDescription + ":" + description).startsWith(SINGLE_TEST_TO_EXECUTE)) {
 			return;
 		}
 
-		final Object data = test.get("data");
-		final Boolean valid = (Boolean) test.get("valid");
+		final JsonNode data = test.get("data");
+		final Boolean valid = (Boolean) test.getSimpleValue("valid");
 		try {
 			jsonSchema.validate(data);
 			if (!valid) {

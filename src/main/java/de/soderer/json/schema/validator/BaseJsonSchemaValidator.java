@@ -12,10 +12,10 @@ import de.soderer.json.schema.JsonSchemaPath;
 public abstract class BaseJsonSchemaValidator {
 	protected JsonSchemaDependencyResolver jsonSchemaDependencyResolver;
 	protected JsonSchemaPath jsonSchemaPath;
-	protected Object validatorData;
+	protected JsonNode validatorData;
 
-	protected BaseJsonSchemaValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
-		if (validatorData == null) {
+	protected BaseJsonSchemaValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError {
+		if (validatorData == null || validatorData.isNull()) {
 			throw new JsonSchemaDefinitionError("ValidatorData is 'null'", jsonSchemaPath);
 		}
 

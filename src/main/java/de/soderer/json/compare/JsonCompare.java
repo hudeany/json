@@ -4,15 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.soderer.json.JsonArray;
+import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
 
 public class JsonCompare {
 	private JsonCompareSettings compareSettings = new JsonCompareSettings();
 
-	private final Object objectLeft;
-	private final Object objectRight;
+	private final JsonNode objectLeft;
+	private final JsonNode objectRight;
 
-	public JsonCompare(final Object objectLeft, final Object objectRight) {
+	public JsonCompare(final JsonNode objectLeft, final JsonNode objectRight) {
 		this.objectLeft = objectLeft;
 		this.objectRight = objectRight;
 	}
@@ -118,7 +119,7 @@ public class JsonCompare {
 		}
 	}
 
-	private JsonArray compare(final Object valueObjectLeft, final Object valueObjectRight) throws Exception {
+	private JsonArray compare(final JsonNode valueObjectLeft, final JsonNode valueObjectRight) throws Exception {
 		if (valueObjectLeft == null && valueObjectRight == null) {
 			return null;
 		} else if (valueObjectLeft == null) {

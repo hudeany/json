@@ -6,6 +6,7 @@ import java.util.List;
 import de.soderer.json.JsonArray;
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
+import de.soderer.json.JsonValueBoolean;
 import de.soderer.json.exception.JsonDuplicateKeyException;
 import de.soderer.json.path.JsonPath;
 import de.soderer.json.schema.JsonSchema;
@@ -27,12 +28,12 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 	private Boolean additionalItemsAllowed = null;
 	private List<BaseJsonSchemaValidator> additionalItemsDefinitions = null;
 
-	public ItemsValidator(final JsonObject parentValidatorData, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
+	public ItemsValidator(final JsonObject parentValidatorData, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
 		super(parentValidatorData, jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
-		if (validatorData == null) {
+		if (validatorData == null || validatorData.isNull()) {
 			throw new JsonSchemaDefinitionError("Items data is 'null'", jsonSchemaPath);
-		} else if (validatorData instanceof JsonObject) {
+		} else if (validatorData.isJsonObject()) {
 			if (((JsonObject) validatorData).size() == 0) {
 				return;
 			} else {
@@ -42,17 +43,17 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 					throw new JsonSchemaDefinitionError("'additionalItems' is only allowed for 'items' with 'array' data value", jsonSchemaPath);
 				}
 			}
-		} else if (validatorData instanceof JsonArray) {
+		} else if (validatorData.isJsonArray()) {
 			final JsonArray validatorDataArray = (JsonArray) validatorData;
 			indexedValidatorPacks = new ArrayList<>();
 			for (int i = 0; i < validatorDataArray.size(); i++) {
-				final Object object = validatorDataArray.get(i);
-				if (object instanceof JsonObject) {
+				final JsonNode object = validatorDataArray.get(i);
+				if (object.isJsonObject()) {
 					final JsonObject validatorObject = (JsonObject) object;
 
 					final List<BaseJsonSchemaValidator> validators = JsonSchema.createValidators(validatorObject, jsonSchemaDependencyResolver, jsonSchemaPath);
 					indexedValidatorPacks.add(validators);
-				} else if (object instanceof Boolean) {
+				} else if (object.isBoolean()) {
 					final List<BaseJsonSchemaValidator> validators = new ArrayList<>();
 					validators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, object));
 					indexedValidatorPacks.add(validators);
@@ -62,12 +63,12 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 			}
 
 			if (parentValidatorData.containsKey("additionalItems")) {
-				final Object additionalItemsRaw = parentValidatorData.get("additionalItems");
+				final JsonNode additionalItemsRaw = parentValidatorData.get("additionalItems");
 				if (additionalItemsRaw == null) {
 					throw new JsonSchemaDefinitionError("Property 'additionalItems' is 'null'", jsonSchemaPath);
-				} else if (additionalItemsRaw instanceof Boolean) {
-					additionalItemsAllowed = (Boolean) additionalItemsRaw;
-				} else if (additionalItemsRaw instanceof JsonObject) {
+				} else if (additionalItemsRaw.isBoolean()) {
+					additionalItemsAllowed = ((JsonValueBoolean) additionalItemsRaw).getValue();
+				} else if (additionalItemsRaw.isJsonObject()) {
 					additionalItemsDefinitions = JsonSchema.createValidators((JsonObject) additionalItemsRaw, jsonSchemaDependencyResolver, jsonSchemaPath);
 				} else {
 					throw new JsonSchemaDefinitionError("AdditionalItems data is not a 'boolean' or 'object'", jsonSchemaPath);
@@ -76,16 +77,16 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 		} else {
 			// Special boolean value for "items" in draft v7 which replaces "additionalItems".
 			// It comes with "prefixItems" which is still part of the discussion.
-			additionalItemsAllowed = (Boolean) validatorData;
+			additionalItemsAllowed = ((JsonValueBoolean) validatorData).getValue();
 			if (parentValidatorData.get("prefixItems") != null) {
-				if (!(parentValidatorData.get("prefixItems") instanceof JsonArray)) {
-					throw new JsonSchemaDefinitionError("'prefixItems' data is not a 'array'", jsonSchemaPath);
+				if (!(parentValidatorData.get("prefixItems").isJsonArray())) {
+					throw new JsonSchemaDefinitionError("'prefixItems' data is not an 'array'", jsonSchemaPath);
 				} else {
 					final JsonArray validatorDataArray = (JsonArray) parentValidatorData.get("prefixItems");
 					indexedValidatorPacks = new ArrayList<>();
 					for (int i = 0; i < validatorDataArray.size(); i++) {
-						final Object object = validatorDataArray.get(i);
-						if (!(object instanceof JsonObject)) {
+						final JsonNode object = validatorDataArray.get(i);
+						if (!(object.isJsonObject())) {
 							throw new JsonSchemaDefinitionError("Items data item is not an 'object'", jsonSchemaPath);
 						}
 						final JsonObject validatorObject = (JsonObject) object;
@@ -106,24 +107,24 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 			}
 		} else {
 			if (singleValidatorPack != null) {
-				for (int i = 0; i < ((JsonArray) jsonNode.getValue()).size(); i++) {
+				for (int i = 0; i < ((JsonArray) jsonNode).size(); i++) {
 					JsonNode jsonNodeToCheck;
 					try {
-						jsonNodeToCheck = new JsonNode(false, ((JsonArray) jsonNode.getValue()).get(i));
+						jsonNodeToCheck = ((JsonArray) jsonNode).get(i).setRootNode(false);
 					} catch (final Exception e) {
-						throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonArray) jsonNode.getValue()).get(i).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(i), e);
+						throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonArray) jsonNode).get(i).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(i), e);
 					}
 					for (final BaseJsonSchemaValidator validator : singleValidatorPack) {
 						validator.validate(jsonNodeToCheck, new JsonPath(jsonPath).addArrayIndex(i));
 					}
 				}
 			} else if (indexedValidatorPacks != null) {
-				for (int i = 0; i < indexedValidatorPacks.size() && i < ((JsonArray) jsonNode.getValue()).size(); i++) {
+				for (int i = 0; i < indexedValidatorPacks.size() && i < ((JsonArray) jsonNode).size(); i++) {
 					JsonNode jsonNodeToCheck;
 					try {
-						jsonNodeToCheck = new JsonNode(false, ((JsonArray) jsonNode.getValue()).get(i));
+						jsonNodeToCheck = ((JsonArray) jsonNode).get(i).setRootNode(false);
 					} catch (final Exception e) {
-						throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonArray) jsonNode.getValue()).get(i).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(i), e);
+						throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonArray) jsonNode).get(i).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(i), e);
 					}
 					for (final BaseJsonSchemaValidator validator : indexedValidatorPacks.get(i)) {
 						validator.validate(jsonNodeToCheck, new JsonPath(jsonPath).addArrayIndex(i));
@@ -132,17 +133,17 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 
 				if (additionalItemsAllowed != null) {
 					if (!additionalItemsAllowed) {
-						if (((JsonArray) jsonNode.getValue()).size() > indexedValidatorPacks.size()) {
-							throw new JsonSchemaDataValidationError("Maximum amount of array items is " + indexedValidatorPacks.size() + " but was " + ((JsonArray) jsonNode.getValue()).size(), jsonPath);
+						if (((JsonArray) jsonNode).size() > indexedValidatorPacks.size()) {
+							throw new JsonSchemaDataValidationError("Maximum amount of array items is " + indexedValidatorPacks.size() + " but was " + ((JsonArray) jsonNode).size(), jsonPath);
 						}
 					}
 				} else if (additionalItemsDefinitions != null) {
-					for (int i = indexedValidatorPacks.size(); i < ((JsonArray) jsonNode.getValue()).size(); i++) {
+					for (int i = indexedValidatorPacks.size(); i < ((JsonArray) jsonNode).size(); i++) {
 						JsonNode newJsonNode;
 						try {
-							newJsonNode = new JsonNode(false, ((JsonArray) jsonNode.getValue()).get(i));
+							newJsonNode = ((JsonArray) jsonNode).get(i).setRootNode(false);
 						} catch (final Exception e) {
-							throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonArray) jsonNode.getValue()).get(i).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(i), e);
+							throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonArray) jsonNode).get(i).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(i), e);
 						}
 						for (final BaseJsonSchemaValidator subValidator : additionalItemsDefinitions) {
 							subValidator.validate(newJsonNode, new JsonPath(jsonPath).addArrayIndex(i));
@@ -151,16 +152,16 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 				}
 			} else {
 				if (additionalItemsAllowed != null) {
-					if (!additionalItemsAllowed && ((JsonArray) jsonNode.getValue()).size() > 0) {
-						throw new JsonSchemaDataValidationError("Maximum amount of array items is 0 but was " + ((JsonArray) jsonNode.getValue()).size(), jsonPath);
+					if (!additionalItemsAllowed && ((JsonArray) jsonNode).size() > 0) {
+						throw new JsonSchemaDataValidationError("Maximum amount of array items is 0 but was " + ((JsonArray) jsonNode).size(), jsonPath);
 					}
 				} else if (additionalItemsDefinitions != null) {
-					for (int i = indexedValidatorPacks.size(); i < ((JsonArray) jsonNode.getValue()).size(); i++) {
+					for (int i = indexedValidatorPacks.size(); i < ((JsonArray) jsonNode).size(); i++) {
 						JsonNode newJsonNode;
 						try {
-							newJsonNode = new JsonNode(false, ((JsonArray) jsonNode.getValue()).get(i));
+							newJsonNode = ((JsonArray) jsonNode).get(i).setRootNode(false);
 						} catch (final Exception e) {
-							throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonArray) jsonNode.getValue()).get(i).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(i), e);
+							throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonArray) jsonNode).get(i).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(i), e);
 						}
 						for (final BaseJsonSchemaValidator subValidator : additionalItemsDefinitions) {
 							subValidator.validate(newJsonNode, new JsonPath(jsonPath).addArrayIndex(i));

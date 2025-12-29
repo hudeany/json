@@ -19,23 +19,23 @@ import de.soderer.json.schema.JsonSchemaPath;
 public class ExtendsValidator extends BaseJsonSchemaValidator {
 	List<JsonSchema> extendedSchemas = new ArrayList<>();
 
-	public ExtendsValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
+	public ExtendsValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
 		try {
-			if (validatorData == null) {
+			if (validatorData == null || validatorData.isNull()) {
 				throw new JsonSchemaDefinitionError("Extended JSON schema value is 'null'", jsonSchemaPath);
-			} else if (validatorData instanceof JsonArray) {
-				for (final Object subSchemaObject : (JsonArray) validatorData) {
+			} else if (validatorData.isJsonArray()) {
+				for (final JsonNode subSchemaObject : (JsonArray) validatorData) {
 					if (subSchemaObject == null) {
 						throw new JsonSchemaDefinitionError("Extended JSON schema value is 'null'", jsonSchemaPath);
-					} else if (subSchemaObject instanceof JsonObject) {
+					} else if (subSchemaObject.isJsonObject()) {
 						extendedSchemas.add(new JsonSchema((JsonObject) subSchemaObject, jsonSchemaDependencyResolver));
 					} else {
 						throw new JsonSchemaDefinitionError("Extended JSON schema value is not 'JsonObject'", jsonSchemaPath);
 					}
 				}
-			} else if (validatorData instanceof JsonObject) {
+			} else if (validatorData.isJsonObject()) {
 				extendedSchemas.add(new JsonSchema((JsonObject) validatorData, jsonSchemaDependencyResolver));
 			} else {
 				throw new JsonSchemaDefinitionError("Extended JSON schema value is not a 'JsonArray' or 'JsonObject'", jsonSchemaPath);
@@ -51,7 +51,7 @@ public class ExtendsValidator extends BaseJsonSchemaValidator {
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		for (final JsonSchema jsonSchema : extendedSchemas) {
 			try {
-				jsonSchema.validate(jsonNode.getValue());
+				jsonSchema.validate(jsonNode);
 				return;
 			} catch (@SuppressWarnings("unused") final JsonSchemaDataValidationError e) {
 				// do nothing

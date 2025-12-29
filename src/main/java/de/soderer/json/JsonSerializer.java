@@ -61,91 +61,150 @@ public class JsonSerializer {
 		if (dataObject == null) {
 			if (excludeNull) {
 				// This may only occur on top level of data
-				return null;
+				return new JsonValueNull().setRootNode(true);
 			} else if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
-				jsonObjectWithTypeInfo.add("class", null);
-				jsonObjectWithTypeInfo.add("value", null);
-				return new JsonNode(true, jsonObjectWithTypeInfo);
+				jsonObjectWithTypeInfo.addNull("class");
+				jsonObjectWithTypeInfo.addNull("value");
+				return jsonObjectWithTypeInfo.setRootNode(true);
 			} else {
-				return new JsonNode(true, dataObject);
+				return new JsonValueNull().setRootNode(true);
 			}
-		} else if (dataObject instanceof Number
-				|| dataObject instanceof String
-				|| dataObject instanceof Character
-				|| dataObject instanceof Boolean) {
+		} else if (dataObject instanceof String) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
-				jsonObjectWithTypeInfo.add("value", dataObject);
-				return new JsonNode(true, jsonObjectWithTypeInfo);
+				jsonObjectWithTypeInfo.add("value", (String) dataObject);
+				return jsonObjectWithTypeInfo.setRootNode(true);
 			} else {
-				return new JsonNode(true, dataObject);
+				return new JsonValueString((String) dataObject).setRootNode(true);
+			}
+		} else if (dataObject instanceof Integer) {
+			if (addObjectTypeInfo) {
+				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
+				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
+				jsonObjectWithTypeInfo.add("value", (Integer) dataObject);
+				return jsonObjectWithTypeInfo.setRootNode(true);
+			} else {
+				return new JsonValueInteger((Integer) dataObject).setRootNode(true);
+			}
+		} else if (dataObject instanceof Long) {
+			if (addObjectTypeInfo) {
+				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
+				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
+				jsonObjectWithTypeInfo.add("value", (Long) dataObject);
+				return jsonObjectWithTypeInfo.setRootNode(true);
+			} else {
+				return new JsonValueInteger((Long) dataObject).setRootNode(true);
+			}
+		} else if (dataObject instanceof Float) {
+			if (addObjectTypeInfo) {
+				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
+				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
+				jsonObjectWithTypeInfo.add("value", (Float) dataObject);
+				return jsonObjectWithTypeInfo.setRootNode(true);
+			} else {
+				return new JsonValueFloat((Float) dataObject).setRootNode(true);
+			}
+		} else if (dataObject instanceof Double) {
+			if (addObjectTypeInfo) {
+				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
+				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
+				jsonObjectWithTypeInfo.add("value", (Double) dataObject);
+				return jsonObjectWithTypeInfo.setRootNode(true);
+			} else {
+				return new JsonValueFloat((Double) dataObject).setRootNode(true);
+			}
+		} else if (dataObject instanceof Number) {
+			if (addObjectTypeInfo) {
+				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
+				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
+				jsonObjectWithTypeInfo.add("value", (Number) dataObject);
+				return jsonObjectWithTypeInfo.setRootNode(true);
+			} else {
+				return new JsonValueFloat((Number) dataObject).setRootNode(true);
+			}
+		} else if (dataObject instanceof Character) {
+			if (addObjectTypeInfo) {
+				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
+				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
+				jsonObjectWithTypeInfo.add("value", ((Character) dataObject).toString());
+				return jsonObjectWithTypeInfo.setRootNode(true);
+			} else {
+				return new JsonValueString(((Character) dataObject).toString()).setRootNode(true);
+			}
+		} else if (dataObject instanceof Boolean) {
+			if (addObjectTypeInfo) {
+				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
+				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
+				jsonObjectWithTypeInfo.add("value", (Boolean) dataObject);
+				return jsonObjectWithTypeInfo.setRootNode(true);
+			} else {
+				return new JsonValueBoolean((Boolean) dataObject).setRootNode(true);
 			}
 		} else if (dataObject instanceof Charset) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", Charset.class.getName());
 				jsonObjectWithTypeInfo.add("value", ((Charset) dataObject).toString());
-				return new JsonNode(true, jsonObjectWithTypeInfo);
+				return jsonObjectWithTypeInfo.setRootNode(true);
 			} else {
-				return new JsonNode(true, dataObject);
+				return new JsonValueString(dataObject.toString()).setRootNode(true);
 			}
 		} else if (dataObject instanceof Date) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
-				jsonObjectWithTypeInfo.add("value", dataObject);
-				return new JsonNode(true, jsonObjectWithTypeInfo);
+				jsonObjectWithTypeInfo.add("value", DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (Date) dataObject));
+				return jsonObjectWithTypeInfo.setRootNode(true);
 			} else {
-				return new JsonNode(true, dataObject);
+				return new JsonValueString(dataObject.toString()).setRootNode(true);
 			}
 		} else if (dataObject instanceof LocalDateTime) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
-				jsonObjectWithTypeInfo.add("value", dataObject);
-				return new JsonNode(true, jsonObjectWithTypeInfo);
+				jsonObjectWithTypeInfo.add("value", DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT_NO_TIMEZONE, (LocalDateTime) dataObject));
+				return jsonObjectWithTypeInfo.setRootNode(true);
 			} else {
-				return new JsonNode(true, dataObject);
+				return new JsonValueString(dataObject.toString()).setRootNode(true);
 			}
 		} else if (dataObject instanceof LocalDate) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
-				jsonObjectWithTypeInfo.add("value", dataObject);
-				return new JsonNode(true, jsonObjectWithTypeInfo);
+				jsonObjectWithTypeInfo.add("value",DateUtilities.formatDate(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE, (LocalDate) dataObject));
+				return jsonObjectWithTypeInfo.setRootNode(true);
 			} else {
-				return new JsonNode(true, dataObject);
+				return new JsonValueString(dataObject.toString()).setRootNode(true);
 			}
 		} else if (dataObject instanceof ZonedDateTime) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
-				jsonObjectWithTypeInfo.add("value", dataObject);
-				return new JsonNode(true, jsonObjectWithTypeInfo);
+				jsonObjectWithTypeInfo.add("value", DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (ZonedDateTime) dataObject));
+				return jsonObjectWithTypeInfo.setRootNode(true);
 			} else {
-				return new JsonNode(true, dataObject);
+				return new JsonValueString(dataObject.toString()).setRootNode(true);
 			}
 		} else if (dataObject instanceof File) {
 			final File fileObject = (File) dataObject;
-			final String valueString = fileObject.getAbsolutePath();
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
-				jsonObjectWithTypeInfo.add("value", valueString);
-				return new JsonNode(true, jsonObjectWithTypeInfo);
+				jsonObjectWithTypeInfo.add("value", fileObject.getAbsolutePath());
+				return jsonObjectWithTypeInfo.setRootNode(true);
 			} else {
-				return new JsonNode(true, valueString);
+				return new JsonValueString(dataObject.toString()).setRootNode(true);
 			}
 		} else if (dataObject instanceof Enum) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", dataObject.toString());
-				return new JsonNode(true, jsonObjectWithTypeInfo);
+				return jsonObjectWithTypeInfo.setRootNode(true);
 			} else {
-				return new JsonNode(true, dataObject.toString());
+				return new JsonValueString(dataObject.toString()).setRootNode(true);
 			}
 		} else if (dataObject.getClass().isArray()) {
 			if (Utilities.containsObject(alreadyVisitedObjects, dataObject)) {
@@ -159,7 +218,7 @@ public class JsonSerializer {
 				for (int i = 0; i < length; i ++) {
 					final Object item = Array.get(dataObject, i);
 					if (item != null || !excludeNull) {
-						jsonArray.add(serializeInternal(item, excludeNull, includeStatic, includeTransient, addObjectTypeInfo, alreadyVisitedObjects).getValue());
+						jsonArray.add(serializeInternal(item, excludeNull, includeStatic, includeTransient, addObjectTypeInfo, alreadyVisitedObjects));
 					}
 				}
 
@@ -170,9 +229,9 @@ public class JsonSerializer {
 					final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 					jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 					jsonObjectWithTypeInfo.add("value", jsonArray);
-					return new JsonNode(true, jsonObjectWithTypeInfo);
+					return jsonObjectWithTypeInfo.setRootNode(true);
 				} else {
-					return new JsonNode(true, jsonArray);
+					return jsonArray.setRootNode(true);
 				}
 			}
 		} else if (dataObject instanceof Iterable<?>) {
@@ -185,7 +244,7 @@ public class JsonSerializer {
 				final JsonArray jsonArray = new JsonArray();
 				for (final Object item : (Iterable<?>) dataObject) {
 					if (item != null || !excludeNull) {
-						jsonArray.add(serializeInternal(item, excludeNull, includeStatic, includeTransient, addObjectTypeInfo, alreadyVisitedObjects).getValue());
+						jsonArray.add(serializeInternal(item, excludeNull, includeStatic, includeTransient, addObjectTypeInfo, alreadyVisitedObjects));
 					}
 				}
 
@@ -196,9 +255,9 @@ public class JsonSerializer {
 					final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 					jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 					jsonObjectWithTypeInfo.add("value", jsonArray);
-					return new JsonNode(true, jsonObjectWithTypeInfo);
+					return jsonObjectWithTypeInfo.setRootNode(true);
 				} else {
-					return new JsonNode(true, jsonArray);
+					return jsonArray.setRootNode(true);
 				}
 			}
 		} else if (dataObject instanceof Map<?, ?>) {
@@ -213,15 +272,15 @@ public class JsonSerializer {
 					final JsonObject jsonObject = new JsonObject();
 
 					if (entry.getKey() == null) {
-						jsonObject.add("key", null);
+						jsonObject.addNull("key");
 					} else {
-						jsonObject.add("key", serializeInternal(entry.getKey(), excludeNull, includeStatic, includeTransient, addObjectTypeInfo, alreadyVisitedObjects).getValue());
+						jsonObject.add("key", serializeInternal(entry.getKey(), excludeNull, includeStatic, includeTransient, addObjectTypeInfo, alreadyVisitedObjects));
 					}
 
 					if (entry.getValue() == null) {
-						jsonObject.add("value", null);
+						jsonObject.addNull("value");
 					} else {
-						jsonObject.add("value", serializeInternal(entry.getValue(), excludeNull, includeStatic, includeTransient, addObjectTypeInfo, alreadyVisitedObjects).getValue());
+						jsonObject.add("value", serializeInternal(entry.getValue(), excludeNull, includeStatic, includeTransient, addObjectTypeInfo, alreadyVisitedObjects));
 					}
 
 					jsonArray.add(jsonObject);
@@ -234,9 +293,9 @@ public class JsonSerializer {
 					final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 					jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 					jsonObjectWithTypeInfo.add("value", jsonArray);
-					return new JsonNode(true, jsonObjectWithTypeInfo);
+					return jsonObjectWithTypeInfo.setRootNode(true);
 				} else {
-					return new JsonNode(true, jsonArray);
+					return jsonArray.setRootNode(true);
 				}
 			}
 		} else {
@@ -268,10 +327,10 @@ public class JsonSerializer {
 							if (fieldData == null && addObjectTypeInfo) {
 								final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 								jsonObjectWithTypeInfo.add("class", dataField.getType().getName());
-								jsonObjectWithTypeInfo.add("value", null);
+								jsonObjectWithTypeInfo.addNull("value");
 								dataJsonObject.add(fieldName, jsonObjectWithTypeInfo);
 							} else {
-								dataJsonObject.add(fieldName, serializeInternal(fieldData, excludeNull, includeStatic, includeTransient, addObjectTypeInfo, alreadyVisitedObjects).getValue());
+								dataJsonObject.add(fieldName, serializeInternal(fieldData, excludeNull, includeStatic, includeTransient, addObjectTypeInfo, alreadyVisitedObjects));
 							}
 						}
 					}
@@ -284,9 +343,9 @@ public class JsonSerializer {
 					final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 					jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 					jsonObjectWithTypeInfo.add("value", dataJsonObject);
-					return new JsonNode(true, jsonObjectWithTypeInfo);
+					return jsonObjectWithTypeInfo.setRootNode(true);
 				} else {
-					return new JsonNode(true, dataJsonObject);
+					return dataJsonObject.setRootNode(true);
 				}
 			}
 		}
@@ -296,9 +355,9 @@ public class JsonSerializer {
 		if (jsonData == null) {
 			throw new Exception("JSON data is null");
 		} else if (jsonData.isJsonObject()) {
-			return deserialize((JsonObject) jsonData.getValue());
+			return deserialize((JsonObject) jsonData);
 		} else {
-			throw new Exception("JSON data is not an object");
+			throw new Exception("JSON data is not a JsonObject: '" + jsonData.getClass().getSimpleName() + "'");
 		}
 	}
 
@@ -309,53 +368,53 @@ public class JsonSerializer {
 			} else {
 				if (!jsonObject.containsKey("class")) {
 					throw new Exception("JSON object is missing mandatory type information");
-				} else if (jsonObject.get("class") == null) {
+				} else if (jsonObject.get("class") == null || jsonObject.get("class").isNull()) {
 					// Null value that has no class info
 					return null;
-				} else if (!(jsonObject.get("class") instanceof String)) {
+				} else if (!(jsonObject.getSimpleValue("class") instanceof String)) {
 					throw new Exception("JSON object has invalid type information");
 				} else if (!jsonObject.containsKey("value")) {
 					throw new Exception("JSON object is missing mandatory value information");
 				}
 
-				final Object value = jsonObject.get("value");
-				final Class<?> clazz = Class.forName((String) jsonObject.get("class"));
-				if (value == null) {
+				final JsonNode value = jsonObject.get("value");
+				final Class<?> clazz = Class.forName((String) jsonObject.getSimpleValue("class"));
+				if (value == null || value.isNull()) {
 					return null;
 				} else if (clazz == Boolean.TYPE || clazz == Boolean.class) {
-					return value;
+					return jsonObject.getSimpleValue("value");
 				} else if (clazz == Byte.TYPE || clazz == Byte.class) {
-					return ((Number) value).byteValue();
+					return ((Number) jsonObject.getSimpleValue("value")).byteValue();
 				} else if (clazz == Short.TYPE || clazz == Short.class) {
-					return ((Number) value).shortValue();
+					return ((Number) jsonObject.getSimpleValue("value")).shortValue();
 				} else if (clazz == Integer.TYPE || clazz == Integer.class) {
-					return ((Number) value).intValue();
+					return ((Number) jsonObject.getSimpleValue("value")).intValue();
 				} else if (clazz == Long.TYPE || clazz == Long.class) {
-					return ((Number) value).longValue();
+					return ((Number) jsonObject.getSimpleValue("value")).longValue();
 				} else if (clazz == Float.TYPE || clazz == Float.class) {
-					return ((Number) value).floatValue();
+					return ((Number) jsonObject.getSimpleValue("value")).floatValue();
 				} else if (clazz == Double.TYPE || clazz == Double.class) {
-					if (value.getClass() == Float.class) {
-						return Double.parseDouble(Float.toString((Float) value));
+					if (jsonObject.getSimpleValue("value").getClass() == Float.class) {
+						return Double.parseDouble(Float.toString((Float) jsonObject.getSimpleValue("value")));
 					} else {
-						return ((Number) value).doubleValue();
+						return ((Number) jsonObject.getSimpleValue("value")).doubleValue();
 					}
 				} else if (clazz == BigDecimal.class) {
-					return value;
+					return jsonObject.getSimpleValue("value");
 				} else if (clazz == Character.TYPE || clazz == Character.class) {
-					if (value instanceof Character) {
-						return value;
+					if (jsonObject.getSimpleValue("value") instanceof Character) {
+						return jsonObject.getSimpleValue("value");
 					} else {
-						return ((String) value).charAt(0);
+						return ((String) jsonObject.getSimpleValue("value")).charAt(0);
 					}
 				} else if (clazz == String.class) {
-					return value;
+					return jsonObject.getSimpleValue("value");
 				} else if (clazz == Charset.class) {
-					return Charset.forName((String) value);
+					return Charset.forName((String) jsonObject.getSimpleValue("value"));
 				} else if (clazz == File.class) {
-					return new File((String) value);
+					return new File((String) jsonObject.getSimpleValue("value"));
 				} else if (clazz.isEnum()) {
-					final String enumName = (String) value;
+					final String enumName = (String) jsonObject.getSimpleValue("value");
 					for (final Object enumConstant : clazz.getEnumConstants()) {
 						if (enumName.equals(enumConstant.toString())) {
 							return enumConstant;
@@ -363,20 +422,20 @@ public class JsonSerializer {
 					}
 					throw new Exception("Invalid enum name '" + enumName + "' for type '" + clazz.getName() + "'");
 				} else if (Date.class.isAssignableFrom(clazz)) {
-					return DateUtilities.getDateForZonedDateTime(DateUtilities.parseIso8601DateTimeString((String) value));
+					return DateUtilities.getDateForZonedDateTime(DateUtilities.parseIso8601DateTimeString((String) jsonObject.getSimpleValue("value")));
 				} else if (LocalDateTime.class.isAssignableFrom(clazz)) {
-					return DateUtilities.parseIso8601DateTimeString((String) value).toLocalDateTime();
+					return DateUtilities.parseIso8601DateTimeString((String) jsonObject.getSimpleValue("value")).toLocalDateTime();
 				} else if (LocalDate.class.isAssignableFrom(clazz)) {
-					return DateUtilities.parseIso8601DateTimeString((String) value).toLocalDate();
+					return DateUtilities.parseIso8601DateTimeString((String) jsonObject.getSimpleValue("value")).toLocalDate();
 				} else if (ZonedDateTime.class.isAssignableFrom(clazz)) {
-					return DateUtilities.parseIso8601DateTimeString((String) value);
+					return DateUtilities.parseIso8601DateTimeString((String) jsonObject.getSimpleValue("value"));
 				} else if (value instanceof JsonObject) {
 					Object object;
 					final Constructor<?> constructor = ClassUtilities.getConstructor(clazz);
 					constructor.setAccessible(true);
 					object = constructor.newInstance();
 
-					for (final Entry<String, Object> entry : ((JsonObject) value).entrySet()) {
+					for (final Entry<String, JsonNode> entry : ((JsonObject) value).entrySet()) {
 						if (!(entry.getValue() instanceof JsonObject)) {
 							throw new Exception("Invalid value type serialization value");
 						}
@@ -501,7 +560,7 @@ public class JsonSerializer {
 						final Constructor<?> constructor = clazz.getConstructor();
 						@SuppressWarnings("unchecked")
 						final Map<Object, Object> mapObject = (Map<Object, Object>) constructor.newInstance();
-						for (final Object keyValueObject : (JsonArray) value) {
+						for (final JsonNode keyValueObject : (JsonArray) value) {
 							if (!(keyValueObject instanceof JsonObject)) {
 								throw new Exception("Invalid value type serialization value");
 							}
@@ -517,7 +576,7 @@ public class JsonSerializer {
 						return mapObject;
 					} else {
 						final List<Object> listOfItems = new ArrayList<>();
-						for (final Object item : (JsonArray) value) {
+						for (final JsonNode item : (JsonArray) value) {
 							if (!(item instanceof JsonObject)) {
 								throw new Exception("Invalid value type serialization value");
 							}
@@ -539,6 +598,8 @@ public class JsonSerializer {
 							throw new Exception("");
 						}
 					}
+				} else if (clazz == Object.class) {
+					return jsonObject.getSimpleValue("value");
 				} else {
 					throw new Exception("Invalid value type for deserialization: " + clazz.getName());
 				}
@@ -553,10 +614,10 @@ public class JsonSerializer {
 			return null;
 		} else if (classType == Object.class) {
 			return objectData;
-		} else if (objectData instanceof JsonNode) {
-			return deserialize(classType, (JsonNode) objectData);
 		} else if (objectData instanceof JsonObject) {
 			return deserialize(classType, (JsonObject) objectData);
+		} else if (objectData instanceof JsonNode) {
+			return deserialize(classType, (JsonNode) objectData);
 		} else {
 			return objectData;
 		}
@@ -566,9 +627,23 @@ public class JsonSerializer {
 		if (jsonData == null) {
 			throw new Exception("JSON data is null");
 		} else if (jsonData.isJsonObject()) {
-			return deserialize(classType, (JsonObject) jsonData.getValue());
+			return deserialize(classType, (JsonObject) jsonData);
+		} else if (classType == Object.class) {
+			if (jsonData.isNull()) {
+				return null;
+			} else if (jsonData.isString()) {
+				return ((JsonValueString) jsonData).getValue();
+			} else if (jsonData.isInteger()) {
+				return ((JsonValueInteger) jsonData).getValue();
+			} else if (jsonData.isFloat()) {
+				return ((JsonValueFloat) jsonData).getValue();
+			} else if (jsonData.isBoolean()) {
+				return ((JsonValueBoolean) jsonData).getValue();
+			} else {
+				throw new Exception("JSON data is not a JsonObject: '" + jsonData.getClass().getSimpleName() + "'");
+			}
 		} else {
-			throw new Exception("JSON data is not an object");
+			throw new Exception("JSON data is not a JsonObject: '" + jsonData.getClass().getSimpleName() + "'");
 		}
 	}
 
@@ -582,7 +657,7 @@ public class JsonSerializer {
 				final Constructor<?> constructor = ClassUtilities.getConstructor(classType);
 				constructor.setAccessible(true);
 				final Object object = constructor.newInstance();
-				for (final Entry<String, Object> entry : jsonObject.entrySet()) {
+				for (final Entry<String, JsonNode> entry : jsonObject.entrySet()) {
 					Field field;
 					try {
 						field = ClassUtilities.getField(classType, entry.getKey());
@@ -591,47 +666,47 @@ public class JsonSerializer {
 					}
 					field.setAccessible(true);
 
-					final Object value = entry.getValue();
+					final JsonNode value = entry.getValue();
 					try {
 						final Class<?> clazz = field.getType();
-						if (value == null) {
+						if (value == null || value.isNull()) {
 							field.set(object, null);
 						} else if (clazz == Boolean.TYPE || clazz == Boolean.class) {
-							field.set(object, value);
+							field.set(object, jsonObject.getSimpleValue(entry.getKey()));
 						} else if (clazz == Byte.TYPE || clazz == Byte.class) {
-							field.set(object, ((Number) value).byteValue());
+							field.set(object, ((Number) jsonObject.getSimpleValue(entry.getKey())).byteValue());
 						} else if (clazz == Short.TYPE || clazz == Short.class) {
-							field.set(object, ((Number) value).shortValue());
+							field.set(object, ((Number) jsonObject.getSimpleValue(entry.getKey())).shortValue());
 						} else if (clazz == Integer.TYPE || clazz == Integer.class) {
-							field.set(object, ((Number) value).intValue());
+							field.set(object, ((Number) jsonObject.getSimpleValue(entry.getKey())).intValue());
 						} else if (clazz == Long.TYPE || clazz == Long.class) {
-							field.set(object, ((Number) value).longValue());
+							field.set(object, ((Number) jsonObject.getSimpleValue(entry.getKey())).longValue());
 						} else if (clazz == Float.TYPE || clazz == Float.class) {
-							field.set(object, ((Number) value).floatValue());
+							field.set(object, ((Number) jsonObject.getSimpleValue(entry.getKey())).floatValue());
 						} else if (clazz == Double.TYPE || clazz == Double.class) {
-							if (value.getClass() == Float.class) {
-								field.set(object, Double.parseDouble(Float.toString((Float) value)));
+							if (jsonObject.getSimpleValue(entry.getKey()).getClass() == Float.class) {
+								field.set(object, Double.parseDouble(Float.toString((Float) jsonObject.getSimpleValue(entry.getKey()))));
 							} else {
-								field.set(object, ((Number) value).doubleValue());
+								field.set(object, ((Number) jsonObject.getSimpleValue(entry.getKey())).doubleValue());
 							}
 						} else if (clazz == BigDecimal.class) {
-							field.set(object, value);
+							field.set(object, jsonObject.getSimpleValue(entry.getKey()));
 						} else if (clazz == Character.TYPE || clazz == Character.class) {
-							field.set(object, ((String) value).charAt(0));
+							field.set(object, ((String) jsonObject.getSimpleValue(entry.getKey())).charAt(0));
 						} else if (clazz == String.class) {
-							field.set(object, value);
+							field.set(object, jsonObject.getSimpleValue(entry.getKey()));
 						} else if (clazz == Charset.class) {
-							field.set(object, Charset.forName((String) value));
+							field.set(object, Charset.forName((String) jsonObject.getSimpleValue(entry.getKey())));
 						} else if (Date.class.isAssignableFrom(clazz)) {
-							field.set(object, DateUtilities.getDateForZonedDateTime(DateUtilities.parseIso8601DateTimeString((String) value)));
+							field.set(object, DateUtilities.getDateForZonedDateTime(DateUtilities.parseIso8601DateTimeString((String) jsonObject.getSimpleValue(entry.getKey()))));
 						} else if (LocalDateTime.class.isAssignableFrom(clazz)) {
-							field.set(object, DateUtilities.parseIso8601DateTimeString((String) value).toLocalDateTime());
+							field.set(object, DateUtilities.parseIso8601DateTimeString((String) jsonObject.getSimpleValue(entry.getKey())).toLocalDateTime());
 						} else if (LocalDate.class.isAssignableFrom(clazz)) {
-							field.set(object, DateUtilities.parseIso8601DateTimeString((String) value).toLocalDate());
+							field.set(object, DateUtilities.parseIso8601DateTimeString((String) jsonObject.getSimpleValue(entry.getKey())).toLocalDate());
 						} else if (ZonedDateTime.class.isAssignableFrom(clazz)) {
-							field.set(object, DateUtilities.parseIso8601DateTimeString((String) value));
+							field.set(object, DateUtilities.parseIso8601DateTimeString((String) jsonObject.getSimpleValue(entry.getKey())));
 						} else if (clazz.isEnum()) {
-							final String enumName = (String) value;
+							final String enumName = (String) jsonObject.getSimpleValue(entry.getKey());
 							for (final Object enumConstant : clazz.getEnumConstants()) {
 								if (enumName.equals(enumConstant.toString())) {
 									field.set(object, enumConstant);
@@ -643,133 +718,133 @@ public class JsonSerializer {
 							if (clazz.getComponentType() == Boolean.TYPE) {
 								final boolean[] arrayValue = new boolean[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = (boolean) jsonArray.get(i);
+									arrayValue[i] = (boolean) jsonArray.getSimpleValue(i);
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Boolean.class) {
 								final Boolean[] arrayValue = new Boolean[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = (Boolean) jsonArray.get(i);
+									arrayValue[i] = (Boolean) jsonArray.getSimpleValue(i);
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Byte.TYPE) {
 								final byte[] arrayValue = new byte[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = ((Number) jsonArray.get(i)).byteValue();
+									arrayValue[i] = ((Number) jsonArray.getSimpleValue(i)).byteValue();
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Byte.class) {
 								final Byte[] arrayValue = new Byte[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = ((Number) jsonArray.get(i)).byteValue();
+									arrayValue[i] = ((Number) jsonArray.getSimpleValue(i)).byteValue();
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Short.TYPE) {
 								final short[] arrayValue = new short[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = ((Number) jsonArray.get(i)).shortValue();
+									arrayValue[i] = ((Number) jsonArray.getSimpleValue(i)).shortValue();
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Short.class) {
 								final Short[] arrayValue = new Short[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = ((Number) jsonArray.get(i)).shortValue();
+									arrayValue[i] = ((Number) jsonArray.getSimpleValue(i)).shortValue();
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Integer.TYPE) {
 								final int[] arrayValue = new int[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = ((Number) jsonArray.get(i)).intValue();
+									arrayValue[i] = ((Number) jsonArray.getSimpleValue(i)).intValue();
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Integer.class) {
 								final Integer[] arrayValue = new Integer[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = ((Number) jsonArray.get(i)).intValue();
+									arrayValue[i] = ((Number) jsonArray.getSimpleValue(i)).intValue();
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Long.TYPE) {
 								final long[] arrayValue = new long[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = ((Number) jsonArray.get(i)).longValue();
+									arrayValue[i] = ((Number) jsonArray.getSimpleValue(i)).longValue();
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Long.class) {
 								final Long[] arrayValue = new Long[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = ((Number) jsonArray.get(i)).longValue();
+									arrayValue[i] = ((Number) jsonArray.getSimpleValue(i)).longValue();
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Float.TYPE) {
 								final float[] arrayValue = new float[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = (float) jsonArray.get(i);
+									arrayValue[i] = (float) jsonArray.getSimpleValue(i);
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Float.class) {
 								final Float[] arrayValue = new Float[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = (float) jsonArray.get(i);
+									arrayValue[i] = (float) jsonArray.getSimpleValue(i);
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Double.TYPE) {
 								final double[] arrayValue = new double[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = (double) jsonArray.get(i);
+									arrayValue[i] = (double) jsonArray.getSimpleValue(i);
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Double.class) {
 								final Double[] arrayValue = new Double[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = (double) jsonArray.get(i);
+									arrayValue[i] = (double) jsonArray.getSimpleValue(i);
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Character.TYPE) {
 								final char[] arrayValue = new char[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = ((String) jsonArray.get(i)).charAt(0);
+									arrayValue[i] = ((String) jsonArray.getSimpleValue(i)).charAt(0);
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Character.class) {
 								final Character[] arrayValue = new Character[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = ((String) jsonArray.get(i)).charAt(0);
+									arrayValue[i] = ((String) jsonArray.getSimpleValue(i)).charAt(0);
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == String.class) {
 								final String[] arrayValue = new String[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = (String) jsonArray.get(i);
+									arrayValue[i] = (String) jsonArray.getSimpleValue(i);
 								}
 								field.set(object, arrayValue);
 							} else if (Date.class.isAssignableFrom(clazz.getComponentType())) {
 								final Date[] arrayValue = new Date[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = DateUtilities.getDateForLocalDateTime(DateUtilities.parseLocalDateTime(DateUtilities.ISO_8601_DATETIME_FORMAT, (String) jsonArray.get(i)));
+									arrayValue[i] = DateUtilities.getDateForLocalDateTime(DateUtilities.parseLocalDateTime(DateUtilities.ISO_8601_DATETIME_FORMAT, (String) jsonArray.getSimpleValue(i)));
 								}
 								field.set(object, arrayValue);
 							} else if (LocalDateTime.class.isAssignableFrom(clazz.getComponentType())) {
 								final LocalDateTime[] arrayValue = new LocalDateTime[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = DateUtilities.parseLocalDateTime(DateUtilities.ISO_8601_DATETIME_FORMAT, (String) jsonArray.get(i));
+									arrayValue[i] = DateUtilities.parseLocalDateTime(DateUtilities.ISO_8601_DATETIME_FORMAT_NO_TIMEZONE, (String) jsonArray.getSimpleValue(i));
 								}
 								field.set(object, arrayValue);
 							} else if (LocalDate.class.isAssignableFrom(clazz.getComponentType())) {
 								final LocalDate[] arrayValue = new LocalDate[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = DateUtilities.parseLocalDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (String) jsonArray.get(i));
+									arrayValue[i] = DateUtilities.parseLocalDate(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE, (String) jsonArray.getSimpleValue(i));
 								}
 								field.set(object, arrayValue);
 							} else if (ZonedDateTime.class.isAssignableFrom(clazz.getComponentType())) {
 								final ZonedDateTime[] arrayValue = new ZonedDateTime[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = DateUtilities.parseZonedDateTime(DateUtilities.ISO_8601_DATETIME_FORMAT, (String) jsonArray.get(i), ZoneId.systemDefault());
+									arrayValue[i] = DateUtilities.parseZonedDateTime(DateUtilities.ISO_8601_DATETIME_FORMAT, (String) jsonArray.getSimpleValue(i), ZoneId.systemDefault());
 								}
 								field.set(object, arrayValue);
 							} else if (Enum.class.isAssignableFrom(clazz.getComponentType())) {
 								final Object[] arrayValue = (Object[]) Array.newInstance(clazz.getComponentType(), jsonArray.size());
 								for (int i = 0; i < arrayValue.length; i++) {
-									final String enumName = (String) jsonArray.get(i);
+									final String enumName = (String) jsonArray.getSimpleValue(i);
 									boolean enumFound = false;
 									for (final Object enumConstant : clazz.getComponentType().getEnumConstants()) {
 										if (enumName.equals(enumConstant.toString())) {
@@ -794,7 +869,7 @@ public class JsonSerializer {
 						} else if (List.class.isAssignableFrom(clazz)) {
 							final List<Object> listOfItems = new ArrayList<>();
 							final Class<?> genericType = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
-							for (final Object arrayItem : (JsonArray) value) {
+							for (final JsonNode arrayItem : (JsonArray) value) {
 								final Object item = deserialize(genericType, arrayItem);
 								listOfItems.add(item);
 							}
@@ -802,7 +877,7 @@ public class JsonSerializer {
 						} else if (Set.class.isAssignableFrom(clazz)) {
 							final Set<Object> setOfItems = new HashSet<>();
 							final Class<?> genericType = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
-							for (final Object arrayItem : (JsonArray) value) {
+							for (final JsonNode arrayItem : (JsonArray) value) {
 								final Object item = deserialize(genericType, arrayItem);
 								setOfItems.add(item);
 							}
@@ -810,7 +885,7 @@ public class JsonSerializer {
 						} else if (Collection.class.isAssignableFrom(clazz)) {
 							final Collection<Object> collectionOfItems = new ArrayList<>();
 							final Class<?> genericType = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
-							for (final Object arrayItem : (JsonArray) value) {
+							for (final JsonNode arrayItem : (JsonArray) value) {
 								final Object item = deserialize(genericType, arrayItem);
 								collectionOfItems.add(item);
 							}
@@ -820,7 +895,7 @@ public class JsonSerializer {
 							if (!(value instanceof JsonArray)) {
 								throw new Exception("Invalid value type serialization value");
 							}
-							for (final Object keyValueObject : (JsonArray) value) {
+							for (final JsonNode keyValueObject : (JsonArray) value) {
 								if (!(keyValueObject instanceof JsonObject)) {
 									throw new Exception("Invalid value type serialization value");
 								}

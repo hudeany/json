@@ -6,6 +6,7 @@ import java.util.Base64;
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
 import de.soderer.json.JsonReader;
+import de.soderer.json.JsonValueString;
 import de.soderer.json.path.JsonPath;
 import de.soderer.json.schema.JsonSchemaDataValidationError;
 import de.soderer.json.schema.JsonSchemaDefinitionError;
@@ -17,14 +18,14 @@ import de.soderer.json.utilities.Utilities;
  * JSON subschema that matches a simple data value to a type definition
  */
 public class ContentMediaTypeValidator extends ExtendedBaseJsonSchemaValidator {
-	public ContentMediaTypeValidator(final JsonObject parentValidatorData, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
+	public ContentMediaTypeValidator(final JsonObject parentValidatorData, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError {
 		super(parentValidatorData, jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
-		if (validatorData == null) {
+		if (validatorData == null || validatorData.isNull()) {
 			throw new JsonSchemaDefinitionError("ContentMediaType value is 'null'", jsonSchemaPath);
-		} else if (!(validatorData instanceof String)) {
+		} else if (!(validatorData instanceof JsonValueString)) {
 			throw new JsonSchemaDefinitionError("ContentMediaType value is not a string", jsonSchemaPath);
-		} else if (Utilities.isBlank((String) validatorData)) {
+		} else if (Utilities.isBlank(((JsonValueString) validatorData).getValue())) {
 			throw new JsonSchemaDefinitionError("Invalid ContentMediaType '" + validatorData + "'", jsonSchemaPath);
 		} else {
 			this.validatorData = validatorData;
@@ -35,7 +36,7 @@ public class ContentMediaTypeValidator extends ExtendedBaseJsonSchemaValidator {
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		if (jsonNode.isNull()) {
 			// ContentMediaType ignore null values
-		} else if (jsonNode.isInteger() || jsonNode.isNumber()) {
+		} else if (jsonNode.isInteger() || jsonNode.isFloat()) {
 			// ContentMediaType ignore numeric values
 		} else if (jsonNode.isJsonObject()) {
 			// ContentMediaType ignore JsonObject values
@@ -46,12 +47,12 @@ public class ContentMediaTypeValidator extends ExtendedBaseJsonSchemaValidator {
 		} else if (!jsonNode.isString()) {
 			throw new JsonSchemaDataValidationError("Expected a 'string' value for ContentMediaType but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 		} else {
-			Object value = jsonNode.getValue();
+			Object value = jsonNode;
 
 			if (parentValidatorData.containsKey("contentEncoding")) {
-				if ("base64".equalsIgnoreCase((String) parentValidatorData.get("contentEncoding"))) {
+				if ("base64".equalsIgnoreCase((String) parentValidatorData.getSimpleValue("contentEncoding"))) {
 					try {
-						value = Base64.getDecoder().decode((String) jsonNode.getValue());
+						value = Base64.getDecoder().decode(((JsonValueString) jsonNode).getValue());
 					} catch (final Exception e) {
 						throw new JsonSchemaDataValidationError("Invalid base64 encoded data: " + e.getMessage(), jsonPath);
 					}
@@ -60,7 +61,7 @@ public class ContentMediaTypeValidator extends ExtendedBaseJsonSchemaValidator {
 				}
 			}
 
-			if ("application/json".equalsIgnoreCase((String) validatorData)) {
+			if ("application/json".equalsIgnoreCase(((JsonValueString) validatorData).getValue())) {
 				if (value instanceof String) {
 					try {
 						JsonReader.readJsonItemString((String) value);

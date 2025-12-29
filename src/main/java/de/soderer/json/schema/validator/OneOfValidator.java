@@ -20,19 +20,19 @@ import de.soderer.json.schema.JsonSchemaPath;
 public class OneOfValidator extends BaseJsonSchemaValidator {
 	private List<List<BaseJsonSchemaValidator>> subValidatorPackages = null;
 
-	public OneOfValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
+	public OneOfValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
-		if (validatorData == null) {
+		if (validatorData == null || validatorData.isNull()) {
 			throw new JsonSchemaDefinitionError("OneOf array is 'null'", jsonSchemaPath);
-		} else if (validatorData instanceof JsonArray) {
+		} else if (validatorData.isJsonArray()) {
 			subValidatorPackages = new ArrayList<>();
-			for (final Object subValidationData : ((JsonArray) validatorData)) {
-				if (subValidationData instanceof Boolean) {
+			for (final JsonNode subValidationData : (JsonArray) validatorData) {
+				if (subValidationData.isBoolean()) {
 					final List<BaseJsonSchemaValidator> subValidators = new ArrayList<>();
 					subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, subValidationData));
 					subValidatorPackages.add(subValidators);
-				} else if (subValidationData instanceof JsonObject) {
+				} else if (subValidationData.isJsonObject()) {
 					subValidatorPackages.add(JsonSchema.createValidators((JsonObject) subValidationData, jsonSchemaDependencyResolver, jsonSchemaPath));
 				} else {
 					throw new JsonSchemaDefinitionError("OneOf array contains a non-JsonObject", jsonSchemaPath);

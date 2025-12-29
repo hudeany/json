@@ -4,6 +4,7 @@ import java.util.List;
 
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
+import de.soderer.json.JsonValueString;
 import de.soderer.json.path.JsonPath;
 import de.soderer.json.schema.JsonSchema;
 import de.soderer.json.schema.JsonSchemaDataValidationError;
@@ -15,13 +16,13 @@ import de.soderer.json.schema.JsonSchemaPath;
  * JSON schema validator for external references in files and urls by code key name "$ref"
  */
 public class ReferenceValidator extends BaseJsonSchemaValidator {
-	public ReferenceValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
+	public ReferenceValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
 		try {
-			if (validatorData == null) {
+			if (validatorData == null || validatorData.isNull()) {
 				throw new JsonSchemaDefinitionError("Reference key is 'null'", jsonSchemaPath);
-			} else if (!(validatorData instanceof String)) {
+			} else if (!(validatorData.isString())) {
 				throw new JsonSchemaDefinitionError("Reference key is not a 'string'", jsonSchemaPath);
 			} else if (jsonSchemaDependencyResolver == null) {
 				throw new JsonSchemaDefinitionError("JSON schema reference definitions is empty. Cannot dereference key '" + validatorData + "'", jsonSchemaPath);
@@ -37,11 +38,11 @@ public class ReferenceValidator extends BaseJsonSchemaValidator {
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		List<BaseJsonSchemaValidator> subValidators;
 		try {
-			final JsonObject dereferencedValue = jsonSchemaDependencyResolver.getDependencyByReference((String) validatorData, jsonSchemaPath);
+			final JsonObject dereferencedValue = jsonSchemaDependencyResolver.getDependencyByReference(((JsonValueString) validatorData).getValue(), jsonSchemaPath);
 			if (dereferencedValue == null) {
 				throw new JsonSchemaDefinitionError("Invalid JSON schema reference data type for key '" + validatorData + "'. Expected 'object' but was 'null'", jsonSchemaPath);
 			} else {
-				jsonSchemaPath = new JsonSchemaPath((String) validatorData);
+				jsonSchemaPath = new JsonSchemaPath(((JsonValueString) validatorData).getValue());
 				subValidators = JsonSchema.createValidators(dereferencedValue, jsonSchemaDependencyResolver, jsonSchemaPath);
 			}
 		} catch (final JsonSchemaDefinitionError e) {

@@ -73,48 +73,70 @@ public class JsonUtilities {
 			final Document xmlDocument = documentBuilder.newDocument();
 			xmlDocument.setXmlStandalone(true);
 			List<Node> mainNodes;
-			if (jsonNode.isJsonObject()) {
-				mainNodes = convertToXmlNodes((JsonObject) jsonNode.getValue(), xmlDocument, useAttributes);
-				if (mainNodes == null || mainNodes.size() < 1) {
-					throw new Exception("No data found");
-				} else if (mainNodes.size() == 1) {
-					xmlDocument.appendChild(mainNodes.get(0));
-				} else {
-					final Node rootNode = xmlDocument.createElement("root");
-					for (final Node subNode : mainNodes) {
-						if (subNode instanceof Attr) {
-							rootNode.getAttributes().setNamedItem(subNode);
-						} else {
-							rootNode.appendChild(subNode);
+			switch (jsonNode.getJsonDataType()) {
+				case OBJECT:
+					mainNodes = convertToXmlNodes((JsonObject) jsonNode, xmlDocument, useAttributes);
+					if (mainNodes == null || mainNodes.size() < 1) {
+						throw new Exception("No data found");
+					} else if (mainNodes.size() == 1) {
+						xmlDocument.appendChild(mainNodes.get(0));
+					} else {
+						final Node rootNode = xmlDocument.createElement("root");
+						for (final Node subNode : mainNodes) {
+							if (subNode instanceof Attr) {
+								rootNode.getAttributes().setNamedItem(subNode);
+							} else {
+								rootNode.appendChild(subNode);
+							}
 						}
+						xmlDocument.appendChild(rootNode);
 					}
-					xmlDocument.appendChild(rootNode);
-				}
-			} else if (jsonNode.isJsonArray()) {
-				mainNodes = convertToXmlNodes((JsonArray) jsonNode.getValue(), "root", xmlDocument, useAttributes);
-				if (mainNodes == null || mainNodes.size() < 1) {
-					throw new Exception("No data found");
-				} else if (mainNodes.size() == 1) {
-					xmlDocument.appendChild(mainNodes.get(0));
-				} else {
-					final Node rootNode = xmlDocument.createElement("root");
-					for (final Node subNode : mainNodes) {
-						if (subNode instanceof Attr) {
-							rootNode.getAttributes().setNamedItem(subNode);
-						} else {
-							rootNode.appendChild(subNode);
+					break;
+				case ARRAY:
+					mainNodes = convertToXmlNodes((JsonArray) jsonNode, "root", xmlDocument, useAttributes);
+					if (mainNodes == null || mainNodes.size() < 1) {
+						throw new Exception("No data found");
+					} else if (mainNodes.size() == 1) {
+						xmlDocument.appendChild(mainNodes.get(0));
+					} else {
+						final Node rootNode = xmlDocument.createElement("root");
+						for (final Node subNode : mainNodes) {
+							if (subNode instanceof Attr) {
+								rootNode.getAttributes().setNamedItem(subNode);
+							} else {
+								rootNode.appendChild(subNode);
+							}
 						}
+						xmlDocument.appendChild(rootNode);
 					}
-					xmlDocument.appendChild(rootNode);
-				}
-			} else if (jsonNode.isNull()) {
-				final Node rootNode = xmlDocument.createElement("root");
-				rootNode.setTextContent("null");
-				xmlDocument.appendChild(rootNode);
-			} else {
-				final Node rootNode = xmlDocument.createElement("root");
-				rootNode.setTextContent(jsonNode.getValue().toString());
-				xmlDocument.appendChild(rootNode);
+					break;
+				case STRING:
+					final Node rootNodeString = xmlDocument.createElement("root");
+					rootNodeString.setTextContent(((JsonValueString) jsonNode).getValue().toString());
+					xmlDocument.appendChild(rootNodeString);
+					break;
+				case INTEGER:
+					final Node rootNodeInteger = xmlDocument.createElement("root");
+					rootNodeInteger.setTextContent(((JsonValueInteger) jsonNode).getValue().toString());
+					xmlDocument.appendChild(rootNodeInteger);
+					break;
+				case FLOAT:
+					final Node rootNodeNumber = xmlDocument.createElement("root");
+					rootNodeNumber.setTextContent(((JsonValueFloat) jsonNode).getValue().toString());
+					xmlDocument.appendChild(rootNodeNumber);
+					break;
+				case BOOLEAN:
+					final Node rootNodeBoolean = xmlDocument.createElement("root");
+					rootNodeBoolean.setTextContent(((JsonValueBoolean) jsonNode).getValue().toString());
+					xmlDocument.appendChild(rootNodeBoolean);
+					break;
+				case NULL:
+					final Node rootNodeNull = xmlDocument.createElement("root");
+					rootNodeNull.setTextContent("null");
+					xmlDocument.appendChild(rootNodeNull);
+					break;
+				default:
+					throw new RuntimeException("Unknown JsonDataType: '" + jsonNode.getJsonDataType().getName() + "'");
 			}
 
 			return xmlDocument;
@@ -160,7 +182,7 @@ public class JsonUtilities {
 		final List<Node> list = new ArrayList<>();
 
 		if (jsonArray.size() > 0) {
-			for (final Object subItem : jsonArray) {
+			for (final JsonNode subItem : jsonArray) {
 				if (subItem instanceof JsonObject) {
 					final Node newNode = xmlDocument.createElement(nodeName);
 					list.add(newNode);

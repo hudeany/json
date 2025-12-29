@@ -2,6 +2,7 @@ package de.soderer.json.schema.validator;
 
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
+import de.soderer.json.JsonValueBoolean;
 import de.soderer.json.exception.JsonDuplicateKeyException;
 import de.soderer.json.path.JsonPath;
 import de.soderer.json.schema.JsonSchema;
@@ -22,34 +23,34 @@ public class IfThenElseValidator extends BaseJsonSchemaValidator {
 	private Boolean elseBoolean = null;
 	private JsonSchema elseJsonSchema = null;
 
-	public IfThenElseValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object ifJsonObject, final Object thenObject, final Object elseObject) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
+	public IfThenElseValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode ifJsonObject, final JsonNode thenObject, final JsonNode elseObject) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, ifJsonObject);
 
 		if (!jsonSchemaDependencyResolver.isDraftV7Mode()) {
 			throw new JsonSchemaDefinitionError("Support for 'if' comes with draft version v7. Please configure used JSON schema version accordingly.", jsonSchemaPath);
 		} else if (ifJsonObject == null) {
 			throw new JsonSchemaDefinitionError("'if' value is 'null'", jsonSchemaPath);
-		} else if (thenObject != null && !(thenObject instanceof Boolean) && !(thenObject instanceof JsonObject)) {
+		} else if (thenObject != null && !thenObject.isBoolean() && !thenObject.isJsonObject()) {
 			throw new JsonSchemaDefinitionError("'then' branch is not 'boolean' or 'object'", jsonSchemaPath);
-		} else if (elseObject != null && !(elseObject instanceof Boolean) && !(elseObject instanceof JsonObject)) {
+		} else if (elseObject != null && !elseObject.isBoolean() && !elseObject.isJsonObject()) {
 			throw new JsonSchemaDefinitionError("'else' branch is not 'boolean' or 'object'", jsonSchemaPath);
 		} else {
 			// Parse "if" JSON sub schema
-			if (ifJsonObject instanceof Boolean) {
-				ifJsonSchema = new JsonSchema((Boolean) ifJsonObject, jsonSchemaDependencyResolver);
-			} else if (ifJsonObject instanceof JsonObject) {
+			if (ifJsonObject.isBoolean()) {
+				ifJsonSchema = new JsonSchema(((JsonValueBoolean) ifJsonObject).getValue(), jsonSchemaDependencyResolver);
+			} else if (ifJsonObject.isJsonObject()) {
 				ifJsonSchema = new JsonSchema((JsonObject) ifJsonObject, jsonSchemaDependencyResolver);
 			}
 
-			if (thenObject != null && thenObject instanceof Boolean) {
-				thenBoolean = (Boolean) thenObject;
-			} else if (thenObject != null && thenObject instanceof JsonObject) {
+			if (thenObject != null && thenObject.isBoolean()) {
+				thenBoolean = ((JsonValueBoolean) thenObject).getValue();
+			} else if (thenObject != null && thenObject.isJsonObject()) {
 				thenJsonSchema = new JsonSchema((JsonObject) thenObject, jsonSchemaDependencyResolver);
 			}
 
-			if (elseObject != null && elseObject instanceof Boolean) {
-				elseBoolean = (Boolean) elseObject;
-			} else if (elseObject != null && elseObject instanceof JsonObject) {
+			if (elseObject != null && elseObject.isBoolean()) {
+				elseBoolean = ((JsonValueBoolean) elseObject).getValue();
+			} else if (elseObject != null && elseObject.isJsonObject()) {
 				elseJsonSchema = new JsonSchema((JsonObject) elseObject, jsonSchemaDependencyResolver);
 			}
 		}
@@ -58,12 +59,12 @@ public class IfThenElseValidator extends BaseJsonSchemaValidator {
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		try {
-			ifJsonSchema.validate(jsonNode.getValue());
+			ifJsonSchema.validate(jsonNode);
 		} catch (@SuppressWarnings("unused") final JsonSchemaDataValidationError e) {
 			if (elseBoolean != null && !elseBoolean) {
 				throw new JsonSchemaDataValidationError("JSON object does not match 'else' branch", jsonPath);
 			} else if (elseJsonSchema != null) {
-				elseJsonSchema.validate(jsonNode.getValue());
+				elseJsonSchema.validate(jsonNode);
 			}
 			return;
 		}
@@ -71,7 +72,7 @@ public class IfThenElseValidator extends BaseJsonSchemaValidator {
 		if (thenBoolean != null && !thenBoolean) {
 			throw new JsonSchemaDataValidationError("JSON object does not match 'then' branch", jsonPath);
 		} else if (thenJsonSchema != null) {
-			thenJsonSchema.validate(jsonNode.getValue());
+			thenJsonSchema.validate(jsonNode);
 		}
 	}
 }

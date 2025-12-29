@@ -2,25 +2,262 @@ package de.soderer.json;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class JsonArray implements Iterable<Object> {
-	private final List<Object> items = new ArrayList<>();
+import de.soderer.json.utilities.DateUtilities;
 
-	public JsonArray add(final Object value) {
-		items.add(value);
+public class JsonArray extends JsonNode implements Iterable<JsonNode> {
+	private final List<JsonNode> items = new ArrayList<>();
+
+	public JsonArray() {
+		super(JsonDataType.ARRAY);
+	}
+
+	public JsonArray addNull() {
+		items.add(new JsonValueNull());
 		return this;
 	}
 
-	public boolean remove(final Object value) {
-		return items.remove(value);
+	public JsonArray add(final String value) {
+		if (value == null) {
+			addNull();
+		} else {
+			add(new JsonValueString(value));
+		}
+		return this;
 	}
 
-	public Object get(final int index) {
+	public JsonArray add(final Integer value) {
+		if (value == null) {
+			addNull();
+		} else {
+			add(new JsonValueInteger(value));
+		}
+		return this;
+	}
+
+	public JsonArray add(final Long value) {
+		if (value == null) {
+			addNull();
+		} else {
+			add(new JsonValueInteger(value));
+		}
+		return this;
+	}
+
+	public JsonArray add(final Number value) {
+		if (value == null) {
+			addNull();
+		} else if (value instanceof Integer) {
+			add(new JsonValueInteger((Integer) value));
+		} else if (value instanceof Long) {
+			add(new JsonValueInteger((Long) value));
+		} else {
+			add(new JsonValueFloat(value));
+		}
+		return this;
+	}
+
+	public JsonArray add(final Boolean value) {
+		if (value == null) {
+			addNull();
+		} else {
+			add(new JsonValueBoolean(value));
+		}
+		return this;
+	}
+
+	public JsonArray add(final Date value) {
+		if (value == null) {
+			addNull();
+		} else {
+			add(new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, value)));
+		}
+		return this;
+	}
+
+	public JsonArray add(final LocalDate value) {
+		if (value == null) {
+			addNull();
+		} else {
+			add(new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE, value)));
+		}
+		return this;
+	}
+
+	public JsonArray add(final LocalDateTime value) {
+		if (value == null) {
+			addNull();
+		} else {
+			if (value.getNano() > 0) {
+				add(new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT_NO_TIMEZONE, value)));
+			} else {
+				add(new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT_NO_TIMEZONE, value)));
+			}
+		}
+		return this;
+	}
+
+	public JsonArray add(final ZonedDateTime value) {
+		if (value == null) {
+			addNull();
+		} else {
+			if (value.getNano() > 0) {
+				add(new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT, value)));
+			} else {
+				add(new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, value)));
+			}
+		}
+		return this;
+	}
+
+	public JsonArray add(final JsonNode value) {
+		if (value == null) {
+			addNull();
+		} else {
+			items.add(value);
+		}
+		return this;
+	}
+
+	public boolean removeNull() {
+		return items.remove(new JsonValueNull());
+	}
+
+	public boolean remove(final String value) {
+		if (value == null) {
+			return removeNull();
+		} else {
+			return items.remove(new JsonValueString(value));
+		}
+	}
+
+	public boolean remove(final Integer value) {
+		if (value == null) {
+			return removeNull();
+		} else {
+			return items.remove(new JsonValueInteger(value));
+		}
+	}
+
+	public boolean remove(final Long value) {
+		if (value == null) {
+			return removeNull();
+		} else {
+			return items.remove(new JsonValueInteger(value));
+		}
+	}
+
+	public boolean remove(final Number value) {
+		if (value == null) {
+			return removeNull();
+		} else if (value instanceof Integer) {
+			return items.remove(new JsonValueInteger((Integer) value));
+		} else if (value instanceof Long) {
+			return items.remove(new JsonValueInteger((Long) value));
+		} else {
+			return items.remove(new JsonValueFloat(value));
+		}
+	}
+
+	public boolean remove(final Boolean value) {
+		if (value == null) {
+			return removeNull();
+		} else {
+			return items.remove(new JsonValueBoolean(value));
+		}
+	}
+
+	public boolean remove(final JsonNode value) {
+		if (value == null) {
+			return removeNull();
+		} else {
+			return items.remove(value);
+		}
+	}
+
+	public boolean containsNull() {
+		return items.contains(new JsonValueNull());
+	}
+
+	public boolean contains(final String value) {
+		if (value == null) {
+			return containsNull();
+		} else {
+			return items.contains(new JsonValueString(value));
+		}
+	}
+
+	public boolean contains(final Integer value) {
+		if (value == null) {
+			return containsNull();
+		} else {
+			return items.contains(new JsonValueInteger(value));
+		}
+	}
+
+	public boolean contains(final Long value) {
+		if (value == null) {
+			return containsNull();
+		} else {
+			return items.contains(new JsonValueInteger(value));
+		}
+	}
+
+	public boolean contains(final Number value) {
+		if (value == null) {
+			return containsNull();
+		} else if (value instanceof Integer) {
+			return items.contains(new JsonValueInteger((Integer) value));
+		} else if (value instanceof Long) {
+			return items.contains(new JsonValueInteger((Long) value));
+		} else {
+			return items.contains(new JsonValueFloat(value));
+		}
+	}
+
+	public boolean contains(final Boolean value) {
+		if (value == null) {
+			return containsNull();
+		} else {
+			return items.contains(new JsonValueBoolean(value));
+		}
+	}
+
+	public boolean contains(final JsonNode value) {
+		if (value == null) {
+			return containsNull();
+		} else {
+			return items.contains(value);
+		}
+	}
+
+	public JsonNode get(final int index) {
 		return items.get(index);
+	}
+
+	public Object getSimpleValue(final int index) {
+		final Object value = get(index);
+		if (value == null || value instanceof JsonValueNull) {
+			return null;
+		} else if (value instanceof JsonValueString) {
+			return ((JsonValueString) value).getValue();
+		} else if (value instanceof JsonValueInteger) {
+			return ((JsonValueInteger) value).getValue();
+		} else if (value instanceof JsonValueFloat) {
+			return ((JsonValueFloat) value).getValue();
+		} else if (value instanceof JsonValueBoolean) {
+			return ((JsonValueBoolean) value).getValue();
+		} else {
+			throw new RuntimeException("Selected item at index '" + index + "' is not a simple value: '" + value.getClass().getSimpleName() + "'");
+		}
 	}
 
 	public int size() {
@@ -28,11 +265,11 @@ public class JsonArray implements Iterable<Object> {
 	}
 
 	@Override
-	public Iterator<Object> iterator() {
+	public Iterator<JsonNode> iterator() {
 		return items.iterator();
 	}
 
-	public Stream<Object> stream() {
+	public Stream<JsonNode> stream() {
 		return items.stream();
 	}
 

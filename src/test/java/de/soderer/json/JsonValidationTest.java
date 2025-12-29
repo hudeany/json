@@ -127,19 +127,19 @@ public class JsonValidationTest {
 		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteSimpleMode.json"))) {
 			int testCount = 0;
 			final JsonNode testsuiteNode = testsuiteReader.read();
-			for (final Object item : ((JsonArray) testsuiteNode.getValue())) {
+			for (final JsonNode item : ((JsonArray) testsuiteNode)) {
 				testCount++;
 				final JsonObject testItem = (JsonObject) item;
-				final String description = (String) testItem.get("description");
+				final String description = (String) testItem.getSimpleValue("description");
 				final JsonObject schema = (JsonObject) testItem.get("schema");
-				final Object data = testItem.get("data");
+				final JsonNode data = testItem.get("data");
 				final Boolean validSchema;
 				if (testItem.containsKey("validSchema")) {
-					validSchema = (Boolean) testItem.get("validSchema");
+					validSchema = (Boolean) testItem.getSimpleValue("validSchema");
 				} else {
 					validSchema = true;
 				}
-				final Boolean valid = (Boolean) testItem.get("valid");
+				final Boolean valid = (Boolean) testItem.getSimpleValue("valid");
 
 				try {
 					final JsonSchema jsonSchema = new JsonSchema(schema, new JsonSchemaConfiguration(StandardCharsets.UTF_8, JsonSchemaVersion.simple, true));
@@ -179,19 +179,19 @@ public class JsonValidationTest {
 		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteDraftV4.json"))) {
 			int testCount = 0;
 			final JsonNode testsuiteNode = testsuiteReader.read();
-			for (final Object item : ((JsonArray) testsuiteNode.getValue())) {
+			for (final JsonNode item : ((JsonArray) testsuiteNode)) {
 				testCount++;
 				final JsonObject testItem = (JsonObject) item;
-				final String description = (String) testItem.get("description");
+				final String description = (String) testItem.getSimpleValue("description");
 				final JsonObject schema = (JsonObject) testItem.get("schema");
-				final Object data = testItem.get("data");
+				final JsonNode data = testItem.get("data");
 				final Boolean validSchema;
 				if (testItem.containsKey("validSchema")) {
-					validSchema = (Boolean) testItem.get("validSchema");
+					validSchema = (Boolean) testItem.getSimpleValue("validSchema");
 				} else {
 					validSchema = true;
 				}
-				final Boolean valid = (Boolean) testItem.get("valid");
+				final Boolean valid = (Boolean) testItem.getSimpleValue("valid");
 
 				try {
 					final JsonSchema jsonSchema = new JsonSchema(schema, new JsonSchemaConfiguration(StandardCharsets.UTF_8, JsonSchemaVersion.draftV4, true));
@@ -228,19 +228,19 @@ public class JsonValidationTest {
 		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteDraftV6.json"))) {
 			int testCount = 0;
 			final JsonNode testsuiteNode = testsuiteReader.read();
-			for (final Object item : ((JsonArray) testsuiteNode.getValue())) {
+			for (final JsonNode item : ((JsonArray) testsuiteNode)) {
 				testCount++;
 				final JsonObject testItem = (JsonObject) item;
-				final String description = (String) testItem.get("description");
+				final String description = (String) testItem.getSimpleValue("description");
 				final JsonObject schema = (JsonObject) testItem.get("schema");
-				final Object data = testItem.get("data");
+				final JsonNode data = testItem.get("data");
 				final Boolean validSchema;
 				if (testItem.containsKey("validSchema")) {
-					validSchema = (Boolean) testItem.get("validSchema");
+					validSchema = (Boolean) testItem.getSimpleValue("validSchema");
 				} else {
 					validSchema = true;
 				}
-				final Boolean valid = (Boolean) testItem.get("valid");
+				final Boolean valid = (Boolean) testItem.getSimpleValue("valid");
 
 				try {
 					final JsonSchema jsonSchema = new JsonSchema(schema, new JsonSchemaConfiguration(StandardCharsets.UTF_8, JsonSchemaVersion.draftV6, true));
@@ -277,19 +277,19 @@ public class JsonValidationTest {
 		try (JsonReader testsuiteReader = new Json5Reader(getClass().getClassLoader().getResourceAsStream("json/testSuiteDraftV7.json"))) {
 			int testCount = 0;
 			final JsonNode testsuiteNode = testsuiteReader.read();
-			for (final Object item : ((JsonArray) testsuiteNode.getValue())) {
+			for (final JsonNode item : ((JsonArray) testsuiteNode)) {
 				testCount++;
 				final JsonObject testItem = (JsonObject) item;
-				final String description = (String) testItem.get("description");
+				final String description = (String) testItem.getSimpleValue("description");
 				final JsonObject schema = (JsonObject) testItem.get("schema");
-				final Object data = testItem.get("data");
+				final JsonNode data = testItem.get("data");
 				final Boolean validSchema;
 				if (testItem.containsKey("validSchema")) {
-					validSchema = (Boolean) testItem.get("validSchema");
+					validSchema = (Boolean) testItem.getSimpleValue("validSchema");
 				} else {
 					validSchema = true;
 				}
-				final Boolean valid = (Boolean) testItem.get("valid");
+				final Boolean valid = (Boolean) testItem.getSimpleValue("valid");
 
 				try {
 					final JsonSchema jsonSchema = new JsonSchema(schema, new JsonSchemaConfiguration(StandardCharsets.UTF_8, JsonSchemaVersion.draftV7, true));

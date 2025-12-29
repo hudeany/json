@@ -2,6 +2,7 @@ package de.soderer.json;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Stack;
@@ -13,7 +14,7 @@ import de.soderer.json.utilities.BasicReader;
 import de.soderer.json.utilities.NumberUtilities;
 
 public class JsonReader extends BasicReader {
-	protected Object currentObject = null;
+	protected JsonNode currentObject = null;
 
 	protected Stack<JsonToken> openJsonItems = new Stack<>();
 	protected JsonPath currentJsonPath = new JsonPath();
@@ -35,7 +36,7 @@ public class JsonReader extends BasicReader {
 		super(inputStream, encodingCharset);
 	}
 
-	public Object getCurrentObject() {
+	public JsonNode getCurrentObject() {
 		return currentObject;
 	}
 
@@ -112,20 +113,20 @@ public class JsonReader extends BasicReader {
 				throw new Exception("Invalid json data '" + currentChar + "' in line " + (getReadLines() + 1) +" at overall index " + getReadCharacters());
 			case '"': // Start JsonObject propertykey or propertyvalue or JsonArray item
 				if (openJsonItems.size() == 0) {
-					currentObject = readQuotedText('\\');
+					currentObject = new JsonValueString(readQuotedText('\\'));
 					jsonToken = JsonToken.JsonSimpleValue;
 				} else if (openJsonItems.peek() == JsonToken.JsonArray_Open) {
-					currentObject = readQuotedText('\\');
+					currentObject = new JsonValueString(readQuotedText('\\'));
 					jsonToken = JsonToken.JsonSimpleValue;
 				} else if (openJsonItems.peek() == JsonToken.JsonObject_Open) {
-					currentObject = readQuotedText('\\');
+					currentObject = new JsonValueString(readQuotedText('\\'));
 					if (readNextNonWhitespace() != ':') {
 						throw new Exception("Invalid json data '" + currentChar + "' in line " + (getReadLines() + 1) +" at overall index " + getReadCharacters());
 					}
 					openJsonItems.push(JsonToken.JsonObject_PropertyKey);
 					jsonToken = JsonToken.JsonObject_PropertyKey;
 				} else if (openJsonItems.peek() == JsonToken.JsonObject_PropertyKey) {
-					currentObject = readQuotedText('\\');
+					currentObject = new JsonValueString(readQuotedText('\\'));
 					openJsonItems.pop();
 					currentChar = readNextNonWhitespace();
 					if (currentChar == null) {
@@ -189,12 +190,12 @@ public class JsonReader extends BasicReader {
 
 		switch (readNextToken()) {
 			case JsonObject_Open:
-				return new JsonNode(false, readJsonObject());
+				return readJsonObject().setRootNode(false);
 			case JsonArray_Open:
-				return new JsonNode(false, readJsonArray());
+				return readJsonArray().setRootNode(false);
 			case JsonSimpleValue:
 				// value was already read
-				return new JsonNode(false, currentObject);
+				return currentObject.setRootNode(false);
 			case JsonObject_Close:
 				reuseCurrentChar();
 				openJsonItems.push(JsonToken.JsonObject_Open);
@@ -204,8 +205,7 @@ public class JsonReader extends BasicReader {
 				openJsonItems.push(JsonToken.JsonArray_Open);
 				return null;
 			case JsonObject_PropertyKey:
-				final String propertyName = (String) currentObject;
-				return new JsonNode(false, propertyName, readNextJsonNode().getValue());
+				return currentObject.setRootNode(false);
 			default:
 				throw new Exception("Invalid data in line " + (getReadLines() + 1) +" at overall index " + getReadCharacters());
 		}
@@ -225,11 +225,11 @@ public class JsonReader extends BasicReader {
 
 		final JsonToken nextToken = readNextToken();
 		if (nextToken == JsonToken.JsonObject_Open) {
-			return new JsonNode(true, readJsonObject());
+			return readJsonObject().setRootNode(true);
 		} else if (nextToken == JsonToken.JsonArray_Open) {
-			return new JsonNode(true, readJsonArray());
+			return readJsonArray().setRootNode(true);
 		} else if (nextToken == JsonToken.JsonSimpleValue) {
-			return new JsonNode(true, currentObject);
+			return currentObject.setRootNode(true);
 		} else {
 			throw new Exception("Invalid json data: No JSON data found at root");
 		}
@@ -242,8 +242,8 @@ public class JsonReader extends BasicReader {
 			final JsonObject returnObject = new JsonObject();
 			JsonToken nextToken = readNextToken();
 			while (nextToken != JsonToken.JsonObject_Close) {
-				if (nextToken == JsonToken.JsonObject_PropertyKey && currentObject instanceof String) {
-					final String propertyKey = (String) currentObject;
+				if (nextToken == JsonToken.JsonObject_PropertyKey && currentObject instanceof JsonValueString) {
+					final String propertyKey = ((JsonValueString) currentObject).getValue();
 					nextToken = readNextToken();
 					if (nextToken == JsonToken.JsonArray_Open) {
 						returnObject.add(propertyKey, readJsonArray());
@@ -290,17 +290,26 @@ public class JsonReader extends BasicReader {
 		}
 	}
 
-	private Object readSimpleUnquotedJsonValue(final String valueString) throws Exception {
+	private JsonNode readSimpleUnquotedJsonValue(final String valueString) throws Exception {
 		if (valueString == null) {
 			throw new Exception("Invalid empty json data");
 		} else if ("null".equalsIgnoreCase(valueString)) {
-			return null;
+			return new JsonValueNull();
 		} else if ("true".equalsIgnoreCase(valueString)) {
-			return true;
+			return new JsonValueBoolean(true);
 		} else if ("false".equalsIgnoreCase(valueString)) {
-			return false;
+			return new JsonValueBoolean(false);
 		} else if (NumberUtilities.isNumber(valueString)) {
-			return NumberUtilities.parseNumber(valueString);
+			final Number value = NumberUtilities.parseNumber(valueString);
+			if (value instanceof Integer) {
+				return new JsonValueInteger((Integer) value);
+			} else if (value instanceof Long) {
+				return new JsonValueInteger((Long) value);
+			} else if (value instanceof BigDecimal && NumberUtilities.isInteger((BigDecimal) value)) {
+				return new JsonValueInteger((BigDecimal) value);
+			} else {
+				return new JsonValueFloat(value);
+			}
 		} else {
 			throw new Exception("Invalid json data in line " + (getReadLines() + 1) +" at overall index " + getReadCharacters());
 		}
@@ -344,7 +353,7 @@ public class JsonReader extends BasicReader {
 					}
 					break;
 				case JsonObject_PropertyKey:
-					currentJsonPath.add(new JsonPathPropertyElement((String) getCurrentObject()));
+					currentJsonPath.add(new JsonPathPropertyElement(((JsonValueString) getCurrentObject()).getValue()));
 					break;
 				case JsonSimpleValue:
 					if (currentJsonPath.size() > 0) {

@@ -23,19 +23,19 @@ import de.soderer.json.schema.JsonSchemaPath;
 public class PatternPropertiesValidator extends BaseJsonSchemaValidator {
 	private final Map <Pattern, List<BaseJsonSchemaValidator>> propertiesDefinitionsByPattern = new HashMap<>();
 
-	public PatternPropertiesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
+	public PatternPropertiesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
-		if (validatorData == null) {
+		if (validatorData == null || validatorData.isNull()) {
 			throw new JsonSchemaDefinitionError("PatternProperties data is 'null'", jsonSchemaPath);
-		} else if (!(validatorData instanceof JsonObject)) {
+		} else if (!(validatorData.isJsonObject())) {
 			throw new JsonSchemaDefinitionError("PatternProperties data is not a JsonObject", jsonSchemaPath);
 		}
 
-		for (final Entry<String, Object> entry : ((JsonObject) validatorData).entrySet()) {
+		for (final Entry<String, JsonNode> entry : ((JsonObject) validatorData).entrySet()) {
 			if (entry.getValue() == null) {
 				throw new JsonSchemaDefinitionError("PatternProperties data is null", jsonSchemaPath.addPropertyKey(entry.getKey()));
-			} else if (entry.getValue() instanceof Boolean) {
+			} else if (entry.getValue().isBoolean()) {
 				Pattern propertyKeyPattern;
 				try {
 					propertyKeyPattern = Pattern.compile(entry.getKey());
@@ -46,7 +46,7 @@ public class PatternPropertiesValidator extends BaseJsonSchemaValidator {
 				final List<BaseJsonSchemaValidator> subValidators = new ArrayList<>();
 				subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, entry.getValue()));
 				propertiesDefinitionsByPattern.put(propertyKeyPattern, subValidators);
-			} else if (entry.getValue() instanceof JsonObject) {
+			} else if (entry.getValue().isJsonObject()) {
 				Pattern propertyKeyPattern;
 				try {
 					propertyKeyPattern = Pattern.compile(entry.getKey());
@@ -70,11 +70,11 @@ public class PatternPropertiesValidator extends BaseJsonSchemaValidator {
 			}
 		} else {
 			for (final Entry<Pattern, List<BaseJsonSchemaValidator>> propertiesDefinitionsEntry : propertiesDefinitionsByPattern.entrySet()) {
-				for (final Entry<String, Object> propertyEntry : ((JsonObject) jsonNode.getValue()).entrySet()) {
+				for (final Entry<String, JsonNode> propertyEntry : ((JsonObject) jsonNode).entrySet()) {
 					if (propertiesDefinitionsEntry.getKey().matcher(propertyEntry.getKey()).find()) {
 						JsonNode newJsonNode;
 						try {
-							newJsonNode = new JsonNode(false, propertyEntry.getValue());
+							newJsonNode = propertyEntry.getValue().setRootNode(false);
 						} catch (final Exception e) {
 							throw new JsonSchemaDataValidationError("Invalid data type '" + propertyEntry.getValue().getClass().getSimpleName() + "'", new JsonPath(jsonPath).addPropertyKey(propertyEntry.getKey()), e);
 						}

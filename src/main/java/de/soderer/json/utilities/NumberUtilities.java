@@ -207,4 +207,29 @@ public class NumberUtilities {
 			return numberString;
 		}
 	}
+
+	public static boolean isInteger(final BigDecimal bigDecimal) {
+		if (bigDecimal == null) {
+			return false;
+		}
+		final int scale = bigDecimal.scale();
+		if (scale <= 0) {
+			return true;
+		}
+
+		final BigInteger unscaled = bigDecimal.unscaledValue();
+		if (unscaled.signum() == 0) {
+			return true;
+		}
+
+		// For small scales, check trailing zeros via string (avoids BigInteger.pow)
+		if (scale <= 18) {
+			final String unscaledStr = unscaled.toString();
+			return unscaledStr.length() >= scale && unscaledStr.substring(unscaledStr.length() - scale).matches("0+");
+		} else {
+			// For large scales, use mod (fallback)
+			final BigInteger tenToScale = BigInteger.TEN.pow(scale);
+			return unscaled.mod(tenToScale).signum() == 0;
+		}
+	}
 }

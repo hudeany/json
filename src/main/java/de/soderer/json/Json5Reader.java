@@ -2,6 +2,7 @@ package de.soderer.json;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
@@ -103,13 +104,13 @@ public class Json5Reader extends JsonReader {
 			case '"':
 			case '\'': // Start JsonObject propertykey or propertyvalue or JsonArray item
 				if (openJsonItems.size() == 0) {
-					currentObject = readQuotedText('\\');
+					currentObject = new JsonValueString(readQuotedText('\\'));
 					jsonToken = JsonToken.JsonSimpleValue;
 				} else if (openJsonItems.peek() == JsonToken.JsonArray_Open) {
-					currentObject = readQuotedText('\\');
+					currentObject = new JsonValueString(readQuotedText('\\'));
 					jsonToken = JsonToken.JsonSimpleValue;
 				} else if (openJsonItems.peek() == JsonToken.JsonObject_Open) {
-					currentObject = readQuotedText('\\');
+					currentObject = new JsonValueString(readQuotedText('\\'));
 					currentChar = readNextNonWhitespace();
 					if (currentChar != ':') {
 						throw new Exception("Invalid json data '" + currentChar + "' in line " + (getReadLines() + 1) + " at overall index " + getReadCharacters());
@@ -117,7 +118,7 @@ public class Json5Reader extends JsonReader {
 					openJsonItems.push(JsonToken.JsonObject_PropertyKey);
 					jsonToken = JsonToken.JsonObject_PropertyKey;
 				} else if (openJsonItems.peek() == JsonToken.JsonObject_PropertyKey) {
-					currentObject = readQuotedText('\\');
+					currentObject = new JsonValueString(readQuotedText('\\'));
 					openJsonItems.pop();
 					currentChar = readNextNonWhitespace();
 					if (currentChar == null) {
@@ -137,7 +138,7 @@ public class Json5Reader extends JsonReader {
 					currentObject = readSimpleJsonValue(readUpToNext(false, null).trim());
 					jsonToken = JsonToken.JsonSimpleValue;
 				} else if (openJsonItems.peek() == JsonToken.JsonObject_Open) {
-					currentObject = readJsonIdentifier(readUpToNext(false, null, ':').trim());
+					currentObject = new JsonValueString(readJsonIdentifier(readUpToNext(false, null, ':').trim()));
 					readNextCharacter();
 					openJsonItems.push(JsonToken.JsonObject_PropertyKey);
 					jsonToken = JsonToken.JsonObject_PropertyKey;
@@ -171,25 +172,43 @@ public class Json5Reader extends JsonReader {
 		return jsonToken;
 	}
 
-	private Object readSimpleJsonValue(final String valueString) throws Exception {
+	private JsonNode readSimpleJsonValue(final String valueString) throws Exception {
 		if ("null".equalsIgnoreCase(valueString)) {
-			return null;
+			return new JsonValueNull();
 		} else if ("true".equalsIgnoreCase(valueString)) {
-			return true;
+			return new JsonValueBoolean(true);
 		} else if ("false".equalsIgnoreCase(valueString)) {
-			return false;
+			return new JsonValueBoolean(false);
 		} else if ("Infinity".equalsIgnoreCase(valueString)) {
-			return Double.POSITIVE_INFINITY;
+			return new JsonValueFloat(Double.POSITIVE_INFINITY);
 		} else if ("-Infinity".equalsIgnoreCase(valueString)) {
-			return Double.NEGATIVE_INFINITY;
+			return new JsonValueFloat(Double.NEGATIVE_INFINITY);
 		} else if ("NaN".equalsIgnoreCase(valueString)) {
-			return Double.NaN;
+			return new JsonValueFloat(Double.NaN);
 		} else if ("-NaN".equalsIgnoreCase(valueString)) {
-			return Double.NaN;
+			return new JsonValueFloat(Double.NaN);
 		} else if (NumberUtilities.isHexNumber(valueString)) {
-			return NumberUtilities.parseHexNumber(valueString);
+			final Number value = NumberUtilities.parseHexNumber(valueString);
+			if (value instanceof Integer) {
+				return new JsonValueInteger((Integer) value);
+			} else if (value instanceof Long) {
+				return new JsonValueInteger((Long) value);
+			} else if (value instanceof BigDecimal && NumberUtilities.isInteger((BigDecimal) value)) {
+				return new JsonValueInteger((BigDecimal) value);
+			} else {
+				return new JsonValueFloat(value);
+			}
 		} else if (NumberUtilities.isNumber(valueString)) {
-			return NumberUtilities.parseNumber(valueString);
+			final Number value = NumberUtilities.parseNumber(valueString);
+			if (value instanceof Integer) {
+				return new JsonValueInteger((Integer) value);
+			} else if (value instanceof Long) {
+				return new JsonValueInteger((Long) value);
+			} else if (value instanceof BigDecimal && NumberUtilities.isInteger((BigDecimal) value)) {
+				return new JsonValueInteger((BigDecimal) value);
+			} else {
+				return new JsonValueFloat(value);
+			}
 		} else {
 			throw new Exception("Invalid json data '" + Utilities.shortenStringToMaxLengthCutLeft(valueString, 20) + "' in line " + (getReadLines() + 1) +" at overall index " + getReadCharacters());
 		}

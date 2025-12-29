@@ -1,6 +1,9 @@
 package de.soderer.json.schema.validator;
 
 import de.soderer.json.JsonNode;
+import de.soderer.json.JsonValueFloat;
+import de.soderer.json.JsonValueInteger;
+import de.soderer.json.JsonValueString;
 import de.soderer.json.path.JsonPath;
 import de.soderer.json.schema.JsonSchemaDataValidationError;
 import de.soderer.json.schema.JsonSchemaDefinitionError;
@@ -12,23 +15,26 @@ import de.soderer.json.utilities.TextUtilities;
  * Minimum length of string value
  */
 public class MinLengthValidator extends BaseJsonSchemaValidator {
-	public MinLengthValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
+	public MinLengthValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
-		if (validatorData == null) {
+		if (validatorData == null || validatorData.isNull()) {
 			throw new JsonSchemaDefinitionError("Data for minLength is 'null'", jsonSchemaPath);
-		} else if (validatorData instanceof String) {
+		} else if (validatorData.isString()) {
 			try {
-				this.validatorData = Integer.parseInt((String) validatorData);
+				Integer.parseInt(((JsonValueString) validatorData).getValue());
 			} catch (final NumberFormatException e) {
 				throw new JsonSchemaDefinitionError("Data for minLength '" + validatorData + "' is not a number", jsonSchemaPath, e);
 			}
-		} else if (validatorData instanceof Number) {
-			final int minimumLengthValue = ((Number) validatorData).intValue();
+		} else if (validatorData.isInteger()) {
+			final int minimumLengthValue = ((JsonValueInteger) validatorData).getValue().intValue();
 			if (minimumLengthValue < 0) {
 				throw new JsonSchemaDefinitionError("Data for minLength is negative", jsonSchemaPath);
-			} else {
-				this.validatorData = minimumLengthValue;
+			}
+		} else if (validatorData.isFloat()) {
+			final int minimumLengthValue = ((JsonValueFloat) validatorData).getValue().intValue();
+			if (minimumLengthValue < 0) {
+				throw new JsonSchemaDefinitionError("Data for minLength is negative", jsonSchemaPath);
 			}
 		} else {
 			throw new JsonSchemaDefinitionError("Data for minLength '" + validatorData + "' is not a number", jsonSchemaPath);
@@ -37,13 +43,23 @@ public class MinLengthValidator extends BaseJsonSchemaValidator {
 
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
+		final int minimumLengthValue;
+		if (validatorData.isString()) {
+			minimumLengthValue = Integer.parseInt(((JsonValueString) validatorData).getValue());
+		} else if (validatorData.isInteger()) {
+			minimumLengthValue = ((JsonValueInteger) validatorData).getValue().intValue();
+		} else {
+			minimumLengthValue = ((JsonValueFloat) validatorData).getValue().intValue();
+		}
+
 		if (!(jsonNode.isString())) {
 			if (jsonSchemaDependencyResolver.isSimpleMode()) {
 				throw new JsonSchemaDataValidationError("Expected data type 'string' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {
-			if (TextUtilities.getUnicodeStringLength((String) jsonNode.getValue()) < ((Integer) validatorData)) {
-				throw new JsonSchemaDataValidationError("String minLength is '" + validatorData + "' but was '" + ((String) jsonNode.getValue()).length() + "'", jsonPath);
+			final int unicodeStringLength = TextUtilities.getUnicodeStringLength(((JsonValueString) jsonNode).getValue());
+			if (unicodeStringLength < minimumLengthValue) {
+				throw new JsonSchemaDataValidationError("String minLength is '" + validatorData + "' but was '" + unicodeStringLength + "'", jsonPath);
 			}
 		}
 	}

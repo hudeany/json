@@ -26,7 +26,7 @@ public class JsonSerializerTest {
 		final JsonNode dataNodeSerialized = JsonSerializer.serialize(deserializedObject, false, false, false, true);
 		final String jsonStringSerialized = JsonWriter.getJsonItemString(dataNodeSerialized);
 		Assert.assertEquals(jsonStringOriginal, jsonStringSerialized);
-		final TestObjectSimple deserializedObject2 = (TestObjectSimple) JsonSerializer.deserialize((JsonObject) JsonReader.readJsonItemString(jsonStringOriginal).getValue());
+		final TestObjectSimple deserializedObject2 = (TestObjectSimple) JsonSerializer.deserialize((JsonObject) JsonReader.readJsonItemString(jsonStringOriginal));
 		final JsonNode dataNodeSerialized2 = JsonSerializer.serialize(deserializedObject2, false, false, false, true);
 		final String jsonStringSerialized2 = JsonWriter.getJsonItemString(dataNodeSerialized2);
 		Assert.assertEquals(jsonStringOriginal, jsonStringSerialized2);

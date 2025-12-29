@@ -1,6 +1,9 @@
 package de.soderer.json.schema.validator;
 
 import de.soderer.json.JsonNode;
+import de.soderer.json.JsonValueFloat;
+import de.soderer.json.JsonValueInteger;
+import de.soderer.json.JsonValueString;
 import de.soderer.json.path.JsonPath;
 import de.soderer.json.schema.JsonSchemaDataValidationError;
 import de.soderer.json.schema.JsonSchemaDefinitionError;
@@ -12,23 +15,26 @@ import de.soderer.json.utilities.TextUtilities;
  * Maximum length of string value
  */
 public class MaxLengthValidator extends BaseJsonSchemaValidator {
-	public MaxLengthValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError {
+	public MaxLengthValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
-		if (validatorData == null) {
+		if (validatorData == null || validatorData.isNull()) {
 			throw new JsonSchemaDefinitionError("Data for maxLength is 'null'", jsonSchemaPath);
-		} else if (validatorData instanceof String) {
+		} else if (validatorData.isString()) {
 			try {
-				this.validatorData = Integer.parseInt((String) validatorData);
+				Integer.parseInt(((JsonValueString) validatorData).getValue());
 			} catch (final NumberFormatException e) {
 				throw new JsonSchemaDefinitionError("Data for maxLength '" + validatorData + "' is not a number", jsonSchemaPath, e);
 			}
-		} else if (validatorData instanceof Number) {
-			final int maximumLengthValue = ((Number) validatorData).intValue();
+		} else if (validatorData.isInteger()) {
+			final int maximumLengthValue = ((JsonValueInteger) validatorData).getValue().intValue();
 			if (maximumLengthValue < 0) {
 				throw new JsonSchemaDefinitionError("Data for maxLength is negative", jsonSchemaPath);
-			} else {
-				this.validatorData = maximumLengthValue;
+			}
+		} else if (validatorData.isFloat()) {
+			final int maximumLengthValue = ((JsonValueFloat) validatorData).getValue().intValue();
+			if (maximumLengthValue < 0) {
+				throw new JsonSchemaDefinitionError("Data for maxLength is negative", jsonSchemaPath);
 			}
 		} else {
 			throw new JsonSchemaDefinitionError("Data for maxLength '" + validatorData + "' is not a number", jsonSchemaPath);
@@ -37,13 +43,23 @@ public class MaxLengthValidator extends BaseJsonSchemaValidator {
 
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
+		final int maximumLengthValue;
+		if (validatorData.isString()) {
+			maximumLengthValue = Integer.parseInt(((JsonValueString) validatorData).getValue());
+		} else if (validatorData.isInteger()) {
+			maximumLengthValue = ((JsonValueInteger) validatorData).getValue().intValue();
+		} else {
+			maximumLengthValue = ((JsonValueFloat) validatorData).getValue().intValue();
+		}
+
 		if (!(jsonNode.isString())) {
 			if (jsonSchemaDependencyResolver.isSimpleMode()) {
 				throw new JsonSchemaDataValidationError("Expected data type 'string' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {
-			if (TextUtilities.getUnicodeStringLength((String) jsonNode.getValue()) > ((Integer) validatorData)) {
-				throw new JsonSchemaDataValidationError("String maxLength is '" + validatorData + "' but was '" + ((String) jsonNode.getValue()).length() + "'", jsonPath);
+			final int unicodeStringLength = TextUtilities.getUnicodeStringLength(((JsonValueString) jsonNode).getValue());
+			if (unicodeStringLength > maximumLengthValue) {
+				throw new JsonSchemaDataValidationError("String maxLength is '" + validatorData + "' but was '" + unicodeStringLength + "'", jsonPath);
 			}
 		}
 	}

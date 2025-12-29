@@ -7,6 +7,7 @@ import de.soderer.json.Json5Reader;
 import de.soderer.json.JsonArray;
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
+import de.soderer.json.JsonValueString;
 import de.soderer.json.utilities.Utilities;
 
 public class JsonSchemaDependency {
@@ -30,7 +31,7 @@ public class JsonSchemaDependency {
 				if (!jsonNode.isJsonObject()) {
 					throw new Exception("JSON schema reference '" + jsonSchemaReferenceName + "' does not contain JSON schema data of type 'object'");
 				} else {
-					final JsonObject jsonSchema = (JsonObject) jsonNode.getValue();
+					final JsonObject jsonSchema = (JsonObject) jsonNode;
 					jsonSchemaReferenceObject = jsonSchema;
 					redirectReferences(jsonSchema, "#", jsonSchemaReferenceName + "#");
 				}
@@ -64,9 +65,10 @@ public class JsonSchemaDependency {
 	}
 
 	private void redirectReferences(final JsonObject jsonObject, final String referenceDefinitionStart, final String referenceDefinitionReplacement) throws Exception {
-		for (final Entry<String, Object> entry : jsonObject.entrySet()) {
-			if ("$ref".equals(entry.getKey()) && entry.getValue() != null && entry.getValue() instanceof String && ((String) entry.getValue()).startsWith(referenceDefinitionStart)) {
-				jsonObject.add("$ref", referenceDefinitionReplacement + ((String) entry.getValue()).substring(referenceDefinitionStart.length()));
+		for (final Entry<String, JsonNode> entry : jsonObject.entrySet()) {
+			if ("$ref".equals(entry.getKey()) && entry.getValue() != null && entry.getValue() instanceof JsonValueString && ((JsonValueString) entry.getValue()).getValue().startsWith(referenceDefinitionStart)) {
+				jsonObject.remove("$ref");
+				jsonObject.add("$ref", referenceDefinitionReplacement + ((JsonValueString) entry.getValue()).getValue().substring(referenceDefinitionStart.length()));
 			} else if (entry.getValue() instanceof JsonObject) {
 				redirectReferences((JsonObject) entry.getValue(), referenceDefinitionStart, referenceDefinitionReplacement);
 			} else if (entry.getValue() instanceof JsonArray) {
@@ -76,7 +78,7 @@ public class JsonSchemaDependency {
 	}
 
 	private void redirectReferences(final JsonArray jsonArray, final String referenceDefinitionStart, final String referenceDefinitionReplacement) throws Exception {
-		for (final Object item : jsonArray) {
+		for (final JsonNode item : jsonArray) {
 			if (item instanceof JsonObject) {
 				redirectReferences((JsonObject) item, referenceDefinitionStart, referenceDefinitionReplacement);
 			} else if (item instanceof JsonArray) {

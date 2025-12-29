@@ -19,15 +19,15 @@ import de.soderer.json.schema.JsonSchemaPath;
 public class NotValidator extends BaseJsonSchemaValidator {
 	private List<BaseJsonSchemaValidator> subValidators = null;
 
-	public NotValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
+	public NotValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
-		if (validatorData == null) {
+		if (validatorData == null || validatorData.isNull()) {
 			throw new JsonSchemaDefinitionError("Not-validation data is 'null'", jsonSchemaPath);
-		} else if (validatorData instanceof Boolean) {
+		} else if (validatorData.isBoolean()) {
 			subValidators = new ArrayList<>();
 			subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData));
-		} else if (validatorData instanceof JsonObject) {
+		} else if (validatorData.isJsonObject()) {
 			subValidators = JsonSchema.createValidators((JsonObject) validatorData, jsonSchemaDependencyResolver, jsonSchemaPath);
 			if (subValidators == null) {
 				throw new JsonSchemaDefinitionError("Not-validation JsonObject is empty", jsonSchemaPath);

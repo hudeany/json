@@ -10,6 +10,8 @@ import de.soderer.json.Json5Reader;
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
 import de.soderer.json.JsonReader;
+import de.soderer.json.JsonValueBoolean;
+import de.soderer.json.JsonValueString;
 import de.soderer.json.exception.JsonDuplicateKeyException;
 import de.soderer.json.path.JsonPath;
 import de.soderer.json.schema.validator.AdditionalPropertiesValidator;
@@ -112,12 +114,12 @@ public class JsonSchema {
 			throw new JsonSchemaDefinitionError("Contains null data", null);
 		} else if (jsonNode.isBoolean()) {
 			validators = new ArrayList<>();
-			validators.add(new BooleanValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(), jsonNode.getValue()));
+			validators.add(new BooleanValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(), jsonNode));
 		} else if (jsonNode.isJsonObject()) {
-			readSchemaData((JsonObject) jsonNode.getValue(), jsonSchemaConfiguration, dependencies);
+			readSchemaData((JsonObject) jsonNode, jsonSchemaConfiguration, dependencies);
 			jsonSchemaDependencyResolver.setJsonSchemaVersion(jsonSchemaConfiguration.getJsonSchemaVersion());
 			jsonSchemaDependencyResolver.setDownloadReferencedSchemas(jsonSchemaConfiguration.isDownloadReferencedSchemas());
-			validators = createValidators((JsonObject) jsonNode.getValue(), jsonSchemaDependencyResolver, new JsonSchemaPath());
+			validators = createValidators((JsonObject) jsonNode, jsonSchemaDependencyResolver, new JsonSchemaPath());
 		} else {
 			throw new JsonSchemaDefinitionError("Does not contain JsonObject", new JsonSchemaPath());
 		}
@@ -149,38 +151,38 @@ public class JsonSchema {
 		}
 
 		if (jsonSchemaDefinitionObject.containsKey("id")) {
-			if (jsonSchemaDefinitionObject.get("id") == null) {
+			if (jsonSchemaDefinitionObject.getSimpleValue("id") == null) {
 				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key 'id'", new JsonSchemaPath());
-			} else if (!(jsonSchemaDefinitionObject.get("id") instanceof String)) {
-				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("id").getClass().getSimpleName() + "' for key 'id'", new JsonSchemaPath());
+			} else if (!(jsonSchemaDefinitionObject.getSimpleValue("id") instanceof String)) {
+				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.getSimpleValue("id").getClass().getSimpleName() + "' for key 'id'", new JsonSchemaPath());
 			} else if (id != null) {
 				throw new JsonSchemaDefinitionError("Invalid duplicate definition for JSON schema id by key 'id'", new JsonSchemaPath());
 			} else {
-				id = (String) jsonSchemaDefinitionObject.get("id");
+				id = (String) jsonSchemaDefinitionObject.getSimpleValue("id");
 			}
 		}
 
 		if (jsonSchemaDefinitionObject.containsKey("$id")) {
-			if (jsonSchemaDefinitionObject.get("$id") == null) {
+			if (jsonSchemaDefinitionObject.getSimpleValue("$id") == null) {
 				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key '$id'", new JsonSchemaPath());
-			} else if (!(jsonSchemaDefinitionObject.get("$id") instanceof String)) {
-				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("$id").getClass().getSimpleName() + "' for key '$id'", new JsonSchemaPath());
+			} else if (!(jsonSchemaDefinitionObject.getSimpleValue("$id") instanceof String)) {
+				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.getSimpleValue("$id").getClass().getSimpleName() + "' for key '$id'", new JsonSchemaPath());
 			} else if (id != null) {
 				throw new JsonSchemaDefinitionError("Invalid duplicate definition for JSON schema id by key '$id'", new JsonSchemaPath());
 			} else {
-				id = (String) jsonSchemaDefinitionObject.get("$id");
+				id = (String) jsonSchemaDefinitionObject.getSimpleValue("$id");
 			}
 		}
 
 		if (jsonSchemaDefinitionObject.containsKey("$schema")) {
-			if (jsonSchemaDefinitionObject.get("$schema") == null) {
+			if (jsonSchemaDefinitionObject.getSimpleValue("$schema") == null) {
 				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key '$schema'", new JsonSchemaPath());
-			} else if (!(jsonSchemaDefinitionObject.get("$schema") instanceof String)) {
-				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("$schema").getClass().getSimpleName() + "' for key '$schema'", new JsonSchemaPath());
+			} else if (!(jsonSchemaDefinitionObject.getSimpleValue("$schema") instanceof String)) {
+				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.getSimpleValue("$schema").getClass().getSimpleName() + "' for key '$schema'", new JsonSchemaPath());
 			} else if (schemaVersionUrl != null) {
 				throw new JsonSchemaDefinitionError("Invalid duplicate definition for JSON schema version url by key '$schema'", new JsonSchemaPath());
 			} else {
-				schemaVersionUrl = (String) jsonSchemaDefinitionObject.get("$schema");
+				schemaVersionUrl = (String) jsonSchemaDefinitionObject.getSimpleValue("$schema");
 				if (jsonSchemaConfiguration.getJsonSchemaVersion() == null) {
 					jsonSchemaConfiguration.setJsonSchemaVersion(JsonSchemaVersion.getJsonSchemaVersionByVersionUrl(schemaVersionUrl));
 				}
@@ -188,38 +190,38 @@ public class JsonSchema {
 		}
 
 		if (jsonSchemaDefinitionObject.containsKey("$comment")) {
-			if (jsonSchemaDefinitionObject.get("$comment") == null) {
+			if (jsonSchemaDefinitionObject.getSimpleValue("$comment") == null) {
 				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key '$comment'", new JsonSchemaPath());
-			} else if (!(jsonSchemaDefinitionObject.get("$comment") instanceof String)) {
-				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("$comment").getClass().getSimpleName() + "' for key '$comment'", new JsonSchemaPath());
+			} else if (!(jsonSchemaDefinitionObject.getSimpleValue("$comment") instanceof String)) {
+				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.getSimpleValue("$comment").getClass().getSimpleName() + "' for key '$comment'", new JsonSchemaPath());
 			} else if (comment != null) {
 				throw new JsonSchemaDefinitionError("Invalid duplicate definition for JSON schema comment by key '$comment'", new JsonSchemaPath());
 			} else {
-				comment = (String) jsonSchemaDefinitionObject.get("$comment");
+				comment = (String) jsonSchemaDefinitionObject.getSimpleValue("$comment");
 			}
 		}
 
 		if (jsonSchemaDefinitionObject.containsKey("title")) {
-			if (jsonSchemaDefinitionObject.get("title") == null) {
+			if (jsonSchemaDefinitionObject.getSimpleValue("title") == null) {
 				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key 'title'", new JsonSchemaPath());
-			} else if (!(jsonSchemaDefinitionObject.get("title") instanceof String)) {
-				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("title").getClass().getSimpleName() + "' for key 'title'", new JsonSchemaPath());
+			} else if (!(jsonSchemaDefinitionObject.getSimpleValue("title") instanceof String)) {
+				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.getSimpleValue("title").getClass().getSimpleName() + "' for key 'title'", new JsonSchemaPath());
 			} else if (title != null) {
 				throw new JsonSchemaDefinitionError("Invalid duplicate definition for JSON schema title url by key 'title'", new JsonSchemaPath());
 			} else {
-				title = (String) jsonSchemaDefinitionObject.get("title");
+				title = (String) jsonSchemaDefinitionObject.getSimpleValue("title");
 			}
 		}
 
 		if (jsonSchemaDefinitionObject.containsKey("description")) {
-			if (jsonSchemaDefinitionObject.get("description") == null) {
+			if (jsonSchemaDefinitionObject.getSimpleValue("description") == null) {
 				throw new JsonSchemaDefinitionError("Invalid data type 'null' for key 'description'", new JsonSchemaPath());
-			} else if (!(jsonSchemaDefinitionObject.get("description") instanceof String)) {
-				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.get("description").getClass().getSimpleName() + "' for key 'description'", new JsonSchemaPath());
+			} else if (!(jsonSchemaDefinitionObject.getSimpleValue("description") instanceof String)) {
+				throw new JsonSchemaDefinitionError("Invalid data type '" + jsonSchemaDefinitionObject.getSimpleValue("description").getClass().getSimpleName() + "' for key 'description'", new JsonSchemaPath());
 			} else if (description != null) {
 				throw new JsonSchemaDefinitionError("Invalid duplicate definition for JSON schema description by key 'description'", new JsonSchemaPath());
 			} else {
-				description = (String) jsonSchemaDefinitionObject.get("description");
+				description = (String) jsonSchemaDefinitionObject.getSimpleValue("description");
 			}
 		}
 
@@ -274,10 +276,10 @@ public class JsonSchema {
 		return jsonDataNode;
 	}
 
-	public void validate(final Object jsonData) throws JsonSchemaDataValidationError {
+	public void validate(final JsonNode jsonData) throws JsonSchemaDataValidationError {
 		JsonNode jsonDataNode;
 		try {
-			jsonDataNode = new JsonNode(true, jsonData);
+			jsonDataNode = jsonData.setRootNode(true);
 		} catch (final Exception e) {
 			throw new JsonSchemaDataValidationError(e.getMessage(), new JsonPath(), e);
 		}
@@ -290,11 +292,11 @@ public class JsonSchema {
 	public static List<BaseJsonSchemaValidator> createValidators(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath currentJsonSchemaPath) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
 		final List<BaseJsonSchemaValidator> validators = new ArrayList<>();
 
-		Object ifJsonObject = null;
-		Object thenObject = null;
-		Object elseObject = null;
+		JsonNode ifJsonObject = null;
+		JsonNode thenObject = null;
+		JsonNode elseObject = null;
 
-		for (final Entry<String, Object> entry : jsonSchemaDefinitionObject.entrySet()) {
+		for (final Entry<String, JsonNode> entry : jsonSchemaDefinitionObject.entrySet()) {
 			switch (entry.getKey()) {
 				case "type":
 					validators.add(new TypeValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
@@ -420,7 +422,11 @@ public class JsonSchema {
 					break;
 
 				case "$ref":
-					validators.add(new ReferenceValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(parseJsonSchemaReference(jsonSchemaDependencyResolver, (String) entry.getValue(), currentJsonSchemaPath).toString()), entry.getValue()));
+					validators.add(new ReferenceValidator(
+							jsonSchemaDependencyResolver,
+							new JsonSchemaPath(parseJsonSchemaReference(jsonSchemaDependencyResolver, ((JsonValueString) entry.getValue()).getValue(), currentJsonSchemaPath).toString()),
+							entry.getValue())
+							);
 					break;
 
 				case "id":
@@ -456,13 +462,13 @@ public class JsonSchema {
 
 				case "title":
 					// Descriptive title
-					if (!(entry.getValue() instanceof String)) {
+					if (!(entry.getValue() instanceof JsonValueString)) {
 						throw new JsonSchemaDefinitionError("Invalid data type '" + entry.getValue().getClass().getSimpleName() + "' for key 'title'", currentJsonSchemaPath);
 					}
 					break;
 				case "description":
 					// Descriptive comments
-					if (!(entry.getValue() instanceof String)) {
+					if (!(entry.getValue() instanceof JsonValueString)) {
 						throw new JsonSchemaDefinitionError("Invalid data type '" + entry.getValue().getClass().getSimpleName() + "' for key 'description'", currentJsonSchemaPath);
 					}
 					break;
@@ -475,7 +481,7 @@ public class JsonSchema {
 						throw new JsonSchemaDefinitionError("Invalid data type 'null' for key 'if'. JsonObject or Boolean expected", currentJsonSchemaPath);
 					} else if (entry.getValue() instanceof JsonObject) {
 						ifJsonObject = entry.getValue();
-					} else if (entry.getValue() instanceof Boolean) {
+					} else if (entry.getValue() instanceof JsonValueBoolean) {
 						ifJsonObject = entry.getValue();
 					} else {
 						throw new JsonSchemaDefinitionError("Invalid data type '" + entry.getValue().getClass().getSimpleName() + "' for key 'if'. JsonObject or Boolean expected", currentJsonSchemaPath);

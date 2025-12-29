@@ -5,6 +5,7 @@ import java.util.List;
 
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
+import de.soderer.json.JsonValueString;
 import de.soderer.json.exception.JsonDuplicateKeyException;
 import de.soderer.json.path.JsonPath;
 import de.soderer.json.schema.JsonSchema;
@@ -19,14 +20,14 @@ import de.soderer.json.schema.JsonSchemaPath;
 public class PropertyNamesValidator extends BaseJsonSchemaValidator {
 	private final List<BaseJsonSchemaValidator> subValidators;
 
-	public PropertyNamesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
+	public PropertyNamesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
-		if (validatorData == null) {
+		if (validatorData == null || validatorData.isNull()) {
 			throw new JsonSchemaDefinitionError("PropertyNames validator data is 'null'", jsonSchemaPath);
-		} else if (validatorData instanceof JsonObject) {
+		} else if (validatorData.isJsonObject()) {
 			subValidators = JsonSchema.createValidators((JsonObject) validatorData, jsonSchemaDependencyResolver, jsonSchemaPath);
-		} else if (validatorData instanceof Boolean) {
+		} else if (validatorData.isBoolean()) {
 			subValidators = new ArrayList<>();
 			subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData));
 		} else {
@@ -41,13 +42,8 @@ public class PropertyNamesValidator extends BaseJsonSchemaValidator {
 				throw new JsonSchemaDataValidationError("Expected data type 'object' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {
-			for (final String propertyName : ((JsonObject) jsonNode.getValue()).keySet()) {
-				JsonNode newJsonNode;
-				try {
-					newJsonNode = new JsonNode(false, propertyName);
-				} catch (final Exception e) {
-					throw new JsonSchemaDataValidationError("Invalid data type '" + jsonNode.getValue().getClass().getSimpleName() + "'", jsonPath, e);
-				}
+			for (final String propertyName : ((JsonObject) jsonNode).keySet()) {
+				final JsonNode newJsonNode = new JsonValueString(propertyName).setRootNode(false);
 				for (final BaseJsonSchemaValidator subValidator : subValidators) {
 					subValidator.validate(newJsonNode, jsonPath);
 				}

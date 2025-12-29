@@ -20,13 +20,13 @@ import de.soderer.json.schema.JsonSchemaPath;
 public class ContainsValidator extends ExtendedBaseJsonSchemaValidator {
 	final List<BaseJsonSchemaValidator> subValidators;
 
-	public ContainsValidator(final JsonObject parentValidatorData, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
+	public ContainsValidator(final JsonObject parentValidatorData, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
 		super(parentValidatorData, jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
-		if (validatorData instanceof Boolean) {
+		if (validatorData.isBoolean()) {
 			subValidators = new ArrayList<>();
 			subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData));
-		} else if (validatorData instanceof JsonObject) {
+		} else if (validatorData.isJsonObject()) {
 			try {
 				subValidators = JsonSchema.createValidators((JsonObject) validatorData, jsonSchemaDependencyResolver, jsonSchemaPath);
 			} catch (final JsonSchemaDefinitionError e) {
@@ -44,10 +44,10 @@ public class ContainsValidator extends ExtendedBaseJsonSchemaValidator {
 				throw new JsonSchemaDataValidationError("Expected data type 'array' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {
-			for (final Object itemObject : (JsonArray) jsonNode.getValue()) {
+			for (final JsonNode itemObject : (JsonArray) jsonNode) {
 				JsonNode newJsonNode;
 				try {
-					newJsonNode = new JsonNode(false, itemObject);
+					newJsonNode = itemObject.setRootNode(false);
 				} catch (final Exception e) {
 					throw new JsonSchemaDataValidationError("Invalid data type '" + itemObject.getClass().getSimpleName() + "'", jsonPath, e);
 				}

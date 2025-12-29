@@ -67,8 +67,8 @@ public class JsonPathTest {
 	public void testJsonPathOnKomplexExample() {
 		try (JsonReader jsonReader = new JsonReader(getClass().getClassLoader().getResourceAsStream("json/KomplexExample.json"))) {
 			final JsonNode jsonNode = jsonReader.read();
-			Assert.assertEquals(3, jsonNode.getDatabyJsonPath(new JsonPath("$.item3")));
-			Assert.assertEquals(true, jsonNode.getDatabyJsonPath(new JsonPath("$.item10.item8[1].item6")));
+			Assert.assertEquals(3, ((JsonValueInteger) jsonNode.getDataByJsonPath(new JsonPath("$.item3"))).getValue().intValue());
+			Assert.assertEquals(true, ((JsonValueBoolean) jsonNode.getDataByJsonPath(new JsonPath("$.item10.item8[1].item6"))).getValue());
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());

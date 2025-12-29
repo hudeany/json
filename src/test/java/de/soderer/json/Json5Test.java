@@ -76,7 +76,7 @@ public class Json5Test {
 			output = new ByteArrayOutputStream();
 			writer = new JsonWriter(output, StandardCharsets.UTF_8);
 			writer.openJsonArray();
-			writer.addSimpleJsonArrayValue(null);
+			writer.addSimpleJsonArrayValueNull();
 			writer.addSimpleJsonArrayValue(true);
 			writer.addSimpleJsonArrayValue(1);
 			writer.addSimpleJsonArrayValue(2);
@@ -129,10 +129,10 @@ public class Json5Test {
 							+ "]\r";
 			jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 			final JsonNode jsonNode = jsonReader.read();
-			Assert.assertNotNull(jsonNode.getValue());
+			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
-			Assert.assertEquals(1, ((JsonArray) jsonNode.getValue()).get(0));
-			Assert.assertEquals(2, ((JsonArray) jsonNode.getValue()).get(1));
+			Assert.assertEquals(1, ((JsonArray) jsonNode).getSimpleValue(0));
+			Assert.assertEquals(2, ((JsonArray) jsonNode).getSimpleValue(1));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -158,8 +158,8 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
-			Assert.assertEquals(1, ((JsonArray) jsonNode.getValue()).get(0));
-			Assert.assertEquals(2, ((JsonArray) jsonNode.getValue()).get(1));
+			Assert.assertEquals(1, ((JsonArray) jsonNode).getSimpleValue(0));
+			Assert.assertEquals(2, ((JsonArray) jsonNode).getSimpleValue(1));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -180,7 +180,7 @@ public class Json5Test {
 			output = new ByteArrayOutputStream();
 
 			final JsonArray jsonArray = new JsonArray();
-			jsonArray.add(null);
+			jsonArray.addNull();
 			jsonArray.add(true);
 			jsonArray.add(1);
 			jsonArray.add(2);
@@ -285,7 +285,7 @@ public class Json5Test {
 			writer = new JsonWriter(output, StandardCharsets.UTF_8);
 			writer.openJsonObject();
 			writer.openJsonObjectProperty("test_null");
-			writer.addSimpleJsonObjectPropertyValue(null);
+			writer.addSimpleJsonObjectPropertyValueNull();
 			writer.openJsonObjectProperty("test_true");
 			writer.addSimpleJsonObjectPropertyValue(true);
 			writer.openJsonObjectProperty("1");
@@ -349,7 +349,7 @@ public class Json5Test {
 			output = new ByteArrayOutputStream();
 
 			final JsonObject jsonObject = new JsonObject();
-			jsonObject.add("test_null", null);
+			jsonObject.addNull("test_null");
 			jsonObject.add("test_true", true);
 			jsonObject.add("1", 1);
 			jsonObject.add("2", 2);
@@ -416,7 +416,7 @@ public class Json5Test {
 				jsonObject.add("text", TextUtilities.GERMAN_TEST_STRING);
 				writer.add(jsonObject);
 			}
-			writer.addSimpleJsonArrayValue(null);
+			writer.addSimpleJsonArrayValueNull();
 			writer.addSimpleJsonArrayValue(true);
 			writer.addSimpleJsonArrayValue(false);
 			writer.closeJsonArray();
@@ -432,23 +432,21 @@ public class Json5Test {
 				final JsonNode nextJsonNode = jsonReader.readNextJsonNode();
 				Assert.assertNotNull(nextJsonNode);
 				if (nextJsonNode.isJsonObject()) {
-					Assert.assertEquals(Integer.valueOf(i), ((JsonObject) nextJsonNode.getValue()).get("number"));
+					Assert.assertEquals(Integer.valueOf(i), ((JsonObject) nextJsonNode).getSimpleValue("number"));
 				} else {
 					Assert.fail();
 				}
 			}
-			Object nextJsonNode;
-			nextJsonNode = jsonReader.readNextJsonNode();
-			Assert.assertNotNull(nextJsonNode);
-			Assert.assertEquals(null, jsonReader.getCurrentObject());
-			nextJsonNode = jsonReader.readNextJsonNode();
-			Assert.assertNotNull(nextJsonNode);
-			Assert.assertEquals(true, jsonReader.getCurrentObject());
-			nextJsonNode = jsonReader.readNextJsonNode();
-			Assert.assertNotNull(nextJsonNode);
-			Assert.assertEquals(false, jsonReader.getCurrentObject());
-			nextJsonNode = jsonReader.readNextJsonNode();
-			Assert.assertNull(nextJsonNode);
+			Assert.assertTrue(jsonReader.readNextJsonNode().isNull());
+			Assert.assertTrue(jsonReader.getCurrentObject().isNull());
+
+			Assert.assertNotNull(jsonReader.readNextJsonNode());
+			Assert.assertEquals(true, ((JsonValueBoolean) jsonReader.getCurrentObject()).getValue());
+
+			Assert.assertNotNull(jsonReader.readNextJsonNode());
+			Assert.assertEquals(false, ((JsonValueBoolean) jsonReader.getCurrentObject()).getValue());
+
+			Assert.assertNull(jsonReader.readNextJsonNode());
 
 			Assert.assertEquals(Json5Reader.JsonToken.JsonArray_Close, jsonReader.readNextToken());
 		} catch (final Exception e) {
@@ -492,8 +490,8 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonObject());
-			Assert.assertEquals(3, ((JsonObject) jsonNode.getValue()).size());
-			Assert.assertEquals("Abc", ((JsonArray) ((JsonObject) jsonNode.getValue()).get("Array")).get(1));
+			Assert.assertEquals(3, ((JsonObject) jsonNode).size());
+			Assert.assertEquals("Abc", ((JsonArray) ((JsonObject) jsonNode).get("Array")).getSimpleValue(1));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -535,8 +533,8 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
-			Assert.assertEquals(3, ((JsonArray) jsonNode.getValue()).size());
-			Assert.assertEquals("Abc2", ((JsonObject) ((JsonArray) jsonNode.getValue()).get(1)).get("Text"));
+			Assert.assertEquals(3, ((JsonArray) jsonNode).size());
+			Assert.assertEquals("Abc2", ((JsonObject) ((JsonArray) jsonNode).get(1)).getSimpleValue("Text"));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -553,23 +551,41 @@ public class Json5Test {
 		try {
 			jsonReader = new Json5Reader(new ByteArrayInputStream("{\"Number\":1,\"Text\":\"Abc2\",\"Array\":[1,\"Abc\"],\"Number2\":2}".getBytes(StandardCharsets.UTF_8)));
 
-			final String[] tokenValues = new String[]{
-					"JsonObject_Open: null",
-					"JsonObject_PropertyKey: Number", "JsonSimpleValue: 1",
-					"JsonObject_PropertyKey: Text", "JsonSimpleValue: Abc2",
-					"JsonObject_PropertyKey: Array",
-					"JsonArray_Open: null",
-					"JsonSimpleValue: 1",
-					"JsonSimpleValue: Abc",
-					"JsonArray_Close: null",
-					"JsonObject_PropertyKey: Number2", "JsonSimpleValue: 2",
-					"JsonObject_Close: null"
-			};
+			Assert.assertEquals(JsonToken.JsonObject_Open, jsonReader.readNextToken());
+			Assert.assertNull(jsonReader.getCurrentObject());
 
-			for (final String tokenValue : tokenValues) {
-				final String nextToken = jsonReader.readNextToken() + ": " + jsonReader.getCurrentObject();
-				Assert.assertEquals(tokenValue, nextToken);
-			}
+			Assert.assertEquals(JsonToken.JsonObject_PropertyKey, jsonReader.readNextToken());
+			Assert.assertEquals("Number", ((JsonValueString) jsonReader.getCurrentObject()).getValue());
+			Assert.assertEquals(JsonToken.JsonSimpleValue, jsonReader.readNextToken());
+			Assert.assertEquals(1, ((JsonValueInteger) jsonReader.getCurrentObject()).getValue().intValue());
+
+			Assert.assertEquals(JsonToken.JsonObject_PropertyKey, jsonReader.readNextToken());
+			Assert.assertEquals("Text", ((JsonValueString) jsonReader.getCurrentObject()).getValue());
+			Assert.assertEquals(JsonToken.JsonSimpleValue, jsonReader.readNextToken());
+			Assert.assertEquals("Abc2", ((JsonValueString) jsonReader.getCurrentObject()).getValue());
+
+			Assert.assertEquals(JsonToken.JsonObject_PropertyKey, jsonReader.readNextToken());
+			Assert.assertEquals("Array", ((JsonValueString) jsonReader.getCurrentObject()).getValue());
+			Assert.assertEquals(JsonToken.JsonArray_Open, jsonReader.readNextToken());
+			Assert.assertNull(jsonReader.getCurrentObject());
+
+			Assert.assertEquals(JsonToken.JsonSimpleValue, jsonReader.readNextToken());
+			Assert.assertEquals(1, ((JsonValueInteger) jsonReader.getCurrentObject()).getValue().intValue());
+			Assert.assertEquals(JsonToken.JsonSimpleValue, jsonReader.readNextToken());
+			Assert.assertEquals("Abc", ((JsonValueString) jsonReader.getCurrentObject()).getValue());
+
+			Assert.assertEquals(JsonToken.JsonArray_Close, jsonReader.readNextToken());
+			Assert.assertNull(jsonReader.getCurrentObject());
+
+			Assert.assertEquals(JsonToken.JsonObject_PropertyKey, jsonReader.readNextToken());
+			Assert.assertEquals("Number2", ((JsonValueString) jsonReader.getCurrentObject()).getValue());
+			Assert.assertEquals(JsonToken.JsonSimpleValue, jsonReader.readNextToken());
+			Assert.assertEquals(2, ((JsonValueInteger) jsonReader.getCurrentObject()).getValue().intValue());
+
+			Assert.assertEquals(JsonToken.JsonObject_Close, jsonReader.readNextToken());
+			Assert.assertNull(jsonReader.getCurrentObject());
+
+			Assert.assertNull(jsonReader.readNextToken());
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -628,8 +644,8 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonObject());
-			Assert.assertEquals(3, ((JsonObject) jsonNode.getValue()).size());
-			Assert.assertEquals("Abc1", ((JsonObject) ((JsonObject) jsonNode.getValue()).get("Object1")).get("Text"));
+			Assert.assertEquals(3, ((JsonObject) jsonNode).size());
+			Assert.assertEquals("Abc1", ((JsonObject) ((JsonObject) jsonNode).get("Object1")).getSimpleValue("Text"));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -675,8 +691,8 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
-			Assert.assertEquals(3, ((JsonArray) jsonNode.getValue()).size());
-			Assert.assertEquals("Abc1", ((JsonArray) ((JsonArray) jsonNode.getValue()).get(1)).get(1));
+			Assert.assertEquals(3, ((JsonArray) jsonNode).size());
+			Assert.assertEquals("Abc1", ((JsonArray) ((JsonArray) jsonNode).get(1)).getSimpleValue(1));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -701,10 +717,10 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonObject());
-			Assert.assertEquals(3, ((JsonObject) jsonNode.getValue()).size());
-			Assert.assertEquals(1, ((JsonObject) jsonNode.getValue()).get("test1"));
-			Assert.assertEquals(2, ((JsonObject) jsonNode.getValue()).get("$test2"));
-			Assert.assertEquals(3, ((JsonObject) jsonNode.getValue()).get("_test3"));
+			Assert.assertEquals(3, ((JsonObject) jsonNode).size());
+			Assert.assertEquals(1, ((JsonObject) jsonNode).getSimpleValue("test1"));
+			Assert.assertEquals(2, ((JsonObject) jsonNode).getSimpleValue("$test2"));
+			Assert.assertEquals(3, ((JsonObject) jsonNode).getSimpleValue("_test3"));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -761,8 +777,8 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonObject());
-			Assert.assertEquals(1, ((JsonObject) jsonNode.getValue()).size());
-			Assert.assertEquals(1, ((JsonObject) jsonNode.getValue()).get("test"));
+			Assert.assertEquals(1, ((JsonObject) jsonNode).size());
+			Assert.assertEquals(1, ((JsonObject) jsonNode).getSimpleValue("test"));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -783,8 +799,8 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonObject());
-			Assert.assertEquals(1, ((JsonObject) jsonNode.getValue()).size());
-			Assert.assertEquals(1, ((JsonObject) jsonNode.getValue()).get("test"));
+			Assert.assertEquals(1, ((JsonObject) jsonNode).size());
+			Assert.assertEquals(1, ((JsonObject) jsonNode).getSimpleValue("test"));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -805,8 +821,8 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
-			Assert.assertEquals(1, ((JsonArray) jsonNode.getValue()).size());
-			Assert.assertEquals("Abc", ((JsonArray) jsonNode.getValue()).get(0));
+			Assert.assertEquals(1, ((JsonArray) jsonNode).size());
+			Assert.assertEquals("Abc", ((JsonArray) jsonNode).getSimpleValue(0));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -827,8 +843,8 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
-			Assert.assertEquals(1, ((JsonArray) jsonNode.getValue()).size());
-			Assert.assertEquals("Abc", ((JsonArray) jsonNode.getValue()).get(0));
+			Assert.assertEquals(1, ((JsonArray) jsonNode).size());
+			Assert.assertEquals("Abc", ((JsonArray) jsonNode).getSimpleValue(0));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -849,8 +865,8 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
-			Assert.assertEquals(1, ((JsonArray) jsonNode.getValue()).size());
-			Assert.assertEquals("Abc \n Abc", ((JsonArray) jsonNode.getValue()).get(0));
+			Assert.assertEquals(1, ((JsonArray) jsonNode).size());
+			Assert.assertEquals("Abc \n Abc", ((JsonArray) jsonNode).getSimpleValue(0));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -871,8 +887,8 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
-			Assert.assertEquals(1, ((JsonArray) jsonNode.getValue()).size());
-			Assert.assertEquals("Abc \n Abc", ((JsonArray) jsonNode.getValue()).get(0));
+			Assert.assertEquals(1, ((JsonArray) jsonNode).size());
+			Assert.assertEquals("Abc \n Abc", ((JsonArray) jsonNode).getSimpleValue(0));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -893,8 +909,8 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
-			Assert.assertEquals(1, ((JsonArray) jsonNode.getValue()).size());
-			Assert.assertEquals(28772997619311l, ((JsonArray) jsonNode.getValue()).get(0));
+			Assert.assertEquals(1, ((JsonArray) jsonNode).size());
+			Assert.assertEquals(28772997619311l, ((JsonArray) jsonNode).getSimpleValue(0));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -916,9 +932,9 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
-			Assert.assertEquals(2, ((JsonArray) jsonNode.getValue()).size());
-			Assert.assertEquals(123.0f, ((JsonArray) jsonNode.getValue()).get(0));
-			Assert.assertEquals(0.123f, ((JsonArray) jsonNode.getValue()).get(1));
+			Assert.assertEquals(2, ((JsonArray) jsonNode).size());
+			Assert.assertEquals(123.0f, ((JsonArray) jsonNode).getSimpleValue(0));
+			Assert.assertEquals(0.123f, ((JsonArray) jsonNode).getSimpleValue(1));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -942,11 +958,11 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
-			Assert.assertEquals(4, ((JsonArray) jsonNode.getValue()).size());
-			Assert.assertEquals(Double.POSITIVE_INFINITY, ((JsonArray) jsonNode.getValue()).get(0));
-			Assert.assertEquals(Double.NEGATIVE_INFINITY, ((JsonArray) jsonNode.getValue()).get(1));
-			Assert.assertEquals(Double.NaN, ((JsonArray) jsonNode.getValue()).get(2));
-			Assert.assertEquals(Double.NaN, ((JsonArray) jsonNode.getValue()).get(3));
+			Assert.assertEquals(4, ((JsonArray) jsonNode).size());
+			Assert.assertEquals(Double.POSITIVE_INFINITY, ((JsonArray) jsonNode).getSimpleValue(0));
+			Assert.assertEquals(Double.NEGATIVE_INFINITY, ((JsonArray) jsonNode).getSimpleValue(1));
+			Assert.assertEquals(Double.NaN, ((JsonArray) jsonNode).getSimpleValue(2));
+			Assert.assertEquals(Double.NaN, ((JsonArray) jsonNode).getSimpleValue(3));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -967,8 +983,8 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
-			Assert.assertEquals(1, ((JsonArray) jsonNode.getValue()).size());
-			Assert.assertEquals(123, ((JsonArray) jsonNode.getValue()).get(0));
+			Assert.assertEquals(1, ((JsonArray) jsonNode).size());
+			Assert.assertEquals(123, ((JsonArray) jsonNode).getSimpleValue(0));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -990,8 +1006,8 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
-			Assert.assertEquals(1, ((JsonArray) jsonNode.getValue()).size());
-			Assert.assertEquals(123, ((JsonArray) jsonNode.getValue()).get(0));
+			Assert.assertEquals(1, ((JsonArray) jsonNode).size());
+			Assert.assertEquals(123, ((JsonArray) jsonNode).getSimpleValue(0));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -1014,8 +1030,8 @@ public class Json5Test {
 			final JsonNode jsonNode = jsonReader.read();
 			Assert.assertNotNull(jsonNode);
 			Assert.assertTrue(jsonNode.isJsonArray());
-			Assert.assertEquals(1, ((JsonArray) jsonNode.getValue()).size());
-			Assert.assertEquals(123, ((JsonArray) jsonNode.getValue()).get(0));
+			Assert.assertEquals(1, ((JsonArray) jsonNode).size());
+			Assert.assertEquals(123, ((JsonArray) jsonNode).getSimpleValue(0));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
@@ -1108,7 +1124,7 @@ public class Json5Test {
 			jsonNode = jsonReader.read();
 		}
 
-		Assert.assertEquals(TextUtilities.SPECIAL_TEST_STRING, jsonNode.getValue());
+		Assert.assertEquals(TextUtilities.SPECIAL_TEST_STRING, ((JsonValueString) jsonNode).getValue());
 	}
 
 	@Test
@@ -1121,7 +1137,7 @@ public class Json5Test {
 				jsonNode = jsonReader.read();
 			}
 
-			Assert.assertEquals(TextUtilities.SPECIAL_TEST_STRING, jsonNode.getValue());
+			Assert.assertEquals(TextUtilities.SPECIAL_TEST_STRING, ((JsonValueString) jsonNode).getValue());
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());

@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 import de.soderer.json.JsonArray;
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
+import de.soderer.json.JsonValueString;
 import de.soderer.json.exception.JsonDuplicateKeyException;
 import de.soderer.json.path.JsonPath;
 import de.soderer.json.schema.JsonSchema;
@@ -24,36 +25,36 @@ public class DependenciesValidator extends BaseJsonSchemaValidator {
 	private final Map<String, List<BaseJsonSchemaValidator>> validators = new HashMap<>();
 	private final Map<String, List<String>> mandatoryProperties = new HashMap<>();
 
-	public DependenciesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final Object validatorData) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
+	public DependenciesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
-		if (validatorData == null) {
+		if (validatorData == null || validatorData.isNull()) {
 			throw new JsonSchemaDefinitionError("Dependencies value is 'null'", jsonSchemaPath);
-		} else if (!(validatorData instanceof JsonObject)) {
+		} else if (!(validatorData.isJsonObject())) {
 			throw new JsonSchemaDefinitionError("Dependencies value is not an 'object'", jsonSchemaPath);
 		}
 
-		for (final Entry<String, Object> entry : ((JsonObject) validatorData).entrySet()) {
+		for (final Entry<String, JsonNode> entry : ((JsonObject) validatorData).entrySet()) {
 			if (entry.getValue() == null) {
 				throw new JsonSchemaDefinitionError("Dependencies value is 'null'", jsonSchemaPath);
-			} else if (entry.getValue() instanceof JsonObject) {
+			} else if (entry.getValue().isJsonObject()) {
 				final List<BaseJsonSchemaValidator> subValidators = JsonSchema.createValidators((JsonObject) entry.getValue(), jsonSchemaDependencyResolver, jsonSchemaPath);
 				validators.put(entry.getKey(), subValidators);
-			} else if (entry.getValue() instanceof JsonArray) {
+			} else if (entry.getValue().isJsonArray()) {
 				final List<String> propertiesList = new ArrayList<>();
-				for (final Object item : ((JsonArray) entry.getValue())) {
-					if (item == null || !(item instanceof String)) {
+				for (final JsonNode item : ((JsonArray) entry.getValue())) {
+					if (item == null || !(item.isString())) {
 						throw new JsonSchemaDefinitionError("Dependencies value for key '" + entry.getKey() + "' contains invalid data that is not 'string'", jsonSchemaPath);
 					} else {
-						propertiesList.add((String) item);
+						propertiesList.add(((JsonValueString) item).getValue());
 					}
 				}
 				mandatoryProperties.put(entry.getKey(), propertiesList);
-			} else if (entry.getValue() instanceof String) {
+			} else if (entry.getValue() instanceof JsonValueString) {
 				final List<String> propertiesList = new ArrayList<>();
-				propertiesList.add((String) entry.getValue());
+				propertiesList.add(((JsonValueString) entry.getValue()).getValue());
 				mandatoryProperties.put(entry.getKey(), propertiesList);
-			} else if (entry.getValue() instanceof Boolean) {
+			} else if (entry.getValue().isBoolean()) {
 				final List<BaseJsonSchemaValidator> subValidators = new ArrayList<>();
 				subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, entry.getValue()));
 				validators.put(entry.getKey(), subValidators);
@@ -71,7 +72,7 @@ public class DependenciesValidator extends BaseJsonSchemaValidator {
 			}
 		} else {
 			for (final Entry<String, List<BaseJsonSchemaValidator>> validatorEntry : validators.entrySet()) {
-				if (((JsonObject) jsonNode.getValue()).containsKey(validatorEntry.getKey())) {
+				if (((JsonObject) jsonNode).containsKey(validatorEntry.getKey())) {
 					final List<BaseJsonSchemaValidator> subValidators = validatorEntry.getValue();
 					for (final BaseJsonSchemaValidator validator : subValidators) {
 						validator.validate(jsonNode, jsonPath);
@@ -80,9 +81,9 @@ public class DependenciesValidator extends BaseJsonSchemaValidator {
 			}
 
 			for (final Entry<String, List<String>> mandatoryPropertyEntry : mandatoryProperties.entrySet()) {
-				if (((JsonObject) jsonNode.getValue()).containsKey(mandatoryPropertyEntry.getKey())) {
+				if (((JsonObject) jsonNode).containsKey(mandatoryPropertyEntry.getKey())) {
 					for (final String item : mandatoryPropertyEntry.getValue()) {
-						if (!((JsonObject) jsonNode.getValue()).containsKey(item)) {
+						if (!((JsonObject) jsonNode).containsKey(item)) {
 							throw new JsonSchemaDataValidationError("Dependent property key '" + item + "' for existing parent key '" + mandatoryPropertyEntry.getKey() + "' is missing", jsonPath);
 						}
 					}

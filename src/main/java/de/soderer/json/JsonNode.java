@@ -1,7 +1,5 @@
 package de.soderer.json;
 
-import java.math.BigDecimal;
-
 import de.soderer.json.path.JsonPath;
 import de.soderer.json.path.JsonPathArrayElement;
 import de.soderer.json.path.JsonPathElement;
@@ -10,52 +8,25 @@ import de.soderer.json.path.JsonPathPropertyElement;
 import de.soderer.json.path.JsonPathRoot;
 
 public class JsonNode {
-	private final String propertyName;
-	private final Object value;
-	private JsonDataType jsonDataType;
-	private final boolean rootNode;
+	protected final JsonDataType jsonDataType;
 
-	public JsonNode(final boolean rootNode, final Object value) throws Exception {
-		this(rootNode, null, value);
+	private boolean rootNode;
+
+	protected JsonNode(final JsonDataType jsonDataType) {
+		this.jsonDataType = jsonDataType;
 	}
 
-	public JsonNode(final boolean rootNode, final String propertyName, final Object value) throws Exception {
-		this.propertyName = propertyName;
-		this.rootNode = rootNode;
-		this.value = value;
-		if (value == null) {
-			jsonDataType = JsonDataType.NULL;
-		} else if (value instanceof Boolean) {
-			jsonDataType = JsonDataType.BOOLEAN;
-		} else if (value instanceof Integer || value instanceof Long || (value instanceof BigDecimal && ((BigDecimal) value).scale() == 0)) {
-			jsonDataType = JsonDataType.INTEGER;
-		} else if (value instanceof Number) {
-			jsonDataType = JsonDataType.NUMBER;
-		} else if (value instanceof String || value instanceof Character) {
-			jsonDataType = JsonDataType.STRING;
-		} else if (value instanceof JsonObject) {
-			jsonDataType = JsonDataType.OBJECT;
-		} else if (value instanceof JsonArray) {
-			jsonDataType = JsonDataType.ARRAY;
-		} else {
-			throw new Exception("Unknown JSON data type: " + value.getClass().getSimpleName());
-		}
+	public JsonDataType getJsonDataType() {
+		return jsonDataType;
 	}
 
 	public boolean isRootNode() {
 		return rootNode;
 	}
 
-	public String getPropertyName() {
-		return propertyName;
-	}
-
-	public Object getValue() {
-		return value;
-	}
-
-	public JsonDataType getJsonDataType() {
-		return jsonDataType;
+	public JsonNode setRootNode(final boolean rootNode) {
+		this.rootNode = rootNode;
+		return this;
 	}
 
 	public boolean isNull() {
@@ -70,8 +41,8 @@ public class JsonNode {
 		return jsonDataType == JsonDataType.INTEGER;
 	}
 
-	public boolean isNumber() {
-		return jsonDataType == JsonDataType.NUMBER || jsonDataType == JsonDataType.INTEGER;
+	public boolean isFloat() {
+		return jsonDataType == JsonDataType.FLOAT;
 	}
 
 	public boolean isString() {
@@ -88,19 +59,14 @@ public class JsonNode {
 
 	public boolean isSimpleValue() {
 		return jsonDataType == JsonDataType.NULL
-				|| jsonDataType == JsonDataType.STRING
 				|| jsonDataType == JsonDataType.BOOLEAN
 				|| jsonDataType == JsonDataType.INTEGER
-				|| jsonDataType == JsonDataType.NUMBER;
+				|| jsonDataType == JsonDataType.FLOAT
+				|| jsonDataType == JsonDataType.STRING;
 	}
 
-	public boolean isKomplexValue() {
-		return jsonDataType == JsonDataType.OBJECT
-				|| jsonDataType == JsonDataType.ARRAY;
-	}
-
-	public Object getDatabyJsonPath(final JsonPath jsonPath) throws JsonPathException {
-		Object nextDataObject = value;
+	public JsonNode getDataByJsonPath(final JsonPath jsonPath) throws JsonPathException {
+		JsonNode nextDataObject = this;
 		for (final JsonPathElement pathPart : jsonPath.getPathParts()) {
 			if (pathPart instanceof JsonPathArrayElement) {
 				if (nextDataObject != null && nextDataObject instanceof JsonArray) {
@@ -135,22 +101,5 @@ public class JsonNode {
 			}
 		}
 		return nextDataObject;
-	}
-
-	@Override
-	public String toString() {
-		if (propertyName != null) {
-			if (isNull()) {
-				return propertyName + ": " + "null";
-			} else {
-				return propertyName + ": " + getValue().toString();
-			}
-		} else {
-			if (isNull()) {
-				return "null";
-			} else {
-				return getValue().toString();
-			}
-		}
 	}
 }
