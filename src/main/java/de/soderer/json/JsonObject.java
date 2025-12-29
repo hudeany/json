@@ -193,6 +193,153 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, J
 		}
 	}
 
+	public JsonObject putNull(final String key) {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else {
+			properties.put(key, new JsonValueNull());
+			return this;
+		}
+	}
+
+	public JsonObject put(final String key, final String value) {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else {
+			if (value == null) {
+				putNull(key);
+			} else {
+				properties.put(key, new JsonValueString(value));
+			}
+			return this;
+		}
+	}
+
+	public JsonObject put(final String key, final Integer value) {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else {
+			if (value == null) {
+				putNull(key);
+			} else {
+				properties.put(key, new JsonValueInteger(value));
+			}
+			return this;
+		}
+	}
+
+	public JsonObject put(final String key, final Long value) {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else {
+			if (value == null) {
+				putNull(key);
+			} else {
+				properties.put(key, new JsonValueInteger(value));
+			}
+			return this;
+		}
+	}
+
+	public JsonObject put(final String key, final Number value) {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else {
+			if (value == null) {
+				putNull(key);
+			} else if (value instanceof Integer) {
+				properties.put(key, new JsonValueInteger((Integer) value));
+			} else if (value instanceof Long) {
+				properties.put(key, new JsonValueInteger((Long) value));
+			} else {
+				properties.put(key, new JsonValueNumber(value));
+			}
+			return this;
+		}
+	}
+
+	public JsonObject put(final String key, final Boolean value) {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else {
+			if (value == null) {
+				putNull(key);
+			} else {
+				properties.put(key, new JsonValueBoolean(value));
+			}
+			return this;
+		}
+	}
+
+	public JsonObject put(final String key, final Date value) throws JsonDuplicateKeyException {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else {
+			if (value == null) {
+				addNull(key);
+			} else {
+				properties.put(key, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, value)));
+			}
+			return this;
+		}
+	}
+
+	public JsonObject put(final String key, final LocalDate value) throws JsonDuplicateKeyException {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else {
+			if (value == null) {
+				addNull(key);
+			} else {
+				properties.put(key, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE, value)));
+			}
+			return this;
+		}
+	}
+
+	public JsonObject put(final String key, final LocalDateTime value) throws JsonDuplicateKeyException {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else {
+			if (value == null) {
+				addNull(key);
+			} else {
+				if (value.getNano() > 0) {
+					properties.put(key, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT_NO_TIMEZONE, value)));
+				} else {
+					properties.put(key, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT_NO_TIMEZONE, value)));
+				}
+			}
+			return this;
+		}
+	}
+
+	public JsonObject put(final String key, final ZonedDateTime value) {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else {
+			if (value == null) {
+				putNull(key);
+			} else {
+				if (value.getNano() > 0) {
+					properties.put(key, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT, value)));
+				} else {
+					properties.put(key, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, value)));
+				}
+			}
+			return this;
+		}
+	}
+
+	public JsonObject put(final String key, final JsonNode value) {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else {
+			properties.put(key, value);
+			return this;
+		}
+	}
+
 	public JsonNode remove(final String key) {
 		return properties.remove(key);
 	}
