@@ -180,13 +180,13 @@ public class Json5Reader extends JsonReader {
 		} else if ("false".equalsIgnoreCase(valueString)) {
 			return new JsonValueBoolean(false);
 		} else if ("Infinity".equalsIgnoreCase(valueString)) {
-			return new JsonValueFloat(Double.POSITIVE_INFINITY);
+			return new JsonValueNumber(Double.POSITIVE_INFINITY);
 		} else if ("-Infinity".equalsIgnoreCase(valueString)) {
-			return new JsonValueFloat(Double.NEGATIVE_INFINITY);
+			return new JsonValueNumber(Double.NEGATIVE_INFINITY);
 		} else if ("NaN".equalsIgnoreCase(valueString)) {
-			return new JsonValueFloat(Double.NaN);
+			return new JsonValueNumber(Double.NaN);
 		} else if ("-NaN".equalsIgnoreCase(valueString)) {
-			return new JsonValueFloat(Double.NaN);
+			return new JsonValueNumber(Double.NaN);
 		} else if (NumberUtilities.isHexNumber(valueString)) {
 			final Number value = NumberUtilities.parseHexNumber(valueString);
 			if (value instanceof Integer) {
@@ -196,7 +196,7 @@ public class Json5Reader extends JsonReader {
 			} else if (value instanceof BigDecimal && NumberUtilities.isInteger((BigDecimal) value)) {
 				return new JsonValueInteger((BigDecimal) value);
 			} else {
-				return new JsonValueFloat(value);
+				return new JsonValueNumber(value);
 			}
 		} else if (NumberUtilities.isNumber(valueString)) {
 			final Number value = NumberUtilities.parseNumber(valueString);
@@ -207,7 +207,7 @@ public class Json5Reader extends JsonReader {
 			} else if (value instanceof BigDecimal && NumberUtilities.isInteger((BigDecimal) value)) {
 				return new JsonValueInteger((BigDecimal) value);
 			} else {
-				return new JsonValueFloat(value);
+				return new JsonValueNumber(value);
 			}
 		} else {
 			throw new Exception("Invalid json data '" + Utilities.shortenStringToMaxLengthCutLeft(valueString, 20) + "' in line " + (getReadLines() + 1) +" at overall index " + getReadCharacters());

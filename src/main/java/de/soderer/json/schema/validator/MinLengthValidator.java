@@ -1,7 +1,7 @@
 package de.soderer.json.schema.validator;
 
 import de.soderer.json.JsonNode;
-import de.soderer.json.JsonValueFloat;
+import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueInteger;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.path.JsonPath;
@@ -31,8 +31,8 @@ public class MinLengthValidator extends BaseJsonSchemaValidator {
 			if (minimumLengthValue < 0) {
 				throw new JsonSchemaDefinitionError("Data for minLength is negative", jsonSchemaPath);
 			}
-		} else if (validatorData.isFloat()) {
-			final int minimumLengthValue = ((JsonValueFloat) validatorData).getValue().intValue();
+		} else if (validatorData.isNumber()) {
+			final int minimumLengthValue = ((JsonValueNumber) validatorData).getValue().intValue();
 			if (minimumLengthValue < 0) {
 				throw new JsonSchemaDefinitionError("Data for minLength is negative", jsonSchemaPath);
 			}
@@ -49,7 +49,7 @@ public class MinLengthValidator extends BaseJsonSchemaValidator {
 		} else if (validatorData.isInteger()) {
 			minimumLengthValue = ((JsonValueInteger) validatorData).getValue().intValue();
 		} else {
-			minimumLengthValue = ((JsonValueFloat) validatorData).getValue().intValue();
+			minimumLengthValue = ((JsonValueNumber) validatorData).getValue().intValue();
 		}
 
 		if (!(jsonNode.isString())) {

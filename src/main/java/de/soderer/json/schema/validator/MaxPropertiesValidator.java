@@ -2,7 +2,7 @@ package de.soderer.json.schema.validator;
 
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
-import de.soderer.json.JsonValueFloat;
+import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueInteger;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.path.JsonPath;
@@ -31,8 +31,8 @@ public class MaxPropertiesValidator extends BaseJsonSchemaValidator {
 			if (maximumPropertiesValue < 0) {
 				throw new JsonSchemaDefinitionError("Data for maximum property keys is negative", jsonSchemaPath);
 			}
-		} else if (validatorData.isFloat()) {
-			final int maximumPropertiesValue = ((JsonValueFloat) validatorData).getValue().intValue();
+		} else if (validatorData.isNumber()) {
+			final int maximumPropertiesValue = ((JsonValueNumber) validatorData).getValue().intValue();
 			if (maximumPropertiesValue < 0) {
 				throw new JsonSchemaDefinitionError("Data for maximum property keys is negative", jsonSchemaPath);
 			}
@@ -49,7 +49,7 @@ public class MaxPropertiesValidator extends BaseJsonSchemaValidator {
 		} else if (validatorData.isInteger()) {
 			maximumPropertiesValue = ((JsonValueInteger) validatorData).getValue().intValue();
 		} else {
-			maximumPropertiesValue = ((JsonValueFloat) validatorData).getValue().intValue();
+			maximumPropertiesValue = ((JsonValueNumber) validatorData).getValue().intValue();
 		}
 
 		if (!(jsonNode.isJsonObject())) {

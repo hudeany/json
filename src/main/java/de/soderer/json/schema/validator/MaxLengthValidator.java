@@ -1,7 +1,7 @@
 package de.soderer.json.schema.validator;
 
 import de.soderer.json.JsonNode;
-import de.soderer.json.JsonValueFloat;
+import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueInteger;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.path.JsonPath;
@@ -31,8 +31,8 @@ public class MaxLengthValidator extends BaseJsonSchemaValidator {
 			if (maximumLengthValue < 0) {
 				throw new JsonSchemaDefinitionError("Data for maxLength is negative", jsonSchemaPath);
 			}
-		} else if (validatorData.isFloat()) {
-			final int maximumLengthValue = ((JsonValueFloat) validatorData).getValue().intValue();
+		} else if (validatorData.isNumber()) {
+			final int maximumLengthValue = ((JsonValueNumber) validatorData).getValue().intValue();
 			if (maximumLengthValue < 0) {
 				throw new JsonSchemaDefinitionError("Data for maxLength is negative", jsonSchemaPath);
 			}
@@ -49,7 +49,7 @@ public class MaxLengthValidator extends BaseJsonSchemaValidator {
 		} else if (validatorData.isInteger()) {
 			maximumLengthValue = ((JsonValueInteger) validatorData).getValue().intValue();
 		} else {
-			maximumLengthValue = ((JsonValueFloat) validatorData).getValue().intValue();
+			maximumLengthValue = ((JsonValueNumber) validatorData).getValue().intValue();
 		}
 
 		if (!(jsonNode.isString())) {

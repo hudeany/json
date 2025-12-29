@@ -4,7 +4,7 @@ import java.util.regex.Pattern;
 
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonValueBoolean;
-import de.soderer.json.JsonValueFloat;
+import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueInteger;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.path.JsonPath;
@@ -34,10 +34,10 @@ public class PatternValidator extends BaseJsonSchemaValidator {
 					throw new JsonSchemaDataValidationError("RegEx pattern '" + ((JsonValueString) validatorData).getValue() + "' is not matched by data number '" + ((JsonValueInteger) jsonNode).getValue().toString() + "'", jsonPath);
 				}
 			}
-		} else if (jsonNode.isFloat()) {
+		} else if (jsonNode.isNumber()) {
 			if (jsonSchemaDependencyResolver.isSimpleMode()) {
-				if (!pattern.matcher(((JsonValueFloat) jsonNode).getValue().toString()).find()) {
-					throw new JsonSchemaDataValidationError("RegEx pattern '" + ((JsonValueString) validatorData).getValue() + "' is not matched by data number '" + ((JsonValueFloat) jsonNode).getValue().toString() + "'", jsonPath);
+				if (!pattern.matcher(((JsonValueNumber) jsonNode).getValue().toString()).find()) {
+					throw new JsonSchemaDataValidationError("RegEx pattern '" + ((JsonValueString) validatorData).getValue() + "' is not matched by data number '" + ((JsonValueNumber) jsonNode).getValue().toString() + "'", jsonPath);
 				}
 			}
 		} else if (jsonNode.isBoolean()) {

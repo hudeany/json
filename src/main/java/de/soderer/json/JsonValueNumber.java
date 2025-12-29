@@ -2,11 +2,11 @@ package de.soderer.json;
 
 import java.util.Objects;
 
-public class JsonValueFloat extends JsonNode {
+public class JsonValueNumber extends JsonNode {
 	private final Number value;
 
-	public JsonValueFloat(final Number value) {
-		super(JsonDataType.FLOAT);
+	public JsonValueNumber(final Number value) {
+		super(JsonDataType.NUMBER);
 		this.value = value;
 
 		if (value == null) {
@@ -31,7 +31,7 @@ public class JsonValueFloat extends JsonNode {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		final JsonValueFloat other = (JsonValueFloat) obj;
+		final JsonValueNumber other = (JsonValueNumber) obj;
 		return Objects.equals(value, other.value);
 	}
 

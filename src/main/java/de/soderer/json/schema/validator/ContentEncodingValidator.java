@@ -33,7 +33,7 @@ public class ContentEncodingValidator extends BaseJsonSchemaValidator {
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		if (jsonNode.isNull()) {
 			// ContentEncoding ignore null values
-		} else if (jsonNode.isInteger() || jsonNode.isFloat()) {
+		} else if (jsonNode.isInteger() || jsonNode.isNumber()) {
 			// ContentEncoding ignore numeric values
 		} else if (jsonNode.isJsonObject()) {
 			// ContentEncoding ignore JsonObject values

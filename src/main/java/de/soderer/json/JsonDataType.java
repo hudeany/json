@@ -3,7 +3,7 @@ package de.soderer.json;
 public enum JsonDataType {
 	STRING,
 	INTEGER,
-	FLOAT,
+	NUMBER,
 	OBJECT,
 	ARRAY,
 	BOOLEAN,
@@ -19,10 +19,7 @@ public enum JsonDataType {
 				return jsonDataType;
 			}
 		}
-		if ("number".equalsIgnoreCase(value)) {
-			return FLOAT;
-		} else {
-			throw new Exception("Invalid JSON data type: " + value);
-		}
+
+		throw new Exception("Invalid JSON data type: " + value);
 	}
 }

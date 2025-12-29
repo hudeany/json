@@ -60,7 +60,7 @@ public class JsonArray extends JsonNode implements Iterable<JsonNode> {
 		} else if (value instanceof Long) {
 			add(new JsonValueInteger((Long) value));
 		} else {
-			add(new JsonValueFloat(value));
+			add(new JsonValueNumber(value));
 		}
 		return this;
 	}
@@ -163,7 +163,7 @@ public class JsonArray extends JsonNode implements Iterable<JsonNode> {
 		} else if (value instanceof Long) {
 			return items.remove(new JsonValueInteger((Long) value));
 		} else {
-			return items.remove(new JsonValueFloat(value));
+			return items.remove(new JsonValueNumber(value));
 		}
 	}
 
@@ -219,7 +219,7 @@ public class JsonArray extends JsonNode implements Iterable<JsonNode> {
 		} else if (value instanceof Long) {
 			return items.contains(new JsonValueInteger((Long) value));
 		} else {
-			return items.contains(new JsonValueFloat(value));
+			return items.contains(new JsonValueNumber(value));
 		}
 	}
 
@@ -251,8 +251,8 @@ public class JsonArray extends JsonNode implements Iterable<JsonNode> {
 			return ((JsonValueString) value).getValue();
 		} else if (value instanceof JsonValueInteger) {
 			return ((JsonValueInteger) value).getValue();
-		} else if (value instanceof JsonValueFloat) {
-			return ((JsonValueFloat) value).getValue();
+		} else if (value instanceof JsonValueNumber) {
+			return ((JsonValueNumber) value).getValue();
 		} else if (value instanceof JsonValueBoolean) {
 			return ((JsonValueBoolean) value).getValue();
 		} else {

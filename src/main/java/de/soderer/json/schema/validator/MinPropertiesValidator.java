@@ -2,7 +2,7 @@ package de.soderer.json.schema.validator;
 
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
-import de.soderer.json.JsonValueFloat;
+import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueInteger;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.path.JsonPath;
@@ -31,8 +31,8 @@ public class MinPropertiesValidator extends BaseJsonSchemaValidator {
 			if (minimumPropertiesValue < 0) {
 				throw new JsonSchemaDefinitionError("Data for minimum property keys is negative", jsonSchemaPath);
 			}
-		} else if (validatorData.isFloat()) {
-			final int minimumPropertiesValue = ((JsonValueFloat) validatorData).getValue().intValue();
+		} else if (validatorData.isNumber()) {
+			final int minimumPropertiesValue = ((JsonValueNumber) validatorData).getValue().intValue();
 			if (minimumPropertiesValue < 0) {
 				throw new JsonSchemaDefinitionError("Data for minimum property keys is negative", jsonSchemaPath);
 			}
@@ -49,7 +49,7 @@ public class MinPropertiesValidator extends BaseJsonSchemaValidator {
 		} else if (validatorData.isInteger()) {
 			minimumPropertiesValue = ((JsonValueInteger) validatorData).getValue().intValue();
 		} else {
-			minimumPropertiesValue = ((JsonValueFloat) validatorData).getValue().intValue();
+			minimumPropertiesValue = ((JsonValueNumber) validatorData).getValue().intValue();
 		}
 
 		if (!(jsonNode.isJsonObject())) {

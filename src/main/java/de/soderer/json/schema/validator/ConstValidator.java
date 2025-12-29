@@ -4,7 +4,7 @@ import de.soderer.json.JsonArray;
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
 import de.soderer.json.JsonValueBoolean;
-import de.soderer.json.JsonValueFloat;
+import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueInteger;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.path.JsonPath;
@@ -36,7 +36,7 @@ public class ConstValidator extends BaseJsonSchemaValidator {
 			return;
 		} else if (jsonNode.isInteger() && validatorDataInclusiveNull.isInteger() && NumberUtilities.compare((((JsonValueInteger) jsonNode).getValue()), (((JsonValueInteger) validatorDataInclusiveNull).getValue())) == 0) {
 			return;
-		} else if (jsonNode.isFloat() && validatorDataInclusiveNull.isFloat() && NumberUtilities.compare((((JsonValueFloat) jsonNode).getValue()), (((JsonValueFloat) validatorDataInclusiveNull).getValue())) == 0) {
+		} else if (jsonNode.isNumber() && validatorDataInclusiveNull.isNumber() && NumberUtilities.compare((((JsonValueNumber) jsonNode).getValue()), (((JsonValueNumber) validatorDataInclusiveNull).getValue())) == 0) {
 			return;
 		} else if (jsonNode.isJsonObject() && validatorDataInclusiveNull.isJsonObject() && ((JsonObject) jsonNode).equals(validatorDataInclusiveNull)) {
 			return;

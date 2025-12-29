@@ -4,7 +4,7 @@ import de.soderer.json.JsonArray;
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
 import de.soderer.json.JsonValueBoolean;
-import de.soderer.json.JsonValueFloat;
+import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueInteger;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.path.JsonPath;
@@ -49,16 +49,16 @@ public class EnumValidator extends BaseJsonSchemaValidator {
 					if (NumberUtilities.compare(((JsonValueInteger) enumObject).getValue(), ((JsonValueInteger) jsonNode).getValue()) == 0) {
 						return;
 					}
-				} else if (enumObject.isFloat() && jsonNode.isFloat()) {
-					if (NumberUtilities.compare(((JsonValueFloat) enumObject).getValue(), ((JsonValueFloat) jsonNode).getValue()) == 0) {
+				} else if (enumObject.isNumber() && jsonNode.isNumber()) {
+					if (NumberUtilities.compare(((JsonValueNumber) enumObject).getValue(), ((JsonValueNumber) jsonNode).getValue()) == 0) {
 						return;
 					}
-				} else if (enumObject.isFloat() && jsonNode.isInteger()) {
-					if (NumberUtilities.compare(((JsonValueFloat) enumObject).getValue(), ((JsonValueInteger) jsonNode).getValue()) == 0) {
+				} else if (enumObject.isNumber() && jsonNode.isInteger()) {
+					if (NumberUtilities.compare(((JsonValueNumber) enumObject).getValue(), ((JsonValueInteger) jsonNode).getValue()) == 0) {
 						return;
 					}
-				} else if (enumObject.isInteger() && jsonNode.isFloat()) {
-					if (NumberUtilities.compare(((JsonValueInteger) enumObject).getValue(), ((JsonValueFloat) jsonNode).getValue()) == 0) {
+				} else if (enumObject.isInteger() && jsonNode.isNumber()) {
+					if (NumberUtilities.compare(((JsonValueInteger) enumObject).getValue(), ((JsonValueNumber) jsonNode).getValue()) == 0) {
 						return;
 					}
 				} else if (enumObject.isJsonObject()) {
@@ -87,8 +87,8 @@ public class EnumValidator extends BaseJsonSchemaValidator {
 				return ((JsonValueString) jsonNode).getValue();
 			case INTEGER:
 				return ((JsonValueInteger) jsonNode).getValue().toString();
-			case FLOAT:
-				return ((JsonValueFloat) jsonNode).getValue().toString();
+			case NUMBER:
+				return ((JsonValueNumber) jsonNode).getValue().toString();
 			case BOOLEAN:
 				return ((JsonValueBoolean) jsonNode).getValue().toString();
 			default:

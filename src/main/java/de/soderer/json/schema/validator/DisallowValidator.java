@@ -8,7 +8,7 @@ import de.soderer.json.JsonArray;
 import de.soderer.json.JsonDataType;
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
-import de.soderer.json.JsonValueFloat;
+import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueInteger;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.exception.JsonDuplicateKeyException;
@@ -92,15 +92,15 @@ public class DisallowValidator extends BaseJsonSchemaValidator {
 	private boolean checkJsonDataType(final JsonNode jsonNode, final JsonDataType jsonDataType) {
 		if (jsonNode.getJsonDataType() == jsonDataType) {
 			return true;
-		} else if (jsonDataType == JsonDataType.FLOAT) {
+		} else if (jsonDataType == JsonDataType.NUMBER) {
 			// Integer datatype is a sub type of number
 			return jsonNode.getJsonDataType() == JsonDataType.INTEGER;
-		} else if (jsonDataType == JsonDataType.INTEGER && jsonNode.getJsonDataType() == JsonDataType.FLOAT) {
+		} else if (jsonDataType == JsonDataType.INTEGER && jsonNode.getJsonDataType() == JsonDataType.NUMBER) {
 			// In JSON schema draft v6+ a float value with zero fraction is also allowed as integer, although it is NOT recommended
 			if (jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV3Mode() || jsonSchemaDependencyResolver.isDraftV4Mode()) {
 				return false;
 			} else {
-				String stringRepresentation = ((JsonValueFloat) jsonNode).getValue().toString();
+				String stringRepresentation = ((JsonValueNumber) jsonNode).getValue().toString();
 				if (stringRepresentation.contains("E")) {
 					final BigDecimal bigDecimal = new BigDecimal(((JsonValueInteger) jsonNode).getValue().toString());
 					return bigDecimal.stripTrailingZeros().scale() <= 0;

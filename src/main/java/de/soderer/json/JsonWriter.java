@@ -171,8 +171,8 @@ public class JsonWriter implements Closeable {
 				write(separator + Boolean.toString(((JsonValueBoolean) propertyValue).getValue()), false);
 			} else if (propertyValue instanceof JsonValueInteger) {
 				write(separator + ((JsonValueInteger) propertyValue).getValue().toString(), false);
-			} else if (propertyValue instanceof JsonValueFloat) {
-				write(separator + ((JsonValueFloat) propertyValue).getValue().toString(), false);
+			} else if (propertyValue instanceof JsonValueNumber) {
+				write(separator + ((JsonValueNumber) propertyValue).getValue().toString(), false);
 			} else if (propertyValue instanceof JsonValueString) {
 				write(separator + "\"" + formatStringOutput(((JsonValueString) propertyValue).getValue()) + "\"", false);
 			}
@@ -361,8 +361,8 @@ public class JsonWriter implements Closeable {
 				write(Boolean.toString(((JsonValueBoolean) arrayValue).getValue()), true);
 			} else if (arrayValue instanceof JsonValueInteger) {
 				write(((JsonValueInteger) arrayValue).getValue().toString(), true);
-			} else if (arrayValue instanceof JsonValueFloat) {
-				write(((JsonValueFloat) arrayValue).getValue().toString(), true);
+			} else if (arrayValue instanceof JsonValueNumber) {
+				write(((JsonValueNumber) arrayValue).getValue().toString(), true);
 			} else if (arrayValue instanceof JsonValueString) {
 				write("\"" + formatStringOutput(((JsonValueString) arrayValue).getValue()) + "\"", true);
 			}
@@ -809,8 +809,8 @@ public class JsonWriter implements Closeable {
 				return ((JsonValueString) jsonNode).getValue();
 			case INTEGER:
 				return ((JsonValueInteger) jsonNode).getValue().toString();
-			case FLOAT:
-				return ((JsonValueFloat) jsonNode).getValue().toString();
+			case NUMBER:
+				return ((JsonValueNumber) jsonNode).getValue().toString();
 			case BOOLEAN:
 				return ((JsonValueBoolean) jsonNode).getValue().toString();
 			case NULL:

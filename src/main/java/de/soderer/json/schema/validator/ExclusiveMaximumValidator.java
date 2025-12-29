@@ -2,7 +2,7 @@ package de.soderer.json.schema.validator;
 
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
-import de.soderer.json.JsonValueFloat;
+import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueInteger;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.path.JsonPath;
@@ -33,7 +33,7 @@ public class ExclusiveMaximumValidator extends ExtendedBaseJsonSchemaValidator {
 			} catch (final NumberFormatException e) {
 				throw new JsonSchemaDefinitionError("Data for exclusiveMaximum '" + validatorData + "' is not a number", jsonSchemaPath, e);
 			}
-		} else if (!validatorData.isInteger() && !validatorData.isFloat()) {
+		} else if (!validatorData.isInteger() && !validatorData.isNumber()) {
 			throw new JsonSchemaDefinitionError("Data for exclusiveMaximum '" + validatorData + "' is not a number", jsonSchemaPath);
 		}
 	}
@@ -47,8 +47,8 @@ public class ExclusiveMaximumValidator extends ExtendedBaseJsonSchemaValidator {
 				exclusiveMaximumValue = NumberUtilities.parseNumber(((JsonValueString) validatorData).getValue());
 			} else if (validatorData.isInteger()) {
 				exclusiveMaximumValue = ((JsonValueInteger) validatorData).getValue();
-			} else if (validatorData.isFloat()) {
-				exclusiveMaximumValue = ((JsonValueFloat) validatorData).getValue();
+			} else if (validatorData.isNumber()) {
+				exclusiveMaximumValue = ((JsonValueNumber) validatorData).getValue();
 			} else {
 				throw new JsonSchemaDataValidationError("ExclusiveMaximum number is '" + validatorData + "' but value was '" + dataValue.toString() + "'", jsonPath);
 			}
@@ -56,15 +56,15 @@ public class ExclusiveMaximumValidator extends ExtendedBaseJsonSchemaValidator {
 			if (NumberUtilities.compare(dataValue, exclusiveMaximumValue) >= 0) {
 				throw new JsonSchemaDataValidationError("ExclusiveMaximum number is '" + validatorData + "' but value was '" + dataValue.toString() + "'", jsonPath);
 			}
-		} else if (jsonNode.isFloat()) {
-			final Number dataValue = ((JsonValueFloat) jsonNode).getValue();
+		} else if (jsonNode.isNumber()) {
+			final Number dataValue = ((JsonValueNumber) jsonNode).getValue();
 			final Number exclusiveMaximumValue;
 			if (validatorData.isString()) {
 				exclusiveMaximumValue = NumberUtilities.parseNumber(((JsonValueString) validatorData).getValue());
 			} else if (validatorData.isInteger()) {
 				exclusiveMaximumValue = ((JsonValueInteger) validatorData).getValue();
-			} else if (validatorData.isFloat()) {
-				exclusiveMaximumValue = ((JsonValueFloat) validatorData).getValue();
+			} else if (validatorData.isNumber()) {
+				exclusiveMaximumValue = ((JsonValueNumber) validatorData).getValue();
 			} else {
 				throw new JsonSchemaDataValidationError("ExclusiveMaximum number is '" + validatorData + "' but value was '" + dataValue.toString() + "'", jsonPath);
 			}

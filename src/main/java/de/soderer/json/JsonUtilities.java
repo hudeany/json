@@ -120,9 +120,9 @@ public class JsonUtilities {
 					rootNodeInteger.setTextContent(((JsonValueInteger) jsonNode).getValue().toString());
 					xmlDocument.appendChild(rootNodeInteger);
 					break;
-				case FLOAT:
+				case NUMBER:
 					final Node rootNodeNumber = xmlDocument.createElement("root");
-					rootNodeNumber.setTextContent(((JsonValueFloat) jsonNode).getValue().toString());
+					rootNodeNumber.setTextContent(((JsonValueNumber) jsonNode).getValue().toString());
 					xmlDocument.appendChild(rootNodeNumber);
 					break;
 				case BOOLEAN:

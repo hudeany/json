@@ -104,7 +104,7 @@ public class JsonSerializer {
 				jsonObjectWithTypeInfo.add("value", (Float) dataObject);
 				return jsonObjectWithTypeInfo.setRootNode(true);
 			} else {
-				return new JsonValueFloat((Float) dataObject).setRootNode(true);
+				return new JsonValueNumber((Float) dataObject).setRootNode(true);
 			}
 		} else if (dataObject instanceof Double) {
 			if (addObjectTypeInfo) {
@@ -113,7 +113,7 @@ public class JsonSerializer {
 				jsonObjectWithTypeInfo.add("value", (Double) dataObject);
 				return jsonObjectWithTypeInfo.setRootNode(true);
 			} else {
-				return new JsonValueFloat((Double) dataObject).setRootNode(true);
+				return new JsonValueNumber((Double) dataObject).setRootNode(true);
 			}
 		} else if (dataObject instanceof Number) {
 			if (addObjectTypeInfo) {
@@ -122,7 +122,7 @@ public class JsonSerializer {
 				jsonObjectWithTypeInfo.add("value", (Number) dataObject);
 				return jsonObjectWithTypeInfo.setRootNode(true);
 			} else {
-				return new JsonValueFloat((Number) dataObject).setRootNode(true);
+				return new JsonValueNumber((Number) dataObject).setRootNode(true);
 			}
 		} else if (dataObject instanceof Character) {
 			if (addObjectTypeInfo) {
@@ -635,8 +635,8 @@ public class JsonSerializer {
 				return ((JsonValueString) jsonData).getValue();
 			} else if (jsonData.isInteger()) {
 				return ((JsonValueInteger) jsonData).getValue();
-			} else if (jsonData.isFloat()) {
-				return ((JsonValueFloat) jsonData).getValue();
+			} else if (jsonData.isNumber()) {
+				return ((JsonValueNumber) jsonData).getValue();
 			} else if (jsonData.isBoolean()) {
 				return ((JsonValueBoolean) jsonData).getValue();
 			} else {

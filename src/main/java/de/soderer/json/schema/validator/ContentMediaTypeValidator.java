@@ -36,7 +36,7 @@ public class ContentMediaTypeValidator extends ExtendedBaseJsonSchemaValidator {
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		if (jsonNode.isNull()) {
 			// ContentMediaType ignore null values
-		} else if (jsonNode.isInteger() || jsonNode.isFloat()) {
+		} else if (jsonNode.isInteger() || jsonNode.isNumber()) {
 			// ContentMediaType ignore numeric values
 		} else if (jsonNode.isJsonObject()) {
 			// ContentMediaType ignore JsonObject values

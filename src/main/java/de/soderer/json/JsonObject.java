@@ -93,7 +93,7 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, J
 			} else if (value instanceof Long) {
 				properties.put(key, new JsonValueInteger((Long) value));
 			} else {
-				properties.put(key, new JsonValueFloat(value));
+				properties.put(key, new JsonValueNumber(value));
 			}
 			return this;
 		}
@@ -209,8 +209,8 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, J
 			return ((JsonValueString) value).getValue();
 		} else if (value instanceof JsonValueInteger) {
 			return ((JsonValueInteger) value).getValue();
-		} else if (value instanceof JsonValueFloat) {
-			return ((JsonValueFloat) value).getValue();
+		} else if (value instanceof JsonValueNumber) {
+			return ((JsonValueNumber) value).getValue();
 		} else if (value instanceof JsonValueBoolean) {
 			return ((JsonValueBoolean) value).getValue();
 		} else {

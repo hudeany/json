@@ -308,7 +308,7 @@ public class JsonReader extends BasicReader {
 			} else if (value instanceof BigDecimal && NumberUtilities.isInteger((BigDecimal) value)) {
 				return new JsonValueInteger((BigDecimal) value);
 			} else {
-				return new JsonValueFloat(value);
+				return new JsonValueNumber(value);
 			}
 		} else {
 			throw new Exception("Invalid json data in line " + (getReadLines() + 1) +" at overall index " + getReadCharacters());

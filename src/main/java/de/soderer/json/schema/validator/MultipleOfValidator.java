@@ -3,7 +3,7 @@ package de.soderer.json.schema.validator;
 import java.math.BigDecimal;
 
 import de.soderer.json.JsonNode;
-import de.soderer.json.JsonValueFloat;
+import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueInteger;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.path.JsonPath;
@@ -28,7 +28,7 @@ public class MultipleOfValidator extends BaseJsonSchemaValidator {
 			} catch (final NumberFormatException e) {
 				throw new JsonSchemaDefinitionError("Data for multipleOf '" + validatorData + "' is not a number", jsonSchemaPath, e);
 			}
-		} else if (!(validatorData.isInteger()) && !(validatorData.isFloat())) {
+		} else if (!(validatorData.isInteger()) && !(validatorData.isNumber())) {
 			throw new JsonSchemaDefinitionError("Data for multipleOf '" + validatorData + "' is not a number", jsonSchemaPath);
 		}
 	}
@@ -41,16 +41,16 @@ public class MultipleOfValidator extends BaseJsonSchemaValidator {
 		} else if (validatorData.isInteger()) {
 			checkNumber = ((JsonValueInteger) validatorData).getValue();
 		} else {
-			checkNumber = ((JsonValueFloat) validatorData).getValue();
+			checkNumber = ((JsonValueNumber) validatorData).getValue();
 		}
 
 		if (jsonNode.isInteger()) {
 			if (new BigDecimal(((JsonValueInteger) jsonNode).getValue().toString()).remainder(new BigDecimal(checkNumber.toString())).compareTo(BigDecimal.ZERO) != 0) {
 				throw new JsonSchemaDataValidationError("Number must be multiple of '" + checkNumber.toString() + "' but value was '" + ((JsonValueInteger) jsonNode).getValue().toString() + "'", jsonPath);
 			}
-		} else if (jsonNode.isFloat()) {
-			if (new BigDecimal(((JsonValueFloat) jsonNode).getValue().toString()).remainder(new BigDecimal(checkNumber.toString())).compareTo(BigDecimal.ZERO) != 0) {
-				throw new JsonSchemaDataValidationError("Number must be multiple of '" + checkNumber.toString() + "' but value was '" + ((JsonValueFloat) jsonNode).getValue().toString() + "'", jsonPath);
+		} else if (jsonNode.isNumber()) {
+			if (new BigDecimal(((JsonValueNumber) jsonNode).getValue().toString()).remainder(new BigDecimal(checkNumber.toString())).compareTo(BigDecimal.ZERO) != 0) {
+				throw new JsonSchemaDataValidationError("Number must be multiple of '" + checkNumber.toString() + "' but value was '" + ((JsonValueNumber) jsonNode).getValue().toString() + "'", jsonPath);
 			}
 		} else if (jsonSchemaDependencyResolver.isSimpleMode()) {
 			throw new JsonSchemaDataValidationError("Expected data type 'number' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);

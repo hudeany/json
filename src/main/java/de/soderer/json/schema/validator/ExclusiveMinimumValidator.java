@@ -2,7 +2,7 @@ package de.soderer.json.schema.validator;
 
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
-import de.soderer.json.JsonValueFloat;
+import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueInteger;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.path.JsonPath;
@@ -33,7 +33,7 @@ public class ExclusiveMinimumValidator extends ExtendedBaseJsonSchemaValidator {
 			} catch (final NumberFormatException e) {
 				throw new JsonSchemaDefinitionError("Data for exclusiveMinimum '" + validatorData + "' is not a number", jsonSchemaPath, e);
 			}
-		} else if (!validatorData.isFloat() && !validatorData.isInteger()) {
+		} else if (!validatorData.isNumber() && !validatorData.isInteger()) {
 			throw new JsonSchemaDefinitionError("Data for exclusiveMinimum '" + validatorData + "' is not a number", jsonSchemaPath);
 		}
 	}
@@ -47,8 +47,8 @@ public class ExclusiveMinimumValidator extends ExtendedBaseJsonSchemaValidator {
 				exclusiveMinimumValue = NumberUtilities.parseNumber(((JsonValueString) validatorData).getValue());
 			} else if (validatorData.isInteger()) {
 				exclusiveMinimumValue = ((JsonValueInteger) validatorData).getValue();
-			} else if (validatorData.isFloat()) {
-				exclusiveMinimumValue = ((JsonValueFloat) validatorData).getValue();
+			} else if (validatorData.isNumber()) {
+				exclusiveMinimumValue = ((JsonValueNumber) validatorData).getValue();
 			} else {
 				throw new JsonSchemaDataValidationError("ExclusiveMinimum number is '" + validatorData + "' but value was '" + dataValue.toString() + "'", jsonPath);
 			}
@@ -56,15 +56,15 @@ public class ExclusiveMinimumValidator extends ExtendedBaseJsonSchemaValidator {
 			if (NumberUtilities.compare(dataValue, exclusiveMinimumValue) <= 0) {
 				throw new JsonSchemaDataValidationError("ExclusiveMinimum number is '" + validatorData + "' but value was '" + dataValue.toString() + "'", jsonPath);
 			}
-		} else if (jsonNode.isFloat()) {
-			final Number dataValue = ((JsonValueFloat) jsonNode).getValue();
+		} else if (jsonNode.isNumber()) {
+			final Number dataValue = ((JsonValueNumber) jsonNode).getValue();
 			final Number exclusiveMinimumValue;
 			if (validatorData.isString()) {
 				exclusiveMinimumValue = NumberUtilities.parseNumber(((JsonValueString) validatorData).getValue());
 			} else if (validatorData.isInteger()) {
 				exclusiveMinimumValue = ((JsonValueInteger) validatorData).getValue();
-			} else if (validatorData.isFloat()) {
-				exclusiveMinimumValue = ((JsonValueFloat) validatorData).getValue();
+			} else if (validatorData.isNumber()) {
+				exclusiveMinimumValue = ((JsonValueNumber) validatorData).getValue();
 			} else {
 				throw new JsonSchemaDataValidationError("ExclusiveMinimum number is '" + validatorData + "' but value was '" + dataValue.toString() + "'", jsonPath);
 			}

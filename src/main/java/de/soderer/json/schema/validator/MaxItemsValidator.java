@@ -2,7 +2,7 @@ package de.soderer.json.schema.validator;
 
 import de.soderer.json.JsonArray;
 import de.soderer.json.JsonNode;
-import de.soderer.json.JsonValueFloat;
+import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueInteger;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.path.JsonPath;
@@ -31,8 +31,8 @@ public class MaxItemsValidator extends BaseJsonSchemaValidator {
 			if (maximumItemsValue < 0) {
 				throw new JsonSchemaDefinitionError("Data for maximum items amount is negative", jsonSchemaPath);
 			}
-		} else if (validatorData.isFloat()) {
-			final int maximumItemsValue = ((JsonValueFloat) validatorData).getValue().intValue();
+		} else if (validatorData.isNumber()) {
+			final int maximumItemsValue = ((JsonValueNumber) validatorData).getValue().intValue();
 			if (maximumItemsValue < 0) {
 				throw new JsonSchemaDefinitionError("Data for maximum items amount is negative", jsonSchemaPath);
 			}
@@ -49,7 +49,7 @@ public class MaxItemsValidator extends BaseJsonSchemaValidator {
 		} else if (validatorData.isInteger()) {
 			maximumItemsValue = ((JsonValueInteger) validatorData).getValue().intValue();
 		} else {
-			maximumItemsValue = ((JsonValueFloat) validatorData).getValue().intValue();
+			maximumItemsValue = ((JsonValueNumber) validatorData).getValue().intValue();
 		}
 
 		if (!(jsonNode.isJsonArray())) {

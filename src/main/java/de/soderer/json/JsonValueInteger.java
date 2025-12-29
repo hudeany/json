@@ -1,6 +1,7 @@
 package de.soderer.json;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Objects;
 
 import de.soderer.json.utilities.NumberUtilities;
@@ -28,13 +29,23 @@ public class JsonValueInteger extends JsonNode {
 		}
 	}
 
+	public JsonValueInteger(final BigInteger value) {
+		super(JsonDataType.INTEGER);
+
+		if (value == null) {
+			throw new RuntimeException("Invalid 'null' value for " + getClass().getSimpleName() + ". Use JsonValueNull instead.");
+		} else {
+			this.value = value;
+		}
+	}
+
 	public JsonValueInteger(final BigDecimal value) {
 		super(JsonDataType.INTEGER);
 
 		if (value == null) {
 			throw new RuntimeException("Invalid 'null' value for " + getClass().getSimpleName() + ". Use JsonValueNull instead.");
 		} else if (!NumberUtilities.isInteger(value)) {
-			throw new RuntimeException("Invalid non integer value '" + value.toString() + "' for " + getClass().getSimpleName() + ". Use JsonValueFloat instead.");
+			throw new RuntimeException("Invalid non integer value '" + value.toString() + "' for " + getClass().getSimpleName() + ". Use JsonValueNumber instead.");
 		} else {
 			this.value = value;
 		}

@@ -65,7 +65,7 @@ public class FormatValidator extends BaseJsonSchemaValidator {
 
 		if (jsonNode.isNull()) {
 			// String formats ignore null values
-		} else if (jsonNode.isInteger() || jsonNode.isFloat()) {
+		} else if (jsonNode.isInteger() || jsonNode.isNumber()) {
 			// String formats ignore numeric values
 		} else if (jsonNode.isJsonObject()) {
 			// String formats ignore JsonObject values

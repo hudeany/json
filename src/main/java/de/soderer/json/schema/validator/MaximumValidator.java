@@ -3,7 +3,7 @@ package de.soderer.json.schema.validator;
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
 import de.soderer.json.JsonValueBoolean;
-import de.soderer.json.JsonValueFloat;
+import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueInteger;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.path.JsonPath;
@@ -31,7 +31,7 @@ public class MaximumValidator extends ExtendedBaseJsonSchemaValidator {
 			} catch (final NumberFormatException e) {
 				throw new JsonSchemaDefinitionError("Data for maximum '" + validatorData + "' is not a number", jsonSchemaPath, e);
 			}
-		} else if (!validatorData.isInteger() && !validatorData.isFloat()) {
+		} else if (!validatorData.isInteger() && !validatorData.isNumber()) {
 			throw new JsonSchemaDefinitionError("Data for maximum '" + validatorData + "' is not a number", jsonSchemaPath);
 		}
 
@@ -57,7 +57,7 @@ public class MaximumValidator extends ExtendedBaseJsonSchemaValidator {
 			} else if (validatorData.isInteger()) {
 				maximumValue = ((JsonValueInteger) validatorData).getValue().doubleValue();
 			} else {
-				maximumValue = ((JsonValueFloat) validatorData).getValue().doubleValue();
+				maximumValue = ((JsonValueNumber) validatorData).getValue().doubleValue();
 			}
 
 			if (NumberUtilities.compare(dataValue, maximumValue) > 0) {
@@ -65,15 +65,15 @@ public class MaximumValidator extends ExtendedBaseJsonSchemaValidator {
 			} else if (isExclusiveMaximum && NumberUtilities.compare(dataValue, maximumValue) == 0) {
 				throw new JsonSchemaDataValidationError("Exclusive maximum number is '" + validatorData + "' but value was '" + dataValue.toString() + "'", jsonPath);
 			}
-		} else if (jsonNode.isFloat()) {
-			final Number dataValue = ((JsonValueFloat) jsonNode).getValue().doubleValue();
+		} else if (jsonNode.isNumber()) {
+			final Number dataValue = ((JsonValueNumber) jsonNode).getValue().doubleValue();
 			final Number maximumValue;
 			if (validatorData.isString()) {
 				maximumValue = NumberUtilities.parseNumber(((JsonValueString) validatorData).getValue()).doubleValue();
 			} else if (validatorData.isInteger()) {
 				maximumValue = ((JsonValueInteger) validatorData).getValue().doubleValue();
 			} else {
-				maximumValue = ((JsonValueFloat) validatorData).getValue().doubleValue();
+				maximumValue = ((JsonValueNumber) validatorData).getValue().doubleValue();
 			}
 
 			if (NumberUtilities.compare(dataValue, maximumValue) > 0) {

@@ -41,8 +41,8 @@ public class JsonNode {
 		return jsonDataType == JsonDataType.INTEGER;
 	}
 
-	public boolean isFloat() {
-		return jsonDataType == JsonDataType.FLOAT;
+	public boolean isNumber() {
+		return jsonDataType == JsonDataType.NUMBER;
 	}
 
 	public boolean isString() {
@@ -61,7 +61,7 @@ public class JsonNode {
 		return jsonDataType == JsonDataType.NULL
 				|| jsonDataType == JsonDataType.BOOLEAN
 				|| jsonDataType == JsonDataType.INTEGER
-				|| jsonDataType == JsonDataType.FLOAT
+				|| jsonDataType == JsonDataType.NUMBER
 				|| jsonDataType == JsonDataType.STRING;
 	}
 
