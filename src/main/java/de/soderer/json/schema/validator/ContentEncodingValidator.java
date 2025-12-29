@@ -20,7 +20,7 @@ public class ContentEncodingValidator extends BaseJsonSchemaValidator {
 
 		if (validatorData == null || validatorData.isNull()) {
 			throw new JsonSchemaDefinitionError("ContentEncoding value is 'null'", jsonSchemaPath);
-		} else if (!(validatorData instanceof JsonValueString)) {
+		} else if (!validatorData.isString()) {
 			throw new JsonSchemaDefinitionError("ContentEncoding value is not a string", jsonSchemaPath);
 		} else if (Utilities.isBlank(((JsonValueString) validatorData).getValue())) {
 			throw new JsonSchemaDefinitionError("Invalid ContentEncoding '" + validatorData + "'", jsonSchemaPath);

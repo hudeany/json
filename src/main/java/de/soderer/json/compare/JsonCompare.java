@@ -128,9 +128,9 @@ public class JsonCompare {
 			return new JsonArray().add("objectLeft is of type '" + valueObjectLeft.getClass().getSimpleName() + "', objectRight is null");
 		} else if (!valueObjectLeft.getClass().equals(valueObjectRight.getClass())) {
 			return new JsonArray().add("objectLeft is of type '" + valueObjectLeft.getClass().getSimpleName() + "', objectRight is of type '" + valueObjectRight.getClass().getSimpleName() + "'");
-		} else if (valueObjectLeft instanceof JsonArray) {
+		} else if (valueObjectLeft.isJsonArray()) {
 			return compare((JsonArray) valueObjectLeft, (JsonArray) valueObjectRight);
-		} else if (valueObjectLeft instanceof JsonObject) {
+		} else if (valueObjectLeft.isJsonObject()) {
 			return compare((JsonObject) valueObjectLeft, (JsonObject) valueObjectRight);
 		} else if (!valueObjectLeft.equals(valueObjectRight)) {
 			return new JsonArray().add("objectLeft is '" + valueObjectLeft.toString() + "', objectRight is '" + valueObjectRight.toString() + "'");

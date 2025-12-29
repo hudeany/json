@@ -50,7 +50,7 @@ public class DependenciesValidator extends BaseJsonSchemaValidator {
 					}
 				}
 				mandatoryProperties.put(entry.getKey(), propertiesList);
-			} else if (entry.getValue() instanceof JsonValueString) {
+			} else if (entry.getValue().isString()) {
 				final List<String> propertiesList = new ArrayList<>();
 				propertiesList.add(((JsonValueString) entry.getValue()).getValue());
 				mandatoryProperties.put(entry.getKey(), propertiesList);

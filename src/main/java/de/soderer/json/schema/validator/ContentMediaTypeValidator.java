@@ -23,7 +23,7 @@ public class ContentMediaTypeValidator extends ExtendedBaseJsonSchemaValidator {
 
 		if (validatorData == null || validatorData.isNull()) {
 			throw new JsonSchemaDefinitionError("ContentMediaType value is 'null'", jsonSchemaPath);
-		} else if (!(validatorData instanceof JsonValueString)) {
+		} else if (!validatorData.isString()) {
 			throw new JsonSchemaDefinitionError("ContentMediaType value is not a string", jsonSchemaPath);
 		} else if (Utilities.isBlank(((JsonValueString) validatorData).getValue())) {
 			throw new JsonSchemaDefinitionError("Invalid ContentMediaType '" + validatorData + "'", jsonSchemaPath);

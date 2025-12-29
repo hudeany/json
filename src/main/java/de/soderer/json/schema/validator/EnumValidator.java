@@ -41,7 +41,7 @@ public class EnumValidator extends BaseJsonSchemaValidator {
 					if ((jsonNode.isBoolean() && enumObject.isBoolean() && ((JsonValueBoolean) jsonNode).getValue() == ((JsonValueBoolean) enumObject).getValue())) {
 						return;
 					}
-				} else if (enumObject instanceof JsonValueString) {
+				} else if (enumObject.isString()) {
 					if (jsonNode.isString() && enumObject.isString() && ((JsonValueString) jsonNode).getValue().equals(((JsonValueString) enumObject).getValue())) {
 						return;
 					}

@@ -400,7 +400,7 @@ public class JsonSchemaSuiteGitHubTest {
 
 	private Triple<Integer, Integer, Integer> executeJsonSchemaTestCollection(final JsonObject jsonSchemaTest, final JsonSchemaVersion jsonSchemaVersion, final String filename) throws Exception {
 		final String collectionDescription = ((String) jsonSchemaTest.getSimpleValue("description")).trim();
-		final Object schemaJsonObject = jsonSchemaTest.get("schema");
+		final JsonNode schemaJsonObject = jsonSchemaTest.get("schema");
 		final JsonArray schemaTestsArray = (JsonArray) jsonSchemaTest.get("tests");
 
 		if (SINGLE_TEST_TO_EXECUTE != null && !SINGLE_TEST_TO_EXECUTE.startsWith(filename + ":" + collectionDescription + ":")) {
@@ -415,9 +415,9 @@ public class JsonSchemaSuiteGitHubTest {
 			try {
 				if (schemaJsonObject == null) {
 					throw new JsonSchemaDefinitionError("JsonSchema is null", new JsonSchemaPath("$"));
-				} else if (schemaJsonObject instanceof Boolean) {
-					jsonSchema = new JsonSchema((Boolean) schemaJsonObject, new JsonSchemaConfiguration().setJsonSchemaVersion(jsonSchemaVersion).setDownloadReferencedSchemas(true));
-				} else if (schemaJsonObject instanceof JsonObject) {
+				} else if (schemaJsonObject.isBoolean()) {
+					jsonSchema = new JsonSchema(((JsonValueBoolean) schemaJsonObject).getValue(), new JsonSchemaConfiguration().setJsonSchemaVersion(jsonSchemaVersion).setDownloadReferencedSchemas(true));
+				} else if (schemaJsonObject.isJsonObject()) {
 					jsonSchema = new JsonSchema((JsonObject) schemaJsonObject, new JsonSchemaConfiguration().setJsonSchemaVersion(jsonSchemaVersion).setDownloadReferencedSchemas(true));
 				} else {
 					throw new JsonSchemaDefinitionError("JsonSchema is not JsonObject or Boolean", new JsonSchemaPath("$"));

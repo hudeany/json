@@ -31,11 +31,11 @@ public class DisallowValidator extends BaseJsonSchemaValidator {
 
 		if (validatorData == null || validatorData.isNull()) {
 			throw new JsonSchemaDefinitionError("Type data is 'null'", jsonSchemaPath);
-		} else if (!(validatorData instanceof JsonValueString) && !(validatorData.isJsonArray())) {
+		} else if (!(validatorData.isString()) && !(validatorData.isJsonArray())) {
 			throw new JsonSchemaDefinitionError("Type data is not a 'string' or 'array'", jsonSchemaPath);
 		}
 
-		if (validatorData instanceof JsonValueString) {
+		if (validatorData.isString()) {
 			try {
 				JsonDataType.getFromString(((JsonValueString) validatorData).getValue());
 			} catch (final Exception e) {
