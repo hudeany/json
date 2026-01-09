@@ -29,8 +29,8 @@ import de.soderer.yaml.exception.YamlParseException;
  * Read anchor
  * Read alias
  * Read complex mapping keys (Fix test file yaml/reference_1_1/input.yaml)
- * Read inline comments
- * Read flow style mappings and sequences
+ * Improve multiline scalars folded and literal
+ * Enable SAX-like reading of path items
  */
 public class YamlReader extends BasicReadAheadReader {
 	private final Stack<Integer> indentations = new Stack<>();

@@ -863,7 +863,6 @@ public class YamlWriter implements Closeable {
 	}
 
 	private void write(final String text) throws IOException {
-		System.out.print(text); // TODO remove
 		outputWriter.write(text);
 	}
 }
