@@ -32,6 +32,13 @@ public class YamlTagDirective extends YamlDirective<YamlTagDirective> {
 
 	@Override
 	public String toString() {
-		return "%TAG " + tag + " " + replacement;
+		String returnString = "";
+		if (getLeadingComments() != null && !getLeadingComments().isEmpty()) {
+			for (final String commentLine : getLeadingComments()) {
+				returnString += "# " + commentLine + "\n";
+			}
+		}
+		returnString += "%TAG " + tag + " " + replacement + (getInlineComment() != null ? " # " + getInlineComment() : "");
+		return returnString;
 	}
 }

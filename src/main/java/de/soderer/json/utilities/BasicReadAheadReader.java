@@ -167,6 +167,18 @@ public class BasicReadAheadReader implements Closeable {
 		return !peekCharMatch(otherChar);
 	}
 
+	protected boolean peekCharMatchAny(final String charSequence) {
+		if (currentChar == null || charSequence == null) {
+			return false;
+		} else {
+			return charSequence.contains(currentChar.toString());
+		}
+	}
+
+	protected boolean peekCharNotMatchAny(final String charSequence) {
+		return !peekCharMatchAny(charSequence);
+	}
+
 	protected boolean peekNextCharMatch(final char otherChar) {
 		if (nextChar == null) {
 			return false;
@@ -181,8 +193,26 @@ public class BasicReadAheadReader implements Closeable {
 		return !peekNextCharMatch(otherChar);
 	}
 
+	protected boolean peekNextCharMatchAny(final String charSequence) {
+		if (nextChar == null || charSequence == null) {
+			return false;
+		} else if (normalizeLinebreaks) {
+			return charSequence.replace("\n",  "\n\r").contains(nextChar.toString());
+		} else {
+			return charSequence.contains(nextChar.toString());
+		}
+	}
+
+	protected boolean peekNextCharNotMatchAny(final String charSequence) {
+		return !peekNextCharMatchAny(charSequence);
+	}
+
 	protected boolean isEOF() {
 		return currentChar == null;
+	}
+
+	protected boolean isNotEOF() {
+		return currentChar != null;
 	}
 
 	protected void skipWhitespaces() throws Exception {
@@ -356,11 +386,11 @@ public class BasicReadAheadReader implements Closeable {
 			if (escapeCharacter == quoteChar) {
 				String returnValue = "";
 				while (!isEOF()) {
-					if (currentChar == quoteChar) {
+					if (!peekCharMatch(quoteChar) || peekNextCharMatch(quoteChar)) {
 						returnValue += readChar();
-						break;
 					} else {
 						returnValue += readChar();
+						break;
 					}
 				}
 				if (returnValue.charAt(returnValue.length() - 1) != quoteChar) {

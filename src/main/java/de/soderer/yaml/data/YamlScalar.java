@@ -91,9 +91,21 @@ public class YamlScalar extends YamlNode {
 				this.type = type;
 			} else {
 				this.valueString = valueString;
-				// Remove optional thousands separator '_'
-				value = NumberUtilities.parseNumber(valueString.replace("_", ""));
-				this.type = type;
+				Number numberValue;
+				try {
+					// Remove optional thousands separator '_'
+					numberValue = NumberUtilities.parseNumber(valueString.replace("_", ""));
+				} catch (@SuppressWarnings("unused") final NumberFormatException e) {
+					numberValue = null;
+				}
+
+				if (numberValue != null) {
+					value = numberValue;
+					this.type = type;
+				} else {
+					value = valueString;
+					this.type = YamlScalarType.STRING;
+				}
 			}
 		} else if (type == YamlScalarType.NULL_VALUE) {
 			this.valueString = valueString;

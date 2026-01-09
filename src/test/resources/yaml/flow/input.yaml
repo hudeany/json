@@ -1,0 +1,8 @@
+# Mapping comment
+{ empty:,
+  # Entry comment
+  a key: a value,
+  "sequence": ["element1", "element2"], # Entry inline comment
+  "mapping": { "subkey1": "subvalue1", "subkey2": "subvalue2" },
+  "sequence_of_mappings": [ one: 1, two: 2 ]
+}

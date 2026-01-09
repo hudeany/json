@@ -22,6 +22,13 @@ public class YamlVersionDirective extends YamlDirective<YamlVersionDirective> {
 
 	@Override
 	public String toString() {
-		return "%YAML " + yamlVersion;
+		String returnString = "";
+		if (getLeadingComments() != null && !getLeadingComments().isEmpty()) {
+			for (final String commentLine : getLeadingComments()) {
+				returnString += "# " + commentLine + "\n";
+			}
+		}
+		returnString += "%YAML " + yamlVersion + (getInlineComment() != null ? " # " + getInlineComment() : "");
+		return returnString;
 	}
 }

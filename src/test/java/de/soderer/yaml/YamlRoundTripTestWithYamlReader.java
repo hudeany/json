@@ -81,16 +81,21 @@ public class YamlRoundTripTestWithYamlReader {
 		roundTripSingleDocument("yaml/big/input.yaml", "yaml/big/output.yaml", false);
 	}
 
+	@Test
+	public void testFlowStyle() throws Exception {
+		roundTripSingleDocument("yaml/flow/input.yaml", "yaml/flow/output.yaml", true);
+	}
+
+	@Test
+	public void testReference_1_1() throws Exception {
+		roundTripSingleDocument("yaml/reference_1_1/input.yaml", "yaml/reference_1_1/output.yaml", true);
+	}
+
 	//	@Test
 	//	public void testMultiline() throws Exception {
 	//		roundTripSingleDocument("yaml/multiline/input.yaml", "yaml/multiline/output.yaml", true);
 	//	}
 
-	//	@Test
-	//	public void testReference_1_1() throws Exception {
-	//		roundTripSingleDocument("yaml/reference_1_1/sample.yaml", "yaml/reference_1_2/result.yaml", true);
-	//	}
-	//
 	//	@Test
 	//	public void testReference_1_2() throws Exception {
 	//		roundTripSingleDocument("yaml/reference_1_2/sample.yaml", "yaml/reference_1_2/result.yaml", true);
