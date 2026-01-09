@@ -3,7 +3,7 @@
 
 title with blank: Example document
 
-person: &p1 # Anchor p1 comment
+person:
   name: "John Doe" # Name of team leader
   age: 42
   active: true
@@ -14,14 +14,11 @@ person: &p1 # Anchor p1 comment
 
 team:
 # Descriptive comment for team
-  leader: *p1 # Alias p1 comment
   members: # Members comment
-    - &p2 # Anchor p2 comment
-      name: "Jane Doe" # Name of team first employee
+    - name: "John Doe" # Name of team first employee
       age: 37
-    - *p2 # Alias p2 comment
-    - name: "Brother John" # Name of team third employee
-      age: 48
+    - name: "Jane Doe" # Name of team second employee
+      age: 37
 
 description: |
   This is a multiline

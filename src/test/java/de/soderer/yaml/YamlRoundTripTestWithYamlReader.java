@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map.Entry;
 
 import org.junit.Assert;
@@ -21,26 +20,128 @@ import de.soderer.yaml.data.YamlSequence;
 
 public class YamlRoundTripTestWithYamlReader {
 	@Test
-	public void testStandard() throws Exception {
-		roundTrip("yaml/standard/sample.yaml", "yaml/standard/result.yaml", true);
+	public void testBasicStructureMapping() throws Exception {
+		roundTripSingleDocument("yaml/mapping/input.yaml", "yaml/mapping/output.yaml", true);
+	}
+
+	@Test
+	public void testBasicStructureSequence() throws Exception {
+		roundTripSingleDocument("yaml/sequence/input.yaml", "yaml/sequence/output.yaml", true);
+	}
+
+	@Test
+	public void testComments() throws Exception {
+		roundTripSingleDocument("yaml/comments/input.yaml", "yaml/comments/output.yaml", true);
+	}
+
+	@Test
+	public void testNumbers() throws Exception {
+		final String inputDataFileNamem = "yaml/numbers/input.yaml";
+		final String outputDataFileName = "yaml/numbers/output.yaml";
+
+		final YamlDocument testDocument;
+		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream(inputDataFileNamem)) {
+			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
+				testDocument = yamlReader.readYamlDocument();
+			}
+		}
+
+		final YamlSequence yamlNode = (YamlSequence) testDocument.getRoot();
+		for (final Object numerItemObject : yamlNode) {
+			final YamlMapping numerItem = (YamlMapping) numerItemObject;
+			final String description = (String) ((YamlScalar) numerItem.get("description")).getValue();
+			if (description.toLowerCase().contains("sexagesimal")) {
+				final String numberString = (String) ((YamlScalar) numerItem.get("number")).getValue();
+				final String normalizedValue = (String) ((YamlScalar) numerItem.get("normalized")).getValue();
+				Assert.assertEquals(description, numberString, normalizedValue);
+			} else {
+				final Number number = (Number) ((YamlScalar) numerItem.get("number")).getValue();
+				final Number normalizedValue = (Number) ((YamlScalar) numerItem.get("normalized")).getValue();
+				Assert.assertEquals(description, normalizedValue, number);
+			}
+		}
+
+		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
+		try (final YamlWriter writer = new YamlWriter(testOutputStream)) {
+			writer.writeDocument(new YamlDocument(yamlNode));
+		}
+
+		final String serializedYaml = new String(testOutputStream.toByteArray(), StandardCharsets.UTF_8);
+
+		String resultYamlFileString;
+		try (InputStream resultDataStream = getClass().getClassLoader().getResourceAsStream(outputDataFileName)) {
+			resultYamlFileString = IoUtilities.toString(resultDataStream, StandardCharsets.UTF_8);
+		}
+
+		Assert.assertEquals(resultYamlFileString, serializedYaml);
 	}
 
 	@Test
 	public void testBig() throws Exception {
-		roundTrip("yaml/big/sample.yaml", "yaml/big/result.yaml", false);
+		roundTripSingleDocument("yaml/big/input.yaml", "yaml/big/output.yaml", false);
 	}
 
 	//	@Test
-	//	public void testTest() throws Exception {
-	//		roundTrip("yaml/test/sample.yaml", "yaml/test/result.yaml", false);
+	//	public void testMultiline() throws Exception {
+	//		roundTripSingleDocument("yaml/multiline/input.yaml", "yaml/multiline/output.yaml", true);
 	//	}
 
-	@Test
-	public void testMultipleDocuments() throws Exception {
-		roundTripMultipleDocuments("yaml/multiple/sample.yaml", "yaml/multiple/result.yaml");
-	}
+	//	@Test
+	//	public void testReference_1_1() throws Exception {
+	//		roundTripSingleDocument("yaml/reference_1_1/sample.yaml", "yaml/reference_1_2/result.yaml", true);
+	//	}
+	//
+	//	@Test
+	//	public void testReference_1_2() throws Exception {
+	//		roundTripSingleDocument("yaml/reference_1_2/sample.yaml", "yaml/reference_1_2/result.yaml", true);
+	//	}
+	//
+	//	@Test
+	//	public void testStandard() throws Exception {
+	//		roundTripSingleDocument("yaml/standard/sample.yaml", "yaml/standard/result.yaml", true);
+	//	}
 
-	private void roundTrip(final String inputDataFileNamem, final String outputDataFileName, final boolean alwaysQuote) throws Exception {
+	//	//	@Test
+	//	//	public void testTest() throws Exception {
+	//	//		roundTrip("yaml/test/sample.yaml", "yaml/test/result.yaml", false);
+	//	//	}
+	//
+	//	@Test
+	//	public void testMultipleDocuments() throws Exception {
+	//		roundTripMultipleDocuments("yaml/multiple/sample.yaml", "yaml/multiple/result.yaml");
+	//	}
+	//
+	//	@Test
+	//	public void testConverter() throws Exception {
+	//		final String inputDataFileNamem = "yaml/converter/sample.yaml";
+	//		final String outputDataFileName = "yaml/converter/result.yaml";
+	//
+	//		String resultYamlFileString;
+	//		try (InputStream resultDataStream = getClass().getClassLoader().getResourceAsStream(outputDataFileName)) {
+	//			resultYamlFileString = IoUtilities.toString(resultDataStream, StandardCharsets.UTF_8);
+	//		}
+	//
+	//		final YamlDocument testDocument1;
+	//		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream(inputDataFileNamem)) {
+	//			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
+	//				testDocument1 = yamlReader.readYamlDocument();
+	//			}
+	//		}
+	//
+	//		final JsonNode jsonNode = YamlToJsonConverter.convert(testDocument1.getRoot());
+	//		final YamlNode yamlNode = JsonToYamlConverter.convert(jsonNode);
+	//
+	//		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
+	//		try (final YamlWriter writer = new YamlWriter(testOutputStream)) {
+	//			writer.writeDocument(new YamlDocument(yamlNode));
+	//		}
+	//
+	//		final String serializedYaml = new String(testOutputStream.toByteArray(), StandardCharsets.UTF_8);
+	//
+	//		Assert.assertEquals(resultYamlFileString, serializedYaml);
+	//	}
+
+	private void roundTripSingleDocument(final String inputDataFileNamem, final String outputDataFileName, final boolean alwaysQuote) throws Exception {
 		String resultYamlFileString;
 		try (InputStream resultDataStream = getClass().getClassLoader().getResourceAsStream(outputDataFileName)) {
 			resultYamlFileString = IoUtilities.toString(resultDataStream, StandardCharsets.UTF_8);
@@ -83,7 +184,7 @@ public class YamlRoundTripTestWithYamlReader {
 			resultYamlFileString = IoUtilities.toString(resultDataStream, StandardCharsets.UTF_8);
 		}
 
-		final List<YamlDocument> yamlDocumentList1;
+		final YamlDocument yamlDocumentList1;
 		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream(inputDataFileNamem)) {
 			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
 				try {
@@ -92,34 +193,29 @@ public class YamlRoundTripTestWithYamlReader {
 				} catch (@SuppressWarnings("unused") final Exception e) {
 					// Expected expection
 				}
-				yamlDocumentList1 = yamlReader.readYamlDocumentList();
+				yamlDocumentList1 = yamlReader.readYamlDocument();
 			}
 		}
 
-		Assert.assertEquals(2, yamlDocumentList1.size());
-		Assert.assertNotNull("Root node of document 1 should not be null", yamlDocumentList1.get(0).getRoot());
-		Assert.assertNotNull("Root node of document 2 should not be null", yamlDocumentList1.get(1).getRoot());
+		Assert.assertNotNull("Root node of document 1 should not be null", yamlDocumentList1.getRoot());
 
 		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
 		try (final YamlWriter writer = new YamlWriter(testOutputStream)) {
-			writer.writeDocument(yamlDocumentList1.get(0));
-			writer.writeDocument(yamlDocumentList1.get(1));
+			writer.writeDocument(yamlDocumentList1);
 		}
 
 		final String serializedYaml = new String(testOutputStream.toByteArray(), StandardCharsets.UTF_8);
 		Assert.assertFalse("Serialized YAML should not be empty", serializedYaml.isEmpty());
 		Assert.assertEquals(resultYamlFileString, serializedYaml);
 
-		final List<YamlDocument> yamlDocumentList2;
+		final YamlDocument yamlDocumentList2;
 		try (final YamlReader yamlReader = new YamlReader(new ByteArrayInputStream(serializedYaml.getBytes(StandardCharsets.UTF_8)))) {
-			yamlDocumentList2 = yamlReader.readYamlDocumentList();
+			yamlDocumentList2 = yamlReader.readYamlDocument();
 		}
 
-		Assert.assertNotNull("Root node of document 1 should not be null", yamlDocumentList2.get(0).getRoot());
-		Assert.assertNotNull("Root node of document 2 should not be null", yamlDocumentList2.get(1).getRoot());
+		Assert.assertNotNull("Root node of document 1 should not be null", yamlDocumentList2.getRoot());
 
-		Assert.assertTrue( "AST should be equal after round trip", astEquals(yamlDocumentList1.get(0).getRoot(), yamlDocumentList2.get(0).getRoot()));
-		Assert.assertTrue( "AST should be equal after round trip", astEquals(yamlDocumentList1.get(1).getRoot(), yamlDocumentList2.get(1).getRoot()));
+		Assert.assertTrue( "AST should be equal after round trip", astEquals(yamlDocumentList1.getRoot(), yamlDocumentList2.getRoot()));
 	}
 
 	private boolean astEquals(final YamlNode a, final YamlNode b) {
@@ -133,7 +229,8 @@ public class YamlRoundTripTestWithYamlReader {
 			return false;
 		}
 
-		if (!a.getLeadingComments().equals(b.getLeadingComments())) {
+		if ((a.getLeadingComments() == null && b.getLeadingComments() != null)
+				|| (a.getLeadingComments() != null && !a.getLeadingComments().equals(b.getLeadingComments()))) {
 			return false;
 		}
 
@@ -142,11 +239,19 @@ public class YamlRoundTripTestWithYamlReader {
 		}
 
 		if (a instanceof final YamlScalar sa && b instanceof final YamlScalar sb) {
-			return sa.getType() == sb.getType() && safeEquals(sa.getValue(), sb.getValue());
+			if (sa.getType() == sb.getType() && safeEquals(sa.getValue(), sb.getValue())) {
+				return true;
+			} else {
+				return false;
+			}
 		}
 
 		if (a instanceof final YamlAlias aa && b instanceof final YamlAlias ab) {
-			return safeEquals(aa.getTargetAnchorName(), ab.getTargetAnchorName());
+			if (safeEquals(aa.getTargetAnchorName(), ab.getTargetAnchorName())) {
+				return true;
+			} else {
+				return false;
+			}
 		}
 
 		if (a instanceof final YamlSequence seqA && b instanceof final YamlSequence seqB) {

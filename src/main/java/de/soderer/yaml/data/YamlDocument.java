@@ -7,11 +7,21 @@ import de.soderer.yaml.YamlWriter;
 import de.soderer.yaml.data.directive.YamlDirective;
 
 public class YamlDocument {
-	private final List<YamlDirective<?>> directives = new ArrayList<>();
-	private final List<String> leadingComments = new ArrayList<>();
+	private List<YamlDirective<?>> directives = null;
+	private List<String> leadingComments = null;
 	private YamlNode root;
 
+	public YamlDocument() {
+	}
+
+	public YamlDocument(final YamlNode root) {
+		this.root = root;
+	}
+
 	public void addDirective(final YamlDirective<?> directive) {
+		if (directives == null) {
+			directives = new ArrayList<>();
+		}
 		directives.add(directive);
 	}
 
@@ -21,6 +31,9 @@ public class YamlDocument {
 
 	public void addLeadingComment(final String comment) {
 		if (comment != null && !comment.isEmpty()) {
+			if (leadingComments == null) {
+				leadingComments = new ArrayList<>();
+			}
 			leadingComments.add(comment);
 		}
 	}

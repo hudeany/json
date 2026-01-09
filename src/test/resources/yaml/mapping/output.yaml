@@ -1,0 +1,54 @@
+"item1":
+  "property11": "value11"
+  "property12": "value12"
+  "property13": "value13"
+"item2":
+  "property21": "value21"
+  "property22": "value22"
+  "property23": "value23"
+"item3":
+  "property31": "value31"
+  "property32": "value32"
+  "property33": "value33"
+"item4":
+  - "item11"
+  - "item12"
+  - "item13"
+"item5":
+  - "item21"
+  - "item22"
+  - "item23"
+"item6":
+  - "item31"
+  - "item32"
+  - "item33"
+"item7": 1234
+"item8": 123.45
+"item9": "abc"
+"item10": "def"
+"item11": "12345"
+"item12": "123.456"
+"item13": "False"
+"item14": "off"
+"item15": true
+"item16": On
+"item17": 1234
+"item18": 123.45
+"item19": "abc"
+"item20": "def"
+"item21": "12345"
+"item22": "123.456"
+"item23": "False"
+"item24": "off"
+"item25": true
+"item26": On
+"item27": 1234
+"item28": 123.45
+"item29": "abc"
+"item30": "def"
+"item31": "12345"
+"item32": "123.456"
+"item33": "False"
+"item34": "off"
+"item35": true
+"item36": On

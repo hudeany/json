@@ -1,36 +1,29 @@
 package de.soderer.yaml.data.directive;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class YamlDirective<T extends YamlDirective<T>> {
-	private String comment;
+	private final List<String> leadingComments = new ArrayList<>();
 	private String inlineComment;
 
-	public String getComment() {
-		return comment;
+	public List<String> getLeadingComments() {
+		return leadingComments;
 	}
 
-	@SuppressWarnings("unchecked")
-	public T setComment(final String comment) {
-		this.comment = comment;
-		return (T) this;
-	}
-
-	@SuppressWarnings("unchecked")
-	public T addCommentLine(final String commentLine) {
-		if (comment == null) {
-			comment = commentLine;
-		} else {
-			comment = comment + "\n" + commentLine;
+	public YamlDirective<T> addLeadingComment(final String comment) {
+		if (comment != null && !comment.isEmpty()) {
+			leadingComments.add(comment);
 		}
-		return (T) this;
+		return this;
 	}
 
 	public String getInlineComment() {
 		return inlineComment;
 	}
 
-	@SuppressWarnings("unchecked")
-	public T setInlineComment(final String inlineComment) {
+	public YamlDirective<T> setInlineComment(final String inlineComment) {
 		this.inlineComment = inlineComment;
-		return (T) this;
+		return this;
 	}
 }

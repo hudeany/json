@@ -10,7 +10,7 @@ import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
 import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueString;
-import de.soderer.json.exception.JsonDuplicateKeyException;
+import de.soderer.json.exception.DuplicateKeyException;
 import de.soderer.json.path.JsonPath;
 import de.soderer.json.schema.JsonSchema;
 import de.soderer.json.schema.JsonSchemaDataValidationError;
@@ -25,7 +25,7 @@ public class TypeValidator extends BaseJsonSchemaValidator {
 	private final List<String> typeStrings = new ArrayList<>();
 	private final List<List<BaseJsonSchemaValidator>> typeValidators = new ArrayList<>();
 
-	public TypeValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
+	public TypeValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
 		if (validatorData == null || validatorData.isNull()) {

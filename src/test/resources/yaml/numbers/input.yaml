@@ -1,0 +1,187 @@
+- description: "Zero"
+  number: 0
+  normalized: 0
+
+- description: "Normal Integer"
+  number: 123
+  normalized: 123
+
+- description: "Large integer with thousands separator"
+  number: 123_456
+  normalized: 123456
+
+- description: "Normal decimal"
+  number: 0.123
+  normalized: 0.123
+
+- description: "Leading dot"
+  number: .123
+  normalized: 0.123
+
+- description: "Leading dot, unsigned exponent"
+  number: .2333e3
+  normalized: 233.3
+
+- description: "Leading dot, positive exponent"
+  number: .2333e+3
+  normalized: 233.3
+
+- description: "Leading dot, negative exponent"
+  number: .2333e-3
+  normalized: 2.333E-4
+
+- description: "Unsigned exponent"
+  number: 0.2333e3
+  normalized: 233.3
+
+- description: "Positive exponent"
+  number: 0.2333e+3
+  normalized: 233.3
+
+- description: "Negative exponent"
+  number: 0.2333e-3
+  normalized: 2.333E-4
+
+- description: "Unsigned exponent with zero"
+  number: 0.2333e03
+  normalized: 233.3
+
+- description: "Leading dot, unsigned exponent with zero"
+  number: .2333e03
+  normalized: 233.3
+
+- description: "Leading dot, positive exponent with zero"
+  number: .2333e+03
+  normalized: 233.3
+
+- description: "Leading dot, negative exponent with zero"
+  number: .2333e-03
+  normalized: 2.333E-4
+
+- description: "Unsigned exponent with zero"
+  number: 0.2333e+03
+  normalized: 233.3
+
+- description: "Positive exponent with zero"
+  number: 0.2333e+03
+  normalized: 233.3
+
+- description: "Negative exponent with zero"
+  number: 0.2333e-03
+  normalized: 2.333E-4
+
+- description: "Normal negative decimal"
+  number: -0.123
+  normalized: -0.123
+
+- description: "Normal negative Integer"
+  number: -123
+  normalized: -123
+
+- description: "Negative, leading dot"
+  number: -.123
+  normalized: -0.123
+
+- description: "Negative, leading dot, unsigned exponent"
+  number: -.2333e3
+  normalized: -233.3
+
+- description: "Negative, leading dot, positive exponent"
+  number: -.2333e+3
+  normalized: -233.3
+
+- description: "Negative, leading dot, negative exponent"
+  number: -.2333e-3
+  normalized: -2.333E-4
+
+- description: "Negative, unsigned exponent"
+  number: -0.2333e3
+  normalized: -233.3
+
+- description: "Negative, positive exponent"
+  number: -0.2333e+3
+  normalized: -233.3
+
+- description: "Negative, negative exponent"
+  number: -0.2333e-3
+  normalized: -2.333E-4
+
+- description: "Negative, leading dot, unsigned exponent with zero"
+  number: -.2333e03
+  normalized: -233.3
+
+- description: "Negative, leading dot, positive exponent with zero"
+  number: -.2333e+03
+  normalized: -233.3
+
+- description: "Negative, leading dot, negative exponent with zero"
+  number: -.2333e-03
+  normalized: -2.333E-4
+
+- description: "Negative, unsigned exponent with zero"
+  number: -0.2333e03
+  normalized: -233.3
+
+- description: "Negative, positive exponent with zero"
+  number: -0.2333e+03
+  normalized: -233.3
+
+- description: "Negative, negative exponent with zero"
+  number: -0.2333e-03
+  normalized: -2.333E-4
+
+- description: "Negative, leading dot, unsigned exponent, thousands separator"
+  number: -.233_456e3
+  normalized: -233.456
+
+- description: "Hexadecimal integer"
+  number: 0x4D2
+  normalized: 1234
+
+- description: "Negative hexadecimal integer"
+  number: -0x4D2
+  normalized: -1234
+
+- description: "Octal integer"
+  number: 0123
+  normalized: 83
+
+- description: "Negative octal integer"
+  number: -0123
+  normalized: -83
+
+- description: "Sexagesimal number for times or angles"
+  number: 190:20:30.15
+  normalized: 190:20:30.15
+
+- description: "Positive infinity, lowercase"
+  number: .inf
+  normalized: .inf
+
+- description: "Negative infinity, lowercase"
+  number: .inf
+  normalized: .inf
+
+- description: "Positive infinity, uppercase"
+  number: .INF
+  normalized: .INF
+
+- description: "Negative infinity, uppercase"
+  number: .INF
+  normalized: .INF
+
+- description: "Positive infinity, mixed case"
+  number: .Inf
+  normalized: .Inf
+
+- description: "Not a number, lowercase"
+  number: .nan
+  normalized: .nan
+
+- description: "Not a number, uppercase"
+  number: .NAN
+  normalized: .NAN
+
+- description: "Not a number, mixed case"
+  number: .Nan
+  normalized: .Nan

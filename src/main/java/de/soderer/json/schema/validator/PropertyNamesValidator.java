@@ -6,7 +6,7 @@ import java.util.List;
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
 import de.soderer.json.JsonValueString;
-import de.soderer.json.exception.JsonDuplicateKeyException;
+import de.soderer.json.exception.DuplicateKeyException;
 import de.soderer.json.path.JsonPath;
 import de.soderer.json.schema.JsonSchema;
 import de.soderer.json.schema.JsonSchemaDataValidationError;
@@ -20,7 +20,7 @@ import de.soderer.json.schema.JsonSchemaPath;
 public class PropertyNamesValidator extends BaseJsonSchemaValidator {
 	private final List<BaseJsonSchemaValidator> subValidators;
 
-	public PropertyNamesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
+	public PropertyNamesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
 		if (validatorData == null || validatorData.isNull()) {

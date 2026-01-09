@@ -11,8 +11,8 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 
+import de.soderer.json.exception.DuplicateKeyException;
 import de.soderer.yaml.YamlWriter;
-import de.soderer.yaml.exception.YamlDuplicateKeyException;
 
 public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, Object>> {
 	private final LinkedHashMap<YamlNode, YamlNode> entries = new LinkedHashMap<>();
@@ -35,93 +35,33 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 		this.flowStyle = flowStyle;
 	}
 
-	public void add(final String key, final Object value) throws YamlDuplicateKeyException {
+	public void add(final String key, final Object value) throws DuplicateKeyException {
 		if (key == null) {
-			if (value == null) {
-				add(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(null, YamlScalarType.NULL_VALUE));
-			} else if (value instanceof String) {
-				add(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.STRING));
-			} else if (value instanceof Number) {
-				add(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.NUMBER));
-			} else if (value instanceof Boolean) {
-				add(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.BOOLEAN));
-			} else {
-				throw new RuntimeException("Unsupported type of value object: '" + value.getClass().getSimpleName() + "'. Use method add(YamlNode, YamlNode) instead");
-			}
+			add(new YamlScalar(null), new YamlScalar(value));
 		} else {
-			if (value == null) {
-				add(new YamlScalar(key, YamlScalarType.STRING), new YamlScalar(null, YamlScalarType.NULL_VALUE));
-			} else if (value instanceof String) {
-				add(new YamlScalar(key, YamlScalarType.STRING), new YamlScalar(value, YamlScalarType.STRING));
-			} else if (value instanceof Number) {
-				add(new YamlScalar(key, YamlScalarType.STRING), new YamlScalar(value, YamlScalarType.NUMBER));
-			} else if (value instanceof Boolean) {
-				add(new YamlScalar(key, YamlScalarType.STRING), new YamlScalar(value, YamlScalarType.BOOLEAN));
-			} else {
-				throw new RuntimeException("Unsupported type of value object: '" + value.getClass().getSimpleName() + "'. Use method add(YamlNode, YamlNode) instead");
-			}
+			add(new YamlScalar(key, YamlScalarType.STRING), new YamlScalar(value));
 		}
 	}
 
-	public void add(final Number key, final Object value) throws YamlDuplicateKeyException {
+	public void add(final Number key, final Object value) throws DuplicateKeyException {
 		if (key == null) {
-			if (value == null) {
-				add(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(null, YamlScalarType.NULL_VALUE));
-			} else if (value instanceof String) {
-				add(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.STRING));
-			} else if (value instanceof Number) {
-				add(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.NUMBER));
-			} else if (value instanceof Boolean) {
-				add(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.BOOLEAN));
-			} else {
-				throw new RuntimeException("Unsupported type of value object: '" + value.getClass().getSimpleName() + "'. Use method add(YamlNode, YamlNode) instead");
-			}
+			add(new YamlScalar(null), new YamlScalar(value));
 		} else {
-			if (value == null) {
-				add(new YamlScalar(key.toString(), YamlScalarType.NUMBER), new YamlScalar(null, YamlScalarType.NULL_VALUE));
-			} else if (value instanceof String) {
-				add(new YamlScalar(key.toString(), YamlScalarType.NUMBER), new YamlScalar(value, YamlScalarType.STRING));
-			} else if (value instanceof Number) {
-				add(new YamlScalar(key.toString(), YamlScalarType.NUMBER), new YamlScalar(value, YamlScalarType.NUMBER));
-			} else if (value instanceof Boolean) {
-				add(new YamlScalar(key.toString(), YamlScalarType.NUMBER), new YamlScalar(value, YamlScalarType.BOOLEAN));
-			} else {
-				throw new RuntimeException("Unsupported type of value object: '" + value.getClass().getSimpleName() + "'. Use method add(YamlNode, YamlNode) instead");
-			}
+			add(new YamlScalar(key, YamlScalarType.NUMBER), new YamlScalar(value));
 		}
 	}
 
-	public void add(final Boolean key, final Object value) throws YamlDuplicateKeyException {
+	public void add(final Boolean key, final Object value) throws DuplicateKeyException {
 		if (key == null) {
-			if (value == null) {
-				add(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(null, YamlScalarType.NULL_VALUE));
-			} else if (value instanceof String) {
-				add(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.STRING));
-			} else if (value instanceof Number) {
-				add(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.NUMBER));
-			} else if (value instanceof Boolean) {
-				add(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.BOOLEAN));
-			} else {
-				throw new RuntimeException("Unsupported type of value object: '" + value.getClass().getSimpleName() + "'. Use method add(YamlNode, YamlNode) instead");
-			}
+			add(new YamlScalar(null), new YamlScalar(value));
 		} else {
-			if (value == null) {
-				add(new YamlScalar(key, YamlScalarType.BOOLEAN), new YamlScalar(null, YamlScalarType.NULL_VALUE));
-			} else if (value instanceof String) {
-				add(new YamlScalar(key, YamlScalarType.BOOLEAN), new YamlScalar(value, YamlScalarType.STRING));
-			} else if (value instanceof Number) {
-				add(new YamlScalar(key, YamlScalarType.BOOLEAN), new YamlScalar(value, YamlScalarType.NUMBER));
-			} else if (value instanceof Boolean) {
-				add(new YamlScalar(key, YamlScalarType.BOOLEAN), new YamlScalar(value, YamlScalarType.BOOLEAN));
-			} else {
-				throw new RuntimeException("Unsupported type of value object: '" + value.getClass().getSimpleName() + "'. Use method add(YamlNode, YamlNode) instead");
-			}
+			add(new YamlScalar(key, YamlScalarType.BOOLEAN), new YamlScalar(value));
 		}
 	}
 
-	public void add(final YamlNode key, final YamlNode value) throws YamlDuplicateKeyException {
+	public void add(final YamlNode key, final YamlNode value) throws DuplicateKeyException {
 		if (containsKey(key)) {
-			throw new YamlDuplicateKeyException(key);
+			throw new DuplicateKeyException(key.toString());
 		} else {
 			entries.put(key, value);
 		}
@@ -129,85 +69,25 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 
 	public void put(final String key, final Object value) {
 		if (key == null) {
-			if (value == null) {
-				put(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(null, YamlScalarType.NULL_VALUE));
-			} else if (value instanceof String) {
-				put(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.STRING));
-			} else if (value instanceof Number) {
-				put(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.NUMBER));
-			} else if (value instanceof Boolean) {
-				put(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.BOOLEAN));
-			} else {
-				throw new RuntimeException("Unsupported type of value object: '" + value.getClass().getSimpleName() + "'. Use method put(YamlNode, YamlNode) instead");
-			}
+			put(new YamlScalar(null), new YamlScalar(value));
 		} else {
-			if (value == null) {
-				put(new YamlScalar(key, YamlScalarType.STRING), new YamlScalar(null, YamlScalarType.NULL_VALUE));
-			} else if (value instanceof String) {
-				put(new YamlScalar(key, YamlScalarType.STRING), new YamlScalar(value, YamlScalarType.STRING));
-			} else if (value instanceof Number) {
-				put(new YamlScalar(key, YamlScalarType.STRING), new YamlScalar(value, YamlScalarType.NUMBER));
-			} else if (value instanceof Boolean) {
-				put(new YamlScalar(key, YamlScalarType.STRING), new YamlScalar(value, YamlScalarType.BOOLEAN));
-			} else {
-				throw new RuntimeException("Unsupported type of value object: '" + value.getClass().getSimpleName() + "'. Use method put(YamlNode, YamlNode) instead");
-			}
+			put(new YamlScalar(key, YamlScalarType.STRING), new YamlScalar(value));
 		}
 	}
 
 	public void put(final Number key, final Object value) {
 		if (key == null) {
-			if (value == null) {
-				put(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(null, YamlScalarType.NULL_VALUE));
-			} else if (value instanceof String) {
-				put(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.STRING));
-			} else if (value instanceof Number) {
-				put(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.NUMBER));
-			} else if (value instanceof Boolean) {
-				put(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.BOOLEAN));
-			} else {
-				throw new RuntimeException("Unsupported type of value object: '" + value.getClass().getSimpleName() + "'. Use method put(YamlNode, YamlNode) instead");
-			}
+			put(new YamlScalar(null), new YamlScalar(value));
 		} else {
-			if (value == null) {
-				put(new YamlScalar(key.toString(), YamlScalarType.NUMBER), new YamlScalar(null, YamlScalarType.NULL_VALUE));
-			} else if (value instanceof String) {
-				put(new YamlScalar(key.toString(), YamlScalarType.NUMBER), new YamlScalar(value, YamlScalarType.STRING));
-			} else if (value instanceof Number) {
-				put(new YamlScalar(key.toString(), YamlScalarType.NUMBER), new YamlScalar(value, YamlScalarType.NUMBER));
-			} else if (value instanceof Boolean) {
-				put(new YamlScalar(key.toString(), YamlScalarType.NUMBER), new YamlScalar(value, YamlScalarType.BOOLEAN));
-			} else {
-				throw new RuntimeException("Unsupported type of value object: '" + value.getClass().getSimpleName() + "'. Use method put(YamlNode, YamlNode) instead");
-			}
+			put(new YamlScalar(key, YamlScalarType.NUMBER), new YamlScalar(value));
 		}
 	}
 
 	public void put(final Boolean key, final Object value) {
 		if (key == null) {
-			if (value == null) {
-				put(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(null, YamlScalarType.NULL_VALUE));
-			} else if (value instanceof String) {
-				put(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.STRING));
-			} else if (value instanceof Number) {
-				put(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.NUMBER));
-			} else if (value instanceof Boolean) {
-				put(new YamlScalar(null, YamlScalarType.NULL_VALUE), new YamlScalar(value, YamlScalarType.BOOLEAN));
-			} else {
-				throw new RuntimeException("Unsupported type of value object: '" + value.getClass().getSimpleName() + "'. Use method put(YamlNode, YamlNode) instead");
-			}
+			put(new YamlScalar(null), new YamlScalar(value));
 		} else {
-			if (value == null) {
-				put(new YamlScalar(key, YamlScalarType.BOOLEAN), new YamlScalar(null, YamlScalarType.NULL_VALUE));
-			} else if (value instanceof String) {
-				put(new YamlScalar(key, YamlScalarType.BOOLEAN), new YamlScalar(value, YamlScalarType.STRING));
-			} else if (value instanceof Number) {
-				put(new YamlScalar(key, YamlScalarType.BOOLEAN), new YamlScalar(value, YamlScalarType.NUMBER));
-			} else if (value instanceof Boolean) {
-				put(new YamlScalar(key, YamlScalarType.BOOLEAN), new YamlScalar(value, YamlScalarType.BOOLEAN));
-			} else {
-				throw new RuntimeException("Unsupported type of value object: '" + value.getClass().getSimpleName() + "'. Use method put(YamlNode, YamlNode) instead");
-			}
+			put(new YamlScalar(key, YamlScalarType.BOOLEAN), new YamlScalar(value));
 		}
 	}
 
@@ -217,7 +97,7 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 
 	public YamlNode remove(final String key) {
 		if (key == null) {
-			return remove(new YamlScalar(null, YamlScalarType.NULL_VALUE));
+			return remove(new YamlScalar(null));
 		} else {
 			return remove(new YamlScalar(key, YamlScalarType.STRING));
 		}
@@ -225,7 +105,7 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 
 	public YamlNode remove(final Number key) {
 		if (key == null) {
-			return remove(new YamlScalar(null, YamlScalarType.NULL_VALUE));
+			return remove(new YamlScalar(null));
 		} else {
 			return remove(new YamlScalar(key, YamlScalarType.NUMBER));
 		}
@@ -233,7 +113,7 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 
 	public YamlNode remove(final Boolean key) {
 		if (key == null) {
-			return remove(new YamlScalar(null, YamlScalarType.NULL_VALUE));
+			return remove(new YamlScalar(null));
 		} else {
 			return remove(new YamlScalar(key, YamlScalarType.BOOLEAN));
 		}
@@ -245,7 +125,7 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 
 	public YamlNode get(final Number key) {
 		if (key == null) {
-			return get(new YamlScalar(null, YamlScalarType.NULL_VALUE));
+			return get(new YamlScalar(null));
 		} else {
 			return get(new YamlScalar(key, YamlScalarType.NUMBER));
 		}
@@ -253,17 +133,17 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 
 	public YamlNode get(final String key) {
 		if (key == null) {
-			return get(new YamlScalar(null, YamlScalarType.NULL_VALUE));
+			return get(new YamlScalar(null));
 		} else {
-			return get(new YamlScalar(key, YamlScalarType.BOOLEAN));
+			return get(new YamlScalar(key, YamlScalarType.STRING));
 		}
 	}
 
 	public YamlNode get(final Boolean key) {
 		if (key == null) {
-			return get(new YamlScalar(null, YamlScalarType.NULL_VALUE));
+			return get(new YamlScalar(null));
 		} else {
-			return get(new YamlScalar(key, YamlScalarType.STRING));
+			return get(new YamlScalar(key, YamlScalarType.BOOLEAN));
 		}
 	}
 
@@ -273,7 +153,7 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 
 	public boolean containsKey(final String key) {
 		if (key == null) {
-			return containsKey(new YamlScalar(null, YamlScalarType.NULL_VALUE));
+			return containsKey(new YamlScalar(null));
 		} else {
 			return containsKey(new YamlScalar(key, YamlScalarType.STRING));
 		}
@@ -281,7 +161,7 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 
 	public boolean containsKey(final Number key) {
 		if (key == null) {
-			return containsKey(new YamlScalar(null, YamlScalarType.NULL_VALUE));
+			return containsKey(new YamlScalar(null));
 		} else {
 			return containsKey(new YamlScalar(key, YamlScalarType.NUMBER));
 		}
@@ -289,7 +169,7 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 
 	public boolean containsKey(final Boolean key) {
 		if (key == null) {
-			return containsKey(new YamlScalar(null, YamlScalarType.NULL_VALUE));
+			return containsKey(new YamlScalar(null));
 		} else {
 			return containsKey(new YamlScalar(key, YamlScalarType.BOOLEAN));
 		}
@@ -332,21 +212,33 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 		for (final Entry<YamlNode, YamlNode> entry : entries.entrySet()) {
 			if (entry.getKey() instanceof YamlScalar) {
 				final YamlScalar keyScalar = (YamlScalar) entry.getKey();
-				if (keyScalar.getType() == YamlScalarType.STRING) {
+				if (keyScalar.getType() == YamlScalarType.STRING
+						|| keyScalar.getType() == YamlScalarType.NUMBER
+						|| keyScalar.getType() == YamlScalarType.BOOLEAN) {
 					if (entry.getValue() instanceof YamlScalar) {
 						if (((YamlScalar) entry.getValue()).getType() == YamlScalarType.NULL_VALUE) {
-							simpleProperties.put((String) keyScalar.getValue(), null);
+							simpleProperties.put(keyScalar.getValueString(), null);
 						} else {
-							simpleProperties.put((String) keyScalar.getValue(), ((YamlScalar) entry.getValue()).getValue());
+							simpleProperties.put(keyScalar.getValueString(), ((YamlScalar) entry.getValue()).getValue());
 						}
 					} else {
-						simpleProperties.put((String) keyScalar.getValue(), entry.getValue());
+						simpleProperties.put(keyScalar.getValueString(), entry.getValue());
+					}
+				} else if (keyScalar.getType() == YamlScalarType.NULL_VALUE) {
+					if (entry.getValue() instanceof YamlScalar) {
+						if (((YamlScalar) entry.getValue()).getType() == YamlScalarType.NULL_VALUE) {
+							simpleProperties.put(null, null);
+						} else {
+							simpleProperties.put(null, ((YamlScalar) entry.getValue()).getValue());
+						}
+					} else {
+						simpleProperties.put(null, entry.getValue());
 					}
 				} else {
-					throw new RuntimeException("Cannot create simpleEntrySet, because YamlMapping contains non-String keys");
+					throw new RuntimeException("Cannot create simpleEntrySet, because YamlMapping contains unkown key type: '" + keyScalar.getType() + "'");
 				}
 			} else {
-				throw new RuntimeException("Cannot create simpleEntrySet, because YamlMapping contains non-String keys");
+				throw new RuntimeException("Cannot create simpleEntrySet, because YamlMapping contains complex keys");
 			}
 		}
 		return Collections.unmodifiableSet(simpleProperties.entrySet());

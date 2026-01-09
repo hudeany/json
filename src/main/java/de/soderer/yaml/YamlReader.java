@@ -8,41 +8,34 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 import de.soderer.json.utilities.BasicReadAheadReader;
-import de.soderer.json.utilities.NumberUtilities;
-import de.soderer.yaml.data.YamlAlias;
 import de.soderer.yaml.data.YamlDocument;
 import de.soderer.yaml.data.YamlMapping;
 import de.soderer.yaml.data.YamlNode;
 import de.soderer.yaml.data.YamlScalar;
 import de.soderer.yaml.data.YamlScalarType;
 import de.soderer.yaml.data.YamlSequence;
-import de.soderer.yaml.data.YamlToken;
-import de.soderer.yaml.data.YamlTokenType;
 import de.soderer.yaml.data.directive.YamlDirective;
 import de.soderer.yaml.data.directive.YamlTagDirective;
 import de.soderer.yaml.data.directive.YamlVersionDirective;
-import de.soderer.yaml.exception.YamlDuplicateKeyException;
+import de.soderer.yaml.exception.NotImplementedException;
+import de.soderer.yaml.exception.YamlParseException;
 
 /**
- * TODOs:
- * - Read complex mapping keys
- * - Improve comment handling
+ * TODO:
+ * Read anchor
+ * Read alias
+ * Read complex mapping keys
+ * Read inline comments
  */
 public class YamlReader extends BasicReadAheadReader {
-	private final List<YamlToken> yamlTokens = new ArrayList<>();
-	private int yamlTokenIndex = 0;
-	private final List<Integer> indentStack = new ArrayList<>();
-
+	private final Stack<Integer> indentations = new Stack<>();
 	private final Map<String, YamlNode> anchorTable = new HashMap<>();
-
-	private final List<String> pendingLeadingComments = new ArrayList<>();
-
+	private List<String> pendingLeadingComments = new ArrayList<>();
 	private Boolean yamlDocumentContentStarted = null;
-	private List<YamlDocument> yamlDocumentList = null;
-
-	private YamlNode latestYamlDataNode = null;
+	private YamlNode latestYamlNode = null;
 
 	public YamlReader(final InputStream inputStream) throws Exception {
 		this(inputStream, null);
@@ -53,792 +46,682 @@ public class YamlReader extends BasicReadAheadReader {
 
 		setNormalizeLinebreaks(true);
 
-		indentStack.add(0);
+		indentations.add(0);
 	}
 
 	public YamlDocument readYamlDocument() throws Exception {
-		yamlDocumentList = readYamlDocumentList();
+		final YamlDocument nextDocument = new YamlDocument();
 
-		if (yamlDocumentList.size() == 1) {
-			return yamlDocumentList.get(0);
-		} else {
-			throw new Exception("Data includes " + yamlDocumentList.size() + " YAML documents. Therefore use method 'readYamlDocumentList' to read all of them now. No need for reparsing data.");
-		}
-	}
-
-
-	public List<YamlDocument> readYamlDocumentList() throws Exception {
-		if (yamlDocumentList == null) {
-			tokenize();
-
-			yamlDocumentList = new ArrayList<>();
-
-			while (!isAtDataEnd()) {
-				final YamlDocument doc = new YamlDocument();
-
-				consumeOptionalNewlines();
-
-				while (match(YamlTokenType.DIRECTIVE)) {
-					doc.addDirective(parseDirective(previousYamlToken().getValue()));
-					consumeOptionalNewlines();
-				}
-
-				if (match(YamlTokenType.DOCUMENT_START)) {
-					System.out.println();
-				}
-
-				while (match(YamlTokenType.COMMENT) || match(YamlTokenType.COMMENT_INLINE)) {
-					doc.addLeadingComment(previousYamlToken().getValue());
-					consumeOptionalNewlines();
-				}
-
-				consumeOptionalNewlines();
-
-				final YamlNode root = parseNode(false);
-				doc.setRoot(root);
-
-				yamlDocumentList.add(doc);
-
-				match(YamlTokenType.DOCUMENT_END);
-			}
-		}
-
-		return yamlDocumentList;
-	}
-
-	private static YamlDirective<?> parseDirective(final String value) throws Exception {
-		try {
-			if (value.toUpperCase().startsWith("%YAML ")) {
-				return new YamlVersionDirective(value.substring(6));
-			} else if (value.toUpperCase().startsWith("%TAG ")) {
-				return new YamlTagDirective(value.substring(5));
-			} else {
-				throw new Exception("Unknown yaml directive: " + value);
-			}
-		} catch (final Exception e) {
-			throw new Exception("Invalid YAML directive data '" + value + "': " + e.getMessage());
-		}
-	}
-
-	private void tokenize() throws Exception {
-		boolean readNextIndentation = true;
-		boolean multilineScalar = false;
 		while (!isEOF()) {
-			if (peekChar() == '\n') {
-				readNextIndentation = true;
-				readNewline();
-				continue;
-			}
-
-			if (readNextIndentation) {
-				readNextIndentation = false;
-				readIndentation();
-				if (yamlTokens.size() > 0 && yamlTokens.get(yamlTokens.size() - 1).getType() == YamlTokenType.DEDENT) {
-					multilineScalar = false;
-				}
-				continue;
-			}
-
-			while (!isEOF() && isBlankOrTab(peekChar())) {
-				// Skip blanks and tabs
-				readChar();
-			}
-
-			switch (peekChar()) {
-				case '%':
-					checkOutsideDocumentContent();
-					readDirective();
-					continue;
-				case '#':
-					final YamlToken latestYamlToken = yamlTokens.size() > 0 ? yamlTokens.get(yamlTokens.size() - 1) : null;
-					if (latestYamlToken == null
-							|| latestYamlToken.getType() == YamlTokenType.INDENT
-							|| latestYamlToken.getType() == YamlTokenType.DEDENT
-							|| latestYamlToken.getType() == YamlTokenType.NEWLINE) {
-						readComment();
-					} else {
-						readInlineComment();
-					}
-					continue;
-				case '-':
-					if (peekNextChar() == '-') {
+			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+			if (peekCharMatch('#')) {
+				readLeadingComment();
+			} else if (peekCharMatch('%')) {
+				nextDocument.addDirective(readDirective());
+				yamlDocumentContentStarted = false;
+			} else if (peekCharMatch('-')) {
+				if (peekNextCharMatch('-')) {
+					readChar();
+					if (peekNextCharMatch('-')) {
 						readChar();
-						if (peekNextChar() == '-') {
-							readChar();
-							readChar();
-							yamlTokens.add(new YamlToken(YamlTokenType.DOCUMENT_START, null, getCurrentLine(), getCurrentColumn() - 3));
+						readChar();
+						if (yamlDocumentContentStarted != null && yamlDocumentContentStarted) {
+							// Start of next document
+							break;
+						} else if (yamlDocumentContentStarted != null && !yamlDocumentContentStarted) {
+							throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn() - 3);
+						} else {
 							yamlDocumentContentStarted = true;
-						} else {
-							throw new Exception("Unexpected double hyphen '--' found at " + getCurrentLine() + ":" + (getCurrentColumn() - 1));
+							skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+							nextDocument.setRoot(parseNextYamlNode());
+							return nextDocument;
 						}
+					} else if (yamlDocumentContentStarted != null && !yamlDocumentContentStarted) {
+						throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn() - 1);
 					} else {
-						yamlTokens.add(new YamlToken(YamlTokenType.DASH, String.valueOf(readChar()), getCurrentLine(), getCurrentColumn() - 1));
+						yamlDocumentContentStarted = true;
+						nextDocument.setRoot(parseYamlMappingOrScalar('-'));
+						return nextDocument;
 					}
-					continue;
-				case ':':
-					checkInsideDocumentContent();
-					yamlTokens.add(new YamlToken(YamlTokenType.COLON, String.valueOf(readChar()), getCurrentLine(), getCurrentColumn() - 1));
-					continue;
-				case '?':
-					checkInsideDocumentContent();
-					yamlTokens.add(new YamlToken(YamlTokenType.QUESTION, String.valueOf(readChar()), getCurrentLine(), getCurrentColumn() - 1));
-					continue;
-				case '{':
-					checkInsideDocumentContent();
-					yamlTokens.add(new YamlToken(YamlTokenType.FLOW_MAP_START, String.valueOf(readChar()), getCurrentLine(), getCurrentColumn() - 1));
-					continue;
-				case '}':
-					checkInsideDocumentContent();
-					yamlTokens.add(new YamlToken(YamlTokenType.FLOW_MAP_END, String.valueOf(readChar()), getCurrentLine(), getCurrentColumn() - 1));
-					continue;
-				case '[':
-					checkInsideDocumentContent();
-					yamlTokens.add(new YamlToken(YamlTokenType.FLOW_SEQ_START, String.valueOf(readChar()), getCurrentLine(), getCurrentColumn() - 1));
-					continue;
-				case ']':
-					checkInsideDocumentContent();
-					yamlTokens.add(new YamlToken(YamlTokenType.FLOW_SEQ_END, String.valueOf(readChar()), getCurrentLine(), getCurrentColumn() - 1));
-					continue;
-				case ',':
-					checkInsideDocumentContent();
-					yamlTokens.add(new YamlToken(YamlTokenType.COMMA, String.valueOf(readChar()), getCurrentLine(), getCurrentColumn() - 1));
-					continue;
-				case '.':
-					if (peekNextChar() == '.') {
+				} else if (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n')) {
+					if (yamlDocumentContentStarted != null && !yamlDocumentContentStarted) {
+						throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
+					} else {
+						nextDocument.setRoot(parseYamlSequence());
+						return nextDocument;
+					}
+				} else if (yamlDocumentContentStarted != null && !yamlDocumentContentStarted) {
+					throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
+				} else {
+					nextDocument.setRoot(parseYamlMappingOrScalar(null));
+					return nextDocument;
+				}
+			} else if (peekCharMatch('.')) {
+				if (peekNextCharMatch('.')) {
+					readChar();
+					if (peekNextCharMatch('.')) {
 						readChar();
-						if (peekNextChar() == '.') {
-							readChar();
-							readChar();
-							yamlTokens.add(new YamlToken(YamlTokenType.DOCUMENT_END, null, getCurrentLine(), getCurrentColumn() - 3));
-							yamlDocumentContentStarted = null;
-						} else {
-							throw new Exception("Unexpected double dot '..' found at " + getCurrentLine() + ":" + (getCurrentColumn() - 1));
-						}
+						readChar();
+						skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+						yamlDocumentContentStarted = null;
+						// End of document
+						break;
+					} else if (yamlDocumentContentStarted != null && !yamlDocumentContentStarted) {
+						throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
 					} else {
-						if (Character.isDigit(peekChar()) || (peekChar() == '-' && Character.isDigit(peekNextChar()))) {
-							readNumber();
-						} else if (multilineScalar) {
-							readMultilineScalarString();
-						} else {
-							multilineScalar = readScalarString();
-						}
+						yamlDocumentContentStarted = true;
+						nextDocument.setRoot(parseYamlMappingOrScalar('.'));
+						return nextDocument;
 					}
-					continue;
-				case '&':
-					checkInsideDocumentContent();
-					readAnchor();
-					continue;
-				case '*':
-					checkInsideDocumentContent();
-					readAlias();
-					continue;
-				case '"':
-					checkInsideDocumentContent();
-					readDoubleQuotedString();
-					continue;
-				case '\'':
-					checkInsideDocumentContent();
-					readSingleQuotedString();
-					continue;
-				default:
-					checkInsideDocumentContent();
-					if (Character.isDigit(peekChar()) || (peekChar() == '-' && Character.isDigit(peekNextChar()))) {
-						readNumber();
-					} else if (multilineScalar) {
-						readMultilineScalarString();
-					} else {
-						multilineScalar = readScalarString();
-					}
-			}
-		}
-
-		while (indentStack.size() > 1) {
-			indentStack.remove(indentStack.size() - 1);
-			yamlTokens.add(new YamlToken(YamlTokenType.DEDENT, null, getCurrentLine(), getCurrentColumn()));
-		}
-
-		yamlTokens.add(new YamlToken(YamlTokenType.EOF, null, getCurrentLine(), getCurrentColumn()));
-	}
-
-	private void readDirective() throws Exception {
-		final long startLine = getCurrentLine();
-		final long startColumn = getCurrentColumn();
-
-		final StringBuilder text = new StringBuilder();
-		if (peekChar() != '%') {
-			throw new Exception("Expected directive not found");
-		}
-		while (!isEOF()) {
-			if (peekChar() == '\n') {
-				break;
+				} else if (yamlDocumentContentStarted != null && !yamlDocumentContentStarted) {
+					throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
+				} else {
+					yamlDocumentContentStarted = true;
+					nextDocument.setRoot(parseYamlMappingOrScalar(null));
+					return nextDocument;
+				}
+			} else if (yamlDocumentContentStarted != null && !yamlDocumentContentStarted) {
+				throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
 			} else {
-				text.append(readChar());
+				yamlDocumentContentStarted = true;
+				nextDocument.setRoot(parseNextYamlNode());
+				return nextDocument;
 			}
 		}
 
-		yamlTokens.add(new YamlToken(YamlTokenType.DIRECTIVE, text.toString().trim(), startLine, startColumn));
+		return null;
 	}
 
-	private void checkOutsideDocumentContent() throws Exception {
-		if (yamlDocumentContentStarted != null && yamlDocumentContentStarted) {
-			final long startLine = getCurrentLine();
-			final long startColumn = getCurrentColumn();
-			throw new Exception("Invalid yaml data starting YAML directives with '%' in line " + startLine +" at column " + startColumn);
+	public YamlNode readUpToPath(final String yamlPath) {
+		// TODO
+		return null;
+	}
+
+	public YamlNode readNextYamlNode() throws Exception {
+		return parseNextYamlNode();
+	}
+
+	public static YamlDocument readYamlDocument(final String yamlDocumentString) throws Exception {
+		try (final YamlReader yamlReader = new YamlReader(new ByteArrayInputStream(yamlDocumentString.getBytes(StandardCharsets.UTF_8)))) {
+			return yamlReader.readYamlDocument();
 		}
-		yamlDocumentContentStarted = false;
 	}
 
-	private void checkInsideDocumentContent() throws Exception {
-		if (yamlDocumentContentStarted != null && !yamlDocumentContentStarted) {
-			final long startLine = getCurrentLine();
-			final long startColumn = getCurrentColumn();
-			throw new Exception("Invalid yaml content data starting before YAML directives end '---' in line " + startLine +" at column " + startColumn);
-		}
-		yamlDocumentContentStarted = true;
-	}
-
-	private void readNewline() throws Exception {
-		final long startLine = getCurrentLine();
-		final long startColumn = getCurrentColumn();
-
-		if (!isEOF()) {
+	private void skipBlanks() throws Exception {
+		while (peekCharMatch(' ') || peekCharMatch('\t')) {
 			readChar();
-			yamlTokens.add(new YamlToken(YamlTokenType.NEWLINE, null, startLine, startColumn));
 		}
-	}
-
-	private void readIndentation() throws Exception {
-		final long startLine = getCurrentLine();
-		final long startColumn = getCurrentColumn();
-		int count = 0;
-
-		while (!isEOF() && peekChar() == ' ') {
-			readChar();
-			count++;
-		}
-
-		if (peekChar() == '\n' || peekChar() == '#') {
-			return;
-		}
-
-		int lastIndent = indentStack.get(indentStack.size() - 1);
-
-		if (count > lastIndent) {
-			indentStack.add(count);
-			yamlTokens.add(new YamlToken(YamlTokenType.INDENT, null, startLine, startColumn));
-		} else {
-			while (count < lastIndent) {
-				indentStack.remove(indentStack.size() - 1);
-				lastIndent = indentStack.get(indentStack.size() - 1);
-				yamlTokens.add(new YamlToken(YamlTokenType.DEDENT, null, startLine, startColumn));
-			}
-		}
-	}
-
-	private void readComment() throws Exception {
-		final long startLine = getCurrentLine();
-		final long startColumn = getCurrentColumn();
-
-		final StringBuilder text = new StringBuilder();
-		final Character nextChar = readChar();
-		if (nextChar != '#') {
-			throw new Exception("Expected comment start '#' not found");
-		}
-		while (!isEOF()) {
-			if (peekChar() == '\n') {
-				break;
-			} else {
-				text.append(readChar());
-			}
-		}
-		yamlTokens.add(new YamlToken(YamlTokenType.COMMENT, text.toString().trim(), startLine, startColumn));
-	}
-
-	private void readInlineComment() throws Exception {
-		final long startLine = getCurrentLine();
-		final long startColumn = getCurrentColumn();
-
-		final StringBuilder text = new StringBuilder();
-		final Character nextChar = readChar();
-		if (nextChar != '#') {
-			throw new Exception("Expected inline comment start '#' not found");
-		}
-		while (!isEOF()) {
-			if (peekChar() == '\n') {
-				break;
-			} else {
-				text.append(readChar());
-			}
-		}
-		yamlTokens.add(new YamlToken(YamlTokenType.COMMENT_INLINE, text.toString().trim(), startLine, startColumn));
-	}
-
-	private void readAnchor() throws Exception {
-		final long startLine = getCurrentLine();
-		final long startColumn = getCurrentColumn();
-
-		readChar(); // &
-		final String name = readIdentifier();
-		yamlTokens.add(new YamlToken(YamlTokenType.ANCHOR, name, startLine, startColumn));
-	}
-
-	private void readAlias() throws Exception {
-		final long startLine = getCurrentLine();
-		final long startColumn = getCurrentColumn();
-
-		readChar(); // *
-		final String name = readIdentifier();
-		yamlTokens.add(new YamlToken(YamlTokenType.ALIAS, name, startLine, startColumn));
-	}
-
-	private void readDoubleQuotedString() throws Exception {
-		final long startLine = getCurrentLine();
-		final long startColumn = getCurrentColumn();
-
-		readChar(); // "
-		final String quotedString = readUpToNext(false, '\\', '\"');
-		readChar(); // closing "
-		yamlTokens.add(new YamlToken(YamlTokenType.STRING, quotedString, startLine, startColumn));
-	}
-
-	private void readSingleQuotedString() throws Exception {
-		final long startLine = getCurrentLine();
-		final long startColumn = getCurrentColumn();
-
-		readChar(); // '
-		final String quotedString = readUpToNext(false, null, '\'');
-		readChar(); // closing '
-		yamlTokens.add(new YamlToken(YamlTokenType.STRING, quotedString, startLine, startColumn));
-	}
-
-	private void readNumber() throws Exception {
-		final long startLine = getCurrentLine();
-		final long startColumn = getCurrentColumn();
-
-		final StringBuilder text = new StringBuilder();
-		final Character nextChar = readChar();
-		if (nextChar != '-' && !Character.isDigit(nextChar)) {
-			throw new Exception("Expected number not found");
-		} else {
-			text.append(nextChar);
-		}
-		while (!isEOF()) {
-			if (Character.isDigit(peekChar()) || peekChar() == '.' || peekChar() == '-') {
-				text.append(readChar());
-			} else {
-				break;
-			}
-		}
-		yamlTokens.add(new YamlToken(YamlTokenType.NUMBER, text.toString(), startLine, startColumn));
 	}
 
 	/**
-	 * Return value 'true' indicates, that next lines are part of a multiline string scalar
 	 * @return
+	 * 	null: same unchanged level of indentation<br />
+	 * 	true: new added level of indentation<br />
+	 * 	false: one or more levels if indentation reduced<br />
+	 *
 	 * @throws Exception
 	 */
-	private boolean readScalarString() throws Exception {
-		final long startLine = getCurrentLine();
-		final long startColumn = getCurrentColumn();
+	private Boolean skipEmptyLinesAndReadNextIndentationAndLeadingComments() throws Exception {
+		if (peekCharNotMatch(' ') && peekCharNotMatch('\t') && peekCharNotMatch('\n') && peekCharNotMatch('#')) {
+			// Prevent multiple skip of indentation without intention
+			return null;
+		}
 
-		final StringBuilder text = new StringBuilder();
+		int nextIndentationSize = 0;
 		while (!isEOF()) {
-			if ("{}[],:#\n".indexOf(peekChar()) > -1) {
-				break;
+			if (peekCharMatch(' ') || peekCharMatch('\t')) {
+				readChar();
+				nextIndentationSize++;
+			} else if (peekCharMatch('#')) {
+				readLeadingComment();
+				nextIndentationSize = getNumberOfIndentationChars();
+			} else if (peekCharMatch('\n')) {
+				readChar();
+				nextIndentationSize = 0;
 			} else {
-				text.append(readChar());
+				break;
 			}
 		}
 
-		final String scalarString = text.toString().trim();
+		for (final int indentationSize : indentations) {
+			nextIndentationSize -= indentationSize;
+		}
 
-		if ("true".equalsIgnoreCase(scalarString)
+		if (nextIndentationSize == 0) {
+			return null;
+		} else if (nextIndentationSize > 0) {
+			indentations.add(nextIndentationSize);
+			return true;
+		} else {
+			// First entry is always [0]
+			while (nextIndentationSize < 0 && indentations.size() > 1) {
+				nextIndentationSize += indentations.pop();
+			}
+			if (nextIndentationSize == 0) {
+				return false;
+			} else {
+				throw new YamlParseException("Unexpected indentation level: " + nextIndentationSize + " indentations: " + indentations, getCurrentLine(), getCurrentColumn());
+			}
+		}
+	}
+
+	private Boolean readNextIndentation() throws Exception {
+		int nextIndentationSize = 0;
+		while (!isEOF()) {
+			if (peekCharMatch(' ') || peekCharMatch('\t')) {
+				readChar();
+				nextIndentationSize++;
+			} else if (peekCharMatch('\n')) {
+				return null;
+			} else {
+				break;
+			}
+		}
+
+		for (final int indentationSize : indentations) {
+			nextIndentationSize -= indentationSize;
+		}
+
+		if (nextIndentationSize == 0) {
+			return null;
+		} else if (nextIndentationSize > 0) {
+			indentations.add(nextIndentationSize);
+			return true;
+		} else {
+			// First entry is always [0]
+			while (nextIndentationSize < 0 && indentations.size() > 1) {
+				nextIndentationSize += indentations.pop();
+			}
+			if (nextIndentationSize == 0) {
+				return false;
+			} else {
+				throw new YamlParseException("Unexpected indentation level: " + nextIndentationSize + " indentations: " + indentations, getCurrentLine(), getCurrentColumn());
+			}
+		}
+	}
+
+	private void readLeadingComment() throws Exception {
+		final long startLine = getCurrentLine();
+		final long startColumn = getCurrentColumn();
+
+		if (peekCharNotMatch('#')) {
+			throw new YamlParseException("Expected comment not found", startLine, startColumn);
+		}
+
+		while (peekCharMatch('#')) {
+			readChar();
+			final String commentText = readUpToNext(false, null, '\n').trim();
+			pendingLeadingComments.add(commentText);
+			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+		}
+	}
+
+	private String readInlineComment() throws Exception {
+		final long startLine = getCurrentLine();
+		final long startColumn = getCurrentColumn();
+
+		if (peekCharNotMatch('#')) {
+			throw new YamlParseException("Expected comment not found", startLine, startColumn);
+		}
+
+		readChar();
+
+		final String commentText = readUpToNext(false, null, '\n').trim();
+		return commentText;
+	}
+
+	private YamlDirective<?> readDirective() throws Exception {
+		final long startLine = getCurrentLine();
+		final long startColumn = getCurrentColumn();
+
+		if (peekCharNotMatch('%')) {
+			throw new YamlParseException("Expected directive not found", startLine, startColumn);
+		}
+
+		final String directiveText = readUpToNext(false, null, '#', '\n');
+		final YamlDirective<?> directive;
+		try {
+			if (directiveText.toUpperCase().startsWith("%YAML ")) {
+				directive = new YamlVersionDirective(directiveText.substring(6));
+			} else if (directiveText.toUpperCase().startsWith("%TAG ")) {
+				directive = new YamlTagDirective(directiveText.substring(5));
+			} else {
+				throw new YamlParseException("Unknown yaml directive: " + directiveText, startLine, startColumn);
+			}
+		} catch (final Exception e) {
+			throw new YamlParseException("Invalid YAML directive data '" + directiveText + "': " + e.getMessage(), startLine, startColumn, e);
+		}
+
+		if (peekCharMatch('#')) {
+			directive.setInlineComment(readInlineComment());
+		}
+
+		return directive;
+	}
+
+	private YamlNode parseNextYamlNode() throws Exception {
+		if (peekCharMatch('-') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
+			return parseYamlSequence();
+		} else if (peekNextCharMatch('&')) {
+			//parseYamlAnchor();
+			// TODO
+			throw new NotImplementedException();
+		} else if (peekNextCharMatch('*')) {
+			//parseYamlAlias();
+			// TODO
+			throw new NotImplementedException();
+		} else {
+			return parseYamlMappingOrScalar(null);
+		}
+	}
+
+	private YamlNode parseYamlSequence() throws Exception {
+		if (peekCharNotMatch('-') || (peekNextCharNotMatch(' ') && peekNextCharNotMatch('\t') && peekNextCharNotMatch('\n'))) {
+			throw new YamlParseException("Expected sequence start not found", getCurrentLine(), getCurrentColumn());
+		}
+
+		final int sequenceIndentation = getNumberOfIndentationChars();
+
+		final YamlSequence sequence = new YamlSequence();
+
+		while (!isEOF() && getNumberOfIndentationChars() == sequenceIndentation) {
+			List<String> interimPendingLeadingComments = pendingLeadingComments;
+			pendingLeadingComments = new ArrayList<>();
+
+			if (peekCharMatch('-') && (peekNextCharMatch(' ') || peekNextCharMatch('\t'))) {
+				readChar();
+				readChar();
+				skipBlanks();
+
+				if (peekCharMatch('&')) {
+					// parseYamlAnchor();
+					// TODO
+					throw new NotImplementedException();
+				}
+
+				String inlineComment = null;
+				if (peekCharMatch('#')) {
+					inlineComment = readInlineComment();
+				}
+
+				indentations.add(2);
+				skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+
+				final YamlNode nextItemNode = parseNextYamlNode();
+				nextItemNode.setInlineComment(inlineComment);
+
+				if (!interimPendingLeadingComments.isEmpty()) {
+					for (final String commentLine : interimPendingLeadingComments) {
+						nextItemNode.addLeadingComment(commentLine);
+					}
+					interimPendingLeadingComments = new ArrayList<>();
+				}
+
+				sequence.add(nextItemNode);
+			} else if (peekCharMatch('-') && (peekNextCharMatch('\n'))) {
+				readChar();
+				skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+
+				final YamlNode nextItemNode = parseNextYamlNode();
+
+				if (!interimPendingLeadingComments.isEmpty()) {
+					for (final String commentLine : interimPendingLeadingComments) {
+						nextItemNode.addLeadingComment(commentLine);
+					}
+					interimPendingLeadingComments = new ArrayList<>();
+				}
+
+				sequence.add(nextItemNode);
+			} else {
+				throw new YamlParseException("Expected sequence start not found", getCurrentLine(), getCurrentColumn());
+			}
+		}
+
+		latestYamlNode = sequence;
+		return latestYamlNode;
+	}
+
+	private YamlNode parseYamlMappingOrScalar(final Character additionalLeadingChar) throws Exception {
+		final int mappingIndentation = getNumberOfIndentationChars();
+
+		YamlNode keyOrScalarNode;
+		if (peekCharMatch('\"')) {
+			keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING);
+		} else if (peekCharMatch('\'')) {
+			keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING);
+		} else {
+			keyOrScalarNode = readScalarString(additionalLeadingChar);
+		}
+		final YamlNode keyOrScalarNode1 = keyOrScalarNode;
+
+		if (!pendingLeadingComments.isEmpty()) {
+			for (final String commentLine1 : pendingLeadingComments) {
+				keyOrScalarNode1.addLeadingComment(commentLine1);
+			}
+			pendingLeadingComments = new ArrayList<>();
+		}
+
+		skipBlanks();
+
+		if (peekCharMatch(':') && (peekNextCharMatch(' ') || peekNextCharMatch('\t'))) {
+			readChar();
+			readChar();
+			skipBlanks();
+
+			if (peekCharMatch('&')) {
+				// parseYamlAnchor();
+				// TODO
+				throw new NotImplementedException();
+			}
+
+			if (peekCharMatch('#')) {
+				keyOrScalarNode.setInlineComment(readInlineComment());
+			}
+
+			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+
+			if (peekCharMatch('&')) {
+				// parseYamlAnchor();
+				// TODO
+				throw new NotImplementedException();
+			}
+
+			final YamlMapping mapping = new YamlMapping();
+
+			List<String> interimPendingLeadingComments = pendingLeadingComments;
+			pendingLeadingComments = new ArrayList<>();
+
+			YamlNode valueNode = parseNextYamlNode();
+
+			if (!interimPendingLeadingComments.isEmpty()) {
+				for (final String commentLine : interimPendingLeadingComments) {
+					valueNode.addLeadingComment(commentLine);
+				}
+				interimPendingLeadingComments = null;
+			}
+
+			mapping.add(keyOrScalarNode, valueNode);
+
+			while (!isEOF() && getNumberOfIndentationChars() == mappingIndentation) {
+				if (peekCharMatch('\"')) {
+					keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING);
+				} else if (peekCharMatch('\'')) {
+					keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING);
+				} else {
+					keyOrScalarNode = readScalarString(null);
+				}
+				final YamlNode keyOrScalarNode2 = keyOrScalarNode;
+
+				if (!pendingLeadingComments.isEmpty()) {
+					for (final String commentLine2 : pendingLeadingComments) {
+						keyOrScalarNode2.addLeadingComment(commentLine2);
+					}
+					pendingLeadingComments = new ArrayList<>();
+				}
+
+				skipBlanks();
+
+				if (peekCharMatch(':') && (peekNextCharMatch(' ') || peekNextCharMatch('\t'))) {
+					readChar();
+					readChar();
+					skipBlanks();
+
+					if (peekCharMatch('&')) {
+						// parseYamlAnchor();
+						// TODO
+						throw new NotImplementedException();
+					}
+
+					if (peekCharMatch('#')) {
+						keyOrScalarNode.setInlineComment(readInlineComment());
+					}
+
+					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+
+					interimPendingLeadingComments = pendingLeadingComments;
+					pendingLeadingComments = new ArrayList<>();
+
+					valueNode = parseNextYamlNode();
+
+					if (!interimPendingLeadingComments.isEmpty()) {
+						for (final String commentLine : interimPendingLeadingComments) {
+							valueNode.addLeadingComment(commentLine);
+						}
+						interimPendingLeadingComments = null;
+					}
+
+					mapping.add(keyOrScalarNode, valueNode);
+				} else if (peekCharMatch(':') && (peekNextCharMatch('\n'))) {
+					readChar();
+					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+
+					if (peekCharMatch('&')) {
+						// parseYamlAnchor();
+						// TODO
+						throw new NotImplementedException();
+					}
+
+					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+
+					interimPendingLeadingComments = pendingLeadingComments;
+					pendingLeadingComments = new ArrayList<>();
+
+					valueNode = parseNextYamlNode();
+
+					if (!interimPendingLeadingComments.isEmpty()) {
+						for (final String commentLine : interimPendingLeadingComments) {
+							valueNode.addLeadingComment(commentLine);
+						}
+						interimPendingLeadingComments = null;
+					}
+
+					mapping.add(keyOrScalarNode, valueNode);
+				} else {
+					throw new YamlParseException("Invalid YAML data when expecting mapping key found", getCurrentLine(), getCurrentColumn());
+				}
+			}
+
+			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+
+			latestYamlNode = mapping;
+			return latestYamlNode;
+		} else if (peekCharMatch(':') && peekNextCharMatch('\n')) {
+			readChar();
+			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+
+			if (peekCharMatch('&')) {
+				// parseYamlAnchor();
+				// TODO
+				throw new NotImplementedException();
+			}
+
+			final YamlMapping mapping = new YamlMapping();
+
+			List<String> interimPendingLeadingComments = pendingLeadingComments;
+			pendingLeadingComments = new ArrayList<>();
+
+			YamlNode valueNode = parseNextYamlNode();
+
+			if (!interimPendingLeadingComments.isEmpty()) {
+				for (final String commentLine : interimPendingLeadingComments) {
+					valueNode.addLeadingComment(commentLine);
+				}
+				interimPendingLeadingComments = null;
+			}
+
+			mapping.add(keyOrScalarNode, valueNode);
+
+			while (!isEOF() && getNumberOfIndentationChars() == mappingIndentation) {
+				if (peekCharMatch('\"')) {
+					keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING);
+				} else if (peekCharMatch('\'')) {
+					keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING);
+				} else {
+					keyOrScalarNode = readScalarString(null);
+				}
+				final YamlNode keyOrScalarNode2 = keyOrScalarNode;
+
+				if (!pendingLeadingComments.isEmpty()) {
+					for (final String commentLine2 : pendingLeadingComments) {
+						keyOrScalarNode2.addLeadingComment(commentLine2);
+					}
+					pendingLeadingComments = new ArrayList<>();
+				}
+
+				skipBlanks();
+
+				if (peekCharMatch(':') && (peekNextCharMatch(' ') || peekNextCharMatch('\t'))) {
+					readChar();
+					readChar();
+					skipBlanks();
+
+					if (peekCharMatch('&')) {
+						// parseYamlAnchor();
+						// TODO
+						throw new NotImplementedException();
+					}
+
+					if (peekCharMatch('#')) {
+						keyOrScalarNode.setInlineComment(readInlineComment());
+					}
+
+					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+
+					interimPendingLeadingComments = pendingLeadingComments;
+					pendingLeadingComments = new ArrayList<>();
+
+					valueNode = parseNextYamlNode();
+
+					if (!interimPendingLeadingComments.isEmpty()) {
+						for (final String commentLine : interimPendingLeadingComments) {
+							valueNode.addLeadingComment(commentLine);
+						}
+						interimPendingLeadingComments = null;
+					}
+
+					mapping.add(keyOrScalarNode, valueNode);
+				} else if (peekCharMatch(':') && (peekNextCharMatch('\n'))) {
+					readChar();
+					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+
+					if (peekCharMatch('&')) {
+						// parseYamlAnchor();
+						// TODO
+						throw new NotImplementedException();
+					}
+
+					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+
+					interimPendingLeadingComments = pendingLeadingComments;
+					pendingLeadingComments = new ArrayList<>();
+
+					valueNode = parseNextYamlNode();
+
+					if (!interimPendingLeadingComments.isEmpty()) {
+						for (final String commentLine : interimPendingLeadingComments) {
+							valueNode.addLeadingComment(commentLine);
+						}
+						interimPendingLeadingComments = null;
+					}
+
+					mapping.add(keyOrScalarNode, valueNode);
+				} else {
+					throw new YamlParseException("Invalid YAML data when expecting mapping key found", getCurrentLine(), getCurrentColumn());
+				}
+			}
+
+			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+
+			latestYamlNode = mapping;
+			return latestYamlNode;
+		} else {
+			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+			latestYamlNode = keyOrScalarNode;
+			return latestYamlNode;
+		}
+	}
+
+	private YamlNode readScalarString(Character additionalLeadingChar) throws Exception {
+		String scalarString = "";
+		while(true) {
+			scalarString += readUpToNext(false, null, ",:#{}[]\n".toCharArray());
+			if (additionalLeadingChar != null) {
+				scalarString = additionalLeadingChar + scalarString;
+				additionalLeadingChar = null;
+			}
+
+			// Read sexagesimal numbers like "190:20:30.15"
+			if (peekCharMatch(':') && peekNextChar() != null && Character.isDigit(peekNextChar())) {
+				readChar();
+				scalarString += ":";
+			} else {
+				break;
+			}
+		}
+
+		scalarString = scalarString.trim();
+
+		String inlineComment = null;
+		if (peekCharMatch('#')) {
+			inlineComment = readInlineComment();
+		}
+
+		skipBlanks();
+
+		if (scalarString.length() == 0) {
+			throw new YamlParseException("Unexpected empty scalar String", getCurrentLine(), getCurrentColumn());
+		} else if ("true".equalsIgnoreCase(scalarString)
 				|| "yes".equalsIgnoreCase(scalarString)
 				|| "on".equalsIgnoreCase(scalarString)
 				|| "false".equalsIgnoreCase(scalarString)
 				|| "no".equalsIgnoreCase(scalarString)
 				|| "off".equalsIgnoreCase(scalarString)) {
-			yamlTokens.add(new YamlToken(YamlTokenType.BOOLEAN, scalarString, startLine, startColumn));
-			return false;
+			latestYamlNode = new YamlScalar(scalarString, YamlScalarType.BOOLEAN);
+			latestYamlNode.setInlineComment(inlineComment);
+			return latestYamlNode;
 		} else if ("null".equalsIgnoreCase(scalarString)
 				|| "~".equalsIgnoreCase(scalarString)) {
-			yamlTokens.add(new YamlToken(YamlTokenType.NULL_VALUE, scalarString, startLine, startColumn));
-			return false;
+			latestYamlNode = new YamlScalar(scalarString, YamlScalarType.NULL_VALUE);
+			latestYamlNode.setInlineComment(inlineComment);
+			return latestYamlNode;
+		} else if (scalarString.startsWith("-") || scalarString.startsWith(".") || Character.isDigit(scalarString.charAt(0))) {
+			latestYamlNode = new YamlScalar(scalarString, YamlScalarType.NUMBER);
+			latestYamlNode.setInlineComment(inlineComment);
+			return latestYamlNode;
+		} else if (scalarString.startsWith(">")) {
+			final char chomping = scalarString.contains("+") ? '+' : scalarString.contains("-") ? '-' : ' ';
+			latestYamlNode = parseMultilineScalar(true, chomping);
+			latestYamlNode.setInlineComment(inlineComment);
+			return latestYamlNode;
+		} else if (scalarString.startsWith("|")) {
+			final char chomping = scalarString.contains("+") ? '+' : scalarString.contains("-") ? '-' : ' ';
+			latestYamlNode = parseMultilineScalar(false, chomping);
+			latestYamlNode.setInlineComment(inlineComment);
+			return latestYamlNode;
 		} else {
-			yamlTokens.add(new YamlToken(YamlTokenType.STRING, scalarString, startLine, startColumn));
-			return scalarString.startsWith(">") || scalarString.startsWith("|");
+			latestYamlNode = new YamlScalar(scalarString, YamlScalarType.STRING);
+			latestYamlNode.setInlineComment(inlineComment);
+			return latestYamlNode;
 		}
 	}
 
-	private void readMultilineScalarString() throws Exception {
-		final long startLine = getCurrentLine();
-		final long startColumn = getCurrentColumn();
+	private YamlScalar parseMultilineScalar(final boolean folded, final char chomping) throws Exception {
+		skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 
-		final StringBuilder text = new StringBuilder();
-		while (!isEOF()) {
-			if ("\n".indexOf(peekChar()) > -1) {
-				break;
-			} else {
-				text.append(readChar());
-			}
-		}
-
-		final String scalarString = text.toString().trim();
-
-		yamlTokens.add(new YamlToken(YamlTokenType.STRING, scalarString, startLine, startColumn));
-	}
-
-	private String readIdentifier() throws Exception {
-		final StringBuilder text = new StringBuilder();
-		while (!isEOF()) {
-			if ((Character.isLetterOrDigit(peekChar()) || peekChar() == '_' || peekChar() == '-')) {
-				text.append(readChar());
-			} else {
-				break;
-			}
-		}
-
-		return text.toString();
-	}
-
-	@SuppressWarnings("static-method")
-	private boolean isBlankOrTab(final char characterToCheck) {
-		return characterToCheck == ' ' || characterToCheck == '\t';
-	}
-
-	private YamlNode parseNode(final boolean inFlow) throws YamlDuplicateKeyException {
-		consumeOptionalNewlinesAndComments();
-
-		String anchorName = null;
-		if (match(YamlTokenType.ANCHOR)) {
-			anchorName = previousYamlToken().getValue();
-			consumeOptionalNewlinesAndComments();
-		}
-
-		if (match(YamlTokenType.INDENT)) {
-			final YamlNode valueNode = parseNode(false);
-			valueNode.setAnchorName(anchorName);
-
-			if (check(YamlTokenType.DEDENT)) {
-				advance();
-			}
-
-			return valueNode;
-		}
-
-		if (check(YamlTokenType.FLOW_MAP_START)) {
-			latestYamlDataNode = parseFlowMapping();
-			return latestYamlDataNode;
-		}
-		if (check(YamlTokenType.FLOW_SEQ_START)) {
-			latestYamlDataNode = parseFlowSequence();
-			return latestYamlDataNode;
-		}
-		if (!inFlow && check(YamlTokenType.DASH)) {
-			latestYamlDataNode = parseBlockSequence();
-			return latestYamlDataNode;
-		}
-		if (!inFlow && isScalarStart()) {
-			latestYamlDataNode = parseBlockPossiblyMappingOrScalar();
-			return latestYamlDataNode;
-		}
-
-		latestYamlDataNode = parseScalarWithAnchorOrAlias();
-		return latestYamlDataNode;
-	}
-
-	private boolean isScalarStart() {
-		return check(YamlTokenType.STRING)
-				|| check(YamlTokenType.NUMBER)
-				|| check(YamlTokenType.BOOLEAN)
-				|| check(YamlTokenType.NULL_VALUE)
-				|| check(YamlTokenType.ANCHOR)
-				|| check(YamlTokenType.ALIAS);
-	}
-
-	private YamlNode parseBlockPossiblyMappingOrScalar() throws YamlDuplicateKeyException {
-		final int startIndex = yamlTokenIndex;
-		final List<String> savedComments = new ArrayList<>(pendingLeadingComments);
-
-		final YamlNode keyNode = parseScalarWithAnchorOrAlias();
-
-		if (match(YamlTokenType.COLON)) {
-			final YamlMapping yamlMapping = new YamlMapping(false);
-
-			YamlNode valueNode;
-
-			if (!check(YamlTokenType.NEWLINE) && !check(YamlTokenType.EOF) && !check(YamlTokenType.DEDENT)) {
-				valueNode = parseNode(false);
-			} else {
-				consumeOptionalNewlinesAndComments();
-				if (match(YamlTokenType.INDENT)) {
-					valueNode = parseNode(false);
-					if (check(YamlTokenType.DEDENT)) {
-						advance();
-					}
-				} else {
-					valueNode = new YamlScalar(null, YamlScalarType.NULL_VALUE);
-				}
-			}
-
-			attachPendingComments(keyNode);
-			yamlMapping.add(keyNode, valueNode);
-
-			consumeOptionalNewlinesAndComments();
-
-			while (isScalarStart()) {
-				final int tempIndex = yamlTokenIndex;
-				final YamlNode possibleKey = parseScalarWithAnchorOrAlias();
-
-				if (!match(YamlTokenType.COLON)) {
-					yamlTokenIndex = tempIndex;
-					break;
-				}
-
-				YamlNode val;
-				if (!check(YamlTokenType.NEWLINE) && !check(YamlTokenType.EOF) && !check(YamlTokenType.DEDENT)) {
-					val = parseNode(false);
-				} else {
-					consumeOptionalNewlinesAndComments();
-					if (match(YamlTokenType.INDENT)) {
-						val = parseNode(false);
-						if (check(YamlTokenType.DEDENT)) {
-							advance();
-						}
-					} else {
-						val = new YamlScalar(null, YamlScalarType.NULL_VALUE);
-					}
-				}
-
-				attachPendingComments(possibleKey);
-				yamlMapping.add(possibleKey, val);
-
-				consumeOptionalNewlinesAndComments();
-			}
-
-			return yamlMapping;
-		}
-
-		// Rollback YamlMapping pre-readings and start reading a YamlScalar
-		yamlTokenIndex = startIndex;
-		pendingLeadingComments.clear();
-		pendingLeadingComments.addAll(savedComments);
-
-		return parseScalarWithAnchorOrAlias();
-	}
-
-	private YamlSequence parseBlockSequence() throws YamlDuplicateKeyException {
-		final YamlSequence yamlSequence = new YamlSequence(false);
-
-		while (match(YamlTokenType.DASH)) {
-
-			if (!check(YamlTokenType.NEWLINE) && !check(YamlTokenType.EOF)) {
-				final YamlNode item = parseNode(false);
-				attachPendingComments(item);
-				yamlSequence.add(item);
-			} else {
-				consumeOptionalNewlinesAndComments();
-				if (match(YamlTokenType.INDENT)) {
-					final YamlNode item = parseNode(false);
-					attachPendingComments(item);
-					yamlSequence.add(item);
-
-					if (check(YamlTokenType.DEDENT)) {
-						advance();
-					}
-				} else {
-					final YamlScalar empty = new YamlScalar(null, YamlScalarType.NULL_VALUE);
-					attachPendingComments(empty);
-					yamlSequence.add(empty);
-				}
-			}
-
-			consumeOptionalNewlinesAndComments();
-
-			if (!check(YamlTokenType.DASH)) break;
-		}
-
-		return yamlSequence;
-	}
-
-	private YamlMapping parseFlowMapping() throws YamlDuplicateKeyException {
-		consume(YamlTokenType.FLOW_MAP_START, "{ expected");
-		final YamlMapping yamlMapping = new YamlMapping(true);
-
-		consumeOptionalNewlinesAndComments();
-
-		if (!check(YamlTokenType.FLOW_MAP_END)) {
-			do {
-				consumeOptionalNewlinesAndComments();
-				final YamlNode key = parseNode(true);
-				consumeOptionalNewlinesAndComments();
-				consume(YamlTokenType.COLON, ": expected");
-				consumeOptionalNewlinesAndComments();
-				final YamlNode value = parseNode(true);
-
-				attachPendingComments(key);
-				yamlMapping.add(key, value);
-
-				consumeOptionalNewlinesAndComments();
-			} while (match(YamlTokenType.COMMA));
-		}
-
-		consumeNewLineAndIndentsAndDedents();
-		consume(YamlTokenType.FLOW_MAP_END, "} expected");
-		return yamlMapping;
-	}
-
-	private YamlSequence parseFlowSequence() throws YamlDuplicateKeyException {
-		consume(YamlTokenType.FLOW_SEQ_START, "[ expected");
-		final YamlSequence yamlSequence = new YamlSequence(true);
-
-		consumeOptionalNewlinesAndComments();
-
-		if (!check(YamlTokenType.FLOW_SEQ_END)) {
-			do {
-				consumeOptionalNewlinesAndComments();
-				final YamlNode item = parseNode(true);
-				attachPendingComments(item);
-				yamlSequence.add(item);
-				consumeOptionalNewlinesAndComments();
-			} while (match(YamlTokenType.COMMA));
-		}
-
-		consumeNewLineAndIndentsAndDedents();
-		consume(YamlTokenType.FLOW_SEQ_END, "] expected");
-		return yamlSequence;
-	}
-
-	private YamlNode parseScalarWithAnchorOrAlias() {
-		consumeOptionalNewlinesAndComments();
-
-		if (match(YamlTokenType.ALIAS)) {
-			final YamlAlias alias = new YamlAlias(previousYamlToken().getValue());
-			attachPendingComments(alias);
-			return alias;
-		}
-
-		String anchorName = null;
-		if (match(YamlTokenType.ANCHOR)) {
-			anchorName = previousYamlToken().getValue();
-			consumeOptionalNewlinesAndComments();
-		}
-
-		if (match(YamlTokenType.STRING)) {
-			final String head = previousYamlToken().getValue();
-
-			if (head.startsWith("|") || head.startsWith(">")) {
-				final boolean folded = head.startsWith(">");
-				final char chomping = extractChompingIndicator(head);
-
-				final YamlScalar scalar = parseMultilineScalar(folded, chomping);
-				if (anchorName != null) {
-					scalar.setAnchorName(anchorName);
-					anchorTable.put(anchorName, scalar);
-				}
-				match(YamlTokenType.DEDENT);
-				return scalar;
-			}
-
-			final YamlScalar scalar = new YamlScalar(head, YamlScalarType.STRING);
-			if (anchorName != null) {
-				scalar.setAnchorName(anchorName);
-				anchorTable.put(anchorName, scalar);
-			}
-			attachPendingComments(scalar);
-
-			latestYamlDataNode = scalar;
-			return scalar;
-		}
-
-		if (match(YamlTokenType.BOOLEAN)) {
-			final YamlScalar scalar;
-			final String booleanString = previousYamlToken().getValue();
-			if ("true".equalsIgnoreCase(booleanString)
-					|| "yes".equalsIgnoreCase(booleanString)
-					|| "on".equalsIgnoreCase(booleanString)) {
-				scalar = new YamlScalar(true, YamlScalarType.BOOLEAN);
-			} else if ("false".equalsIgnoreCase(booleanString)
-					|| "no".equalsIgnoreCase(booleanString)
-					|| "off".equalsIgnoreCase(booleanString)) {
-				scalar = new YamlScalar(false, YamlScalarType.BOOLEAN);
-			} else {
-				throw new RuntimeException("Invalid boolean token found: '" + booleanString + "'");
-			}
-
-			if (anchorName != null) {
-				scalar.setAnchorName(anchorName);
-				anchorTable.put(anchorName, scalar);
-			}
-			attachPendingComments(scalar);
-
-			latestYamlDataNode = scalar;
-			return scalar;
-		}
-
-		if (match(YamlTokenType.NUMBER)) {
-			final String numberString = previousYamlToken().getValue();
-			final YamlScalar scalar = new YamlScalar(NumberUtilities.parseNumber(numberString), YamlScalarType.NUMBER);
-			if (anchorName != null) {
-				scalar.setAnchorName(anchorName);
-				anchorTable.put(anchorName, scalar);
-			}
-			attachPendingComments(scalar);
-
-			latestYamlDataNode = scalar;
-			return scalar;
-		}
-
-		if (match(YamlTokenType.NULL_VALUE)) {
-			final YamlScalar scalar = new YamlScalar(null, YamlScalarType.NULL_VALUE);
-			if (anchorName != null) {
-				scalar.setAnchorName(anchorName);
-				anchorTable.put(anchorName, scalar);
-			}
-			attachPendingComments(scalar);
-
-			latestYamlDataNode = scalar;
-			return scalar;
-		}
-
-		throw error(peekYamlToken(), "Unexpected token in scalar context: " + peekYamlToken().getType());
-	}
-
-	@SuppressWarnings("static-method")
-	private char extractChompingIndicator(final String head) {
-		if (head.contains("+")) {
-			return '+';
-		}
-		if (head.contains("-")) {
-			return '-';
-		}
-		return ' ';
-	}
-
-	private YamlScalar parseMultilineScalar(final boolean folded, final char chomping) {
-		consumeOptionalNewlinesAndComments();
-
-		final long indent = detectMultilineIndent();
+		final int multilineIndentationLevel = getNumberOfIndentationChars();
 
 		final StringBuilder raw = new StringBuilder();
 
-		while (!isAtDocumentEnd()) {
-			final YamlToken token = peekYamlToken();
+		while (!isEOF() && multilineIndentationLevel <= getNumberOfIndentationChars()) {
+			final String nextLine = readUpToNext(false, null, '\n');
+			raw.append(nextLine);
+			raw.append("\n");
+			readChar();
+			readNextIndentation();
+		}
 
-			if (token.getType() == YamlTokenType.DEDENT || token.getType() == YamlTokenType.EOF) {
-				break;
-			}
-
-			if (token.getType() == YamlTokenType.NEWLINE) {
-				advance();
-				continue;
-			}
-
-			if (token.getColumn() <= indent) {
-				break;
-			}
-
-			raw.append(readMultilineLine(indent));
+		if (peekCharMatch('#')) {
+			readLeadingComment();
 		}
 
 		String text = raw.toString();
@@ -847,52 +730,18 @@ public class YamlReader extends BasicReadAheadReader {
 			text = foldLines(text);
 		}
 
-		final YamlScalarType type = folded ? YamlScalarType.MULTILINE_FOLDED : YamlScalarType.MULTILINE_LITERAL;
-		final YamlScalar scalar = new YamlScalar(text, type);
-		attachPendingComments(scalar);
+		final YamlScalar scalar = new YamlScalar(text, folded ? YamlScalarType.MULTILINE_FOLDED : YamlScalarType.MULTILINE_LITERAL);
+
 		return scalar;
-	}
-
-	private long detectMultilineIndent() {
-		int i = yamlTokenIndex;
-		while (i < yamlTokens.size()) {
-			final YamlToken token = yamlTokens.get(i);
-			if (token.getType() == YamlTokenType.NEWLINE || token.getType() == YamlTokenType.COMMENT || token.getType() == YamlTokenType.COMMENT_INLINE) {
-				i++;
-				continue;
-			}
-			return token.getColumn() - 1;
-		}
-		return 0;
-	}
-
-	private String readMultilineLine(final long indent) {
-		final StringBuilder sb = new StringBuilder();
-
-		long remove = indent;
-		while (remove > 0 && sb.length() < remove) {
-			advance();
-			remove--;
-		}
-
-		while (!isAtDocumentEnd() && peekYamlToken().getType() == YamlTokenType.INDENT) {
-			advance();
-		}
-
-		while (!isAtDocumentEnd() && peekYamlToken().getType() != YamlTokenType.NEWLINE && peekYamlToken().getType() != YamlTokenType.INDENT) {
-			sb.append(advance().getValue());
-		}
-
-		return sb.toString() + "\n";
 	}
 
 	@SuppressWarnings("static-method")
 	private String applyChomping(final String text, final char chomping) {
 		switch (chomping) {
-			case '-':
-				return text.replaceAll("\\n+$", "");
 			case '+':
 				return text;
+			case '-':
+				return text.replaceAll("\\n+$", "");
 			default:
 				return text.replaceAll("\\n+$", "") + "\n";
 		}
@@ -919,124 +768,7 @@ public class YamlReader extends BasicReadAheadReader {
 		return out.toString().trim() + "\n";
 	}
 
-	private void consumeOptionalNewlines() {
-		while (match(YamlTokenType.NEWLINE)) {
-			// Do nothing
-		}
-	}
-
-	private void consumeOptionalNewlinesAndComments() {
-		boolean progressed;
-		do {
-			progressed = false;
-			while (match(YamlTokenType.NEWLINE)) {
-				progressed = true;
-			}
-			while (check(YamlTokenType.COMMENT) || check(YamlTokenType.COMMENT_INLINE)) {
-				if (match(YamlTokenType.COMMENT)) {
-					pendingLeadingComments.add(previousYamlToken().getValue());
-					progressed = true;
-					match(YamlTokenType.NEWLINE);
-				} else if (match(YamlTokenType.COMMENT_INLINE)) {
-					if (latestYamlDataNode != null) {
-						latestYamlDataNode.addInlineComment(previousYamlToken().getValue());
-						progressed = true;
-						match(YamlTokenType.NEWLINE);
-						break;
-					} else {
-						pendingLeadingComments.add(previousYamlToken().getValue());
-						progressed = true;
-						match(YamlTokenType.NEWLINE);
-					}
-				}
-			}
-		} while (progressed);
-	}
-
-	private void consumeNewLineAndIndentsAndDedents() {
-		boolean progressed;
-		do {
-			progressed = false;
-			while (match(YamlTokenType.NEWLINE) || match(YamlTokenType.INDENT) || match(YamlTokenType.DEDENT)) {
-				progressed = true;
-			}
-		} while (progressed);
-	}
-
-	private void consumeNewLineAndDedents() {
-		boolean progressed;
-		do {
-			progressed = false;
-			while (match(YamlTokenType.NEWLINE) || match(YamlTokenType.DEDENT)) {
-				progressed = true;
-			}
-		} while (progressed);
-	}
-
-	private void attachPendingComments(final YamlNode node) {
-		if (!pendingLeadingComments.isEmpty()) {
-			for (final String c : pendingLeadingComments) {
-				node.addLeadingComment(c);
-			}
-			pendingLeadingComments.clear();
-		}
-	}
-
-	private boolean match(final YamlTokenType type) {
-		if (check(type)) {
-			advance();
-			return true;
-		}
-		return false;
-	}
-
-	private YamlToken consume(final YamlTokenType type, final String message) {
-		if (check(type)) {
-			return advance();
-		} else {
-			throw error(peekYamlToken(), message + " (found: " + peekYamlToken().getType() + ")");
-		}
-	}
-
-	private boolean check(final YamlTokenType type) {
-		if (isAtDataEnd()) {
-			return false;
-		} else {
-			return peekYamlToken().getType() == type;
-		}
-	}
-
-	private YamlToken advance() {
-		if (!isAtDataEnd()) {
-			yamlTokenIndex++;
-		}
-		return previousYamlToken();
-	}
-
-	private boolean isAtDataEnd() {
-		return peekYamlToken().getType() == YamlTokenType.EOF;
-	}
-
-	private boolean isAtDocumentEnd() {
-		return peekYamlToken().getType() == YamlTokenType.DOCUMENT_END || peekYamlToken().getType() == YamlTokenType.EOF;
-	}
-
-	private YamlToken peekYamlToken() {
-		return yamlTokens.get(yamlTokenIndex);
-	}
-
-	private YamlToken previousYamlToken() {
-		return yamlTokens.get(yamlTokenIndex - 1);
-	}
-
-	@SuppressWarnings("static-method")
-	private RuntimeException error(final YamlToken token, final String message) {
-		return new RuntimeException("Parser error in line " + token.getLine() + ", column " + token.getColumn() + ": " + message);
-	}
-
-	public static YamlDocument readYamlDocument(final String yamlDocumentString) throws Exception {
-		try (final YamlReader yamlReader = new YamlReader(new ByteArrayInputStream(yamlDocumentString.getBytes(StandardCharsets.UTF_8)))) {
-			return yamlReader.readYamlDocument();
-		}
+	private int getNumberOfIndentationChars() {
+		return indentations.stream().reduce(0, Integer::sum);
 	}
 }

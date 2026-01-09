@@ -4,10 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class YamlNode {
-	private final List<String> leadingComments = new ArrayList<>();
-
-	private final List<String> inlineComments = new ArrayList<>();
-
+	private List<String> leadingComments = null;
+	private String inlineComment = null;
 	private String anchorName;
 
 	public List<String> getLeadingComments() {
@@ -16,26 +14,29 @@ public abstract class YamlNode {
 
 	public void addLeadingComment(final String comment) {
 		if (comment != null && !comment.isEmpty()) {
+			if (leadingComments == null) {
+				leadingComments = new ArrayList<>();
+			}
 			leadingComments.add(comment);
 		}
 	}
 
-	public List<String> getInlineComments() {
-		return inlineComments;
+	public String getInlineComment() {
+		return inlineComment;
 	}
 
-	public void addInlineComment(final String comment) {
-		if (comment != null && !comment.isEmpty()) {
-			inlineComments.add(comment);
-		}
+	public YamlNode setInlineComment(final String inlineComment) {
+		this.inlineComment = inlineComment;
+		return this;
 	}
 
 	public String getAnchorName() {
 		return anchorName;
 	}
 
-	public void setAnchorName(final String anchorName) {
+	public YamlNode setAnchorName(final String anchorName) {
 		this.anchorName = anchorName;
+		return this;
 	}
 
 	@Override

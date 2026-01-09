@@ -356,6 +356,7 @@ public class BasicReader implements Closeable {
 					}
 				}
 				returnValue = returnValue.replace("" + escapeCharacter + escapeCharacter, "" + quoteChar);
+				returnValue = Utilities.unescapeJavaString(returnValue);
 				return returnValue.substring(1, returnValue.length() - 1);
 			}
 		} finally {

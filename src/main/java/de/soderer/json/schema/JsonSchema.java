@@ -12,7 +12,7 @@ import de.soderer.json.JsonObject;
 import de.soderer.json.JsonReader;
 import de.soderer.json.JsonValueBoolean;
 import de.soderer.json.JsonValueString;
-import de.soderer.json.exception.JsonDuplicateKeyException;
+import de.soderer.json.exception.DuplicateKeyException;
 import de.soderer.json.path.JsonPath;
 import de.soderer.json.schema.validator.AdditionalPropertiesValidator;
 import de.soderer.json.schema.validator.AllOfValidator;
@@ -86,15 +86,15 @@ public class JsonSchema {
 		this(jsonSchemaInputStream, new JsonSchemaConfiguration(), dependencies);
 	}
 
-	public JsonSchema(final Boolean jsonSchemaDefinitionObject, final JsonSchemaDependency... dependencies) throws JsonDuplicateKeyException, Exception {
+	public JsonSchema(final Boolean jsonSchemaDefinitionObject, final JsonSchemaDependency... dependencies) throws DuplicateKeyException, Exception {
 		this(jsonSchemaDefinitionObject == null ? (JsonObject) null : (jsonSchemaDefinitionObject ? new JsonObject() : new JsonObject().add("not", new JsonObject())), new JsonSchemaConfiguration(), dependencies);
 	}
 
-	public JsonSchema(final Boolean jsonSchemaDefinitionObject, final JsonSchemaConfiguration jsonSchemaConfiguration, final JsonSchemaDependency... dependencies) throws JsonDuplicateKeyException, Exception {
+	public JsonSchema(final Boolean jsonSchemaDefinitionObject, final JsonSchemaConfiguration jsonSchemaConfiguration, final JsonSchemaDependency... dependencies) throws DuplicateKeyException, Exception {
 		this(jsonSchemaDefinitionObject == null ? (JsonObject) null : (jsonSchemaDefinitionObject ? new JsonObject() : new JsonObject().add("not", new JsonObject())), jsonSchemaConfiguration, dependencies);
 	}
 
-	public JsonSchema(final Boolean jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
+	public JsonSchema(final Boolean jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		this(jsonSchemaDefinitionObject == null ? (JsonObject) null : (jsonSchemaDefinitionObject ? new JsonObject() : new JsonObject().add("not", new JsonObject())), jsonSchemaDependencyResolver);
 	}
 
@@ -136,7 +136,7 @@ public class JsonSchema {
 		}
 	}
 
-	public JsonSchema(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
+	public JsonSchema(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		if (jsonSchemaDefinitionObject == null) {
 			throw new JsonSchemaDefinitionError("Contains null data", null);
 		} else {
@@ -289,7 +289,7 @@ public class JsonSchema {
 		}
 	}
 
-	public static List<BaseJsonSchemaValidator> createValidators(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath currentJsonSchemaPath) throws JsonSchemaDefinitionError, JsonDuplicateKeyException {
+	public static List<BaseJsonSchemaValidator> createValidators(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath currentJsonSchemaPath) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		final List<BaseJsonSchemaValidator> validators = new ArrayList<>();
 
 		JsonNode ifJsonObject = null;

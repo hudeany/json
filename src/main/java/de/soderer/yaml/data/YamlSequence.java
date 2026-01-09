@@ -30,9 +30,13 @@ public class YamlSequence extends YamlNode implements Iterable<Object> {
 		this.flowStyle = flowStyle;
 	}
 
+	public void addNull() {
+		add(new YamlScalar(null));
+	}
+
 	public void add(final String item) {
 		if (item == null) {
-			add(new YamlScalar(null, YamlScalarType.NULL_VALUE));
+			add(new YamlScalar(null));
 		} else {
 			add(new YamlScalar(item, YamlScalarType.STRING));
 		}
@@ -40,7 +44,7 @@ public class YamlSequence extends YamlNode implements Iterable<Object> {
 
 	public void add(final Number item) {
 		if (item == null) {
-			add(new YamlScalar(null, YamlScalarType.NULL_VALUE));
+			add(new YamlScalar(null));
 		} else {
 			add(new YamlScalar(item, YamlScalarType.NUMBER));
 		}
@@ -48,7 +52,7 @@ public class YamlSequence extends YamlNode implements Iterable<Object> {
 
 	public void add(final Boolean item) {
 		if (item == null) {
-			add(new YamlScalar(null, YamlScalarType.NULL_VALUE));
+			add(new YamlScalar(null));
 		} else {
 			add(new YamlScalar(item, YamlScalarType.BOOLEAN));
 		}
@@ -60,7 +64,7 @@ public class YamlSequence extends YamlNode implements Iterable<Object> {
 
 	public boolean remove(final String item) {
 		if (item == null) {
-			return remove(new YamlScalar(null, YamlScalarType.NULL_VALUE));
+			return remove(new YamlScalar(null));
 		} else {
 			return remove(new YamlScalar(item, YamlScalarType.STRING));
 		}
@@ -68,7 +72,7 @@ public class YamlSequence extends YamlNode implements Iterable<Object> {
 
 	public boolean remove(final Number item) {
 		if (item == null) {
-			return remove(new YamlScalar(null, YamlScalarType.NULL_VALUE));
+			return remove(new YamlScalar(null));
 		} else {
 			return remove(new YamlScalar(item, YamlScalarType.NUMBER));
 		}
@@ -76,7 +80,7 @@ public class YamlSequence extends YamlNode implements Iterable<Object> {
 
 	public boolean remove(final Boolean item) {
 		if (item == null) {
-			return remove(new YamlScalar(null, YamlScalarType.NULL_VALUE));
+			return remove(new YamlScalar(null));
 		} else {
 			return remove(new YamlScalar(item, YamlScalarType.BOOLEAN));
 		}

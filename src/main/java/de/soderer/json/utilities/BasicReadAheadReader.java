@@ -28,6 +28,7 @@ public class BasicReadAheadReader implements Closeable {
 	/** Input reader. */
 	private Reader inputReader;
 
+	private long charactersRead = 0;
 	private CountingInputStream countingInputStream;
 
 	private Character currentChar = null;
@@ -133,6 +134,7 @@ public class BasicReadAheadReader implements Closeable {
 			}
 		}
 
+		charactersRead++;
 		return returnChar;
 	}
 
@@ -149,8 +151,34 @@ public class BasicReadAheadReader implements Closeable {
 		return currentChar;
 	}
 
+	protected boolean peekCharMatch(final char otherChar) {
+		if (currentChar == null) {
+			return false;
+		} else {
+			return currentChar == otherChar;
+		}
+	}
+
 	protected Character peekNextChar() {
 		return nextChar;
+	}
+
+	protected boolean peekCharNotMatch(final char otherChar) {
+		return !peekCharMatch(otherChar);
+	}
+
+	protected boolean peekNextCharMatch(final char otherChar) {
+		if (nextChar == null) {
+			return false;
+		} else if (otherChar == '\n') {
+			return nextChar == '\n' || (normalizeLinebreaks && nextChar == '\r');
+		} else {
+			return nextChar == otherChar;
+		}
+	}
+
+	protected boolean peekNextCharNotMatch(final char otherChar) {
+		return !peekNextCharMatch(otherChar);
 	}
 
 	protected boolean isEOF() {
@@ -206,9 +234,15 @@ public class BasicReadAheadReader implements Closeable {
 					unescapedChar = readChar();
 				} else if ('/' == peekChar()) {
 					unescapedChar = readChar();
+				} else if ('a' == peekChar()) {
+					readChar();
+					unescapedChar = '\u0007'; // ASCII Alert/Bell
 				} else if ('b' == peekChar()) {
 					readChar();
 					unescapedChar = '\b';
+				} else if ('e' == peekChar()) {
+					readChar();
+					unescapedChar = '\u001B'; // ESC
 				} else if ('f' == peekChar()) {
 					readChar();
 					unescapedChar = '\f';
@@ -221,6 +255,46 @@ public class BasicReadAheadReader implements Closeable {
 				} else if ('t' == peekChar()) {
 					readChar();
 					unescapedChar = '\t';
+				} else if ('v' == peekChar()) {
+					readChar();
+					unescapedChar = '\u2B7F'; // Vertical Tab
+				} else if (' ' == peekChar()) {
+					readChar();
+					unescapedChar = ' ';
+				} else if ('	' == peekChar()) {
+					readChar();
+					unescapedChar = '\t';
+				} else if ('_' == peekChar()) {
+					readChar();
+					unescapedChar = '\u00A0'; // NBSP/non-breaking space
+				} else if ('0' == peekChar()) {
+					readChar();
+					unescapedChar = '\0';
+				} else if ('N' == peekChar()) {
+					readChar();
+					unescapedChar = '\u0085'; // Next Line
+				} else if ('L' == peekChar()) {
+					readChar();
+					unescapedChar = '\u2028'; // Unicode LINE SEPARATOR (LS or LSEP)
+				} else if ('P' == peekChar()) {
+					readChar();
+					unescapedChar = '\u2029'; // Unicode PARAGRAPH SEPARATOR (PS or PSEP)
+				} else if ('x' == peekChar()) {
+					readChar();
+					// hexadecimal encoded character
+					String hexcode = "";
+					for (int i = 0; i < 2 && !isEOF(); i++) {
+						final Character hexDigit = readChar();
+						hexcode += hexDigit;
+						if (hexDigit == null || Character.digit(hexDigit, 16) == -1) {
+							throw new Exception("Invalid unicode sequence at character index " + (getCurrentColumn() - hexcode.length()) + " in line " + getCurrentLine() + " ('" + hexcode + "')");
+						}
+					}
+					if (hexcode.length() != 2) {
+						throw new Exception("Invalid unicode sequence at character index " + (getCurrentColumn() - hexcode.length()) + " in line " + getCurrentLine() + " ('" + hexcode + "')");
+					} else {
+						unescapedChar = (char) Integer.parseInt(hexcode.toString(), 16);
+					}
 				} else if ('u' == peekChar()) {
 					readChar();
 					// Java encoded character
@@ -235,10 +309,26 @@ public class BasicReadAheadReader implements Closeable {
 					if (unicode.length() != 4) {
 						throw new Exception("Invalid unicode sequence at character index " + (getCurrentColumn() - unicode.length()) + " in line " + getCurrentLine() + " ('" + unicode + "')");
 					} else {
-						unescapedChar = (char)Integer.parseInt(unicode.toString(), 16);
+						unescapedChar = (char) Integer.parseInt(unicode.toString(), 16);
+					}
+				} else if ('U' == peekChar()) {
+					readChar();
+					// Unicode encoded character
+					String unicode = "";
+					for (int i = 0; i < 8 && !isEOF(); i++) {
+						final Character hexDigit = readChar();
+						unicode += hexDigit;
+						if (hexDigit == null || Character.digit(hexDigit, 16) == -1) {
+							throw new Exception("Invalid unicode sequence at character index " + (getCurrentColumn() - unicode.length()) + " in line " + getCurrentLine() + " ('" + unicode + "')");
+						}
+					}
+					if (unicode.length() != 8) {
+						throw new Exception("Invalid unicode sequence at character index " + (getCurrentColumn() - unicode.length()) + " in line " + getCurrentLine() + " ('" + unicode + "')");
+					} else {
+						unescapedChar = (char) Integer.parseInt(unicode.toString(), 16);
 					}
 				} else {
-					throw new Exception("Invalid escape sequence at character index " + getCurrentColumn() + " in line " + getCurrentLine() + " ('" + currentChar + "')");
+					throw new Exception("Invalid escape sequence at character index " + getCurrentColumn() + " in line " + getCurrentLine() + " ('" + escapeCharacter + currentChar + "')");
 				}
 				returnValue += unescapedChar;
 			} else if (escapeCharacter != null && escapeCharacter == peekChar()) {
@@ -273,7 +363,7 @@ public class BasicReadAheadReader implements Closeable {
 						returnValue += readChar();
 					}
 				}
-				if (returnValue.charAt(returnValue.length()) != quoteChar) {
+				if (returnValue.charAt(returnValue.length() - 1) != quoteChar) {
 					throw new Exception("Missing closing quote character for quoted string beginning at line " + lineStart + " column " + columnStart);
 				} else {
 					returnValue = returnValue.substring(0, returnValue.length() - 1);
@@ -282,14 +372,14 @@ public class BasicReadAheadReader implements Closeable {
 				}
 			} else {
 				final String returnValue = readUpToNext(true, escapeCharacter, quoteChar);
-				if (returnValue.charAt(returnValue.length()) != quoteChar) {
+				if (returnValue.charAt(returnValue.length() - 1) != quoteChar) {
 					throw new Exception("Missing closing quote character for quoted string beginning at line " + lineStart + " column " + columnStart);
 				} else {
 					return returnValue.substring(0, returnValue.length() - 1);
 				}
 			}
 		} finally {
-			normalizeLinebreaks = previousSettingNormalizeLinebreaks;
+			setNormalizeLinebreaks(previousSettingNormalizeLinebreaks);
 		}
 	}
 
@@ -389,5 +479,9 @@ public class BasicReadAheadReader implements Closeable {
 		} else {
 			return 0;
 		}
+	}
+
+	public long getCharactersRead() {
+		return charactersRead;
 	}
 }

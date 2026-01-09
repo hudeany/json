@@ -1,0 +1,46 @@
+# First comment property mapping1
+# Second comment property mapping1
+"mapping1":
+  # Comment item11
+  - "property11": "value11"
+    "property12": "value12"
+    "property13": "value13"
+# First comment property mapping2
+# Second comment property mapping2
+"mapping2": # Inline comment mapping2
+  # Comment item21
+  -
+    # Comment property21
+    "property21": "value21" # Inline comment value21
+    # Comment property22
+    "property22": "value22" # Inline comment value22
+    # Comment property23
+    "property23": "value23" # Inline comment value23
+  # Comment item22
+  - "property31": # Inline comment property31
+      # Comment value31
+      "value31" # Inline comment value31
+    "property32": # Inline comment property32
+      # Comment value32
+      "value32" # Inline comment value32
+    "property33": # Inline comment property33
+      # Comment value33
+      "value33" # Inline comment value33
+  # Comment item23
+  - # Inline comment item23
+    "property41": # Inline comment property41
+      # Comment value41
+      "value41" # Inline comment value41
+    "property42": # Inline comment property42
+      # Comment value42
+      "value42" # Inline comment value42
+    "property43": # Inline comment property43
+      # Comment value43
+      "value43" # Inline comment value43
+# First comment property item1
+# Second comment property item1
+"item1": "value1" # Inline comment value1
+# First comment property item2
+# Second comment property item2
+"item2": # Inline comment value2
+  "value2" # Inline comment value2

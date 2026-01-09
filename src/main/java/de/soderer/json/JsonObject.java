@@ -16,7 +16,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import de.soderer.json.exception.JsonDuplicateKeyException;
+import de.soderer.json.exception.DuplicateKeyException;
+import de.soderer.json.exception.JsonInvalidValueTypeException;
 import de.soderer.json.utilities.DateUtilities;
 
 public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, Object>> {
@@ -26,22 +27,22 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 		super(JsonDataType.OBJECT);
 	}
 
-	public JsonObject addNull(final String key) throws JsonDuplicateKeyException {
+	public JsonObject addNull(final String key) throws DuplicateKeyException {
 		if (key == null) {
 			throw new RuntimeException("Invalid null value for JsonObject property key");
 		} else if (properties.containsKey(key)) {
-			throw new JsonDuplicateKeyException(key);
+			throw new DuplicateKeyException(key);
 		} else {
 			properties.put(key, new JsonValueNull());
 			return this;
 		}
 	}
 
-	public JsonObject add(final String key, final String value) throws JsonDuplicateKeyException {
+	public JsonObject add(final String key, final String value) throws DuplicateKeyException {
 		if (key == null) {
 			throw new RuntimeException("Invalid null value for JsonObject property key");
 		} else if (properties.containsKey(key)) {
-			throw new JsonDuplicateKeyException(key);
+			throw new DuplicateKeyException(key);
 		} else {
 			if (value == null) {
 				addNull(key);
@@ -52,11 +53,11 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 		}
 	}
 
-	public JsonObject add(final String key, final Integer value) throws JsonDuplicateKeyException {
+	public JsonObject add(final String key, final Integer value) throws DuplicateKeyException {
 		if (key == null) {
 			throw new RuntimeException("Invalid null value for JsonObject property key");
 		} else if (properties.containsKey(key)) {
-			throw new JsonDuplicateKeyException(key);
+			throw new DuplicateKeyException(key);
 		} else {
 			if (value == null) {
 				addNull(key);
@@ -67,11 +68,11 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 		}
 	}
 
-	public JsonObject add(final String key, final Long value) throws JsonDuplicateKeyException {
+	public JsonObject add(final String key, final Long value) throws DuplicateKeyException {
 		if (key == null) {
 			throw new RuntimeException("Invalid null value for JsonObject property key");
 		} else if (properties.containsKey(key)) {
-			throw new JsonDuplicateKeyException(key);
+			throw new DuplicateKeyException(key);
 		} else {
 			if (value == null) {
 				addNull(key);
@@ -82,11 +83,11 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 		}
 	}
 
-	public JsonObject add(final String key, final Number value) throws JsonDuplicateKeyException {
+	public JsonObject add(final String key, final Number value) throws DuplicateKeyException {
 		if (key == null) {
 			throw new RuntimeException("Invalid null value for JsonObject property key");
 		} else if (properties.containsKey(key)) {
-			throw new JsonDuplicateKeyException(key);
+			throw new DuplicateKeyException(key);
 		} else {
 			if (value == null) {
 				addNull(key);
@@ -101,11 +102,11 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 		}
 	}
 
-	public JsonObject add(final String key, final Boolean value) throws JsonDuplicateKeyException {
+	public JsonObject add(final String key, final Boolean value) throws DuplicateKeyException {
 		if (key == null) {
 			throw new RuntimeException("Invalid null value for JsonObject property key");
 		} else if (properties.containsKey(key)) {
-			throw new JsonDuplicateKeyException(key);
+			throw new DuplicateKeyException(key);
 		} else {
 			if (value == null) {
 				addNull(key);
@@ -116,11 +117,11 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 		}
 	}
 
-	public JsonObject add(final String key, final Date value) throws JsonDuplicateKeyException {
+	public JsonObject add(final String key, final Date value) throws DuplicateKeyException {
 		if (key == null) {
 			throw new RuntimeException("Invalid null value for JsonObject property key");
 		} else if (properties.containsKey(key)) {
-			throw new JsonDuplicateKeyException(key);
+			throw new DuplicateKeyException(key);
 		} else {
 			if (value == null) {
 				addNull(key);
@@ -131,11 +132,11 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 		}
 	}
 
-	public JsonObject add(final String key, final LocalDate value) throws JsonDuplicateKeyException {
+	public JsonObject add(final String key, final LocalDate value) throws DuplicateKeyException {
 		if (key == null) {
 			throw new RuntimeException("Invalid null value for JsonObject property key");
 		} else if (properties.containsKey(key)) {
-			throw new JsonDuplicateKeyException(key);
+			throw new DuplicateKeyException(key);
 		} else {
 			if (value == null) {
 				addNull(key);
@@ -146,11 +147,11 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 		}
 	}
 
-	public JsonObject add(final String key, final LocalDateTime value) throws JsonDuplicateKeyException {
+	public JsonObject add(final String key, final LocalDateTime value) throws DuplicateKeyException {
 		if (key == null) {
 			throw new RuntimeException("Invalid null value for JsonObject property key");
 		} else if (properties.containsKey(key)) {
-			throw new JsonDuplicateKeyException(key);
+			throw new DuplicateKeyException(key);
 		} else {
 			if (value == null) {
 				addNull(key);
@@ -165,11 +166,11 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 		}
 	}
 
-	public JsonObject add(final String key, final ZonedDateTime value) throws JsonDuplicateKeyException {
+	public JsonObject add(final String key, final ZonedDateTime value) throws DuplicateKeyException {
 		if (key == null) {
 			throw new RuntimeException("Invalid null value for JsonObject property key");
 		} else if (properties.containsKey(key)) {
-			throw new JsonDuplicateKeyException(key);
+			throw new DuplicateKeyException(key);
 		} else {
 			if (value == null) {
 				addNull(key);
@@ -184,13 +185,48 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 		}
 	}
 
-	public JsonObject add(final String key, final JsonNode value) throws JsonDuplicateKeyException {
+	public JsonObject add(final String key, final JsonNode value) throws DuplicateKeyException {
 		if (key == null) {
 			throw new RuntimeException("Invalid null value for JsonObject property key");
 		} else if (properties.containsKey(key)) {
-			throw new JsonDuplicateKeyException(key);
+			throw new DuplicateKeyException(key);
 		} else {
 			properties.put(key, value);
+			return this;
+		}
+	}
+
+	public JsonObject add(final String key, final Object value) throws DuplicateKeyException, JsonInvalidValueTypeException {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else if (properties.containsKey(key)) {
+			throw new DuplicateKeyException(key);
+		} else {
+			if (value == null) {
+				addNull(key);
+			} else if (value instanceof String) {
+				add(key, (String) value);
+			} else if (value instanceof Integer) {
+				add(key, (Integer) value);
+			} else if (value instanceof Long) {
+				add(key, (Long) value);
+			} else if (value instanceof Number) {
+				add(key, (Number) value);
+			} else if (value instanceof Boolean) {
+				add(key, (Boolean) value);
+			} else if (value instanceof Date) {
+				add(key, (Date) value);
+			} else if (value instanceof LocalDate) {
+				add(key, (LocalDate) value);
+			} else if (value instanceof LocalDateTime) {
+				add(key, (LocalDateTime) value);
+			} else if (value instanceof ZonedDateTime) {
+				add(key, (ZonedDateTime) value);
+			} else if (value instanceof JsonNode) {
+				add(key, (JsonNode) value);
+			} else {
+				throw new JsonInvalidValueTypeException(value.getClass());
+			}
 			return this;
 		}
 	}
@@ -273,12 +309,12 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 		}
 	}
 
-	public JsonObject put(final String key, final Date value) throws JsonDuplicateKeyException {
+	public JsonObject put(final String key, final Date value) {
 		if (key == null) {
 			throw new RuntimeException("Invalid null value for JsonObject property key");
 		} else {
 			if (value == null) {
-				addNull(key);
+				putNull(key);
 			} else {
 				properties.put(key, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, value)));
 			}
@@ -286,12 +322,12 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 		}
 	}
 
-	public JsonObject put(final String key, final LocalDate value) throws JsonDuplicateKeyException {
+	public JsonObject put(final String key, final LocalDate value) {
 		if (key == null) {
 			throw new RuntimeException("Invalid null value for JsonObject property key");
 		} else {
 			if (value == null) {
-				addNull(key);
+				putNull(key);
 			} else {
 				properties.put(key, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE, value)));
 			}
@@ -299,12 +335,12 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 		}
 	}
 
-	public JsonObject put(final String key, final LocalDateTime value) throws JsonDuplicateKeyException {
+	public JsonObject put(final String key, final LocalDateTime value) {
 		if (key == null) {
 			throw new RuntimeException("Invalid null value for JsonObject property key");
 		} else {
 			if (value == null) {
-				addNull(key);
+				putNull(key);
 			} else {
 				if (value.getNano() > 0) {
 					properties.put(key, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT_NO_TIMEZONE, value)));
@@ -338,6 +374,39 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 			throw new RuntimeException("Invalid null value for JsonObject property key");
 		} else {
 			properties.put(key, value);
+			return this;
+		}
+	}
+
+	public JsonObject put(final String key, final Object value) throws JsonInvalidValueTypeException {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else {
+			if (value == null) {
+				putNull(key);
+			} else if (value instanceof String) {
+				put(key, (String) value);
+			} else if (value instanceof Integer) {
+				put(key, (Integer) value);
+			} else if (value instanceof Long) {
+				put(key, (Long) value);
+			} else if (value instanceof Number) {
+				put(key, (Number) value);
+			} else if (value instanceof Boolean) {
+				put(key, (Boolean) value);
+			} else if (value instanceof Date) {
+				put(key, (Date) value);
+			} else if (value instanceof LocalDate) {
+				put(key, (LocalDate) value);
+			} else if (value instanceof LocalDateTime) {
+				put(key, (LocalDateTime) value);
+			} else if (value instanceof ZonedDateTime) {
+				put(key, (ZonedDateTime) value);
+			} else if (value instanceof JsonNode) {
+				put(key, (JsonNode) value);
+			} else {
+				throw new JsonInvalidValueTypeException(value.getClass());
+			}
 			return this;
 		}
 	}
