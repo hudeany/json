@@ -27,8 +27,7 @@
       # Comment value33
       "value33" # Inline comment value33
   # Comment item23
-  - # Inline comment item23
-    "property41": # Inline comment property41
+  - "property41": # Inline comment property41
       # Comment value41
       "value41" # Inline comment value41
     "property42": # Inline comment property42

@@ -96,15 +96,10 @@ public class YamlRoundTripTestWithYamlReader {
 	//		roundTripSingleDocument("yaml/multiline/input.yaml", "yaml/multiline/output.yaml", true);
 	//	}
 
-	//	@Test
-	//	public void testReference_1_2() throws Exception {
-	//		roundTripSingleDocument("yaml/reference_1_2/sample.yaml", "yaml/reference_1_2/result.yaml", true);
-	//	}
-	//
-	//	@Test
-	//	public void testStandard() throws Exception {
-	//		roundTripSingleDocument("yaml/standard/sample.yaml", "yaml/standard/result.yaml", true);
-	//	}
+	@Test
+	public void testStandard() throws Exception {
+		roundTripSingleDocument("yaml/standard/input.yaml", "yaml/standard/output.yaml", true);
+	}
 
 	//	//	@Test
 	//	//	public void testTest() throws Exception {
