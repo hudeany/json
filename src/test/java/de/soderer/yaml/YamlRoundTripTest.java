@@ -144,7 +144,9 @@ public class YamlRoundTripTest {
 
 		final String serializedYaml = new String(testOutputStream.toByteArray(), StandardCharsets.UTF_8);
 
-		Assert.assertEquals(resultYamlFileString.trim(), serializedYaml.trim());
+		Assert.assertTrue(resultYamlFileString.contains("\r\n"));
+
+		Assert.assertEquals(resultYamlFileString.replace("\r\n", "\n"), serializedYaml.replace("\r\n", "\n"));
 	}
 
 	private void roundTripSingleDocument(final String inputDataFileNamem, final String outputDataFileName, final boolean alwaysQuote) throws Exception {
