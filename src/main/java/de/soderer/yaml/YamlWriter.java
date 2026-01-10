@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import de.soderer.json.utilities.Linebreak;
+import de.soderer.json.utilities.NumberUtilities;
 import de.soderer.json.utilities.Utilities;
 import de.soderer.yaml.data.YamlAlias;
 import de.soderer.yaml.data.YamlDocument;
@@ -122,6 +123,8 @@ public class YamlWriter implements Closeable {
 				write(directive.toString() + linebreakString);
 			}
 			write("---" + linebreakString);
+		} else if (!firstDocument) {
+			write("---" + linebreakString);
 		}
 
 		if (document.getLeadingComments() != null) {
@@ -143,7 +146,7 @@ public class YamlWriter implements Closeable {
 			writeNode(document.getRoot(), 0, false, false);
 		}
 
-		if (document.getDirectives() != null) {
+		if (document.getDirectives() != null || !firstDocument) {
 			write("..." + linebreakString);
 			documentEndWasWritten = true;
 		} else {
@@ -203,14 +206,6 @@ public class YamlWriter implements Closeable {
 					write(linebreakString);
 				}
 			} else {
-				//TODO
-				//				if (mapping.getLeadingComments() != null) {
-				//					for (final String commentLine : mapping.getLeadingComments()) {
-				//						write("# " + commentLine + linebreakString);
-				//						writeIndent(indentLevel);
-				//					}
-				//				}
-
 				writeBlockMapping(mapping, indentLevel);
 			}
 		} else {
@@ -258,7 +253,9 @@ public class YamlWriter implements Closeable {
 	private void writeAlias(final YamlAlias alias, final int indentLevel) throws IOException {
 		writeIndent(indentLevel);
 		write(" *" + alias.getTargetAnchorName());
-		if (alias.getInlineComment() != null) {
+		if (alias.getInlineComment() == null) {
+			write(linebreakString);
+		} else {
 			write(" # " + alias.getInlineComment() + linebreakString);
 		}
 	}
@@ -328,6 +325,22 @@ public class YamlWriter implements Closeable {
 						needsQuotes = true;
 						break;
 					}
+				}
+
+				if ("true".equalsIgnoreCase(value)
+						|| "yes".equalsIgnoreCase(value)
+						|| "on".equalsIgnoreCase(value)
+						|| "false".equalsIgnoreCase(value)
+						|| "no".equalsIgnoreCase(value)
+						|| "off".equalsIgnoreCase(value)
+						|| "null".equalsIgnoreCase(value)
+						|| "~".equalsIgnoreCase(value)) {
+					needsQuotes = true;
+				}
+
+
+				if (NumberUtilities.isNumber(value)) {
+					needsQuotes = true;
 				}
 			}
 
@@ -431,8 +444,7 @@ public class YamlWriter implements Closeable {
 				write(" *" + alias.getTargetAnchorName());
 				if (alias.getInlineComment() == null) {
 					write(linebreakString);
-				}
-				if (alias.getInlineComment() != null) {
+				} else {
 					write(" # " + alias.getInlineComment() + linebreakString);
 				}
 			} else if (item instanceof final YamlMapping mapping) {
@@ -582,7 +594,9 @@ public class YamlWriter implements Closeable {
 				}
 			} else if (value instanceof final YamlAlias alias) {
 				write(" *" + alias.getTargetAnchorName());
-				if (alias.getInlineComment() != null) {
+				if (alias.getInlineComment() == null) {
+					write(linebreakString);
+				} else {
 					write(" # " + alias.getInlineComment() + linebreakString);
 				}
 			} else if (value instanceof final YamlMapping mapping) {
@@ -718,7 +732,9 @@ public class YamlWriter implements Closeable {
 				writeScalarInlineInFlow(scalarVal);
 			} else if (value instanceof final YamlAlias alias) {
 				write(" *" + alias.getTargetAnchorName());
-				if (alias.getInlineComment() != null) {
+				if (alias.getInlineComment() == null) {
+					write(linebreakString);
+				} else {
 					write(" # " + alias.getInlineComment() + linebreakString);
 				}
 			} else {
@@ -788,7 +804,9 @@ public class YamlWriter implements Closeable {
 				writeScalarInlineInFlow(scalar);
 			} else if (item instanceof final YamlAlias alias) {
 				write(" *" + alias.getTargetAnchorName());
-				if (alias.getInlineComment() != null) {
+				if (alias.getInlineComment() == null) {
+					write(linebreakString);
+				} else {
 					write(" # " + alias.getInlineComment() + linebreakString);
 				}
 			} else {

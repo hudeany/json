@@ -51,15 +51,21 @@ public class YamlReader extends BasicReadAheadReader {
 		indentations.add(0);
 	}
 
-	public YamlDocument readYamlDocument() throws Exception {
-		final YamlDocument nextDocument = new YamlDocument();
+	public YamlDocument readDocument() throws Exception {
+		final YamlDocument document = new YamlDocument();
+		if (!pendingLeadingComments.isEmpty()) {
+			for (final String commentLine : pendingLeadingComments) {
+				document.addLeadingComment(commentLine);
+			}
+			pendingLeadingComments = new ArrayList<>();
+		}
 
 		while (isNotEOF()) {
 			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 			if (peekCharMatch('#')) {
 				readLeadingComment();
 			} else if (peekCharMatch('%')) {
-				nextDocument.addDirective(readDirective());
+				document.addDirective(readDirective());
 				yamlDocumentContentStarted = false;
 			} else if (peekCharMatch('-')) {
 				if (peekNextCharMatch('-')) {
@@ -67,6 +73,13 @@ public class YamlReader extends BasicReadAheadReader {
 					if (peekNextCharMatch('-')) {
 						readChar();
 						readChar();
+
+						skipBlanks();
+						if (peekCharMatch('#')) {
+							final String documentComment = readInlineComment();
+							document.addLeadingComment(documentComment);
+						}
+
 						if (yamlDocumentContentStarted != null && yamlDocumentContentStarted) {
 							// Start of next document
 							break;
@@ -75,28 +88,28 @@ public class YamlReader extends BasicReadAheadReader {
 						} else {
 							yamlDocumentContentStarted = true;
 							skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-							nextDocument.setRoot(parseYamlNode());
-							return nextDocument;
+							document.setRoot(parseYamlNode());
+							return document;
 						}
 					} else if (yamlDocumentContentStarted != null && !yamlDocumentContentStarted) {
 						throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn() - 1);
 					} else {
 						yamlDocumentContentStarted = true;
-						nextDocument.setRoot(parseBlockMappingOrScalar('-'));
-						return nextDocument;
+						document.setRoot(parseBlockMappingOrScalar('-'));
+						return document;
 					}
 				} else if (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n')) {
 					if (yamlDocumentContentStarted != null && !yamlDocumentContentStarted) {
 						throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
 					} else {
-						nextDocument.setRoot(parseBlockSequence());
-						return nextDocument;
+						document.setRoot(parseBlockSequence());
+						return document;
 					}
 				} else if (yamlDocumentContentStarted != null && !yamlDocumentContentStarted) {
 					throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
 				} else {
-					nextDocument.setRoot(parseBlockMappingOrScalar(null));
-					return nextDocument;
+					document.setRoot(parseBlockMappingOrScalar(null));
+					return document;
 				}
 			} else if (peekCharMatch('.')) {
 				if (peekNextCharMatch('.')) {
@@ -112,22 +125,22 @@ public class YamlReader extends BasicReadAheadReader {
 						throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
 					} else {
 						yamlDocumentContentStarted = true;
-						nextDocument.setRoot(parseBlockMappingOrScalar('.'));
-						return nextDocument;
+						document.setRoot(parseBlockMappingOrScalar('.'));
+						return document;
 					}
 				} else if (yamlDocumentContentStarted != null && !yamlDocumentContentStarted) {
 					throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
 				} else {
 					yamlDocumentContentStarted = true;
-					nextDocument.setRoot(parseBlockMappingOrScalar(null));
-					return nextDocument;
+					document.setRoot(parseBlockMappingOrScalar(null));
+					return document;
 				}
 			} else if (yamlDocumentContentStarted != null && !yamlDocumentContentStarted) {
 				throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
 			} else {
 				yamlDocumentContentStarted = true;
-				nextDocument.setRoot(parseYamlNode());
-				return nextDocument;
+				document.setRoot(parseYamlNode());
+				return document;
 			}
 		}
 
@@ -145,7 +158,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 	public static YamlDocument readYamlDocument(final String yamlDocumentString) throws Exception {
 		try (final YamlReader yamlReader = new YamlReader(new ByteArrayInputStream(yamlDocumentString.getBytes(StandardCharsets.UTF_8)))) {
-			return yamlReader.readYamlDocument();
+			return yamlReader.readDocument();
 		}
 	}
 
@@ -451,6 +464,22 @@ public class YamlReader extends BasicReadAheadReader {
 				}
 
 				sequence.add(nextItemNode);
+			} else if (peekCharMatch('-') && (peekNextCharMatch('-'))) {
+				readChar();
+				if (peekNextCharMatch('-')) {
+					readChar();
+					readChar();
+					yamlDocumentContentStarted = true;
+					return sequence;
+				}
+			} else if (peekCharMatch('.') && (peekNextCharMatch('.'))) {
+				readChar();
+				if (peekNextCharMatch('.')) {
+					readChar();
+					readChar();
+					yamlDocumentContentStarted = null;
+					return sequence;
+				}
 			} else {
 				throw new YamlParseException("Expected sequence start not found", getCurrentLine(), getCurrentColumn());
 			}
@@ -520,12 +549,22 @@ public class YamlReader extends BasicReadAheadReader {
 					keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING);
 				} else {
 					keyOrScalarNode = readScalarString(null);
+
+					if ("...".equals(((YamlScalar) keyOrScalarNode).getValueString())) {
+						yamlDocumentContentStarted = null;
+						return mapping;
+					} else if ("---".equals(((YamlScalar) keyOrScalarNode).getValueString())) {
+						if (keyOrScalarNode.getInlineComment() != null) {
+							pendingLeadingComments.add(keyOrScalarNode.getInlineComment());
+						}
+						yamlDocumentContentStarted = true;
+						return mapping;
+					}
 				}
-				final YamlNode keyOrScalarNode2 = keyOrScalarNode;
 
 				if (!pendingLeadingComments.isEmpty()) {
 					for (final String commentLine2 : pendingLeadingComments) {
-						keyOrScalarNode2.addLeadingComment(commentLine2);
+						keyOrScalarNode.addLeadingComment(commentLine2);
 					}
 					pendingLeadingComments = new ArrayList<>();
 				}
@@ -605,8 +644,15 @@ public class YamlReader extends BasicReadAheadReader {
 					keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING);
 				} else {
 					keyOrScalarNode = readScalarString(null);
+
 					if ("...".equals(((YamlScalar) keyOrScalarNode).getValueString())) {
-						yamlDocumentContentStarted = false;
+						yamlDocumentContentStarted = null;
+						return mapping;
+					} else if ("---".equals(((YamlScalar) keyOrScalarNode).getValueString())) {
+						if (keyOrScalarNode.getInlineComment() != null) {
+							pendingLeadingComments.add(keyOrScalarNode.getInlineComment());
+						}
+						yamlDocumentContentStarted = true;
 						return mapping;
 					}
 				}
@@ -1076,7 +1122,7 @@ public class YamlReader extends BasicReadAheadReader {
 	private YamlNode readScalarString(Character additionalLeadingChar) throws Exception {
 		String scalarString = "";
 		while(true) {
-			scalarString += readUpToNext(false, null, ":#{}[]\n".toCharArray());
+			scalarString += readUpToNext(false, null, ":#\n".toCharArray());
 			if (additionalLeadingChar != null) {
 				scalarString = additionalLeadingChar + scalarString;
 				additionalLeadingChar = null;

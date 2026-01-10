@@ -42,7 +42,7 @@ public class YamlRoundTripTestWithYamlReader {
 		final YamlDocument testDocument;
 		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream(inputDataFileNamem)) {
 			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
-				testDocument = yamlReader.readYamlDocument();
+				testDocument = yamlReader.readDocument();
 			}
 		}
 
@@ -91,20 +91,21 @@ public class YamlRoundTripTestWithYamlReader {
 		roundTripSingleDocument("yaml/reference_1_1/input.yaml", "yaml/reference_1_1/output.yaml", true);
 	}
 
+	@Test
+	public void testStandard() throws Exception {
+		roundTripSingleDocument("yaml/standard/input.yaml", "yaml/standard/output.yaml", true);
+	}
+
 	//	@Test
 	//	public void testMultiline() throws Exception {
 	//		roundTripSingleDocument("yaml/multiline/input.yaml", "yaml/multiline/output.yaml", true);
 	//	}
 
 	@Test
-	public void testStandard() throws Exception {
-		roundTripSingleDocument("yaml/standard/input.yaml", "yaml/standard/output.yaml", true);
+	public void testTest() throws Exception {
+		roundTripMultipleDocumentsInSingleFile("yaml/test/input.yaml", "yaml/test/output.yaml", false);
 	}
 
-	//	//	@Test
-	//	//	public void testTest() throws Exception {
-	//	//		roundTrip("yaml/test/sample.yaml", "yaml/test/result.yaml", false);
-	//	//	}
 	//
 	//	@Test
 	//	public void testMultipleDocuments() throws Exception {
@@ -150,7 +151,7 @@ public class YamlRoundTripTestWithYamlReader {
 		final YamlDocument testDocument1;
 		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream(inputDataFileNamem)) {
 			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
-				testDocument1 = yamlReader.readYamlDocument();
+				testDocument1 = yamlReader.readDocument();
 			}
 		}
 
@@ -170,12 +171,39 @@ public class YamlRoundTripTestWithYamlReader {
 
 		final YamlDocument testDocument2;
 		try (final YamlReader yamlReader = new YamlReader(new ByteArrayInputStream(serializedYaml.getBytes(StandardCharsets.UTF_8)))) {
-			testDocument2 = yamlReader.readYamlDocument();
+			testDocument2 = yamlReader.readDocument();
 		}
 
 		Assert.assertNotNull("Round-trip root should not be null", testDocument2.getRoot());
 
 		Assert.assertTrue( "AST should be equal after round trip", astEquals(testDocument1.getRoot(), testDocument2.getRoot()));
+	}
+
+	private void roundTripMultipleDocumentsInSingleFile(final String inputDataFileNamem, final String outputDataFileName, final boolean alwaysQuote) throws Exception {
+		String resultYamlFileString;
+		try (InputStream resultDataStream = getClass().getClassLoader().getResourceAsStream(outputDataFileName)) {
+			resultYamlFileString = IoUtilities.toString(resultDataStream, StandardCharsets.UTF_8);
+		}
+
+		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
+		try (final YamlWriter writer = new YamlWriter(testOutputStream)) {
+			if (alwaysQuote) {
+				writer.setAlwaysQuoteAllStrings();
+			}
+
+			try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream(inputDataFileNamem)) {
+				try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
+					YamlDocument testDocument;
+					while ((testDocument = yamlReader.readDocument()) != null) {
+						writer.writeDocument(testDocument);
+					}
+				}
+			}
+		}
+
+		final String serializedYaml = new String(testOutputStream.toByteArray(), StandardCharsets.UTF_8);
+		Assert.assertFalse("Serialized YAML should not be empty", serializedYaml.isEmpty());
+		Assert.assertEquals(resultYamlFileString, serializedYaml);
 	}
 
 	private void roundTripMultipleDocuments(final String inputDataFileNamem, final String outputDataFileName) throws Exception {
@@ -188,12 +216,12 @@ public class YamlRoundTripTestWithYamlReader {
 		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream(inputDataFileNamem)) {
 			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
 				try {
-					yamlReader.readYamlDocument();
+					yamlReader.readDocument();
 					Assert.fail("Missing expected expection for multiple documents");
 				} catch (@SuppressWarnings("unused") final Exception e) {
 					// Expected expection
 				}
-				yamlDocumentList1 = yamlReader.readYamlDocument();
+				yamlDocumentList1 = yamlReader.readDocument();
 			}
 		}
 
@@ -210,7 +238,7 @@ public class YamlRoundTripTestWithYamlReader {
 
 		final YamlDocument yamlDocumentList2;
 		try (final YamlReader yamlReader = new YamlReader(new ByteArrayInputStream(serializedYaml.getBytes(StandardCharsets.UTF_8)))) {
-			yamlDocumentList2 = yamlReader.readYamlDocument();
+			yamlDocumentList2 = yamlReader.readDocument();
 		}
 
 		Assert.assertNotNull("Root node of document 1 should not be null", yamlDocumentList2.getRoot());

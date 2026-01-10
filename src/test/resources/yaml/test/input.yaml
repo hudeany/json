@@ -6,10 +6,10 @@ sequence1: # using 1-space indentation, tab indentation is not allowed
  - Sequence item 11
  - Sequence item 12
  - Sequence item 13
-sequence2: #Sequence without indentation
-- Sequence item 21
-- Sequence item 22
-- Sequence item 23
+sequence2:
+  - Sequence item 21
+  - Sequence item 22
+  - Sequence item 23
 sequence3: [Sequence item 31, Sequence item 32, Sequence item 33]
 sequence4: [Sequence item 41,
 Sequence item 42,
