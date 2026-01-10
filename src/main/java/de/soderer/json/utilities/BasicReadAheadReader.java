@@ -386,8 +386,11 @@ public class BasicReadAheadReader implements Closeable {
 			if (escapeCharacter == quoteChar) {
 				String returnValue = "";
 				while (!isEOF()) {
-					if (!peekCharMatch(quoteChar) || peekNextCharMatch(quoteChar)) {
+					if (peekCharNotMatch(quoteChar)) {
 						returnValue += readChar();
+					} else if (peekCharMatch(quoteChar) && peekNextCharMatch(quoteChar)) {
+						returnValue += readChar();
+						readChar();
 					} else {
 						returnValue += readChar();
 						break;

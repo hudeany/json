@@ -53,7 +53,9 @@ public class YamlRoundTripTest {
 		for (final Object numerItemObject : yamlNode) {
 			final YamlMapping numerItem = (YamlMapping) numerItemObject;
 			final String description = (String) ((YamlScalar) numerItem.get("description")).getValue();
-			if (description.toLowerCase().contains("sexagesimal")) {
+			if (description.toLowerCase().contains("sexagesimal")
+					|| description.toLowerCase().contains("date")
+					|| description.toLowerCase().contains("time")) {
 				final String numberString = (String) ((YamlScalar) numerItem.get("number")).getValue();
 				final String normalizedValue = (String) ((YamlScalar) numerItem.get("normalized")).getValue();
 				Assert.assertEquals(description, numberString, normalizedValue);
@@ -77,6 +79,11 @@ public class YamlRoundTripTest {
 		}
 
 		Assert.assertEquals(resultYamlFileString, serializedYaml);
+	}
+
+	@Test
+	public void testSimpleValues() throws Exception {
+		roundTripSingleDocument("yaml/simpleValues/input.yaml", "yaml/simpleValues/output.yaml", false);
 	}
 
 	@Test

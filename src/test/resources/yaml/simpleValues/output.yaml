@@ -1,0 +1,47 @@
+- Text with blank
+- "Text with\ttab"
+- "Double quoted text\t'\""
+- "Single quoted text\t'\""
+- 123
+- -123
+- 123.456
+- -123.456
+- 123.
+- -123.
+- 123.0
+- -123.0
+- 123E+10
+- -123E+10
+- 123E-10
+- -123E-10
+- true
+- True
+- TRUE
+- false
+- null
+- Null
+- NULL
+- Yes
+- yes
+- No
+- no
+- On
+- on
+- Off
+- off
+- Y
+- y
+- N
+- n
+- Yes we have No bananas
+- 2012-08-06
+- 2012-08-06T12:30
+- 12:30
+- "12 : 30"
+- "123"
+- "!!float 123"
+- "!!str 123"
+- "!!str Yes"
+- .inf
+- -.Inf
+- .NAN

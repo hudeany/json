@@ -153,6 +153,18 @@
 - description: "Sexagesimal number for times or angles"
   number: 190:20:30.15
   normalized: 190:20:30.15
+  
+- description: "Date"
+  number: 2012-08-06
+  normalized: 2012-08-06
+  
+- description: "Time"
+  number: 12:30
+  normalized: 12:30
+  
+- description: "DateTime"
+  number: 2012-08-06T12:30
+  normalized: 2012-08-06T12:30
 
 - description: "Positive infinity, lowercase"
   number: .inf

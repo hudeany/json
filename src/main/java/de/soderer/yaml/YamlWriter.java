@@ -325,28 +325,41 @@ public class YamlWriter implements Closeable {
 			if (alwaysQuoteStringValues) {
 				needsQuotes = true;
 			} else {
-				for (final char c : value.toCharArray()) {
-					if ((Character.isWhitespace(c) && c != ' ')
-							|| ":{}[],#&*!|>'\"%@`".indexOf(c) > -1) {
+
+				for (int i = 0; i < value.length(); i++) {
+					final char nextChar = value.charAt(i);
+
+					if ((Character.isWhitespace(nextChar) && nextChar != ' ')
+							|| ",#&*!|>'\"%@`".indexOf(nextChar) > -1) {
 						needsQuotes = true;
 						break;
 					}
+
+					if (":{}[]".indexOf(nextChar) > -1) {
+						if (value.length() > i + 1 && " \t\n\r".indexOf(value.charAt(i + 1)) > -1) {
+							needsQuotes = true;
+							break;
+						}
+					}
 				}
 
-				if ("true".equalsIgnoreCase(value)
-						|| "yes".equalsIgnoreCase(value)
-						|| "on".equalsIgnoreCase(value)
-						|| "false".equalsIgnoreCase(value)
-						|| "no".equalsIgnoreCase(value)
-						|| "off".equalsIgnoreCase(value)
-						|| "null".equalsIgnoreCase(value)
-						|| "~".equalsIgnoreCase(value)) {
-					needsQuotes = true;
+				if (!needsQuotes) {
+					if ("true".equalsIgnoreCase(value)
+							|| "yes".equalsIgnoreCase(value)
+							|| "on".equalsIgnoreCase(value)
+							|| "false".equalsIgnoreCase(value)
+							|| "no".equalsIgnoreCase(value)
+							|| "off".equalsIgnoreCase(value)
+							|| "null".equalsIgnoreCase(value)
+							|| "~".equalsIgnoreCase(value)) {
+						needsQuotes = true;
+					}
 				}
 
-
-				if (NumberUtilities.isNumber(value)) {
-					needsQuotes = true;
+				if (!needsQuotes) {
+					if (NumberUtilities.isNumber(value)) {
+						needsQuotes = true;
+					}
 				}
 			}
 

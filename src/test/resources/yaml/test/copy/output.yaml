@@ -23,8 +23,8 @@ mapping3: {property 31: Value 31, property 32: 32}
 mapping4: {property 41: Value 41, property 42: 42}
 mapping5:
   not a: "prob{lem,"
-  also: f]ine
-mapping6: {must: "quo{ te", and: "al,so", this: "t] oo"}
+  also: "f]ine"
+mapping6: {must: "quo{te,", this: "t]oo"}
 # mapping7: # TODO: Mapping with complex mapping keys
 # ? - Detroit Tigers
 # - Chicago cubs
