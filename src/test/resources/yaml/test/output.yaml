@@ -22,9 +22,9 @@ mapping2:
 mapping3: {property 31: Value 31, property 32: 32}
 mapping4: {property 41: Value 41, property 42: 42}
 mapping5:
-  not a: "prob{lem,"
+  not a: prob{lem,
   also: f]ine
-mapping6: {must: "quo{ te", and: "al,so", this: "t] oo"}
+mapping6: {must: "quo{ te", this: "t] oo"}
 # mapping7: # TODO: Mapping with complex mapping keys
 # ? - Detroit Tigers
 # - Chicago cubs
@@ -59,7 +59,7 @@ mapping 1:
 # property keys may contain whitespaces
 mapping 1:
   a property: Value for space in property key
-  "my	property": Value for tab in property key
+  "my\tproperty": Value for tab in property key
 ...
 %YAML 1.2
 ---

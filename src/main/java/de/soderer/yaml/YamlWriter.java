@@ -244,7 +244,10 @@ public class YamlWriter implements Closeable {
 				write((value == null ? "null" : value.toString()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + linebreakString);
 				break;
 			case STRING:
-				if (inFlow || isKeyContext) {
+				if (inFlow ) {
+					writeIndent(indentLevel);
+					write(escapePlainStringValueInFlow(value));
+				} else if (isKeyContext) {
 					writeIndent(indentLevel);
 					write(escapePlainStringValue(value));
 				} else {
@@ -299,11 +302,39 @@ public class YamlWriter implements Closeable {
 			if (alwaysQuoteStringKeys) {
 				needsQuotes = true;
 			} else {
-				for (final char c : key.toCharArray()) {
-					if ((Character.isWhitespace(c) && c != ' ')
-							|| ":{}[],#&*!|>'\"%@`".indexOf(c) > -1) {
+				for (int i = 0; i < key.length(); i++) {
+					final char nextChar = key.charAt(i);
+
+					if ((Character.isWhitespace(nextChar) && nextChar != ' ')
+							|| "#&*!|>'\"%@`".indexOf(nextChar) > -1) {
 						needsQuotes = true;
 						break;
+					}
+
+					if (":{}[]".indexOf(nextChar) > -1) {
+						if (key.length() > i + 1 && " \t\n\r".indexOf(key.charAt(i + 1)) > -1) {
+							needsQuotes = true;
+							break;
+						}
+					}
+				}
+
+				if (!needsQuotes) {
+					if ("true".equalsIgnoreCase(key)
+							|| "yes".equalsIgnoreCase(key)
+							|| "on".equalsIgnoreCase(key)
+							|| "false".equalsIgnoreCase(key)
+							|| "no".equalsIgnoreCase(key)
+							|| "off".equalsIgnoreCase(key)
+							|| "null".equalsIgnoreCase(key)
+							|| "~".equalsIgnoreCase(key)) {
+						needsQuotes = true;
+					}
+				}
+
+				if (!needsQuotes) {
+					if (NumberUtilities.isNumber(key)) {
+						needsQuotes = true;
 					}
 				}
 			}
@@ -311,7 +342,65 @@ public class YamlWriter implements Closeable {
 			if (!needsQuotes) {
 				return key;
 			} else {
-				return "\"" + key.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+				return "\""
+						+ escapeScalarString(key)
+						+ "\"";
+			}
+		}
+	}
+
+	private String escapePlainStringKeyInFlow(final String key) {
+		if (key.isEmpty()) {
+			return "\"\"";
+		} else {
+			boolean needsQuotes = false;
+
+			if (alwaysQuoteStringKeys) {
+				needsQuotes = true;
+			} else {
+				for (int i = 0; i < key.length(); i++) {
+					final char nextChar = key.charAt(i);
+
+					if ((Character.isWhitespace(nextChar) && nextChar != ' ')
+							|| ",#&*!|>'\"%@`".indexOf(nextChar) > -1) {
+						needsQuotes = true;
+						break;
+					}
+
+					if (":{}[]".indexOf(nextChar) > -1) {
+						if (key.length() > i + 1 && " \t\n\r".indexOf(key.charAt(i + 1)) > -1) {
+							needsQuotes = true;
+							break;
+						}
+					}
+				}
+
+				if (!needsQuotes) {
+					if ("true".equalsIgnoreCase(key)
+							|| "yes".equalsIgnoreCase(key)
+							|| "on".equalsIgnoreCase(key)
+							|| "false".equalsIgnoreCase(key)
+							|| "no".equalsIgnoreCase(key)
+							|| "off".equalsIgnoreCase(key)
+							|| "null".equalsIgnoreCase(key)
+							|| "~".equalsIgnoreCase(key)) {
+						needsQuotes = true;
+					}
+				}
+
+				if (!needsQuotes) {
+					if (NumberUtilities.isNumber(key)) {
+						needsQuotes = true;
+					}
+				}
+			}
+
+			if (!needsQuotes) {
+				return key;
+			} else {
+				return "\""
+						+ escapeScalarString(key)
+						+ "\"";
 			}
 		}
 	}
@@ -325,12 +414,67 @@ public class YamlWriter implements Closeable {
 			if (alwaysQuoteStringValues) {
 				needsQuotes = true;
 			} else {
-
 				for (int i = 0; i < value.length(); i++) {
 					final char nextChar = value.charAt(i);
 
 					if ((Character.isWhitespace(nextChar) && nextChar != ' ')
-							|| ",#&*!|>'\"%@`".indexOf(nextChar) > -1) {
+							|| "#&*!|>'\"%@`".indexOf(nextChar) > -1) {
+						needsQuotes = true;
+						break;
+					}
+
+					if (":{}[]".indexOf(nextChar) > -1) {
+						if (value.length() > i + 1 && " \t\n\r".indexOf(value.charAt(i + 1)) > -1) {
+							needsQuotes = true;
+							break;
+						}
+					}
+				}
+
+				if (!needsQuotes) {
+					if ("true".equalsIgnoreCase(value)
+							|| "yes".equalsIgnoreCase(value)
+							|| "on".equalsIgnoreCase(value)
+							|| "false".equalsIgnoreCase(value)
+							|| "no".equalsIgnoreCase(value)
+							|| "off".equalsIgnoreCase(value)
+							|| "null".equalsIgnoreCase(value)
+							|| "~".equalsIgnoreCase(value)) {
+						needsQuotes = true;
+					}
+				}
+
+				if (!needsQuotes) {
+					if (NumberUtilities.isNumber(value)) {
+						needsQuotes = true;
+					}
+				}
+			}
+
+			if (!needsQuotes) {
+				return value;
+			} else {
+				return "\""
+						+ escapeScalarString(value)
+						+ "\"";
+			}
+		}
+	}
+
+	private String escapePlainStringValueInFlow(final String value) {
+		if (value.isEmpty()) {
+			return "\"\"";
+		} else {
+			boolean needsQuotes = false;
+
+			if (alwaysQuoteStringValues) {
+				needsQuotes = true;
+			} else {
+				for (int i = 0; i < value.length(); i++) {
+					final char nextChar = value.charAt(i);
+
+					if ((Character.isWhitespace(nextChar) && nextChar != ' ')
+							|| "#&*!|>'\"%@`".indexOf(nextChar) > -1) {
 						needsQuotes = true;
 						break;
 					}
@@ -509,12 +653,12 @@ public class YamlWriter implements Closeable {
 				write(scalar.getValueString() + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + linebreakString);
 				break;
 			case STRING:
-				write(escapePlainStringValue(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + linebreakString);
+				write(escapePlainStringValueInFlow(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + linebreakString);
 				break;
 			case MULTILINE_FOLDED:
 			case MULTILINE_LITERAL:
 			default:
-				write(escapePlainStringValue(scalar.getValueString()) + linebreakString);
+				write(escapePlainStringValueInFlow(scalar.getValueString()) + linebreakString);
 		}
 	}
 
@@ -856,12 +1000,12 @@ public class YamlWriter implements Closeable {
 				write(scalar.getValueString() + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : ""));
 				break;
 			case STRING:
-				write(escapePlainStringValue(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : ""));
+				write(escapePlainStringValueInFlow(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : ""));
 				break;
 			case MULTILINE_FOLDED:
 			case MULTILINE_LITERAL:
 			default:
-				write(escapePlainStringValue(scalar.getValueString()));
+				write(escapePlainStringValueInFlow(scalar.getValueString()));
 		}
 	}
 

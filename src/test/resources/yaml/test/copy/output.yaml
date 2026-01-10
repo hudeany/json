@@ -59,7 +59,7 @@ mapping 1:
 # property keys may contain whitespaces
 mapping 1:
   a property: Value for space in property key
-  "my	property": Value for tab in property key
+  "my\tproperty": Value for tab in property key
 ...
 %YAML 1.2
 ---
