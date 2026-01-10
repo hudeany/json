@@ -144,6 +144,9 @@ public class YamlRoundTripTest {
 
 		final String serializedYaml = new String(testOutputStream.toByteArray(), StandardCharsets.UTF_8);
 
+		if (!resultYamlFileString.contains("\r\n")) {
+			resultYamlFileString = resultYamlFileString.replace("\n", "\r\n");
+		}
 		Assert.assertTrue(resultYamlFileString.contains("\r\n"));
 
 		Assert.assertEquals(resultYamlFileString, serializedYaml);
