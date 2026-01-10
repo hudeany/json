@@ -38,6 +38,8 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 	public void add(final String key, final Object value) throws DuplicateKeyException {
 		if (key == null) {
 			add(new YamlScalar(null), new YamlScalar(value));
+		} else if (value instanceof YamlNode) {
+			add(new YamlScalar(key), (YamlNode) value);
 		} else {
 			add(new YamlScalar(key, YamlScalarType.STRING), new YamlScalar(value));
 		}

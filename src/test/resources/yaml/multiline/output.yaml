@@ -4,26 +4,23 @@
   # with comment like text
   And a third line, with comma!
   
-# This text will have one trailing newline.
 "folded chomped": >
   My first line # with comment like text And a third line, with comma!
   
-# This text will keep all trailing newlines.
 "literal not chomped": |
   My first line
   # with comment like text
   And a third line, with comma!
   
   
-# This text will keep all trailing newlines.
+  
 "folded not chomped": >
   My first line # with comment like text And a third line, with comma!
   
-# This text will have no trailing newline.
 "literal strip chomped": |
   My first line
   # with comment like text
   And a third line, with comma!
-# This text will have no trailing newline.
 "folded strip chomped": >
   My first line # with comment like text And a third line, with comma!
+  

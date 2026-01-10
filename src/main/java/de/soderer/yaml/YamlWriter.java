@@ -25,9 +25,9 @@ import de.soderer.yaml.data.directive.YamlDirective;
 
 /**
  * TODOs:
- * - Write inline comments for anchors and aliases
  * - Write with ignore settings for flow style
- * - Write with resolving aliases
+ * - Write with ignore settings for comments
+ * - Write with resolving aliases (Check cyclic dependencies in aliases)
  */
 public class YamlWriter implements Closeable {
 	/** Default output encoding. */
@@ -41,8 +41,8 @@ public class YamlWriter implements Closeable {
 	private final Charset encoding;
 
 	/** Output linebreak. */
-	private final Linebreak linebreak;
-	private final String linebreakString;
+	private Linebreak linebreak;
+	private String linebreakString;
 
 	private int indentSize = 2;
 	private boolean alwaysQuoteStringKeys = false;
@@ -78,6 +78,12 @@ public class YamlWriter implements Closeable {
 
 	public YamlWriter setIndentSize(final int indentSize) {
 		this.indentSize = indentSize;
+		return this;
+	}
+
+	public YamlWriter setLinebreakType(final Linebreak linebreak) {
+		this.linebreak = linebreak == null ? DEFAULT_LINEBREAK : linebreak;
+		linebreakString = this.linebreak.toString();
 		return this;
 	}
 

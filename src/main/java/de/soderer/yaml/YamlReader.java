@@ -25,13 +25,12 @@ import de.soderer.yaml.exception.YamlParseException;
 
 /**
  * TODO:
- * Read datatype definitions like ""
- * Read anchor
- * Read alias
- * Check alias references after document read
+ * Read datatype definitions like "!!str"
  * Read complex mapping keys (Fix test file yaml/reference_1_1/input.yaml)
  * Improve multiline scalars folded and literal
- * Enable SAX-like reading of path items
+ * Enable SAX-like reading of path items with methods "readUpToPath" and "readNextYamlNode"
+ * Check alias references after document read
+ * Check cyclic dependencies in aliases
  */
 public class YamlReader extends BasicReadAheadReader {
 	private final Stack<Integer> indentations = new Stack<>();

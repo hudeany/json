@@ -10,7 +10,10 @@ import java.util.Map.Entry;
 import org.junit.Assert;
 import org.junit.Test;
 
+import de.soderer.json.JsonNode;
+import de.soderer.json.JsonToYamlConverter;
 import de.soderer.json.utilities.IoUtilities;
+import de.soderer.json.utilities.Linebreak;
 import de.soderer.yaml.data.YamlAlias;
 import de.soderer.yaml.data.YamlDocument;
 import de.soderer.yaml.data.YamlMapping;
@@ -96,51 +99,46 @@ public class YamlRoundTripTestWithYamlReader {
 		roundTripSingleDocument("yaml/standard/input.yaml", "yaml/standard/output.yaml", true);
 	}
 
-	//	@Test
-	//	public void testMultiline() throws Exception {
-	//		roundTripSingleDocument("yaml/multiline/input.yaml", "yaml/multiline/output.yaml", true);
-	//	}
+	@Test
+	public void testMultiline() throws Exception {
+		roundTripSingleDocument("yaml/multiline/input.yaml", "yaml/multiline/output.yaml", true);
+	}
 
 	@Test
 	public void testTest() throws Exception {
 		roundTripMultipleDocumentsInSingleFile("yaml/test/input.yaml", "yaml/test/output.yaml", false);
 	}
 
-	//
-	//	@Test
-	//	public void testMultipleDocuments() throws Exception {
-	//		roundTripMultipleDocuments("yaml/multiple/sample.yaml", "yaml/multiple/result.yaml");
-	//	}
-	//
-	//	@Test
-	//	public void testConverter() throws Exception {
-	//		final String inputDataFileNamem = "yaml/converter/sample.yaml";
-	//		final String outputDataFileName = "yaml/converter/result.yaml";
-	//
-	//		String resultYamlFileString;
-	//		try (InputStream resultDataStream = getClass().getClassLoader().getResourceAsStream(outputDataFileName)) {
-	//			resultYamlFileString = IoUtilities.toString(resultDataStream, StandardCharsets.UTF_8);
-	//		}
-	//
-	//		final YamlDocument testDocument1;
-	//		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream(inputDataFileNamem)) {
-	//			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
-	//				testDocument1 = yamlReader.readYamlDocument();
-	//			}
-	//		}
-	//
-	//		final JsonNode jsonNode = YamlToJsonConverter.convert(testDocument1.getRoot());
-	//		final YamlNode yamlNode = JsonToYamlConverter.convert(jsonNode);
-	//
-	//		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
-	//		try (final YamlWriter writer = new YamlWriter(testOutputStream)) {
-	//			writer.writeDocument(new YamlDocument(yamlNode));
-	//		}
-	//
-	//		final String serializedYaml = new String(testOutputStream.toByteArray(), StandardCharsets.UTF_8);
-	//
-	//		Assert.assertEquals(resultYamlFileString, serializedYaml);
-	//	}
+	@Test
+	public void testConverter() throws Exception {
+		final String inputDataFileNamem = "yaml/converter/input.yaml";
+		final String outputDataFileName = "yaml/converter/output.yaml";
+
+		String resultYamlFileString;
+		try (InputStream resultDataStream = getClass().getClassLoader().getResourceAsStream(outputDataFileName)) {
+			resultYamlFileString = IoUtilities.toString(resultDataStream, StandardCharsets.UTF_8);
+		}
+
+		final YamlDocument testDocument1;
+		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream(inputDataFileNamem)) {
+			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
+				testDocument1 = yamlReader.readDocument();
+			}
+		}
+
+		final JsonNode jsonNode = YamlToJsonConverter.convert(testDocument1.getRoot());
+		final YamlNode yamlNode = JsonToYamlConverter.convert(jsonNode);
+
+		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
+		try (final YamlWriter writer = new YamlWriter(testOutputStream)) {
+			writer.setLinebreakType(Linebreak.Windows);
+			writer.writeDocument(new YamlDocument(yamlNode));
+		}
+
+		final String serializedYaml = new String(testOutputStream.toByteArray(), StandardCharsets.UTF_8);
+
+		Assert.assertEquals(resultYamlFileString, serializedYaml);
+	}
 
 	private void roundTripSingleDocument(final String inputDataFileNamem, final String outputDataFileName, final boolean alwaysQuote) throws Exception {
 		String resultYamlFileString;
@@ -204,46 +202,6 @@ public class YamlRoundTripTestWithYamlReader {
 		final String serializedYaml = new String(testOutputStream.toByteArray(), StandardCharsets.UTF_8);
 		Assert.assertFalse("Serialized YAML should not be empty", serializedYaml.isEmpty());
 		Assert.assertEquals(resultYamlFileString, serializedYaml);
-	}
-
-	private void roundTripMultipleDocuments(final String inputDataFileNamem, final String outputDataFileName) throws Exception {
-		String resultYamlFileString;
-		try (InputStream resultDataStream = getClass().getClassLoader().getResourceAsStream(outputDataFileName)) {
-			resultYamlFileString = IoUtilities.toString(resultDataStream, StandardCharsets.UTF_8);
-		}
-
-		final YamlDocument yamlDocumentList1;
-		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream(inputDataFileNamem)) {
-			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
-				try {
-					yamlReader.readDocument();
-					Assert.fail("Missing expected expection for multiple documents");
-				} catch (@SuppressWarnings("unused") final Exception e) {
-					// Expected expection
-				}
-				yamlDocumentList1 = yamlReader.readDocument();
-			}
-		}
-
-		Assert.assertNotNull("Root node of document 1 should not be null", yamlDocumentList1.getRoot());
-
-		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
-		try (final YamlWriter writer = new YamlWriter(testOutputStream)) {
-			writer.writeDocument(yamlDocumentList1);
-		}
-
-		final String serializedYaml = new String(testOutputStream.toByteArray(), StandardCharsets.UTF_8);
-		Assert.assertFalse("Serialized YAML should not be empty", serializedYaml.isEmpty());
-		Assert.assertEquals(resultYamlFileString, serializedYaml);
-
-		final YamlDocument yamlDocumentList2;
-		try (final YamlReader yamlReader = new YamlReader(new ByteArrayInputStream(serializedYaml.getBytes(StandardCharsets.UTF_8)))) {
-			yamlDocumentList2 = yamlReader.readDocument();
-		}
-
-		Assert.assertNotNull("Root node of document 1 should not be null", yamlDocumentList2.getRoot());
-
-		Assert.assertTrue( "AST should be equal after round trip", astEquals(yamlDocumentList1.getRoot(), yamlDocumentList2.getRoot()));
 	}
 
 	private boolean astEquals(final YamlNode a, final YamlNode b) {
