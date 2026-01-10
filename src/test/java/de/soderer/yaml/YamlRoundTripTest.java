@@ -119,7 +119,7 @@ public class YamlRoundTripTest {
 	@Test
 	public void testConverter() throws Exception {
 		final String inputDataFileNamem = "yaml/converter/input.yaml";
-		final String outputDataFileName = "yaml/converter/output.yaml";
+		final String outputDataFileName = "yaml/converter/outputWindowsLines.yaml";
 
 		String resultYamlFileString;
 		try (InputStream resultDataStream = getClass().getClassLoader().getResourceAsStream(outputDataFileName)) {
@@ -146,7 +146,7 @@ public class YamlRoundTripTest {
 
 		Assert.assertTrue(resultYamlFileString.contains("\r\n"));
 
-		Assert.assertEquals(resultYamlFileString.replace("\r\n", "\n"), serializedYaml.replace("\r\n", "\n"));
+		Assert.assertEquals(resultYamlFileString, serializedYaml);
 	}
 
 	private void roundTripSingleDocument(final String inputDataFileNamem, final String outputDataFileName, final boolean alwaysQuote) throws Exception {
