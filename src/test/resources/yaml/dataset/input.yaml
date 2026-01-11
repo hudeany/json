@@ -1,0 +1,46 @@
+level1:
+   items:
+      - property1: "property 01"
+        property2: "property 02"
+        property3: "property 03"
+
+      - property1: "property 11"
+        property2: "property 12"
+        property3: "property 13"
+
+      - property1: "property 21"
+        property2: "property 22"
+        property3: "property 23"
+
+      - property1: "property 31"
+        property2: "property 32"
+        property3: "property 33"
+
+      - property1: "property 41"
+        property2: "property 42"
+        property3: "property 43"
+
+      - property1: "property 51"
+        property2: "property 52"
+        property3: "property 53"
+
+      - property1: "property 61"
+        property2: "property 62"
+        property3: "property 63"
+
+      - property1: "property 71"
+        property2: "property 72"
+        property3: "property 73"
+
+      - property1: "property 81"
+        property2: "property 82"
+        property3: "property 83"
+
+      - property1: "property 91"
+        property2: "property 92"
+        property3: "property 93"
+level2:
+   otherItems:
+      - property1: "property other 1"
+        property2: "property other 2"
+        property3: "property other 3"

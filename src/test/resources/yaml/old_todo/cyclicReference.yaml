@@ -1,0 +1,7 @@
+%YAML 1.2
+---
+anchor: &anchor
+  baz: you
+foo: &foo
+  bar: *anchor
+  bat: *foo

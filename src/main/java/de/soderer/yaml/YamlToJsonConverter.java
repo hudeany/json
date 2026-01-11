@@ -10,6 +10,7 @@ import de.soderer.json.JsonValueNull;
 import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.exception.DuplicateKeyException;
+import de.soderer.yaml.data.YamlDocument;
 import de.soderer.yaml.data.YamlMapping;
 import de.soderer.yaml.data.YamlNode;
 import de.soderer.yaml.data.YamlScalar;
@@ -80,7 +81,15 @@ public class YamlToJsonConverter {
 		}
 	}
 
-	private static JsonNode convert(final YamlScalar yamlScalar) {
+	public static JsonNode convert(final YamlDocument yamlDocument) throws DuplicateKeyException {
+		if (yamlDocument == null || yamlDocument.getRoot() == null) {
+			return null;
+		} else {
+			return convert(yamlDocument.getRoot());
+		}
+	}
+
+	public static JsonNode convert(final YamlScalar yamlScalar) {
 		if (yamlScalar == null) {
 			return null;
 		} else {

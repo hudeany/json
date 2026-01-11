@@ -232,7 +232,7 @@ public class BasicReadAheadReader implements Closeable {
 			return null;
 		} else {
 			String nextLine = "";
-			while (!isEOF() && currentChar != '\r' && currentChar != '\n') {
+			while (isNotEOF() && currentChar != '\r' && currentChar != '\n') {
 				nextLine += readChar();
 			}
 			if (currentChar == '\r' || currentChar == '\n') {
@@ -251,7 +251,7 @@ public class BasicReadAheadReader implements Closeable {
 
 		String returnValue = "";
 		boolean unescapeNextCharacter = false;
-		while (!isEOF()) {
+		while (isNotEOF()) {
 			if (unescapeNextCharacter) {
 				unescapeNextCharacter = false;
 				char unescapedChar;
@@ -313,7 +313,7 @@ public class BasicReadAheadReader implements Closeable {
 					readChar();
 					// hexadecimal encoded character
 					String hexcode = "";
-					for (int i = 0; i < 2 && !isEOF(); i++) {
+					for (int i = 0; i < 2 && isNotEOF(); i++) {
 						final Character hexDigit = readChar();
 						hexcode += hexDigit;
 						if (hexDigit == null || Character.digit(hexDigit, 16) == -1) {
@@ -329,7 +329,7 @@ public class BasicReadAheadReader implements Closeable {
 					readChar();
 					// Java encoded character
 					String unicode = "";
-					for (int i = 0; i < 4 && !isEOF(); i++) {
+					for (int i = 0; i < 4 && isNotEOF(); i++) {
 						final Character hexDigit = readChar();
 						unicode += hexDigit;
 						if (hexDigit == null || Character.digit(hexDigit, 16) == -1) {
@@ -345,7 +345,7 @@ public class BasicReadAheadReader implements Closeable {
 					readChar();
 					// Unicode encoded character
 					String unicode = "";
-					for (int i = 0; i < 8 && !isEOF(); i++) {
+					for (int i = 0; i < 8 && isNotEOF(); i++) {
 						final Character hexDigit = readChar();
 						unicode += hexDigit;
 						if (hexDigit == null || Character.digit(hexDigit, 16) == -1) {
@@ -385,7 +385,7 @@ public class BasicReadAheadReader implements Closeable {
 			final char quoteChar = readChar();
 			if (escapeCharacter == quoteChar) {
 				String returnValue = "";
-				while (!isEOF()) {
+				while (isNotEOF()) {
 					if (peekCharNotMatch(quoteChar)) {
 						returnValue += readChar();
 					} else if (peekCharMatch(quoteChar) && peekNextCharMatch(quoteChar)) {
