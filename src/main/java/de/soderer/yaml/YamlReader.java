@@ -190,11 +190,15 @@ public class YamlReader extends BasicReadAheadReader {
 	}
 
 	public YamlNode readNextYamlNode() throws Exception {
-		if (getCurrentPath().equals(searchPath)) {
-			final YamlSequence sequence = (YamlSequence) parseYamlNode();
-			return sequence.get(0);
-		} else {
-			return null;
+		try {
+			if (getCurrentPath().equals(searchPath)) {
+				final YamlSequence sequence = (YamlSequence) parseYamlNode();
+				return sequence.get(0);
+			} else {
+				return null;
+			}
+		} catch (@SuppressWarnings("unused") final FoundPathEvent e) {
+			throw new Exception("Cannot read items of path");
 		}
 	}
 
@@ -493,7 +497,6 @@ public class YamlReader extends BasicReadAheadReader {
 				}
 
 				sequence.add(nextItemNode);
-				updateJsonPath(YamlToken.YamlScalar, null);
 			} else if (peekCharMatch('-') && (peekNextCharMatch('\n'))) {
 				readChar();
 				skipEmptyLinesAndReadNextIndentationAndLeadingComments();
@@ -508,7 +511,6 @@ public class YamlReader extends BasicReadAheadReader {
 				}
 
 				sequence.add(nextItemNode);
-				updateJsonPath(YamlToken.YamlScalar, null);
 			} else if (peekCharMatch('-') && (peekNextCharMatch('-'))) {
 				readChar();
 				if (peekNextCharMatch('-')) {

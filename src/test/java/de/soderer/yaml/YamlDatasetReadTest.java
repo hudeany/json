@@ -26,6 +26,23 @@ public class YamlDatasetReadTest {
 	}
 
 	@Test
+	public void testPathWithoutSequence() throws Exception {
+		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream("yaml/dataset/input.yaml")) {
+			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
+				yamlReader.readUpToPath("$.level1");
+
+				try {
+					yamlReader.readNextYamlNode();
+					Assert.fail("Missing expected exception");
+				} catch (final Exception e) {
+					// Expected exception
+					Assert.assertEquals("Cannot read items of path", e.getMessage());
+				}
+			}
+		}
+	}
+
+	@Test
 	public void testReadDataSet() throws Exception {
 		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream("yaml/dataset/input.yaml")) {
 			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
