@@ -1,0 +1,12 @@
+map: !!map
+  property1: abc
+  property2: abc
+seq: !!seq
+   - item1
+   - item2
+str: !!str
+   true
+float: !!float
+   123
+binary: !!binary
+   R0lGODlhDAAMAIQAAP//9/X17unp5WZmZgAAAOfn515eXvPz7Y6OjuDg4J+fn5OTk6enp56enmleECcgggoBADs=
