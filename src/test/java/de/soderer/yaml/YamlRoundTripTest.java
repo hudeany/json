@@ -152,6 +152,11 @@ public class YamlRoundTripTest {
 		Assert.assertEquals(resultYamlFileString, serializedYaml);
 	}
 
+	@Test
+	public void testDatatypes() throws Exception {
+		roundTripSingleDocument("yaml/datatypes/input.yaml", "yaml/datatypes/output.yaml", true);
+	}
+
 	private void roundTripSingleDocument(final String inputDataFileNamem, final String outputDataFileName, final boolean alwaysQuote) throws Exception {
 		String resultYamlFileString;
 		try (InputStream resultDataStream = getClass().getClassLoader().getResourceAsStream(outputDataFileName)) {

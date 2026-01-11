@@ -96,9 +96,9 @@ sequence2:
 a: 123 # an integer
 b: "123" # a string, disambiguated by quotes
 c: 123.0 # a float
-d: "!!float 123" # also a float via explicit data type prefixed by (!!)
-e: "!!str 123" # a string, disambiguated by explicit type
-f: "!!str Yes" # a string via explicit type
+d: 123 # also a float via explicit data type prefixed by (!!)
+e: "123" # a string, disambiguated by explicit type
+f: "Yes" # a string via explicit type
 g: Yes # a Boolean True (yaml1.1), string "Yes" (yaml1.2)
 h: Yes we have No bananas # a string, "Yes" and "No" disambiguated by context.
 i: .inf
@@ -106,20 +106,11 @@ j: -.Inf
 k: .NAN
 ...
 ---
-base64BinaryData: "!!binary |"
-...
----
-R0lGODdhDQAIAIAAAAAAANn
-...
----
-Z2SwAAAAADQAIAAACF4SDGQ
-...
----
-ar3xxbJ9p0qa7R0YxwzYxwz
-...
----
-YxwzYxwzYxwzYxwzaFME1IA
-...
----
-ADs=
+base64BinaryData: |
+  R0lGODdhDQAIAIAAAAAAANn
+  Z2SwAAAAADQAIAAACF4SDGQ
+  ar3xxbJ9p0qa7R0YxwzYxwz
+  YxwzYxwzYxwzYxwzaFME1IA
+  ADs=
+  
 ...

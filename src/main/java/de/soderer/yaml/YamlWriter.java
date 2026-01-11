@@ -349,62 +349,6 @@ public class YamlWriter implements Closeable {
 		}
 	}
 
-	private String escapePlainStringKeyInFlow(final String key) {
-		if (key.isEmpty()) {
-			return "\"\"";
-		} else {
-			boolean needsQuotes = false;
-
-			if (alwaysQuoteStringKeys) {
-				needsQuotes = true;
-			} else {
-				for (int i = 0; i < key.length(); i++) {
-					final char nextChar = key.charAt(i);
-
-					if ((Character.isWhitespace(nextChar) && nextChar != ' ')
-							|| ",#&*!|>'\"%@`".indexOf(nextChar) > -1) {
-						needsQuotes = true;
-						break;
-					}
-
-					if (":{}[]".indexOf(nextChar) > -1) {
-						if (key.length() > i + 1 && " \t\n\r".indexOf(key.charAt(i + 1)) > -1) {
-							needsQuotes = true;
-							break;
-						}
-					}
-				}
-
-				if (!needsQuotes) {
-					if ("true".equalsIgnoreCase(key)
-							|| "yes".equalsIgnoreCase(key)
-							|| "on".equalsIgnoreCase(key)
-							|| "false".equalsIgnoreCase(key)
-							|| "no".equalsIgnoreCase(key)
-							|| "off".equalsIgnoreCase(key)
-							|| "null".equalsIgnoreCase(key)
-							|| "~".equalsIgnoreCase(key)) {
-						needsQuotes = true;
-					}
-				}
-
-				if (!needsQuotes) {
-					if (NumberUtilities.isNumber(key)) {
-						needsQuotes = true;
-					}
-				}
-			}
-
-			if (!needsQuotes) {
-				return key;
-			} else {
-				return "\""
-						+ escapeScalarString(key)
-						+ "\"";
-			}
-		}
-	}
-
 	private String escapePlainStringValue(final String value) {
 		if (value.isEmpty()) {
 			return "\"\"";

@@ -355,6 +355,15 @@ public class YamlReader extends BasicReadAheadReader {
 	}
 
 	private YamlNode parseYamlNode() throws Exception {
+		String datatype = null;
+		if (peekCharMatch('!') && peekNextCharMatch('!')) {
+			readChar();
+			readChar();
+			datatype = readUpToNext(false, null, ' ', '\t', '\n');
+			skipBlanks();
+			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+		}
+
 		if (peekCharMatch('-') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
 			final YamlNode sequence = parseBlockSequence();
 			return sequence;
@@ -405,7 +414,46 @@ public class YamlReader extends BasicReadAheadReader {
 			return flowSequence;
 		} else {
 			final YamlNode mappingOrScalar = parseBlockMappingOrScalar(null);
+			if (datatype == null) {
+				return mappingOrScalar;
+			} else {
+				return applyDatatypeToScalar(datatype, mappingOrScalar);
+			}
+		}
+	}
+
+	private static YamlNode applyDatatypeToScalar(final String datatype, final YamlNode mappingOrScalar) throws Exception {
+		if ("str".equals(datatype)) {
+			if (mappingOrScalar instanceof final YamlScalar scalar) {
+				if (scalar.getType() != YamlScalarType.STRING) {
+					return new YamlScalar(scalar.getValueString(), YamlScalarType.STRING).setInlineComment(scalar.getInlineComment());
+				} else {
+					return mappingOrScalar;
+				}
+			} else {
+				throw new Exception("Invalid data for YAML datatype: '" + datatype + "'");
+			}
+		} else if ("float".equals(datatype)) {
+			if (mappingOrScalar instanceof final YamlScalar scalar) {
+				if (scalar.getType() != YamlScalarType.NUMBER) {
+					return new YamlScalar(scalar.getValueString(), YamlScalarType.NUMBER).setInlineComment(scalar.getInlineComment());
+				} else {
+					return mappingOrScalar;
+				}
+			} else {
+				throw new Exception("Invalid data for YAML datatype: '" + datatype + "'");
+			}
+		} else if ("binary".equals(datatype)) {
+			// TODO
 			return mappingOrScalar;
+		} else if ("map".equals(datatype)) {
+			// TODO
+			return mappingOrScalar;
+		} else if ("seq".equals(datatype)) {
+			// TODO
+			return mappingOrScalar;
+		} else {
+			throw new Exception("Unknown YAML datatype: '" + datatype + "'");
 		}
 	}
 
