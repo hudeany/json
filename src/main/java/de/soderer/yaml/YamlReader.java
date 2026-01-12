@@ -431,36 +431,42 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 	}
 
-	private static YamlNode applyDatatypeToScalar(final String datatype, final YamlNode mappingOrScalar) throws Exception {
+	private static YamlNode applyDatatypeToScalar(final String datatype, final YamlNode yamlNode) throws Exception {
 		if ("str".equals(datatype)) {
-			if (mappingOrScalar instanceof final YamlScalar scalar) {
+			if (yamlNode instanceof final YamlScalar scalar) {
 				if (scalar.getType() != YamlScalarType.STRING) {
 					return new YamlScalar(scalar.getValueString(), YamlScalarType.STRING).setInlineComment(scalar.getInlineComment());
 				} else {
-					return mappingOrScalar;
+					return yamlNode;
 				}
 			} else {
-				throw new Exception("Invalid data for YAML datatype: '" + datatype + "'");
+				throw new Exception("Invalid data '" + yamlNode.getClass().getSimpleName() + "' for YAML datatype: '" + datatype + "'");
 			}
 		} else if ("float".equals(datatype)) {
-			if (mappingOrScalar instanceof final YamlScalar scalar) {
+			if (yamlNode instanceof final YamlScalar scalar) {
 				if (scalar.getType() != YamlScalarType.NUMBER) {
 					return new YamlScalar(scalar.getValueString(), YamlScalarType.NUMBER).setInlineComment(scalar.getInlineComment());
 				} else {
-					return mappingOrScalar;
+					return yamlNode;
 				}
 			} else {
-				throw new Exception("Invalid data for YAML datatype: '" + datatype + "'");
+				throw new Exception("Invalid data '" + yamlNode.getClass().getSimpleName() + "' for YAML datatype: '" + datatype + "'");
 			}
 		} else if ("binary".equals(datatype)) {
 			// TODO
-			return mappingOrScalar;
+			return yamlNode;
 		} else if ("map".equals(datatype)) {
-			// TODO
-			return mappingOrScalar;
+			if (yamlNode instanceof YamlMapping) {
+				return yamlNode;
+			} else {
+				throw new Exception("Invalid data '" + yamlNode.getClass().getSimpleName() + "' for YAML datatype: '" + datatype + "'");
+			}
 		} else if ("seq".equals(datatype)) {
-			// TODO
-			return mappingOrScalar;
+			if (yamlNode instanceof YamlSequence) {
+				return yamlNode;
+			} else {
+				throw new Exception("Invalid data '" + yamlNode.getClass().getSimpleName() + "' for YAML datatype: '" + datatype + "'");
+			}
 		} else {
 			throw new Exception("Unknown YAML datatype: '" + datatype + "'");
 		}
