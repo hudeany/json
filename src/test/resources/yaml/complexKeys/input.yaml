@@ -1,0 +1,8 @@
+Language Independent Scalar types:
+  ? [1234, 0x4D2, 02333]
+  : [Decimal int, Hexadecimal int, Octal int]
+  ? [1_230.15, 12.3015e+02]
+  : [Fixed float, Exponential float]
+  ? [.inf, -.Inf, .NAN]
+  : [Infinity (float), Negative, Not a number]
+  abc: def

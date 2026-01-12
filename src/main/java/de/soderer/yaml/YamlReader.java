@@ -32,7 +32,7 @@ import de.soderer.yaml.exception.YamlParseException;
 /**
  * TODO:
  * Read datatype definitions like "!!str"
- * Read complex mapping keys (Fix test file yaml/reference_1_1/input.yaml)
+ * Read complex mapping keys for maps as keys (Fix test file yaml/reference_1_1/input.yaml)
  * Improve multiline scalars folded and literal
  * Check alias references after document read
  * Check cyclic dependencies in aliases
@@ -607,10 +607,10 @@ public class YamlReader extends BasicReadAheadReader {
 			keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING);
 		} else if (peekCharMatch('\'')) {
 			keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING);
-			//		} else if (peekCharMatch('?') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
-			//			readChar();
-			//			skipBlanks();
-			//			keyOrScalarNode = parseYamlNode();
+		} else if (peekCharMatch('?') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
+			readChar();
+			skipBlanks();
+			keyOrScalarNode = parseYamlNode();
 		} else {
 			keyOrScalarNode = readScalarString(additionalLeadingChar);
 		}
@@ -664,10 +664,10 @@ public class YamlReader extends BasicReadAheadReader {
 					keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING);
 				} else if (peekCharMatch('\'')) {
 					keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING);
-					//				} else if (peekCharMatch('?') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
-					//					readChar();
-					//					skipBlanks();
-					//					keyOrScalarNode = parseYamlNode();
+				} else if (peekCharMatch('?') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
+					readChar();
+					skipBlanks();
+					keyOrScalarNode = parseYamlNode();
 				} else {
 					keyOrScalarNode = readScalarString(null);
 
@@ -770,10 +770,10 @@ public class YamlReader extends BasicReadAheadReader {
 					keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING);
 				} else if (peekCharMatch('\'')) {
 					keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING);
-					//				} else if (peekCharMatch('?') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
-					//					readChar();
-					//					skipBlanks();
-					//					keyOrScalarNode = parseYamlNode();
+				} else if (peekCharMatch('?') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
+					readChar();
+					skipBlanks();
+					keyOrScalarNode = parseYamlNode();
 				} else {
 					keyOrScalarNode = readScalarString(null);
 

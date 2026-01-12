@@ -630,23 +630,34 @@ public class YamlWriter implements Closeable {
 				}
 			}
 
-			if (key instanceof final YamlScalar scalarKey && scalarKey.getType() == YamlScalarType.STRING) {
-				if (!isFirstData) {
-					writeIndent(indentLevel);
-					write(escapePlainStringKey(scalarKey.getValueString()));
-					isFirstData = false;
+			if (key instanceof final YamlScalar scalarKey) {
+				if (scalarKey.getType() == YamlScalarType.STRING) {
+					if (!isFirstData) {
+						writeIndent(indentLevel);
+						write(escapePlainStringKey(scalarKey.getValueString()));
+						isFirstData = false;
+					} else {
+						write(escapePlainStringKey(scalarKey.getValueString()));
+					}
 				} else {
-					write(escapePlainStringKey(scalarKey.getValueString()));
+					if (!isFirstData) {
+						writeIndent(indentLevel);
+						write(scalarKey.getValueString());
+						isFirstData = false;
+					} else {
+						write(scalarKey.getValueString());
+					}
 				}
 			} else {
-				writeIndent(indentLevel);
-				write("?" + linebreakString);
+				if (!isFirstData) {
+					writeIndent(indentLevel);
+					isFirstData = false;
+				}
+				write("? ");
 				writeNode(key, indentLevel + 1, false, false);
 				writeIndent(indentLevel);
-				write(":" + linebreakString);
-				writeNode(value, indentLevel + 1, false, false);
-				continue;
 			}
+
 			if (key.getAnchorName() != null) {
 				write(" &" + key.getAnchorName());
 				if (key.getInlineComment() == null) {

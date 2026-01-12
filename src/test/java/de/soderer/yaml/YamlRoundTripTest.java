@@ -38,6 +38,11 @@ public class YamlRoundTripTest {
 	}
 
 	@Test
+	public void testComplexKeys() throws Exception {
+		roundTripSingleDocument("yaml/complexKeys/input.yaml", "yaml/complexKeys/output.yaml", true);
+	}
+
+	@Test
 	public void testNumbers() throws Exception {
 		final String inputDataFileNamem = "yaml/numbers/input.yaml";
 		final String outputDataFileName = "yaml/numbers/output.yaml";
