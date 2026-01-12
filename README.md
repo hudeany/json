@@ -83,9 +83,9 @@ try {
 }
 ```
 
-For other simple examples see test class "de.soderer.utilities.json.JsonTest":
+For other simple examples see test class "de.soderer.json.JsonTest":
 
-https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/utilities/json/JsonTest.java
+https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/json/JsonTest.java
   
 ## Maven2 repository
 This library is also available via Maven2 repository
