@@ -89,16 +89,18 @@ https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/utilities/j
   
 ## Maven2 repository
 This library is also available via Maven2 repository
- 
+
+```
 	<repositories>
 		<repository>
 			<id>de.soderer</id>
 			<url>http://soderer.de/maven2</url>
 		</repository>
 	</repositories>
-
+	
 	<dependency>
 		<groupId>de.soderer</groupId>
 		<artifactId>json</artifactId>
 		<version>RELEASE</version>
 	</dependency>
+```
