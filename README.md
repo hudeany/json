@@ -25,16 +25,16 @@ try {
 
 	final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 
-	jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
-	final JsonNode nodevalue = jsonReader.read();
+	reader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
+	final JsonNode nodevalue = reader.read();
 	System.out.println(nodevalue.getJsonDataType() == JsonDataType.OBJECT);
 	// true
-	final JsonObject jsonObject = (JsonObject) nodevalue.getValue();
+	final JsonObject jsonObject = (JsonObject) nodevalue;
 	for (final Map.Entry<String, Object> jsonObjectProperty : jsonObject) {
-		System.out.println(jsonObjectProperty.getKey() + ": " + jsonArrayItem.getClass().getSimpleName() + ": " + jsonObjectProperty.getValue());
-		// abc: String: 1
-		// def: Integer: 2
-		// ghi: Float: 3.0
+		System.out.println(jsonObjectProperty.getKey() + ": " + jsonObject.getClass().getSimpleName() + ": " + jsonObjectProperty.getValue());
+		// abc: JsonObject: 1
+		// def: JsonObject: 2
+		// ghi: JsonObject: 3.0
 	}
 } catch (final Exception e) {
 	e.printStackTrace();
@@ -63,11 +63,11 @@ try {
 
 	final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 
-	jsonReader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
-	final JsonNode nodevalue = jsonReader.read();
+	reader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
+	final JsonNode nodevalue = reader.read();
 	System.out.println(nodevalue.getJsonDataType() == JsonDataType.ARRAY);
 	// true
-	final JsonArray jsonArray = (JsonArray) nodevalue.getValue();
+	final JsonArray jsonArray = (JsonArray) nodevalue;
 	for (final Object jsonArrayItem : jsonArray) {
 		System.out.println(jsonArrayItem.getClass().getSimpleName() + ": " + jsonArrayItem);
 		// String: 1
