@@ -591,7 +591,7 @@ public class YamlReader extends BasicReadAheadReader {
 					return sequence;
 				}
 			} else {
-				throw new YamlParseException("Expected sequence start not found", getCurrentLine(), getCurrentColumn());
+				return sequence;
 			}
 		}
 
@@ -605,14 +605,22 @@ public class YamlReader extends BasicReadAheadReader {
 		YamlNode keyOrScalarNode;
 		if (peekCharMatch('\"')) {
 			keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING);
+			skipBlanks();
+			if (peekCharMatch('#')) {
+				keyOrScalarNode.setInlineComment(readInlineComment());
+			}
 		} else if (peekCharMatch('\'')) {
 			keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING);
+			skipBlanks();
+			if (peekCharMatch('#')) {
+				keyOrScalarNode.setInlineComment(readInlineComment());
+			}
 		} else if (peekCharMatch('?') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
 			readChar();
 			skipBlanks();
 			keyOrScalarNode = parseYamlNode();
 		} else {
-			keyOrScalarNode = readScalarString(additionalLeadingChar);
+			keyOrScalarNode = readUnquotedScalarString(additionalLeadingChar);
 		}
 
 		if (!pendingLeadingComments.isEmpty()) {
@@ -628,6 +636,8 @@ public class YamlReader extends BasicReadAheadReader {
 			readChar();
 			readChar();
 			skipBlanks();
+
+			indentations.add(1);
 
 			String pendingAnchor = null;
 			if (peekCharMatch('&')) {
@@ -660,16 +670,42 @@ public class YamlReader extends BasicReadAheadReader {
 			mapping.add(keyOrScalarNode, valueNode);
 
 			while (isNotEOF() && getNumberOfIndentationChars() == mappingIndentation) {
-				if (peekCharMatch('\"')) {
+				if (peekCharMatch('.') && (peekNextCharMatch('.'))) {
+					readChar();
+					if (peekNextCharMatch('.')) {
+						readChar();
+						readChar();
+						documentContentStarted = null;
+						skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+						return mapping;
+					}
+				} else if (peekCharMatch('-') && (peekNextCharMatch('-'))) {
+					readChar();
+					if (peekNextCharMatch('-')) {
+						readChar();
+						readChar();
+						documentContentStarted = true;
+						skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+						return mapping;
+					}
+				} else if (peekCharMatch('\"')) {
 					keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING);
+					skipBlanks();
+					if (peekCharMatch('#')) {
+						keyOrScalarNode.setInlineComment(readInlineComment());
+					}
 				} else if (peekCharMatch('\'')) {
 					keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING);
+					skipBlanks();
+					if (peekCharMatch('#')) {
+						keyOrScalarNode.setInlineComment(readInlineComment());
+					}
 				} else if (peekCharMatch('?') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
 					readChar();
 					skipBlanks();
 					keyOrScalarNode = parseYamlNode();
 				} else {
-					keyOrScalarNode = readScalarString(null);
+					keyOrScalarNode = readUnquotedScalarString(null);
 
 					if ("...".equals(((YamlScalar) keyOrScalarNode).getValueString())) {
 						documentContentStarted = null;
@@ -697,6 +733,8 @@ public class YamlReader extends BasicReadAheadReader {
 					readChar();
 					skipBlanks();
 
+					indentations.add(1);
+
 					if (peekCharMatch('&')) {
 						pendingAnchor = parseAnchor();
 					}
@@ -719,6 +757,8 @@ public class YamlReader extends BasicReadAheadReader {
 				} else if (peekCharMatch(':') && (peekNextCharMatch('\n'))) {
 					readChar();
 					skipBlanks();
+
+					indentations.add(1);
 
 					if (peekCharMatch('&')) {
 						pendingAnchor = parseAnchor();
@@ -746,6 +786,9 @@ public class YamlReader extends BasicReadAheadReader {
 			return mapping;
 		} else if (peekCharMatch(':') && peekNextCharMatch('\n')) {
 			readChar();
+
+			indentations.add(1);
+
 			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 
 			String pendingAnchor = null;
@@ -766,16 +809,42 @@ public class YamlReader extends BasicReadAheadReader {
 			mapping.add(keyOrScalarNode, valueNode);
 
 			while (isNotEOF() && getNumberOfIndentationChars() == mappingIndentation) {
-				if (peekCharMatch('\"')) {
+				if (peekCharMatch('.') && (peekNextCharMatch('.'))) {
+					readChar();
+					if (peekNextCharMatch('.')) {
+						readChar();
+						readChar();
+						documentContentStarted = null;
+						skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+						return mapping;
+					}
+				} else if (peekCharMatch('-') && (peekNextCharMatch('-'))) {
+					readChar();
+					if (peekNextCharMatch('-')) {
+						readChar();
+						readChar();
+						documentContentStarted = true;
+						skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+						return mapping;
+					}
+				} else if (peekCharMatch('\"')) {
 					keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING);
+					skipBlanks();
+					if (peekCharMatch('#')) {
+						keyOrScalarNode.setInlineComment(readInlineComment());
+					}
 				} else if (peekCharMatch('\'')) {
 					keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING);
+					skipBlanks();
+					if (peekCharMatch('#')) {
+						keyOrScalarNode.setInlineComment(readInlineComment());
+					}
 				} else if (peekCharMatch('?') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
 					readChar();
 					skipBlanks();
 					keyOrScalarNode = parseYamlNode();
 				} else {
-					keyOrScalarNode = readScalarString(null);
+					keyOrScalarNode = readUnquotedScalarString(null);
 
 					if ("...".equals(((YamlScalar) keyOrScalarNode).getValueString())) {
 						documentContentStarted = null;
@@ -804,6 +873,8 @@ public class YamlReader extends BasicReadAheadReader {
 					readChar();
 					skipBlanks();
 
+					indentations.add(1);
+
 					if (peekCharMatch('&')) {
 						pendingAnchor = parseAnchor();
 					}
@@ -825,6 +896,9 @@ public class YamlReader extends BasicReadAheadReader {
 					mapping.add(keyOrScalarNode, valueNode);
 				} else if (peekCharMatch(':') && (peekNextCharMatch('\n'))) {
 					readChar();
+
+					indentations.add(1);
+
 					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 
 					if (peekCharMatch('&')) {
@@ -855,10 +929,6 @@ public class YamlReader extends BasicReadAheadReader {
 			String pendingAnchor = null;
 			if (peekCharMatch('&')) {
 				pendingAnchor = parseAnchor();
-			}
-
-			if (peekCharMatch('#')) {
-				keyOrScalarNode.setInlineComment(readInlineComment());
 			}
 
 			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
@@ -960,6 +1030,8 @@ public class YamlReader extends BasicReadAheadReader {
 
 				mapping.add(keyNode, new YamlScalar(null));
 			} else if (peekCharMatch(':') && peekNextCharMatchAny(", \t\n")) {
+				indentations.add(1);
+
 				if (peekNextCharMatch(',')) {
 					readChar();
 					readChar();
@@ -1190,6 +1262,8 @@ public class YamlReader extends BasicReadAheadReader {
 			} else if (peekCharMatch(':')) {
 				readChar();
 
+				indentations.add(1);
+
 				final YamlMapping mapping = new YamlMapping();
 
 				YamlNode valueNode;
@@ -1268,32 +1342,61 @@ public class YamlReader extends BasicReadAheadReader {
 		return sequence;
 	}
 
-	private YamlNode readScalarString(Character additionalLeadingChar) throws Exception {
+	private YamlNode readUnquotedScalarString(final Character additionalLeadingChar) throws Exception {
 		String scalarString = "";
-		while(true) {
-			scalarString += readUpToNext(false, null, ":#\n".toCharArray());
-			if (additionalLeadingChar != null) {
-				scalarString = additionalLeadingChar + scalarString;
-				additionalLeadingChar = null;
-			}
-
-			// Allow sexagesimal numbers like "190:20:30.15" or text with ':' without following whitespace
-			if (peekCharMatch(':') && (peekNextChar() == null || (peekNextCharNotMatch(' ') && peekNextCharNotMatch('\t') && peekNextCharNotMatch('\n')))) {
-				readChar();
-				scalarString += ":";
-			} else {
+		final int scalarStartIndentations = getNumberOfIndentationChars();
+		String nextScalarStringLine = "";
+		String inlineComment = null;
+		if (additionalLeadingChar != null) {
+			nextScalarStringLine += additionalLeadingChar;
+		}
+		while (isNotEOF()) {
+			if (peekCharMatch(':') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
+				// Mapping separator ': ' ends Scalar
 				break;
+			} else if ((peekCharMatch(' ') || peekCharMatch('\t') || peekCharMatch('\n')) && peekNextCharMatch('#')) {
+				// Comment ' #' ends Scalar
+				if (peekCharMatch(' ') || peekCharMatch('\t')) {
+					readChar();
+					inlineComment = readInlineComment();
+				} else {
+					readChar();
+				}
+				break;
+			} else if (peekCharMatch('\n')) {
+				readChar();
+				nextScalarStringLine = nextScalarStringLine.trim();
+				if (nextScalarStringLine.startsWith("|") || nextScalarStringLine.startsWith(">")) {
+					break;
+				}
+				if (nextScalarStringLine.length() > 0) {
+					if (scalarString.length() > 0 && !scalarString.endsWith("\n")) {
+						scalarString += " ";
+					}
+					scalarString += nextScalarStringLine;
+					nextScalarStringLine = "";
+				} else {
+					scalarString += "\n";
+				}
+				readNextIndentation();
+				if (peekCharNotMatch('\n') && getNumberOfIndentationChars() < scalarStartIndentations) {
+					break;
+				} else if (peekCharMatch('#')) {
+					break;
+				}
+			} else {
+				nextScalarStringLine += readChar();
 			}
+		}
+
+		if (nextScalarStringLine.length() > 0) {
+			if (scalarString.length() > 0 && !scalarString.endsWith("\n")) {
+				scalarString += " ";
+			}
+			scalarString += nextScalarStringLine.trim();
 		}
 
 		scalarString = scalarString.trim();
-
-		String inlineComment = null;
-		if (peekCharMatch('#')) {
-			inlineComment = readInlineComment();
-		}
-
-		skipBlanks();
 
 		if (scalarString.length() == 0) {
 			throw new YamlParseException("Unexpected empty scalar String", getCurrentLine(), getCurrentColumn());

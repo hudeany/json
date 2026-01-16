@@ -3,6 +3,10 @@
 %TAG !! tag:yaml.org,2002: # Default Tag for !!, it is always active. Tags !!int to tag:yaml.org,2002:int
 ---
 # starting a new YAML document. Basically optional, when not using directives
+sequence0: # using 0-space indentation
+  - Sequence item 01
+  - Sequence item 02
+  - Sequence item 03
 sequence1: # using 1-space indentation, tab indentation is not allowed
   - Sequence item 11
   - Sequence item 12

@@ -41,11 +41,13 @@ public class YamlScalar extends YamlNode {
 		} else if (type == YamlScalarType.BOOLEAN) {
 			this.valueString = valueString;
 			if ("true".equalsIgnoreCase(valueString)
+					|| "y".equalsIgnoreCase(valueString)
 					|| "yes".equalsIgnoreCase(valueString)
 					|| "on".equalsIgnoreCase(valueString)) {
 				value = true;
 				this.type = type;
 			} else if ("false".equalsIgnoreCase(valueString)
+					|| "n".equalsIgnoreCase(valueString)
 					|| "no".equalsIgnoreCase(valueString)
 					|| "off".equalsIgnoreCase(valueString)) {
 				value = false;

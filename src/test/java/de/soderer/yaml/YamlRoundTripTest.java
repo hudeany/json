@@ -23,6 +23,11 @@ import de.soderer.yaml.data.YamlSequence;
 
 public class YamlRoundTripTest {
 	@Test
+	public void testStrings() throws Exception {
+		roundTripSingleDocument("yaml/strings/input.yaml", "yaml/strings/output.yaml", true);
+	}
+
+	@Test
 	public void testBasicStructureMapping() throws Exception {
 		roundTripSingleDocument("yaml/mapping/input.yaml", "yaml/mapping/output.yaml", true);
 	}
