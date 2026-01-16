@@ -321,9 +321,11 @@ public class YamlWriter implements Closeable {
 
 				if (!needsQuotes) {
 					if ("true".equalsIgnoreCase(key)
+							|| "y".equalsIgnoreCase(key)
 							|| "yes".equalsIgnoreCase(key)
 							|| "on".equalsIgnoreCase(key)
 							|| "false".equalsIgnoreCase(key)
+							|| "n".equalsIgnoreCase(key)
 							|| "no".equalsIgnoreCase(key)
 							|| "off".equalsIgnoreCase(key)
 							|| "null".equalsIgnoreCase(key)

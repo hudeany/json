@@ -9,6 +9,16 @@
   property31: value31
   property32: value32
   property33: value33
+- 
+  property41:
+  - 123
+  - 456
+- property51:
+    - 123
+    - 456
+- property61:
+    - 1234
+      - 4567
 - - item11
   - item12
   - item13
