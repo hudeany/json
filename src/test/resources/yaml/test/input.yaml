@@ -76,7 +76,7 @@ mapping 1:
 - {property 11: Value 11, property 12: 12}
 - property 21: Value 21
   property 22: 22
-# TODO: - [property1, property2]: [Value 3, 44] # sequences as keys are supported
+- [property1, property2]: [Value 3, 44] # sequences as keys are supported
 --- # Mapping with sequences
 sequence1: [Item 1, Item 2]
 sequence2:

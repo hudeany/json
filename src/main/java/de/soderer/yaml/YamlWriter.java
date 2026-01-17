@@ -193,6 +193,9 @@ public class YamlWriter implements Closeable {
 			if (sequence.isFlowStyle() || inFlow) {
 				writeFlowSequence(sequence, indentLevel);
 				if (!inFlow) {
+					if (sequence.getInlineComment() != null) {
+						write(" # " + sequence.getInlineComment());
+					}
 					write(linebreakString);
 				}
 			} else {
@@ -209,6 +212,9 @@ public class YamlWriter implements Closeable {
 			if (mapping.isFlowStyle() || inFlow) {
 				writeFlowMapping(mapping, indentLevel);
 				if (!inFlow) {
+					if (mapping.getInlineComment() != null) {
+						write(" # " + mapping.getInlineComment());
+					}
 					write(linebreakString);
 				}
 			} else {

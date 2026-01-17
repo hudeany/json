@@ -112,7 +112,7 @@ public class YamlReader extends BasicReadAheadReader {
 							throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn() - 1);
 						} else {
 							documentContentStarted = true;
-							document.setRoot(parseBlockMappingOrScalar('-'));
+							document.setRoot(parseBlockMappingOrScalar('-', null));
 							return document;
 						}
 					} else if (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n')) {
@@ -125,7 +125,7 @@ public class YamlReader extends BasicReadAheadReader {
 					} else if (documentContentStarted != null && !documentContentStarted) {
 						throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
 					} else {
-						document.setRoot(parseBlockMappingOrScalar(null));
+						document.setRoot(parseBlockMappingOrScalar(null, null));
 						return document;
 					}
 				} else if (peekCharMatch('.')) {
@@ -142,14 +142,14 @@ public class YamlReader extends BasicReadAheadReader {
 							throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
 						} else {
 							documentContentStarted = true;
-							document.setRoot(parseBlockMappingOrScalar('.'));
+							document.setRoot(parseBlockMappingOrScalar('.', null));
 							return document;
 						}
 					} else if (documentContentStarted != null && !documentContentStarted) {
 						throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
 					} else {
 						documentContentStarted = true;
-						document.setRoot(parseBlockMappingOrScalar(null));
+						document.setRoot(parseBlockMappingOrScalar(null, null));
 						return document;
 					}
 				} else if (documentContentStarted != null && !documentContentStarted) {
@@ -406,7 +406,13 @@ public class YamlReader extends BasicReadAheadReader {
 				interimPendingLeadingComments = new ArrayList<>();
 			}
 
-			return flowMapping;
+			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+
+			if (peekCharMatch(':')) {
+				return parseBlockMappingOrScalar(null, flowMapping);
+			} else {
+				return flowMapping;
+			}
 		} else if (peekCharMatch('[')) {
 			List<String> interimPendingLeadingComments = pendingLeadingComments;
 			pendingLeadingComments = new ArrayList<>();
@@ -420,9 +426,15 @@ public class YamlReader extends BasicReadAheadReader {
 				interimPendingLeadingComments = new ArrayList<>();
 			}
 
-			return flowSequence;
+			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+
+			if (peekCharMatch(':')) {
+				return parseBlockMappingOrScalar(null, flowSequence);
+			} else {
+				return flowSequence;
+			}
 		} else {
-			final YamlNode mappingOrScalar = parseBlockMappingOrScalar(null);
+			final YamlNode mappingOrScalar = parseBlockMappingOrScalar(null, null);
 			if (datatype == null) {
 				return mappingOrScalar;
 			} else {
@@ -599,38 +611,46 @@ public class YamlReader extends BasicReadAheadReader {
 		return sequence;
 	}
 
-	private YamlNode parseBlockMappingOrScalar(final Character additionalLeadingChar) throws Exception {
+	private YamlNode parseBlockMappingOrScalar(final Character additionalLeadingChar, final YamlNode firstKeyNode) throws Exception {
 		final int mappingIndentation = getNumberOfIndentationChars();
 
 		YamlNode keyOrScalarNode;
-		if (peekCharMatch('\"')) {
-			keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING);
-			skipBlanks();
-			if (peekCharMatch('#')) {
-				keyOrScalarNode.setInlineComment(readInlineComment());
-			}
-		} else if (peekCharMatch('\'')) {
-			keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING);
-			skipBlanks();
-			if (peekCharMatch('#')) {
-				keyOrScalarNode.setInlineComment(readInlineComment());
-			}
-		} else if (peekCharMatch('?') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
-			readChar();
-			skipBlanks();
-			keyOrScalarNode = parseYamlNode();
+		if (firstKeyNode != null) {
+			keyOrScalarNode = firstKeyNode;
 		} else {
-			keyOrScalarNode = readUnquotedScalarString(additionalLeadingChar);
-		}
-
-		if (!pendingLeadingComments.isEmpty()) {
-			for (final String commentLine1 : pendingLeadingComments) {
-				keyOrScalarNode.addLeadingComment(commentLine1);
+			if (peekCharMatch('\"')) {
+				keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING);
+				skipBlanks();
+				if (peekCharMatch('#')) {
+					keyOrScalarNode.setInlineComment(readInlineComment());
+				}
+			} else if (peekCharMatch('\'')) {
+				keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING);
+				skipBlanks();
+				if (peekCharMatch('#')) {
+					keyOrScalarNode.setInlineComment(readInlineComment());
+				}
+			} else if (peekCharMatch('[')) {
+				keyOrScalarNode = parseFlowSequence();
+			} else if (peekCharMatch('{')) {
+				keyOrScalarNode = parseFlowMapping();
+			} else if (peekCharMatch('?') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
+				readChar();
+				skipBlanks();
+				keyOrScalarNode = parseYamlNode();
+			} else {
+				keyOrScalarNode = readUnquotedScalarString(additionalLeadingChar);
 			}
-			pendingLeadingComments = new ArrayList<>();
-		}
 
-		skipBlanks();
+			if (!pendingLeadingComments.isEmpty()) {
+				for (final String commentLine1 : pendingLeadingComments) {
+					keyOrScalarNode.addLeadingComment(commentLine1);
+				}
+				pendingLeadingComments = new ArrayList<>();
+			}
+
+			skipBlanks();
+		}
 
 		if (peekCharMatch(':') && (peekNextCharMatch(' ') || peekNextCharMatch('\t'))) {
 			readChar();
@@ -1239,6 +1259,14 @@ public class YamlReader extends BasicReadAheadReader {
 			if (peekCharMatch(']')) {
 				sequence.add(itemNode);
 				readChar();
+
+				skipBlanks();
+
+				if (peekCharMatch('#')) {
+					final String inlineComment = readInlineComment();
+					sequence.setInlineComment(inlineComment);
+				}
+
 				skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 				return sequence;
 			} else if (peekCharMatch(',')) {
