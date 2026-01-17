@@ -394,6 +394,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 			return alias;
 		} else if (peekCharMatch('{')) {
+			final int flowStartIndentations = getNumberOfIndentationChars();
 			List<String> interimPendingLeadingComments = pendingLeadingComments;
 			pendingLeadingComments = new ArrayList<>();
 
@@ -408,12 +409,13 @@ public class YamlReader extends BasicReadAheadReader {
 
 			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 
-			if (peekCharMatch(':')) {
+			if (peekCharMatch(':') && flowStartIndentations + 1 < getCurrentColumn()) {
 				return parseBlockMappingOrScalar(null, flowMapping);
 			} else {
 				return flowMapping;
 			}
 		} else if (peekCharMatch('[')) {
+			final int flowStartIndentations = getNumberOfIndentationChars();
 			List<String> interimPendingLeadingComments = pendingLeadingComments;
 			pendingLeadingComments = new ArrayList<>();
 
@@ -428,7 +430,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 
-			if (peekCharMatch(':')) {
+			if (peekCharMatch(':') && flowStartIndentations + 1 < getCurrentColumn()) {
 				return parseBlockMappingOrScalar(null, flowSequence);
 			} else {
 				return flowSequence;
