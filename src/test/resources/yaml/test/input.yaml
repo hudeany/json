@@ -35,15 +35,15 @@ mapping6: {
   must: 'quo{ te',
   this: 't] oo'
   }
-#mapping7: # TODO: Mapping with complex mapping keys
-#  ? - Detroit Tigers
-#    - Chicago cubs
-#  : - 2001-07-23
-#
-#  ? [ New York Yankees,
-#    Atlanta Braves ]
-#  : [ 2001-07-02, 2001-08-12,
-#    2001-08-14 ]
+mapping7: # Mapping with complex mapping keys
+  ? - Detroit Tigers
+    - Chicago cubs
+  : - 2001-07-23
+
+  ? [ New York Yankees,
+    Atlanta Braves ]
+  : [ 2001-07-02, 2001-08-12,
+    2001-08-14 ]
 data1: |
    There once was a tall man from Ealing
    Who got on a bus to Darjeeling

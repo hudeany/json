@@ -36,7 +36,6 @@ import de.soderer.yaml.exception.YamlParseException;
  * Improve multiline scalars folded and literal
  * Check alias references after document read
  * Check cyclic dependencies in aliases
- *
  */
 public class YamlReader extends BasicReadAheadReader {
 	private final Stack<Integer> indentations = new Stack<>();
@@ -639,6 +638,7 @@ public class YamlReader extends BasicReadAheadReader {
 			} else if (peekCharMatch('?') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
 				readChar();
 				skipBlanks();
+				indentations.add(2);
 				keyOrScalarNode = parseYamlNode();
 			} else {
 				keyOrScalarNode = readUnquotedScalarString(additionalLeadingChar);
@@ -654,7 +654,7 @@ public class YamlReader extends BasicReadAheadReader {
 			skipBlanks();
 		}
 
-		if (peekCharMatch(':') && (peekNextCharMatch(' ') || peekNextCharMatch('\t'))) {
+		if (peekCharMatch(':') && (peekNextCharMatch(' ') || peekNextCharMatch('\t')) && mappingIndentation < getCurrentColumn()) {
 			readChar();
 			readChar();
 			skipBlanks();
@@ -725,6 +725,7 @@ public class YamlReader extends BasicReadAheadReader {
 				} else if (peekCharMatch('?') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
 					readChar();
 					skipBlanks();
+					indentations.add(2);
 					keyOrScalarNode = parseYamlNode();
 				} else {
 					keyOrScalarNode = readUnquotedScalarString(null);
@@ -750,7 +751,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 				skipBlanks();
 
-				if (peekCharMatch(':') && (peekNextCharMatch(' ') || peekNextCharMatch('\t'))) {
+				if (peekCharMatch(':') && (peekNextCharMatch(' ') || peekNextCharMatch('\t')) && mappingIndentation < getCurrentColumn()) {
 					readChar();
 					readChar();
 					skipBlanks();
@@ -776,7 +777,7 @@ public class YamlReader extends BasicReadAheadReader {
 					}
 
 					mapping.add(keyOrScalarNode, valueNode);
-				} else if (peekCharMatch(':') && (peekNextCharMatch('\n'))) {
+				} else if (peekCharMatch(':') && (peekNextCharMatch('\n')) && mappingIndentation < getCurrentColumn()) {
 					readChar();
 					skipBlanks();
 
@@ -806,7 +807,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 			updateJsonPath(YamlToken.YamlMapping_End, null);
 			return mapping;
-		} else if (peekCharMatch(':') && peekNextCharMatch('\n')) {
+		} else if (peekCharMatch(':') && peekNextCharMatch('\n') && mappingIndentation < getCurrentColumn()) {
 			readChar();
 
 			indentations.add(1);
@@ -864,6 +865,7 @@ public class YamlReader extends BasicReadAheadReader {
 				} else if (peekCharMatch('?') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
 					readChar();
 					skipBlanks();
+					indentations.add(2);
 					keyOrScalarNode = parseYamlNode();
 				} else {
 					keyOrScalarNode = readUnquotedScalarString(null);
@@ -890,7 +892,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 				skipBlanks();
 
-				if (peekCharMatch(':') && (peekNextCharMatch(' ') || peekNextCharMatch('\t'))) {
+				if (peekCharMatch(':') && (peekNextCharMatch(' ') || peekNextCharMatch('\t')) && mappingIndentation < getCurrentColumn()) {
 					readChar();
 					readChar();
 					skipBlanks();
@@ -916,7 +918,7 @@ public class YamlReader extends BasicReadAheadReader {
 					}
 
 					mapping.add(keyOrScalarNode, valueNode);
-				} else if (peekCharMatch(':') && (peekNextCharMatch('\n'))) {
+				} else if (peekCharMatch(':') && (peekNextCharMatch('\n')) && mappingIndentation < getCurrentColumn()) {
 					readChar();
 
 					indentations.add(1);

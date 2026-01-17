@@ -1056,6 +1056,7 @@ public class YamlWriter implements Closeable {
 	}
 
 	private void write(final String text) throws IOException {
+		System.out.print(text);
 		outputWriter.write(text);
 	}
 }
