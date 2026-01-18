@@ -31,10 +31,10 @@ try {
 	// true
 	final JsonObject jsonObject = (JsonObject) nodevalue;
 	for (final Map.Entry<String, Object> jsonObjectProperty : jsonObject) {
-		System.out.println(jsonObjectProperty.getKey() + ": " + jsonObject.getClass().getSimpleName() + ": " + jsonObjectProperty.getValue());
-		// abc: JsonObject: 1
-		// def: JsonObject: 2
-		// ghi: JsonObject: 3.0
+		System.out.println(jsonObjectProperty.getKey() + ": " + jsonObjectProperty.getValue().getClass().getSimpleName() + ": " + jsonObjectProperty.getValue());
+		// abc: String: 1
+		// def: Integer: 2
+		// ghi: Float: 3.0
 	}
 } catch (final Exception e) {
 	e.printStackTrace();
@@ -149,9 +149,9 @@ try {
 	final YamlMapping yamlMapping = (YamlMapping) document.getRoot();
 	for (final Map.Entry<String, Object> yamlObjectProperty : yamlMapping) {
 		System.out.println(yamlObjectProperty.getKey() + ": " + yamlObjectProperty.getValue().getClass().getSimpleName() + ": " + yamlObjectProperty.getValue());
-		// abc: String: 1
-		// def: Integer: 2
-		// ghi: Float: 3.0
+		// String: 1
+		// Integer: 2
+		// Float: 3.0
 	}
 } catch (final Exception e) {
 	e.printStackTrace();
