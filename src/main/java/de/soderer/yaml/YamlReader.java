@@ -196,7 +196,9 @@ public class YamlReader extends BasicReadAheadReader {
 
 	public YamlNode readNextYamlNode() throws Exception {
 		try {
-			if (getCurrentPath().equals(searchPath)) {
+			if (isEOF()) {
+				return null;
+			} else if (getCurrentPath().equals(searchPath)) {
 				final YamlSequence sequence = (YamlSequence) parseYamlNode();
 				return sequence.get(0);
 			} else {

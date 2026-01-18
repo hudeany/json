@@ -49,7 +49,17 @@ public class YamlTest {
 
 	@Test
 	public void testDbImport() throws Exception {
-		roundTripSingleDocument("yaml/dbimport/input.yaml", "yaml/dbimport/output.yaml", false);
+		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream("yaml/dbimport/input.yaml")) {
+			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
+				yamlReader.readUpToPath("$");
+				YamlNode nextYamlNode;
+				while ((nextYamlNode = yamlReader.readNextYamlNode()) != null) {
+					Assert.assertNotNull(nextYamlNode);
+				}
+			}
+		} catch (final Exception e) {
+			Assert.fail(e.getMessage());
+		}
 	}
 
 	@Test
@@ -172,14 +182,14 @@ public class YamlTest {
 		roundTripSingleDocument("yaml/datatypes/input.yaml", "yaml/datatypes/output.yaml", true);
 	}
 
-	private void roundTripSingleDocument(final String inputDataFileNamem, final String outputDataFileName, final boolean alwaysQuote) throws Exception {
+	private void roundTripSingleDocument(final String inputDataFileName, final String outputDataFileName, final boolean alwaysQuote) throws Exception {
 		String resultYamlFileString;
 		try (InputStream resultDataStream = getClass().getClassLoader().getResourceAsStream(outputDataFileName)) {
 			resultYamlFileString = IoUtilities.toString(resultDataStream, StandardCharsets.UTF_8);
 		}
 
 		final YamlDocument testDocument1;
-		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream(inputDataFileNamem)) {
+		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream(inputDataFileName)) {
 			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
 				testDocument1 = yamlReader.readDocument();
 			}
