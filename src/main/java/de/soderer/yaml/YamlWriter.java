@@ -119,7 +119,7 @@ public class YamlWriter implements Closeable {
 		return indentSize;
 	}
 
-	public void writeDocument(final YamlDocument document) throws Exception {
+	public YamlWriter writeDocument(final YamlDocument document) throws Exception {
 		if (!firstDocument && !documentEndWasWritten) {
 			write("..." + linebreakString);
 		}
@@ -161,9 +161,10 @@ public class YamlWriter implements Closeable {
 
 		outputWriter.flush();
 		firstDocument = false;
+		return this;
 	}
 
-	public void writeDocumentList(final List<YamlDocument> documentList) throws Exception {
+	public YamlWriter writeDocumentList(final List<YamlDocument> documentList) throws Exception {
 		for (int i = 0; i < documentList.size(); i++) {
 			final YamlDocument document = documentList.get(i);
 			if (!firstDocument) {
@@ -172,9 +173,10 @@ public class YamlWriter implements Closeable {
 			writeDocument(document);
 			firstDocument = false;
 		}
+		return this;
 	}
 
-	private void writeNode(final YamlNode node, final int indentLevel, final boolean inFlow, final boolean isKeyContext) throws Exception {
+	private YamlWriter writeNode(final YamlNode node, final int indentLevel, final boolean inFlow, final boolean isKeyContext) throws Exception {
 		if (node instanceof final YamlScalar scalar) {
 			writeScalar(scalar, indentLevel, inFlow, isKeyContext);
 		} else if (node instanceof final YamlAlias alias) {
@@ -223,15 +225,17 @@ public class YamlWriter implements Closeable {
 		} else {
 			throw new IllegalStateException("Unbekannter Node-Typ: " + node.getClass());
 		}
+		return this;
 	}
 
-	private void writeIndent(final int indentLevel) throws IOException {
+	private YamlWriter writeIndent(final int indentLevel) throws IOException {
 		if (indentLevel > 0) {
 			write(" ".repeat(indentLevel * indentSize));
 		}
+		return this;
 	}
 
-	private void writeScalar(final YamlScalar scalar, final int indentLevel, final boolean inFlow, final boolean isKeyContext) throws IOException {
+	private YamlWriter writeScalar(final YamlScalar scalar, final int indentLevel, final boolean inFlow, final boolean isKeyContext) throws IOException {
 		final YamlScalarType type = scalar.getType();
 		final String value = scalar.getValueString();
 		final String inlineComment = scalar.getInlineComment();
@@ -263,9 +267,10 @@ public class YamlWriter implements Closeable {
 			default:
 				// Do nothing
 		}
+		return this;
 	}
 
-	private void writeAlias(final YamlAlias alias, final int indentLevel) throws IOException {
+	private YamlWriter writeAlias(final YamlAlias alias, final int indentLevel) throws IOException {
 		writeIndent(indentLevel);
 		write(" *" + alias.getTargetAnchorName());
 		if (alias.getInlineComment() == null) {
@@ -273,9 +278,10 @@ public class YamlWriter implements Closeable {
 		} else {
 			write(" # " + alias.getInlineComment() + linebreakString);
 		}
+		return this;
 	}
 
-	private void writeMultilineLiteral(final YamlScalar scalar, final int indentLevel) throws IOException {
+	private YamlWriter writeMultilineLiteral(final YamlScalar scalar, final int indentLevel) throws IOException {
 		if (indentLevel > 0) {
 			write(" ");
 		}
@@ -285,9 +291,10 @@ public class YamlWriter implements Closeable {
 			writeIndent(indentLevel);
 			write(line + linebreakString);
 		}
+		return this;
 	}
 
-	private void writeMultilineFolded(final YamlScalar scalar, final int indentLevel) throws IOException {
+	private YamlWriter writeMultilineFolded(final YamlScalar scalar, final int indentLevel) throws IOException {
 		if (indentLevel > 0) {
 			write(" ");
 		}
@@ -297,6 +304,7 @@ public class YamlWriter implements Closeable {
 			writeIndent(indentLevel);
 			write(line + linebreakString);
 		}
+		return this;
 	}
 
 	private String escapePlainStringKey(final String key) {
@@ -522,81 +530,17 @@ public class YamlWriter implements Closeable {
 		return escapedTextBuilder.toString();
 	}
 
-	private void writeBlockSequence(final YamlSequence yamlSequence, final int indentLevel) throws Exception {
+	private YamlWriter writeBlockSequence(final YamlSequence yamlSequence, final int indentLevel) throws Exception {
 		boolean isFirstData = true;
 		for (final YamlNode item : yamlSequence.items()) {
-			if (item.getLeadingComments() != null && !item.getLeadingComments().isEmpty()) {
-				for (final String commentLine : item.getLeadingComments()) {
-					if (!isFirstData) {
-						writeIndent(indentLevel);
-					}
-					write("# " + commentLine + linebreakString);
-				}
-				isFirstData = false;
-			}
-
-			if (!isFirstData) {
-				writeIndent(indentLevel);
-			}
-			write("-");
-
-			boolean startItemInNewLine = false;
-			if (item.getAnchorName() != null) {
-				write(" &" + item.getAnchorName());
-				startItemInNewLine = true;
-			}
-
-			if (item instanceof final YamlScalar scalar) {
-				if (startItemInNewLine) {
-					write(linebreakString);
-					writeIndent(indentLevel + 1);
-					writeScalarInlineInSequence(scalar);
-				} else {
-					write(" ");
-					writeScalarInlineInSequence(scalar);
-				}
-			} else if (item instanceof final YamlAlias alias) {
-				write(" *" + alias.getTargetAnchorName());
-				if (alias.getInlineComment() == null) {
-					write(linebreakString);
-				} else {
-					write(" # " + alias.getInlineComment() + linebreakString);
-				}
-			} else if (item instanceof final YamlMapping mapping) {
-				if (!startItemInNewLine
-						&& !mustStartInNewLine(mapping)) {
-					write(" ");
-					writeNode(mapping, indentLevel + 1, false, false);
-				} else {
-					write(linebreakString);
-					writeIndent(indentLevel + 1);
-					writeNode(mapping, indentLevel + 1, false, false);
-				}
-			} else if (item instanceof final YamlSequence sequence) {
-				if (!startItemInNewLine
-						&& !mustStartInNewLine(sequence)) {
-					write(" ");
-					writeNode(sequence, indentLevel + 1, false, false);
-				} else {
-					write(linebreakString);
-					if (sequence.getLeadingComments() != null) {
-						for (final String commentLine1 : sequence.getLeadingComments()) {
-							writeIndent(indentLevel + 1);
-							write("# " + commentLine1 + linebreakString);
-						}
-					}
-					writeIndent(indentLevel + 1);
-					writeNode(sequence, indentLevel + 1, false, false);
-				}
-			} else {
-				throw new Exception("Unknown YAML node type: '" + item.getClass().getSimpleName() + "'");
-			}
+			addSequenceItem(item, indentLevel, isFirstData);
 
 			isFirstData = false;
 		}
+		return this;
 	}
 
-	private void writeScalarInlineInSequence(final YamlScalar scalar) throws IOException {
+	private YamlWriter writeScalarInlineInSequence(final YamlScalar scalar) throws IOException {
 		final String inlineComment = scalar.getInlineComment();
 		switch (scalar.getType()) {
 			case BOOLEAN:
@@ -612,9 +556,10 @@ public class YamlWriter implements Closeable {
 			default:
 				write(escapePlainStringValueInFlow(scalar.getValueString()) + linebreakString);
 		}
+		return this;
 	}
 
-	private void writeBlockMapping(final YamlMapping yamlMapping, final int indentLevel) throws Exception {
+	private YamlWriter writeBlockMapping(final YamlMapping yamlMapping, final int indentLevel) throws Exception {
 		boolean isFirstData = true;
 		for (final Entry<YamlNode, YamlNode> entry : yamlMapping.entrySet()) {
 			final YamlNode key = entry.getKey();
@@ -765,9 +710,10 @@ public class YamlWriter implements Closeable {
 
 			isFirstData = false;
 		}
+		return this;
 	}
 
-	private void writeFlowMapping(final YamlMapping yamlMapping, final int indentLevel) throws Exception {
+	private YamlWriter writeFlowMapping(final YamlMapping yamlMapping, final int indentLevel) throws Exception {
 		write("{");
 
 		boolean isSingleLineFlow = true;
@@ -880,9 +826,10 @@ public class YamlWriter implements Closeable {
 		}
 
 		write("}");
+		return this;
 	}
 
-	private void writeFlowSequence(final YamlSequence yamlSequence, final int indentLevel) throws Exception {
+	private YamlWriter writeFlowSequence(final YamlSequence yamlSequence, final int indentLevel) throws Exception {
 		write("[");
 
 		boolean isSingleLineFlow = true;
@@ -952,9 +899,10 @@ public class YamlWriter implements Closeable {
 		}
 
 		write("]");
+		return this;
 	}
 
-	private void writeScalarInlineInFlow(final YamlScalar scalar) throws IOException {
+	private YamlWriter writeScalarInlineInFlow(final YamlScalar scalar) throws IOException {
 		final String inlineComment = scalar.getInlineComment();
 		switch (scalar.getType()) {
 			case BOOLEAN:
@@ -970,6 +918,7 @@ public class YamlWriter implements Closeable {
 			default:
 				write(escapePlainStringValueInFlow(scalar.getValueString()));
 		}
+		return this;
 	}
 
 	private static boolean mustStartInNewLine(final YamlMapping mapping) {
@@ -1055,7 +1004,98 @@ public class YamlWriter implements Closeable {
 		return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
 	}
 
-	private void write(final String text) throws IOException {
+	private YamlWriter write(final String text) throws IOException {
 		outputWriter.write(text);
+		return this;
+	}
+
+	public YamlWriter addSequenceItem(final YamlNode item, final int indentLevel, boolean isFirstData) throws Exception {
+		if (item.getLeadingComments() != null && !item.getLeadingComments().isEmpty()) {
+			for (final String commentLine : item.getLeadingComments()) {
+				if (!isFirstData) {
+					writeIndent(indentLevel);
+				}
+				write("# " + commentLine + linebreakString);
+			}
+			isFirstData = false;
+		}
+
+		if (!isFirstData) {
+			writeIndent(indentLevel);
+		}
+		write("-");
+
+		boolean startItemInNewLine = false;
+		if (item.getAnchorName() != null) {
+			write(" &" + item.getAnchorName());
+			startItemInNewLine = true;
+		}
+
+		if (item instanceof final YamlScalar scalar) {
+			if (startItemInNewLine) {
+				write(linebreakString);
+				writeIndent(indentLevel + 1);
+				writeScalarInlineInSequence(scalar);
+			} else {
+				write(" ");
+				writeScalarInlineInSequence(scalar);
+			}
+		} else if (item instanceof final YamlAlias alias) {
+			write(" *" + alias.getTargetAnchorName());
+			if (alias.getInlineComment() == null) {
+				write(linebreakString);
+			} else {
+				write(" # " + alias.getInlineComment() + linebreakString);
+			}
+		} else if (item instanceof final YamlMapping mapping) {
+			if (!startItemInNewLine
+					&& !mustStartInNewLine(mapping)) {
+				write(" ");
+				writeNode(mapping, indentLevel + 1, false, false);
+			} else {
+				write(linebreakString);
+				writeIndent(indentLevel + 1);
+				writeNode(mapping, indentLevel + 1, false, false);
+			}
+		} else if (item instanceof final YamlSequence sequence) {
+			if (!startItemInNewLine
+					&& !mustStartInNewLine(sequence)) {
+				write(" ");
+				writeNode(sequence, indentLevel + 1, false, false);
+			} else {
+				write(linebreakString);
+				if (sequence.getLeadingComments() != null) {
+					for (final String commentLine1 : sequence.getLeadingComments()) {
+						writeIndent(indentLevel + 1);
+						write("# " + commentLine1 + linebreakString);
+					}
+				}
+				writeIndent(indentLevel + 1);
+				writeNode(sequence, indentLevel + 1, false, false);
+			}
+		} else {
+			throw new Exception("Unknown YAML node type: '" + item.getClass().getSimpleName() + "'");
+		}
+		return this;
+	}
+
+	public YamlWriter addSequenceItem(final YamlNode item) throws Exception {
+		addSequenceItem(item, 0, false);
+		return this;
+	}
+
+	public YamlWriter addSequenceItem(final Object item) throws Exception {
+		if (item == null) {
+			addSequenceItem(new YamlScalar(null));
+		} else if (item instanceof String) {
+			addSequenceItem(new YamlScalar((String) item, YamlScalarType.STRING));
+		} else if (item instanceof Number) {
+			addSequenceItem(new YamlScalar((Number) item, YamlScalarType.NUMBER));
+		} else if (item instanceof Boolean) {
+			addSequenceItem(new YamlScalar((Boolean) item, YamlScalarType.BOOLEAN));
+		} else {
+			throw new Exception("Item Object to add by YamlWriter must be String or Boolean or Number, but was: " + item.getClass().getSimpleName());
+		}
+		return this;
 	}
 }
