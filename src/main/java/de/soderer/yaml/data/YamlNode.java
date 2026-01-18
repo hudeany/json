@@ -12,13 +12,14 @@ public abstract class YamlNode {
 		return leadingComments;
 	}
 
-	public void addLeadingComment(final String comment) {
+	public YamlNode addLeadingComment(final String comment) {
 		if (comment != null && !comment.isEmpty()) {
 			if (leadingComments == null) {
 				leadingComments = new ArrayList<>();
 			}
 			leadingComments.add(comment);
 		}
+		return this;
 	}
 
 	public String getInlineComment() {

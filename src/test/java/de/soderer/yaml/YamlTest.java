@@ -21,7 +21,7 @@ import de.soderer.yaml.data.YamlNode;
 import de.soderer.yaml.data.YamlScalar;
 import de.soderer.yaml.data.YamlSequence;
 
-public class YamlRoundTripTest {
+public class YamlTest {
 	@Test
 	public void testStrings() throws Exception {
 		roundTripSingleDocument("yaml/strings/input.yaml", "yaml/strings/output.yaml", true);

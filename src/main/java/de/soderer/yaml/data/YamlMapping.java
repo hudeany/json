@@ -31,11 +31,12 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 		return flowStyle;
 	}
 
-	public void setFlowStyle(final boolean flowStyle) {
+	public YamlMapping setFlowStyle(final boolean flowStyle) {
 		this.flowStyle = flowStyle;
+		return this;
 	}
 
-	public void add(final String key, final Object value) throws DuplicateKeyException {
+	public YamlMapping add(final String key, final Object value) throws DuplicateKeyException {
 		if (key == null) {
 			add(new YamlScalar(null), new YamlScalar(value));
 		} else if (value instanceof YamlNode) {
@@ -43,58 +44,66 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 		} else {
 			add(new YamlScalar(key, YamlScalarType.STRING), new YamlScalar(value));
 		}
+		return this;
 	}
 
-	public void add(final Number key, final Object value) throws DuplicateKeyException {
+	public YamlMapping add(final Number key, final Object value) throws DuplicateKeyException {
 		if (key == null) {
 			add(new YamlScalar(null), new YamlScalar(value));
 		} else {
 			add(new YamlScalar(key, YamlScalarType.NUMBER), new YamlScalar(value));
 		}
+		return this;
 	}
 
-	public void add(final Boolean key, final Object value) throws DuplicateKeyException {
+	public YamlMapping add(final Boolean key, final Object value) throws DuplicateKeyException {
 		if (key == null) {
 			add(new YamlScalar(null), new YamlScalar(value));
 		} else {
 			add(new YamlScalar(key, YamlScalarType.BOOLEAN), new YamlScalar(value));
 		}
+		return this;
 	}
 
-	public void add(final YamlNode key, final YamlNode value) throws DuplicateKeyException {
+	public YamlMapping add(final YamlNode key, final YamlNode value) throws DuplicateKeyException {
 		if (containsKey(key)) {
 			throw new DuplicateKeyException(key.toString());
 		} else {
 			entries.put(key, value);
 		}
+		return this;
 	}
 
-	public void put(final String key, final Object value) {
+	public YamlMapping put(final String key, final Object value) {
 		if (key == null) {
 			put(new YamlScalar(null), new YamlScalar(value));
 		} else {
 			put(new YamlScalar(key, YamlScalarType.STRING), new YamlScalar(value));
 		}
+		return this;
 	}
 
-	public void put(final Number key, final Object value) {
+	public YamlMapping put(final Number key, final Object value) {
 		if (key == null) {
 			put(new YamlScalar(null), new YamlScalar(value));
 		} else {
 			put(new YamlScalar(key, YamlScalarType.NUMBER), new YamlScalar(value));
 		}
+		return this;
 	}
 
-	public void put(final Boolean key, final Object value) {
+	public YamlMapping put(final Boolean key, final Object value) {
 		if (key == null) {
 			put(new YamlScalar(null), new YamlScalar(value));
 		} else {
 			put(new YamlScalar(key, YamlScalarType.BOOLEAN), new YamlScalar(value));
 		}
+		return this;
 	}
 
-	public void put(final YamlNode key, final YamlNode value) {
+	public YamlMapping put(final YamlNode key, final YamlNode value) {
 		entries.put(key, value);
+		return this;
 	}
 
 	public YamlNode remove(final String key) {

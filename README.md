@@ -1,8 +1,8 @@
-# Java JsonReader, JsonWriter and JsonSchema
+# Java JsonReader, JsonWriter, YamlReader, YamlWriter and JsonSchema
 
-Read and write JSON data from and to files or streams.  
+Read and write JSON and YAML data from and to files or streams.  
 Validation by JsonSchema (see http://json-schema.org for specifications).  
-Sequential read of JsonArray items (like SAX parser for XML data).  
+Sequential read of JsonArray and YamlSequence items (like SAX parser for XML data).  
 
 ## JsonObject with JsonWriter and JsonReader example
 ```
@@ -162,7 +162,7 @@ try {
 }
 ```
 
-For other simple examples see test class "de.soderer.json.JsonTest":
+For other simple examples see test class "de.soderer.json.JsonTest" and class "de.soderer.yaml.YamlTest":
 
 https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/json/JsonTest.java
   
