@@ -316,19 +316,26 @@ public class YamlWriter implements Closeable {
 			if (alwaysQuoteStringKeys) {
 				needsQuotes = true;
 			} else {
-				for (int i = 0; i < key.length(); i++) {
-					final char nextChar = key.charAt(i);
+				if (Character.isWhitespace(key.charAt(0))
+						|| Character.isWhitespace(key.charAt(key.length() - 1))) {
+					needsQuotes = true;
+				}
 
-					if ((Character.isWhitespace(nextChar) && nextChar != ' ')
-							|| "#&*!|>'\"%@`".indexOf(nextChar) > -1) {
-						needsQuotes = true;
-						break;
-					}
+				if (!needsQuotes) {
+					for (int i = 0; i < key.length(); i++) {
+						final char nextChar = key.charAt(i);
 
-					if (":{}[]".indexOf(nextChar) > -1) {
-						if (key.length() > i + 1 && " \t\n\r".indexOf(key.charAt(i + 1)) > -1) {
+						if ((Character.isWhitespace(nextChar) && nextChar != ' ')
+								|| "#&*!|>'\"%@`".indexOf(nextChar) > -1) {
 							needsQuotes = true;
 							break;
+						}
+
+						if (":{}[]".indexOf(nextChar) > -1) {
+							if (key.length() > i + 1 && " \t\n\r".indexOf(key.charAt(i + 1)) > -1) {
+								needsQuotes = true;
+								break;
+							}
 						}
 					}
 				}
@@ -374,19 +381,26 @@ public class YamlWriter implements Closeable {
 			if (alwaysQuoteStringValues) {
 				needsQuotes = true;
 			} else {
-				for (int i = 0; i < value.length(); i++) {
-					final char nextChar = value.charAt(i);
+				if (Character.isWhitespace(value.charAt(0))
+						|| Character.isWhitespace(value.charAt(value.length() - 1))) {
+					needsQuotes = true;
+				}
 
-					if ((Character.isWhitespace(nextChar) && nextChar != ' ')
-							|| "#&*!|>'\"%@`".indexOf(nextChar) > -1) {
-						needsQuotes = true;
-						break;
-					}
+				if (!needsQuotes) {
+					for (int i = 0; i < value.length(); i++) {
+						final char nextChar = value.charAt(i);
 
-					if (":{}[]".indexOf(nextChar) > -1) {
-						if (value.length() > i + 1 && " \t\n\r".indexOf(value.charAt(i + 1)) > -1) {
+						if ((Character.isWhitespace(nextChar) && nextChar != ' ')
+								|| "#&*!|>'\"%@`".indexOf(nextChar) > -1) {
 							needsQuotes = true;
 							break;
+						}
+
+						if (":{}[]".indexOf(nextChar) > -1) {
+							if (value.length() > i + 1 && " \t\n\r".indexOf(value.charAt(i + 1)) > -1) {
+								needsQuotes = true;
+								break;
+							}
 						}
 					}
 				}
@@ -430,19 +444,26 @@ public class YamlWriter implements Closeable {
 			if (alwaysQuoteStringValues) {
 				needsQuotes = true;
 			} else {
-				for (int i = 0; i < value.length(); i++) {
-					final char nextChar = value.charAt(i);
+				if (Character.isWhitespace(value.charAt(0))
+						|| Character.isWhitespace(value.charAt(value.length() - 1))) {
+					needsQuotes = true;
+				}
 
-					if ((Character.isWhitespace(nextChar) && nextChar != ' ')
-							|| "#&*!|>'\"%@`".indexOf(nextChar) > -1) {
-						needsQuotes = true;
-						break;
-					}
+				if (!needsQuotes) {
+					for (int i = 0; i < value.length(); i++) {
+						final char nextChar = value.charAt(i);
 
-					if (":{}[]".indexOf(nextChar) > -1) {
-						if (value.length() > i + 1 && " \t\n\r".indexOf(value.charAt(i + 1)) > -1) {
+						if ((Character.isWhitespace(nextChar) && nextChar != ' ')
+								|| "#&*!|>'\"%@`".indexOf(nextChar) > -1) {
 							needsQuotes = true;
 							break;
+						}
+
+						if (":{}[]".indexOf(nextChar) > -1) {
+							if (value.length() > i + 1 && " \t\n\r".indexOf(value.charAt(i + 1)) > -1) {
+								needsQuotes = true;
+								break;
+							}
 						}
 					}
 				}

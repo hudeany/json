@@ -1,0 +1,48 @@
+- column integer: 1
+  column_double: 123.456
+  column_varchar: " aBcDeF123_1"
+  column_clob: " aBcDeF1234"
+  column_timestamp: 01.02.2003 11:12:13
+  column_date:  01.03.2003 21:22:23
+- column integer: 1
+  column_double: 123.456
+  column_varchar: null
+  column_clob: " aBcDeF1235_1"
+  column_timestamp: 01.02.2003 11:12:13
+  column_date:  01.03.2003 21:22:23
+- column integer: 2
+  column_double: 123.456
+  column_varchar: " aBcDeF123_2"
+  column_clob: " aBcDeF1234"
+  column_timestamp: 01.02.2003 11:12:13
+  column_date:  01.03.2003 21:22:23
+- column integer: 2
+  column_double: 123.456
+  column_varchar: null
+  column_clob: " aBcDeF1235_2"
+  column_timestamp: 01.02.2003 11:12:13
+  column_date:  01.03.2003 21:22:23
+- column integer: 3
+  column_double: 123.456
+  column_varchar: " aBcDeF123_3"
+  column_clob: " aBcDeF1234"
+  column_timestamp: 01.02.2003 11:12:13
+  column_date:  01.03.2003 21:22:23
+- column integer: 3
+  column_double: 123.456
+  column_varchar: null
+  column_clob: " aBcDeF1235_3"
+  column_timestamp: 01.02.2003 11:12:13
+  column_date:  01.03.2003 21:22:23
+- column integer: 4
+  column_double: 123.456
+  column_varchar: null
+  column_clob: " aBcDeF1235_4"
+  column_timestamp: 01.02.2003 11:12:13
+  column_date:  01.03.2003 21:22:23
+- column integer: 5
+  column_double: 123.456
+  column_varchar: " aBcDeF123_5"
+  column_clob: " aBcDeF1234"
+  column_timestamp: 01.02.2003 11:12:13
+  column_date:  01.03.2003 21:22:23
