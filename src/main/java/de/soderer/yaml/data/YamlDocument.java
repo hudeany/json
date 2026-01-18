@@ -18,24 +18,26 @@ public class YamlDocument {
 		this.root = root;
 	}
 
-	public void addDirective(final YamlDirective<?> directive) {
+	public YamlDocument addDirective(final YamlDirective<?> directive) {
 		if (directives == null) {
 			directives = new ArrayList<>();
 		}
 		directives.add(directive);
+		return this;
 	}
 
 	public List<YamlDirective<?>> getDirectives() {
 		return directives;
 	}
 
-	public void addLeadingComment(final String comment) {
+	public YamlDocument addLeadingComment(final String comment) {
 		if (comment != null && !comment.isEmpty()) {
 			if (leadingComments == null) {
 				leadingComments = new ArrayList<>();
 			}
 			leadingComments.add(comment);
 		}
+		return this;
 	}
 
 	public List<String> getLeadingComments() {
@@ -46,8 +48,9 @@ public class YamlDocument {
 		return root;
 	}
 
-	public void setRoot(final YamlNode root) {
+	public YamlDocument setRoot(final YamlNode root) {
 		this.root = root;
+		return this;
 	}
 
 	@Override
