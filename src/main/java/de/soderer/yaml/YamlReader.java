@@ -44,6 +44,7 @@ public class YamlReader extends BasicReadAheadReader {
 	private Boolean documentContentStarted = null;
 	protected JsonPath currentPath = new JsonPath();
 	protected JsonPath searchPath = null;
+	protected int searchPathWasFoundAtLevel = -1;
 
 	public YamlReader(final InputStream inputStream) throws Exception {
 		this(inputStream, null);
@@ -58,7 +59,7 @@ public class YamlReader extends BasicReadAheadReader {
 	}
 
 	public YamlDocument readDocument() throws Exception {
-		if (searchPath != null) {
+		if (searchPath != null || searchPathWasFoundAtLevel >= 0) {
 			throw new Exception("Search path was already started before by method 'readUpToPath'");
 		} else {
 			return parseDocument();
@@ -84,37 +85,32 @@ public class YamlReader extends BasicReadAheadReader {
 					document.addDirective(readDirective());
 					documentContentStarted = false;
 				} else if (peekCharMatch('-')) {
-					if (peekNextCharMatch('-')) {
+					if (searchPath != null && getCurrentPath().equals(searchPath)) {
+						throw new FoundPathEvent("Path '" + searchPath + "' was found");
+					}
+					if (peekNextCharMatch(1, '-') && peekNextCharMatch(2, '-')) {
 						readChar();
-						if (peekNextCharMatch('-')) {
-							readChar();
-							readChar();
+						readChar();
+						readChar();
 
-							skipBlanks();
-							if (peekCharMatch('#')) {
-								final String documentComment = readInlineComment();
-								document.addLeadingComment(documentComment);
-							}
+						skipBlanks();
+						if (peekCharMatch('#')) {
+							final String documentComment = readInlineComment();
+							document.addLeadingComment(documentComment);
+						}
 
-							if (documentContentStarted != null && documentContentStarted) {
-								// Start of next document
-								break;
-							} else if (documentContentStarted != null && !documentContentStarted) {
-								documentContentStarted = true;
-							} else {
-								documentContentStarted = true;
-								skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-								document.setRoot(parseYamlNode());
-								return document;
-							}
+						if (documentContentStarted != null && documentContentStarted) {
+							// Start of next document
+							break;
 						} else if (documentContentStarted != null && !documentContentStarted) {
-							throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn() - 1);
+							documentContentStarted = true;
 						} else {
 							documentContentStarted = true;
-							document.setRoot(parseBlockMappingOrScalar('-', null));
+							skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+							document.setRoot(parseYamlNode());
 							return document;
 						}
-					} else if (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n')) {
+					} else if (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n')) {
 						if (documentContentStarted != null && !documentContentStarted) {
 							throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
 						} else {
@@ -124,37 +120,24 @@ public class YamlReader extends BasicReadAheadReader {
 					} else if (documentContentStarted != null && !documentContentStarted) {
 						throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
 					} else {
-						document.setRoot(parseBlockMappingOrScalar(null, null));
+						document.setRoot(parseBlockMappingOrScalar(null));
 						return document;
 					}
-				} else if (peekCharMatch('.')) {
-					if (peekNextCharMatch('.')) {
-						readChar();
-						if (peekNextCharMatch('.')) {
-							readChar();
-							readChar();
-							skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-							documentContentStarted = null;
-							// End of document
-							break;
-						} else if (documentContentStarted != null && !documentContentStarted) {
-							throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
-						} else {
-							documentContentStarted = true;
-							document.setRoot(parseBlockMappingOrScalar('.', null));
-							return document;
-						}
-					} else if (documentContentStarted != null && !documentContentStarted) {
-						throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
-					} else {
-						documentContentStarted = true;
-						document.setRoot(parseBlockMappingOrScalar(null, null));
-						return document;
-					}
+				} else if (peekCharMatch('.') && peekNextCharMatch(1, '.') && peekNextCharMatch(2, '.')) {
+					readChar();
+					readChar();
+					readChar();
+					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+					documentContentStarted = null;
+					// End of document
+					break;
 				} else if (documentContentStarted != null && !documentContentStarted) {
 					throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
 				} else {
 					documentContentStarted = true;
+					if (searchPath != null && getCurrentPath().equals(searchPath)) {
+						throw new FoundPathEvent("Path '" + searchPath + "' was found");
+					}
 					document.setRoot(parseYamlNode());
 					return document;
 				}
@@ -177,6 +160,9 @@ public class YamlReader extends BasicReadAheadReader {
 
 		if (!getCurrentPath().equals(searchPath)) {
 			throw new Exception("Path '" + yamlPathString + "' is not part of the YAML data");
+		} else {
+			searchPathWasFoundAtLevel = getNumberOfIndentationChars();
+			searchPath = null;
 		}
 	}
 
@@ -198,9 +184,9 @@ public class YamlReader extends BasicReadAheadReader {
 		try {
 			if (isEOF()) {
 				return null;
-			} else if (getCurrentPath().equals(searchPath)) {
-				final YamlSequence sequence = (YamlSequence) parseYamlNode();
-				return sequence.get(0);
+			} else if (searchPathWasFoundAtLevel >= 0 && getNumberOfIndentationChars() == searchPathWasFoundAtLevel) {
+				final YamlNode nextSequenceItem = readNextSequenceItem();
+				return nextSequenceItem;
 			} else {
 				return null;
 			}
@@ -366,7 +352,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 	private YamlNode parseYamlNode() throws Exception {
 		String datatype = null;
-		if (peekCharMatch('!') && peekNextCharMatch('!')) {
+		if (peekCharMatch('!') && peekNextCharMatch(1, '!')) {
 			readChar();
 			readChar();
 			datatype = readUpToNext(false, null, ' ', '\t', '\n');
@@ -374,7 +360,7 @@ public class YamlReader extends BasicReadAheadReader {
 			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 		}
 
-		if (peekCharMatch('-') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
+		if (peekCharMatch('-') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
 			final YamlNode sequence = parseBlockSequence();
 			return sequence;
 		} else if (peekCharMatch('&')) {
@@ -411,7 +397,7 @@ public class YamlReader extends BasicReadAheadReader {
 			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 
 			if (peekCharMatch(':') && flowStartIndentations + 1 < getCurrentColumn()) {
-				return parseBlockMappingOrScalar(null, flowMapping);
+				return parseBlockMappingOrScalar(flowMapping);
 			} else {
 				return flowMapping;
 			}
@@ -432,12 +418,12 @@ public class YamlReader extends BasicReadAheadReader {
 			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 
 			if (peekCharMatch(':') && flowStartIndentations + 1 < getCurrentColumn()) {
-				return parseBlockMappingOrScalar(null, flowSequence);
+				return parseBlockMappingOrScalar(flowSequence);
 			} else {
 				return flowSequence;
 			}
 		} else {
-			final YamlNode mappingOrScalar = parseBlockMappingOrScalar(null, null);
+			final YamlNode mappingOrScalar = parseBlockMappingOrScalar(null);
 			if (datatype == null) {
 				return mappingOrScalar;
 			} else {
@@ -529,92 +515,97 @@ public class YamlReader extends BasicReadAheadReader {
 	}
 
 	private YamlNode parseBlockSequence() throws Exception {
-		if (peekCharNotMatch('-') || (peekNextCharNotMatch(' ') && peekNextCharNotMatch('\t') && peekNextCharNotMatch('\n'))) {
+		if (peekCharNotMatch('-') || (peekNextCharNotMatch(1, ' ') && peekNextCharNotMatch(1, '\t') && peekNextCharNotMatch(1, '\n'))) {
 			throw new YamlParseException("Expected sequence start not found", getCurrentLine(), getCurrentColumn());
 		}
 
 		final int sequenceIndentation = getNumberOfIndentationChars();
 
 		final YamlSequence sequence = new YamlSequence();
-		updateJsonPath(YamlToken.YamlSequence_Start, null);
+		updatePath(YamlToken.YamlSequence_Start, null);
 
-		while (isNotEOF() && getNumberOfIndentationChars() == sequenceIndentation) {
-			List<String> interimPendingLeadingComments = pendingLeadingComments;
-			pendingLeadingComments = new ArrayList<>();
-
-			if (peekCharMatch('-') && (peekNextCharMatch(' ') || peekNextCharMatch('\t'))) {
+		while (isNotEOF() && peekCharMatch('-') && getNumberOfIndentationChars() == sequenceIndentation) {
+			if (peekCharMatch('-') && peekNextCharMatch(1, '-') && peekNextCharMatch(2, '-')) {
 				readChar();
 				readChar();
-				skipBlanks();
-
-				String pendingAnchor = null;
-				if (peekCharMatch('&')) {
-					pendingAnchor = parseAnchor();
-				}
-
-				String inlineComment = null;
-				if (peekCharMatch('#')) {
-					inlineComment = readInlineComment();
-				}
-
-				indentations.add(2);
-				skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-
-				final YamlNode nextItemNode = parseYamlNode();
-				nextItemNode.setInlineComment(inlineComment);
-				if (pendingAnchor != null) {
-					nextItemNode.setAnchorName(pendingAnchor);
-					pendingAnchor = null;
-				}
-
-				if (!interimPendingLeadingComments.isEmpty()) {
-					for (final String commentLine : interimPendingLeadingComments) {
-						nextItemNode.addLeadingComment(commentLine);
-					}
-					interimPendingLeadingComments = new ArrayList<>();
-				}
-
-				sequence.add(nextItemNode);
-			} else if (peekCharMatch('-') && (peekNextCharMatch('\n'))) {
 				readChar();
-				skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-
-				final YamlNode nextItemNode = parseYamlNode();
-
-				if (!interimPendingLeadingComments.isEmpty()) {
-					for (final String commentLine : interimPendingLeadingComments) {
-						nextItemNode.addLeadingComment(commentLine);
-					}
-					interimPendingLeadingComments = new ArrayList<>();
-				}
-
-				sequence.add(nextItemNode);
-			} else if (peekCharMatch('-') && (peekNextCharMatch('-'))) {
+				documentContentStarted = true;
+			} else if (peekCharMatch('.') && peekNextCharMatch(1, '.') && peekNextCharMatch(2, '.')) {
 				readChar();
-				if (peekNextCharMatch('-')) {
-					readChar();
-					readChar();
-					documentContentStarted = true;
-					return sequence;
-				}
-			} else if (peekCharMatch('.') && (peekNextCharMatch('.'))) {
 				readChar();
-				if (peekNextCharMatch('.')) {
-					readChar();
-					readChar();
-					documentContentStarted = null;
-					return sequence;
-				}
+				readChar();
+				documentContentStarted = null;
 			} else {
-				return sequence;
+				final YamlNode nextItemNode = readNextSequenceItem();
+				if (nextItemNode != null) {
+					sequence.add(nextItemNode);
+				} else {
+					break;
+				}
 			}
 		}
 
-		updateJsonPath(YamlToken.YamlSequence_End, null);
+		updatePath(YamlToken.YamlSequence_End, null);
 		return sequence;
 	}
 
-	private YamlNode parseBlockMappingOrScalar(final Character additionalLeadingChar, final YamlNode firstKeyNode) throws Exception {
+	private YamlNode readNextSequenceItem() throws Exception {
+		List<String> interimPendingLeadingComments = pendingLeadingComments;
+		pendingLeadingComments = new ArrayList<>();
+
+		if (peekCharMatch('-') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t'))) {
+			readChar();
+			readChar();
+			skipBlanks();
+
+			String pendingAnchor = null;
+			if (peekCharMatch('&')) {
+				pendingAnchor = parseAnchor();
+			}
+
+			String inlineComment = null;
+			if (peekCharMatch('#')) {
+				inlineComment = readInlineComment();
+			}
+
+			indentations.add(2);
+			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+
+			final YamlNode nextItemNode = parseYamlNode();
+			nextItemNode.setInlineComment(inlineComment);
+			if (pendingAnchor != null) {
+				nextItemNode.setAnchorName(pendingAnchor);
+				pendingAnchor = null;
+			}
+
+			if (!interimPendingLeadingComments.isEmpty()) {
+				for (final String commentLine : interimPendingLeadingComments) {
+					nextItemNode.addLeadingComment(commentLine);
+				}
+				interimPendingLeadingComments = new ArrayList<>();
+			}
+
+			return nextItemNode;
+		} else if (peekCharMatch('-') && (peekNextCharMatch(1, '\n'))) {
+			readChar();
+			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+
+			final YamlNode nextItemNode = parseYamlNode();
+
+			if (!interimPendingLeadingComments.isEmpty()) {
+				for (final String commentLine : interimPendingLeadingComments) {
+					nextItemNode.addLeadingComment(commentLine);
+				}
+				interimPendingLeadingComments = new ArrayList<>();
+			}
+
+			return nextItemNode;
+		} else {
+			return null;
+		}
+	}
+
+	private YamlNode parseBlockMappingOrScalar(final YamlNode firstKeyNode) throws Exception {
 		final int mappingIndentation = getNumberOfIndentationChars();
 
 		YamlNode keyOrScalarNode;
@@ -637,13 +628,13 @@ public class YamlReader extends BasicReadAheadReader {
 				keyOrScalarNode = parseFlowSequence();
 			} else if (peekCharMatch('{')) {
 				keyOrScalarNode = parseFlowMapping();
-			} else if (peekCharMatch('?') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
+			} else if (peekCharMatch('?') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
 				readChar();
 				skipBlanks();
 				indentations.add(2);
 				keyOrScalarNode = parseYamlNode();
 			} else {
-				keyOrScalarNode = readUnquotedScalarString(additionalLeadingChar);
+				keyOrScalarNode = readUnquotedScalarString();
 			}
 
 			if (!pendingLeadingComments.isEmpty()) {
@@ -656,7 +647,7 @@ public class YamlReader extends BasicReadAheadReader {
 			skipBlanks();
 		}
 
-		if (peekCharMatch(':') && (peekNextCharMatch(' ') || peekNextCharMatch('\t')) && mappingIndentation < getCurrentColumn()) {
+		if (peekCharMatch(':') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t')) && mappingIndentation < getCurrentColumn()) {
 			readChar();
 			readChar();
 			skipBlanks();
@@ -682,8 +673,8 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 
 			final YamlMapping mapping = new YamlMapping();
-			updateJsonPath(YamlToken.YamlMapping_Start, null);
-			updateJsonPath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
+			updatePath(YamlToken.YamlMapping_Start, null);
+			updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
 
 			YamlNode valueNode = parseYamlNode();
 			if (pendingAnchor != null) {
@@ -694,24 +685,20 @@ public class YamlReader extends BasicReadAheadReader {
 			mapping.add(keyOrScalarNode, valueNode);
 
 			while (isNotEOF() && getNumberOfIndentationChars() == mappingIndentation) {
-				if (peekCharMatch('.') && (peekNextCharMatch('.'))) {
+				if (peekCharMatch('.') && peekNextCharMatch(1, '.') && peekNextCharMatch(2, '.')) {
 					readChar();
-					if (peekNextCharMatch('.')) {
-						readChar();
-						readChar();
-						documentContentStarted = null;
-						skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-						return mapping;
-					}
-				} else if (peekCharMatch('-') && (peekNextCharMatch('-'))) {
 					readChar();
-					if (peekNextCharMatch('-')) {
-						readChar();
-						readChar();
-						documentContentStarted = true;
-						skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-						return mapping;
-					}
+					readChar();
+					documentContentStarted = null;
+					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+					return mapping;
+				} else if (peekCharMatch('-') && peekNextCharMatch(1, '-') && peekNextCharMatch(2, '-')) {
+					readChar();
+					readChar();
+					readChar();
+					documentContentStarted = true;
+					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+					return mapping;
 				} else if (peekCharMatch('\"')) {
 					keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING);
 					skipBlanks();
@@ -724,13 +711,13 @@ public class YamlReader extends BasicReadAheadReader {
 					if (peekCharMatch('#')) {
 						keyOrScalarNode.setInlineComment(readInlineComment());
 					}
-				} else if (peekCharMatch('?') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
+				} else if (peekCharMatch('?') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
 					readChar();
 					skipBlanks();
 					indentations.add(2);
 					keyOrScalarNode = parseYamlNode();
 				} else {
-					keyOrScalarNode = readUnquotedScalarString(null);
+					keyOrScalarNode = readUnquotedScalarString();
 
 					if ("...".equals(((YamlScalar) keyOrScalarNode).getValueString())) {
 						documentContentStarted = null;
@@ -753,7 +740,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 				skipBlanks();
 
-				if (peekCharMatch(':') && (peekNextCharMatch(' ') || peekNextCharMatch('\t')) && mappingIndentation < getCurrentColumn()) {
+				if (peekCharMatch(':') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t')) && mappingIndentation < getCurrentColumn()) {
 					readChar();
 					readChar();
 					skipBlanks();
@@ -770,7 +757,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 
-					updateJsonPath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
+					updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
 
 					valueNode = parseYamlNode();
 					if (pendingAnchor != null) {
@@ -779,7 +766,7 @@ public class YamlReader extends BasicReadAheadReader {
 					}
 
 					mapping.add(keyOrScalarNode, valueNode);
-				} else if (peekCharMatch(':') && (peekNextCharMatch('\n')) && mappingIndentation < getCurrentColumn()) {
+				} else if (peekCharMatch(':') && (peekNextCharMatch(1, '\n')) && mappingIndentation < getCurrentColumn()) {
 					readChar();
 					skipBlanks();
 
@@ -791,7 +778,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 
-					updateJsonPath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
+					updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
 
 					valueNode = parseYamlNode();
 					if (pendingAnchor != null) {
@@ -807,9 +794,9 @@ public class YamlReader extends BasicReadAheadReader {
 
 			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 
-			updateJsonPath(YamlToken.YamlMapping_End, null);
+			updatePath(YamlToken.YamlMapping_End, null);
 			return mapping;
-		} else if (peekCharMatch(':') && peekNextCharMatch('\n') && mappingIndentation < getCurrentColumn()) {
+		} else if (peekCharMatch(':') && peekNextCharMatch(1, '\n') && mappingIndentation < getCurrentColumn()) {
 			readChar();
 
 			indentations.add(1);
@@ -822,8 +809,8 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 
 			final YamlMapping mapping = new YamlMapping();
-			updateJsonPath(YamlToken.YamlMapping_Start, null);
-			updateJsonPath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
+			updatePath(YamlToken.YamlMapping_Start, null);
+			updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
 
 			YamlNode valueNode = parseYamlNode();
 			if (pendingAnchor != null) {
@@ -834,24 +821,20 @@ public class YamlReader extends BasicReadAheadReader {
 			mapping.add(keyOrScalarNode, valueNode);
 
 			while (isNotEOF() && getNumberOfIndentationChars() == mappingIndentation) {
-				if (peekCharMatch('.') && (peekNextCharMatch('.'))) {
+				if (peekCharMatch('.') && peekNextCharMatch(1, '.') && peekNextCharMatch(2, '.')) {
 					readChar();
-					if (peekNextCharMatch('.')) {
-						readChar();
-						readChar();
-						documentContentStarted = null;
-						skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-						return mapping;
-					}
-				} else if (peekCharMatch('-') && (peekNextCharMatch('-'))) {
 					readChar();
-					if (peekNextCharMatch('-')) {
-						readChar();
-						readChar();
-						documentContentStarted = true;
-						skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-						return mapping;
-					}
+					readChar();
+					documentContentStarted = null;
+					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+					return mapping;
+				} else if (peekCharMatch('-') && peekNextCharMatch(1, '-') && peekNextCharMatch(2, '-')) {
+					readChar();
+					readChar();
+					readChar();
+					documentContentStarted = true;
+					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+					return mapping;
 				} else if (peekCharMatch('\"')) {
 					keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING);
 					skipBlanks();
@@ -864,24 +847,13 @@ public class YamlReader extends BasicReadAheadReader {
 					if (peekCharMatch('#')) {
 						keyOrScalarNode.setInlineComment(readInlineComment());
 					}
-				} else if (peekCharMatch('?') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
+				} else if (peekCharMatch('?') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
 					readChar();
 					skipBlanks();
 					indentations.add(2);
 					keyOrScalarNode = parseYamlNode();
 				} else {
-					keyOrScalarNode = readUnquotedScalarString(null);
-
-					if ("...".equals(((YamlScalar) keyOrScalarNode).getValueString())) {
-						documentContentStarted = null;
-						return mapping;
-					} else if ("---".equals(((YamlScalar) keyOrScalarNode).getValueString())) {
-						if (keyOrScalarNode.getInlineComment() != null) {
-							pendingLeadingComments.add(keyOrScalarNode.getInlineComment());
-						}
-						documentContentStarted = true;
-						return mapping;
-					}
+					keyOrScalarNode = readUnquotedScalarString();
 				}
 				final YamlNode keyOrScalarNode2 = keyOrScalarNode;
 
@@ -894,7 +866,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 				skipBlanks();
 
-				if (peekCharMatch(':') && (peekNextCharMatch(' ') || peekNextCharMatch('\t')) && mappingIndentation < getCurrentColumn()) {
+				if (peekCharMatch(':') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t')) && mappingIndentation < getCurrentColumn()) {
 					readChar();
 					readChar();
 					skipBlanks();
@@ -911,7 +883,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 
-					updateJsonPath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
+					updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
 
 					valueNode = parseYamlNode();
 					if (pendingAnchor != null) {
@@ -920,7 +892,7 @@ public class YamlReader extends BasicReadAheadReader {
 					}
 
 					mapping.add(keyOrScalarNode, valueNode);
-				} else if (peekCharMatch(':') && (peekNextCharMatch('\n')) && mappingIndentation < getCurrentColumn()) {
+				} else if (peekCharMatch(':') && (peekNextCharMatch(1, '\n')) && mappingIndentation < getCurrentColumn()) {
 					readChar();
 
 					indentations.add(1);
@@ -933,7 +905,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 
-					updateJsonPath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
+					updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
 
 					valueNode = parseYamlNode();
 					if (pendingAnchor != null) {
@@ -949,7 +921,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 
-			updateJsonPath(YamlToken.YamlMapping_End, null);
+			updatePath(YamlToken.YamlMapping_End, null);
 			return mapping;
 		} else {
 			String pendingAnchor = null;
@@ -964,7 +936,7 @@ public class YamlReader extends BasicReadAheadReader {
 				pendingAnchor = null;
 			}
 
-			updateJsonPath(YamlToken.YamlScalar, null);
+			updatePath(YamlToken.YamlScalar, null);
 			return keyOrScalarNode;
 		}
 	}
@@ -979,7 +951,7 @@ public class YamlReader extends BasicReadAheadReader {
 		skipBlanks();
 
 		final YamlMapping mapping = new YamlMapping(true);
-		updateJsonPath(YamlToken.YamlMapping_Start, null);
+		updatePath(YamlToken.YamlMapping_Start, null);
 
 		if (!pendingLeadingComments.isEmpty()) {
 			for (final String commentLine : pendingLeadingComments) {
@@ -1035,7 +1007,7 @@ public class YamlReader extends BasicReadAheadReader {
 				readChar();
 				skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 
-				updateJsonPath(YamlToken.YamlMapping_End, null);
+				updatePath(YamlToken.YamlMapping_End, null);
 				return mapping;
 			} else if (peekCharMatch(',')) {
 				readChar();
@@ -1055,10 +1027,10 @@ public class YamlReader extends BasicReadAheadReader {
 				}
 
 				mapping.add(keyNode, new YamlScalar(null));
-			} else if (peekCharMatch(':') && peekNextCharMatchAny(", \t\n")) {
+			} else if (peekCharMatch(':') && peekNextCharMatchAny(1, ", \t\n")) {
 				indentations.add(1);
 
-				if (peekNextCharMatch(',')) {
+				if (peekNextCharMatch(1, ',')) {
 					readChar();
 					readChar();
 					skipBlanks();
@@ -1071,7 +1043,7 @@ public class YamlReader extends BasicReadAheadReader {
 						keyNode.setInlineComment(readInlineComment());
 					}
 
-					updateJsonPath(YamlToken.YamlMapping_PropertyKey, keyNode);
+					updatePath(YamlToken.YamlMapping_PropertyKey, keyNode);
 
 					final YamlScalar valueNode = new YamlScalar(null);
 
@@ -1082,7 +1054,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 					mapping.add(keyNode, valueNode);
 					continue;
-				} else if (peekNextCharMatch('\n')) {
+				} else if (peekNextCharMatch(1, '\n')) {
 					readChar();
 					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 				} else {
@@ -1176,7 +1148,7 @@ public class YamlReader extends BasicReadAheadReader {
 					if (mapIsClosed) {
 						skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 
-						updateJsonPath(YamlToken.YamlMapping_End, null);
+						updatePath(YamlToken.YamlMapping_End, null);
 						return mapping;
 					}
 				} else {
@@ -1187,7 +1159,7 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 		}
 
-		updateJsonPath(YamlToken.YamlMapping_End, null);
+		updatePath(YamlToken.YamlMapping_End, null);
 		return mapping;
 	}
 
@@ -1201,7 +1173,7 @@ public class YamlReader extends BasicReadAheadReader {
 		skipBlanks();
 
 		final YamlSequence sequence = new YamlSequence(true);
-		updateJsonPath(YamlToken.YamlSequence_Start, null);
+		updatePath(YamlToken.YamlSequence_Start, null);
 
 		if (!pendingLeadingComments.isEmpty()) {
 			for (final String commentLine : pendingLeadingComments) {
@@ -1225,7 +1197,7 @@ public class YamlReader extends BasicReadAheadReader {
 			} else if (peekCharMatch(']')) {
 				readChar();
 				skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-				updateJsonPath(YamlToken.YamlSequence_End, null);
+				updatePath(YamlToken.YamlSequence_End, null);
 				return sequence;
 			} else {
 				itemNode = readFlowScalarString();
@@ -1372,23 +1344,20 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 		}
 
-		updateJsonPath(YamlToken.YamlSequence_End, null);
+		updatePath(YamlToken.YamlSequence_End, null);
 		return sequence;
 	}
 
-	private YamlNode readUnquotedScalarString(final Character additionalLeadingChar) throws Exception {
+	private YamlNode readUnquotedScalarString() throws Exception {
 		String scalarString = "";
 		final int scalarStartIndentations = getNumberOfIndentationChars();
 		String nextScalarStringLine = "";
 		String inlineComment = null;
-		if (additionalLeadingChar != null) {
-			nextScalarStringLine += additionalLeadingChar;
-		}
 		while (isNotEOF()) {
-			if (peekCharMatch(':') && (peekNextCharMatch(' ') || peekNextCharMatch('\t') || peekNextCharMatch('\n'))) {
+			if (peekCharMatch(':') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
 				// Mapping separator ': ' ends Scalar
 				break;
-			} else if ((peekCharMatch(' ') || peekCharMatch('\t') || peekCharMatch('\n')) && peekNextCharMatch('#')) {
+			} else if ((peekCharMatch(' ') || peekCharMatch('\t') || peekCharMatch('\n')) && peekNextCharMatch(1, '#')) {
 				// Comment ' #' ends Scalar
 				if (peekCharMatch(' ') || peekCharMatch('\t')) {
 					readChar();
@@ -1482,7 +1451,7 @@ public class YamlReader extends BasicReadAheadReader {
 			scalarString += readUpToNext(false, null, ",:#{}[]\n".toCharArray());
 
 			// Allow sexagesimal numbers like "190:20:30.15" or text with ':' without following whitespace
-			if (peekCharMatch(':') && (peekNextChar() == null || peekNextCharNotMatchAny(",{}[] \t\n"))) {
+			if (peekCharMatch(':') && (peekNextChar(1) == null || peekNextCharNotMatchAny(1, ",{}[] \t\n"))) {
 				readChar();
 				scalarString += ":";
 			} else {
@@ -1530,7 +1499,7 @@ public class YamlReader extends BasicReadAheadReader {
 			scalar.setInlineComment(inlineComment);
 		}
 
-		updateJsonPath(YamlToken.YamlScalar, null);
+		updatePath(YamlToken.YamlScalar, null);
 		return scalar;
 	}
 
@@ -1601,7 +1570,7 @@ public class YamlReader extends BasicReadAheadReader {
 		return indentations.stream().reduce(0, Integer::sum);
 	}
 
-	private void updateJsonPath(final YamlToken jsonToken, final YamlNode key) throws Exception {
+	private void updatePath(final YamlToken jsonToken, final YamlNode key) throws Exception {
 		if (jsonToken == null) {
 			throw new Exception("Invalid YamlToken: null");
 		}

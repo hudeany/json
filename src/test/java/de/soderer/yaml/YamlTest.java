@@ -48,14 +48,35 @@ public class YamlTest {
 	}
 
 	@Test
+	public void testDbImportItems() throws Exception {
+		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream("yaml/dbimport/inputItems.yaml")) {
+			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
+				yamlReader.readUpToPath("$.items");
+				YamlNode nextYamlNode;
+				int count = 0;
+				while ((nextYamlNode = yamlReader.readNextYamlNode()) != null) {
+					Assert.assertNotNull(nextYamlNode);
+					count++;
+				}
+				Assert.assertEquals(4, count);
+			}
+		} catch (final Exception e) {
+			Assert.fail(e.getMessage());
+		}
+	}
+
+	@Test
 	public void testDbImport() throws Exception {
 		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream("yaml/dbimport/input.yaml")) {
 			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
 				yamlReader.readUpToPath("$");
 				YamlNode nextYamlNode;
+				int count = 0;
 				while ((nextYamlNode = yamlReader.readNextYamlNode()) != null) {
 					Assert.assertNotNull(nextYamlNode);
+					count++;
 				}
+				Assert.assertEquals(4, count);
 			}
 		} catch (final Exception e) {
 			Assert.fail(e.getMessage());

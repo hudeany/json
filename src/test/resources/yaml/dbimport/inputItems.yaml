@@ -1,0 +1,27 @@
+items:
+  - column integer: 1
+    column_double: 123.456
+    column_varchar: " aBcDeF123_5"
+    column_clob: " aBcDeF1234"
+    column_timestamp: 01.02.2003 11:12:13
+    column_date:  01.03.2003 21:22:23
+  - column integer: 2
+    column_double: 123.456
+    column_varchar: " aBcDeF123_5"
+    column_clob: " aBcDeF1234"
+    column_timestamp: 01.02.2003 11:12:13
+    column_date:  01.03.2003 21:22:23
+  - column integer: 3
+    column_double: 123.456
+    column_varchar: " aBcDeF123_5"
+    column_clob: " aBcDeF1234"
+    column_timestamp: 01.02.2003 11:12:13
+    column_date:  01.03.2003 21:22:23
+  - column integer: 4
+    column_double: 123.456
+    column_varchar: " aBcDeF123_5"
+    column_clob: " aBcDeF1234"
+    column_timestamp: 01.02.2003 11:12:13
+    column_date:  01.03.2003 21:22:23
+otherdata:
+  -abc

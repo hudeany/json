@@ -31,16 +31,27 @@ public class BasicReadAheadReader implements Closeable {
 	private long charactersRead = 0;
 	private CountingInputStream countingInputStream;
 
-	private Character currentChar = null;
-	private Character nextChar = null;
+	private final Character[] nextChars;
 	private long currentColumn = 1;
 	private long currentLine = 1;
 
 	public BasicReadAheadReader(final InputStream inputStream) throws Exception {
-		this(inputStream, null);
+		this(inputStream, null, 3);
+	}
+
+	public BasicReadAheadReader(final InputStream inputStream, final int numberOfReadAheadCharacters) throws Exception {
+		this(inputStream, null, numberOfReadAheadCharacters);
 	}
 
 	public BasicReadAheadReader(final InputStream inputStream, final Charset encodingCharset) throws Exception {
+		this(inputStream, encodingCharset, 3);
+	}
+
+	public BasicReadAheadReader(final InputStream inputStream, final Charset encodingCharset, final int numberOfReadAheadCharacters) throws Exception {
+		if (numberOfReadAheadCharacters < 1) {
+			throw new Exception("Invalid size of read ahead buffer. Minimum 1 was: " + numberOfReadAheadCharacters);
+		}
+
 		if (inputStream == null) {
 			throw new Exception("Invalid empty inputStream");
 		} else {
@@ -48,6 +59,8 @@ public class BasicReadAheadReader implements Closeable {
 			encoding = encodingCharset == null ? DEFAULT_ENCODING : encodingCharset;
 			inputReader = new BufferedReader(new InputStreamReader(countingInputStream, encoding));
 		}
+
+		nextChars = new Character[numberOfReadAheadCharacters];
 
 		initializeBuffers();
 	}
@@ -58,14 +71,19 @@ public class BasicReadAheadReader implements Closeable {
 
 	protected void setNormalizeLinebreaks(final boolean normalizeLinebreaks) throws IOException {
 		this.normalizeLinebreaks = normalizeLinebreaks;
+		normalizeLinebreaks();
+	}
 
-		if (normalizeLinebreaks && currentChar != null && nextChar != null) {
-			if (currentChar == '\r' && nextChar == '\n') {
-				currentChar = '\n';
-				readNextChar();
+	private void normalizeLinebreaks() throws IOException {
+		if (normalizeLinebreaks) {
+			for (int i = 0; i < nextChars.length - 2; i++) {
+				if (nextChars[i] != null && nextChars[i + 1] != null) {
+					if (nextChars[0] == '\r' && nextChars[1] == '\n') {
+						nextChars[0] = '\n';
+						readNextChars(i);
+					}
+				}
 			}
-		} else if (normalizeLinebreaks && currentChar != null && currentChar == '\r') {
-			currentChar = '\n';
 		}
 	}
 
@@ -88,42 +106,23 @@ public class BasicReadAheadReader implements Closeable {
 			if (currentCharInt == BOM_UTF_8_CHAR && encoding == StandardCharsets.UTF_8) {
 				currentCharInt = inputReader.read();
 				if (currentCharInt != -1) {
-					currentChar = (char) currentCharInt;
-					readNextChar();
+					nextChars[0] = (char) currentCharInt;
 				}
 			} else if (currentCharInt == BOM_UTF_8_CHAR_ISO_8859 && encoding.displayName().toUpperCase().startsWith("ISO-8859-")) {
 				throw new IOException("Data encoding \"" + encoding + "\" is invalid: UTF-8 BOM detected");
 			} else {
-				currentChar = (char) currentCharInt;
-				readNextChar();
+				nextChars[0] = (char) currentCharInt;
 			}
 		}
 
-		if (normalizeLinebreaks && currentChar != null && nextChar != null) {
-			if (currentChar == '\r' && nextChar == '\n') {
-				currentChar = '\n';
-				readNextChar();
-			}
-		} else if (normalizeLinebreaks && currentChar != null && currentChar == '\r') {
-			currentChar = '\n';
+		for (int i = 1; i < nextChars.length; i++) {
+			readNextChars(1);
 		}
 	}
 
 	protected Character readChar() throws IOException {
-		final Character returnChar = currentChar;
-		currentChar = nextChar;
-		if (currentChar != null) {
-			readNextChar();
-		}
-
-		if (normalizeLinebreaks && currentChar != null && nextChar != null) {
-			if (currentChar == '\r' && nextChar == '\n') {
-				currentChar = '\n';
-				readNextChar();
-			}
-		} else if (normalizeLinebreaks && currentChar != null && currentChar == '\r') {
-			currentChar = '\n';
-		}
+		final Character returnChar = nextChars[0];
+		readNextChars(0);
 
 		if (returnChar != null) {
 			if (returnChar == '\r' || returnChar == '\n') {
@@ -138,29 +137,31 @@ public class BasicReadAheadReader implements Closeable {
 		return returnChar;
 	}
 
-	private void readNextChar() throws IOException {
+	private void readNextChars(final int startIndex) throws IOException {
+		for (int i = startIndex; i < nextChars.length - 1; i++) {
+			nextChars[i] = nextChars[i + 1];
+		}
+
 		final int newNextCharInt = inputReader.read();
 		if (newNextCharInt == -1) {
-			nextChar = null;
+			nextChars[nextChars.length - 1] = null;
 		} else {
-			nextChar = (char) newNextCharInt;
+			nextChars[nextChars.length - 1] = (char) newNextCharInt;
 		}
+
+		normalizeLinebreaks();
 	}
 
 	protected Character peekChar() {
-		return currentChar;
+		return nextChars[0];
 	}
 
 	protected boolean peekCharMatch(final char otherChar) {
-		if (currentChar == null) {
+		if (nextChars[0] == null) {
 			return false;
 		} else {
-			return currentChar == otherChar;
+			return nextChars[0] == otherChar;
 		}
-	}
-
-	protected Character peekNextChar() {
-		return nextChar;
 	}
 
 	protected boolean peekCharNotMatch(final char otherChar) {
@@ -168,10 +169,10 @@ public class BasicReadAheadReader implements Closeable {
 	}
 
 	protected boolean peekCharMatchAny(final String charSequence) {
-		if (currentChar == null || charSequence == null) {
+		if (nextChars[0] == null || charSequence == null) {
 			return false;
 		} else {
-			return charSequence.contains(currentChar.toString());
+			return charSequence.contains(nextChars[0].toString());
 		}
 	}
 
@@ -179,50 +180,54 @@ public class BasicReadAheadReader implements Closeable {
 		return !peekCharMatchAny(charSequence);
 	}
 
-	protected boolean peekNextCharMatch(final char otherChar) {
-		if (nextChar == null) {
+	protected Character peekNextChar(final int indexOfNextChar) {
+		return nextChars[indexOfNextChar];
+	}
+
+	protected boolean peekNextCharMatch(final int indexOfNextChar, final char otherChar) {
+		if (nextChars[indexOfNextChar] == null) {
 			return false;
 		} else if (otherChar == '\n') {
-			return nextChar == '\n' || (normalizeLinebreaks && nextChar == '\r');
+			return nextChars[indexOfNextChar] == '\n' || (normalizeLinebreaks && nextChars[indexOfNextChar] == '\r');
 		} else {
-			return nextChar == otherChar;
+			return nextChars[indexOfNextChar] == otherChar;
 		}
 	}
 
-	protected boolean peekNextCharNotMatch(final char otherChar) {
-		return !peekNextCharMatch(otherChar);
+	protected boolean peekNextCharNotMatch(final int indexOfNextChar, final char otherChar) {
+		return !peekNextCharMatch(indexOfNextChar, otherChar);
 	}
 
-	protected boolean peekNextCharMatchAny(final String charSequence) {
-		if (nextChar == null || charSequence == null) {
+	protected boolean peekNextCharMatchAny(final int indexOfNextChar, final String charSequence) {
+		if (nextChars[indexOfNextChar] == null || charSequence == null) {
 			return false;
 		} else if (normalizeLinebreaks) {
-			return charSequence.replace("\n",  "\n\r").contains(nextChar.toString());
+			return charSequence.replace("\n",  "\n\r").contains(nextChars[indexOfNextChar].toString());
 		} else {
-			return charSequence.contains(nextChar.toString());
+			return charSequence.contains(nextChars[indexOfNextChar].toString());
 		}
 	}
 
-	protected boolean peekNextCharNotMatchAny(final String charSequence) {
-		return !peekNextCharMatchAny(charSequence);
+	protected boolean peekNextCharNotMatchAny(final int indexOfNextChar, final String charSequence) {
+		return !peekNextCharMatchAny(indexOfNextChar, charSequence);
 	}
 
 	protected boolean isEOF() {
-		return currentChar == null;
+		return nextChars[0] == null;
 	}
 
 	protected boolean isNotEOF() {
-		return currentChar != null;
+		return nextChars[0] != null;
 	}
 
 	protected void skipWhitespaces() throws Exception {
-		while (currentChar != null && Character.isWhitespace(currentChar)) {
+		while (nextChars[0] != null && Character.isWhitespace(nextChars[0])) {
 			readChar();
 		}
 	}
 
 	protected void skipWhitespacesInCurrentLine() throws Exception {
-		while (currentChar != null && currentChar != '\r' && currentChar != '\n' && Character.isWhitespace(currentChar)) {
+		while (nextChars[0] != null && nextChars[0] != '\r' && nextChars[0] != '\n' && Character.isWhitespace(nextChars[0])) {
 			readChar();
 		}
 	}
@@ -232,10 +237,10 @@ public class BasicReadAheadReader implements Closeable {
 			return null;
 		} else {
 			String nextLine = "";
-			while (isNotEOF() && currentChar != '\r' && currentChar != '\n') {
+			while (isNotEOF() && nextChars[0] != '\r' && nextChars[0] != '\n') {
 				nextLine += readChar();
 			}
-			if (currentChar == '\r' || currentChar == '\n') {
+			if (nextChars[0] == '\r' || nextChars[0] == '\n') {
 				readChar();
 			}
 			return nextLine;
@@ -358,7 +363,7 @@ public class BasicReadAheadReader implements Closeable {
 						unescapedChar = (char) Integer.parseInt(unicode.toString(), 16);
 					}
 				} else {
-					throw new Exception("Invalid escape sequence at character index " + getCurrentColumn() + " in line " + getCurrentLine() + " ('" + escapeCharacter + currentChar + "')");
+					throw new Exception("Invalid escape sequence at character index " + getCurrentColumn() + " in line " + getCurrentLine() + " ('" + escapeCharacter + nextChars[0] + "')");
 				}
 				returnValue += unescapedChar;
 			} else if (escapeCharacter != null && escapeCharacter == peekChar()) {
@@ -388,7 +393,7 @@ public class BasicReadAheadReader implements Closeable {
 				while (isNotEOF()) {
 					if (peekCharNotMatch(quoteChar)) {
 						returnValue += readChar();
-					} else if (peekCharMatch(quoteChar) && peekNextCharMatch(quoteChar)) {
+					} else if (peekCharMatch(quoteChar) && peekNextCharMatch(1, quoteChar)) {
 						returnValue += readChar();
 						readChar();
 					} else {
@@ -426,8 +431,8 @@ public class BasicReadAheadReader implements Closeable {
 		closeQuietly(countingInputStream);
 		countingInputStream = null;
 
-		currentChar = null;
-		nextChar = null;
+		nextChars[0] = null;
+		nextChars[1] = null;
 		currentColumn = 1;
 		currentLine = 1;
 	}

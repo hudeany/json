@@ -34,13 +34,8 @@ public class YamlDatasetReadTest {
 			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
 				yamlReader.readUpToPath("$.level1");
 
-				try {
-					yamlReader.readNextYamlNode();
-					Assert.fail("Missing expected exception");
-				} catch (final Exception e) {
-					// Expected exception
-					Assert.assertEquals("Cannot read items of path", e.getMessage());
-				}
+				final YamlNode nodeMustBeNull = yamlReader.readNextYamlNode();
+				Assert.assertNull(nodeMustBeNull);
 			}
 		}
 	}
