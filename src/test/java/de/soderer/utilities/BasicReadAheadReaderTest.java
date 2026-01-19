@@ -25,6 +25,9 @@ public class BasicReadAheadReaderTest extends BasicReadAheadReader {
 		try {
 			Assert.assertEquals(1, getCurrentLine());
 			Assert.assertEquals(1, getCurrentColumn());
+			Assert.assertTrue(peekCharMatch('T'));
+			Assert.assertTrue(peekNextCharMatch(1, 'e'));
+			Assert.assertTrue(peekNextCharMatch(2, 's'));
 
 			final String testText1 = readUpToNext(false, null, "\r\n".toCharArray());
 			Assert.assertEquals("Test line 1", testText1);
@@ -46,12 +49,18 @@ public class BasicReadAheadReaderTest extends BasicReadAheadReader {
 
 			final char nextChar2 = readChar();
 			Assert.assertEquals('\n', nextChar2);
+			Assert.assertTrue(peekCharMatch('T'));
+			Assert.assertTrue(peekNextCharMatch(1, 'e'));
+			Assert.assertTrue(peekNextCharMatch(2, 's'));
 
 			Assert.assertEquals(3, getCurrentLine());
 			Assert.assertEquals(1, getCurrentColumn());
 
 			final String testText3 = readUpToNext(false, null, "\r\n".toCharArray());
 			Assert.assertEquals("Testline3", testText3);
+			Assert.assertTrue(peekCharMatch('\n'));
+			Assert.assertNull(peekNextChar(1));
+			Assert.assertNull(peekNextChar(2));
 
 			Assert.assertEquals(3, getCurrentLine());
 			Assert.assertEquals(10, getCurrentColumn());

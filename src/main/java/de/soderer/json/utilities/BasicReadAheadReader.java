@@ -77,10 +77,12 @@ public class BasicReadAheadReader implements Closeable {
 	private void normalizeLinebreaks() throws IOException {
 		if (normalizeLinebreaks) {
 			for (int i = 0; i < nextChars.length - 2; i++) {
-				if (nextChars[i] != null && nextChars[i + 1] != null) {
-					if (nextChars[0] == '\r' && nextChars[1] == '\n') {
-						nextChars[0] = '\n';
-						readNextChars(i);
+				if (nextChars[i] != null && nextChars[i] == '\r') {
+					if (nextChars[i + 1] != null && nextChars[i + 1] == '\n') {
+						nextChars[i] = '\n';
+						readNextChars(i + 1);
+					} else {
+						nextChars[i] = '\n';
 					}
 				}
 			}
