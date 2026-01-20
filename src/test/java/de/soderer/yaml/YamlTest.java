@@ -163,6 +163,21 @@ public class YamlTest {
 	}
 
 	@Test
+	public void testReceipt() throws Exception {
+		roundTripMultipleDocumentsInSingleFile("yaml/receipt/input.yaml", "yaml/receipt/output.yaml", false);
+	}
+
+	@Test
+	public void testSimpleFlowSequence() throws Exception {
+		roundTripMultipleDocumentsInSingleFile("yaml/simpleFlowSequence/input.yaml", "yaml/simpleFlowSequence/output.yaml", false);
+	}
+
+	@Test
+	public void testSimpleSequenceEmpty() throws Exception {
+		roundTripMultipleDocumentsInSingleFile("yaml/simpleSequenceEmpty/input.yaml", "yaml/simpleSequenceEmpty/output.yaml", false);
+	}
+
+	@Test
 	public void testConverter() throws Exception {
 		final String inputDataFileNamem = "yaml/converter/input.yaml";
 		final String outputDataFileName = "yaml/converter/outputWindowsLines.yaml";

@@ -524,4 +524,9 @@ public class BasicReadAheadReader implements Closeable {
 	public long getCharactersRead() {
 		return charactersRead;
 	}
+
+	protected Character readNextNonWhitespace() throws Exception {
+		skipWhitespaces();
+		return readChar();
+	}
 }
