@@ -942,21 +942,6 @@ public class YamlWriter implements Closeable {
 		return this;
 	}
 
-	private static boolean mustStartInNewLine(final YamlMapping mapping) {
-		if (mapping.getAnchorName() != null) {
-			return true;
-		} else {
-			// Only check for first entry
-			for (final Entry<YamlNode, YamlNode> entry : mapping.entrySet()) {
-				if (entry.getKey().getLeadingComments() != null && !entry.getKey().getLeadingComments().isEmpty()) {
-					return true;
-				}
-			}
-
-			return false;
-		}
-	}
-
 	private static boolean mustStartInNewLine(final YamlSequence sequence) {
 		if (sequence.getAnchorName() != null
 				|| (sequence.getLeadingComments() != null && !sequence.getLeadingComments().isEmpty())) {
@@ -1069,8 +1054,7 @@ public class YamlWriter implements Closeable {
 				write(" # " + alias.getInlineComment() + linebreakString);
 			}
 		} else if (item instanceof final YamlMapping mapping) {
-			if (!startItemInNewLine
-					&& !mustStartInNewLine(mapping)) {
+			if (!startItemInNewLine) {
 				write(" ");
 				writeNode(mapping, indentLevel + 1, false, false);
 			} else {

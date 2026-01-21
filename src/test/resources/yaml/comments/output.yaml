@@ -9,8 +9,7 @@
 # Second comment property mapping2
 "mapping2": # Inline comment mapping2
   # Comment item21
-  -
-    # Comment property21
+  - # Comment property21
     "property21": "value21" # Inline comment value21
     # Comment property22
     "property22": "value22" # Inline comment value22
@@ -27,7 +26,8 @@
       # Comment value33
       "value33" # Inline comment value33
   # Comment item23
-  - "property41": # Inline comment property41
+  - # Inline comment item23
+    "property41": # Inline comment property41
       # Comment value41
       "value41" # Inline comment value41
     "property42": # Inline comment property42

@@ -14,9 +14,10 @@
   "leader": *p1 # Alias p1 comment
   "members": # Members comment
     - &p2
+      # Anchor p2 comment
       "name": "Jane Doe" # Name of team first employee
       "age": 37
-    - *p2
+    - *p2 # Alias p2 comment
     - "name": "Brother John" # Name of team third employee
       "age": 48
 "description": |
