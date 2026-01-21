@@ -705,44 +705,17 @@ public class YamlReader extends BasicReadAheadReader {
 
 				skipBlanks();
 
-				if (peekCharMatch(':') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t')) && mappingIndentation < getCurrentColumn()) {
-					readChar();
-					readChar();
-					skipBlanks();
-
-					indentations.add(1);
-
-					if (peekCharMatch('&')) {
-						pendingAnchor = parseAnchor();
+				if (peekCharMatch(':')
+						&& mappingIndentation < getCurrentColumn()
+						&& (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
+					if (peekNextCharNotMatch(1, '\n')) {
+						readChar();
 					}
-
-					if (peekCharMatch('#')) {
-						keyOrScalarNode.setInlineComment(readInlineComment());
-					}
-
-					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-
-					updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
-
-					valueNode = parseYamlNode();
-					if (pendingAnchor != null) {
-						valueNode.setAnchorName(pendingAnchor);
-						pendingAnchor = null;
-					}
-
-					mapping.add(keyOrScalarNode, valueNode);
-				} else if (peekCharMatch(':') && (peekNextCharMatch(1, '\n')) && mappingIndentation < getCurrentColumn()) {
 					readChar();
 
 					indentations.add(1);
 
-					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-
-					if (peekCharMatch('&')) {
-						pendingAnchor = parseAnchor();
-					}
-
-					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+					pendingAnchor = readUpToNextContent(keyOrScalarNode);
 
 					updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
 
@@ -828,20 +801,8 @@ public class YamlReader extends BasicReadAheadReader {
 				return mapping;
 			} else if (peekCharMatch(',')) {
 				readChar();
-				skipBlanks();
 
-				if (peekCharMatch('&')) {
-					pendingAnchor = parseAnchor();
-				}
-
-				if (peekCharMatch('#')) {
-					keyNode.setInlineComment(readInlineComment());
-				}
-
-				if (pendingAnchor != null) {
-					keyNode.setAnchorName(pendingAnchor);
-					pendingAnchor = null;
-				}
+				pendingAnchor = readUpToNextContent(keyNode);
 
 				mapping.add(keyNode, new YamlScalar(null));
 			} else if (peekCharMatch(':') && peekNextCharMatchAny(1, ", \t\n")) {
@@ -850,15 +811,8 @@ public class YamlReader extends BasicReadAheadReader {
 				if (peekNextCharMatch(1, ',')) {
 					readChar();
 					readChar();
-					skipBlanks();
 
-					if (peekCharMatch('&')) {
-						pendingAnchor = parseAnchor();
-					}
-
-					if (peekCharMatch('#')) {
-						keyNode.setInlineComment(readInlineComment());
-					}
+					pendingAnchor = readUpToNextContent(keyNode);
 
 					updatePath(YamlToken.YamlMapping_PropertyKey, keyNode);
 
@@ -873,26 +827,12 @@ public class YamlReader extends BasicReadAheadReader {
 					continue;
 				} else if (peekNextCharMatch(1, '\n')) {
 					readChar();
-					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 				} else {
 					readChar();
 					readChar();
-					skipBlanks();
 				}
 
-				if (peekCharMatch('&')) {
-					pendingAnchor = parseAnchor();
-				}
-
-				if (peekCharMatch('#')) {
-					keyNode.setInlineComment(readInlineComment());
-				}
-
-				skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-
-				if (peekCharMatch('&')) {
-					pendingAnchor = parseAnchor();
-				}
+				pendingAnchor = readUpToNextContent(keyNode);
 
 				YamlNode valueNode;
 				if (peekCharMatch('\"')) {
@@ -919,21 +859,7 @@ public class YamlReader extends BasicReadAheadReader {
 					pendingLeadingComments = new ArrayList<>();
 				}
 
-				skipBlanks();
-
-				if (peekCharMatch('&')) {
-					pendingAnchor = parseAnchor();
-				}
-
-				if (peekCharMatch('#')) {
-					valueNode.setInlineComment(readInlineComment());
-				}
-
-				skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-
-				if (peekCharMatch('&')) {
-					pendingAnchor = parseAnchor();
-				}
+				pendingAnchor = readUpToNextContent(valueNode);
 
 				if (pendingAnchor != null) {
 					valueNode.setAnchorName(pendingAnchor);
@@ -944,21 +870,8 @@ public class YamlReader extends BasicReadAheadReader {
 				if (peekCharMatch('}') || peekCharMatch(',')) {
 					mapIsClosed = peekCharMatch('}');
 					readChar();
-					skipBlanks();
 
-					if (peekCharMatch('&')) {
-						pendingAnchor = parseAnchor();
-					}
-
-					if (peekCharMatch('#')) {
-						valueNode.setInlineComment(readInlineComment());
-					}
-
-					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-
-					if (peekCharMatch('&')) {
-						pendingAnchor = parseAnchor();
-					}
+					pendingAnchor = readUpToNextContent(valueNode);
 
 					mapping.add(keyNode, valueNode);
 
@@ -1051,21 +964,8 @@ public class YamlReader extends BasicReadAheadReader {
 			} else if (peekCharMatch(',')) {
 				sequence.add(itemNode);
 				readChar();
-				skipBlanks();
 
-				if (peekCharMatch('&')) {
-					pendingAnchor = parseAnchor();
-				}
-
-				if (peekCharMatch('#')) {
-					itemNode.setInlineComment(readInlineComment());
-				}
-
-				skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-
-				if (peekCharMatch('&')) {
-					pendingAnchor = parseAnchor();
-				}
+				pendingAnchor = readUpToNextContent(itemNode);
 			} else if (peekCharMatch(':')) {
 				readChar();
 
@@ -1093,22 +993,7 @@ public class YamlReader extends BasicReadAheadReader {
 					pendingLeadingComments = new ArrayList<>();
 				}
 
-				skipBlanks();
-
-				if (peekCharMatch('&')) {
-					pendingAnchor = parseAnchor();
-				}
-
-				if (peekCharMatch('#')) {
-					valueNode.setInlineComment(readInlineComment());
-				}
-
-				skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-
-				if (peekCharMatch('&')) {
-					pendingAnchor = parseAnchor();
-				}
-
+				pendingAnchor = readUpToNextContent(valueNode);
 				if (pendingAnchor != null) {
 					valueNode.setAnchorName(pendingAnchor);
 					pendingAnchor = null;
@@ -1124,21 +1009,8 @@ public class YamlReader extends BasicReadAheadReader {
 					return sequence;
 				} else if (peekCharMatch(',')) {
 					readChar();
-					skipBlanks();
 
-					if (peekCharMatch('&')) {
-						pendingAnchor = parseAnchor();
-					}
-
-					if (peekCharMatch('#')) {
-						valueNode.setInlineComment(readInlineComment());
-					}
-
-					skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-
-					if (peekCharMatch('&')) {
-						pendingAnchor = parseAnchor();
-					}
+					pendingAnchor = readUpToNextContent(valueNode);
 				}
 			} else {
 				throw new YamlParseException("Invalid flow YAML sequence syntax found", getCurrentLine(), getCurrentColumn());
