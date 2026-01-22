@@ -8,6 +8,7 @@ public class YamlScalar extends YamlNode {
 	private final String valueString;
 	private final Object value;
 	private final YamlScalarType type;
+	private YamlScalarQuoteType quoteType = null;
 	private YamlMultilineScalarType multilineType = YamlMultilineScalarType.LITERAL;
 	private YamlMultilineScalarChompingType multilineChompingType = YamlMultilineScalarChompingType.KEEP;
 	private int indentationIndicator = 0;
@@ -173,33 +174,45 @@ public class YamlScalar extends YamlNode {
 		return multilineType;
 	}
 
-	public void setMultilineType(final YamlMultilineScalarType multilineType) throws Exception {
+	public YamlScalarQuoteType getQuoteType() {
+		return quoteType;
+	}
+
+	public YamlScalar setQuoteType(final YamlScalarQuoteType quoteType) {
+		this.quoteType = quoteType;
+		return this;
+	}
+
+	public YamlScalar setMultilineType(final YamlMultilineScalarType multilineType) throws Exception {
 		this.multilineType = multilineType;
 		if (multilineType == null) {
 			throw new Exception("Invalid empty multilineType");
 		}
+		return this;
 	}
 
 	public YamlMultilineScalarChompingType getMultilineChompingType() {
 		return multilineChompingType;
 	}
 
-	public void setMultilineChompingType(final YamlMultilineScalarChompingType multilineChompingType) throws Exception {
+	public YamlScalar setMultilineChompingType(final YamlMultilineScalarChompingType multilineChompingType) throws Exception {
 		this.multilineChompingType = multilineChompingType;
 		if (multilineChompingType == null) {
 			throw new Exception("Invalid empty multilineChompingType");
 		}
+		return this;
 	}
 
 	public int getIndentationIndicator() {
 		return indentationIndicator;
 	}
 
-	public void setIndentationIndicator(final int indentationIndicator) throws Exception {
+	public YamlScalar setIndentationIndicator(final int indentationIndicator) throws Exception {
 		this.indentationIndicator = indentationIndicator;
 		if (indentationIndicator < 0) {
 			throw new Exception("Invalid multiline scalar indentation indicator: indentationIndicator");
 		}
+		return this;
 	}
 
 	@Override

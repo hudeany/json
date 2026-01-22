@@ -1,48 +1,48 @@
 %YAML 1.1 # Reference card
 ---
 "Collection indicators":
-  "? ": "Key indicator."
-  ": ": "Value indicator."
-  "- ": "Nested series entry indicator."
-  ", ": "Separate in-line branch entries."
-  "[]": "Surround in-line series branch."
-  "{}": "Surround in-line keyed branch."
+  '? ': "Key indicator."
+  ': ': "Value indicator."
+  '- ': "Nested series entry indicator."
+  ', ': "Separate in-line branch entries."
+  '[]': "Surround in-line series branch."
+  '{}': "Surround in-line keyed branch."
 "Scalar indicators":
-  "'": "Surround in-line unescaped scalar ('' escaped ')."
-  "\"": "Surround in-line escaped scalar (see escape codes below)."
-  "|": "Block scalar indicator."
-  ">": "Folded scalar indicator."
-  "-": "Strip chomp modifier ('|-' or '>-')."
-  "+": "Keep chomp modifier ('|+' or '>+')."
+  '''': "Surround in-line unescaped scalar ('' escaped ')."
+  '"': "Surround in-line escaped scalar (see escape codes below)."
+  '|': "Block scalar indicator."
+  '>': "Folded scalar indicator."
+  '-': "Strip chomp modifier ('|-' or '>-')."
+  '+': "Keep chomp modifier ('|+' or '>+')."
   "1-9": "Explicit indentation modifier ('|1' or '>2')."
 # Modifiers can be combined ('|2-', '>+1').
 "Alias indicators":
-  "&": "Anchor property."
-  "*": "Alias indicator."
+  '&': "Anchor property."
+  '*': "Alias indicator."
 "Tag property": # Usually unspecified.
   "none": "Unspecified tag (automatically resolved by application)."
-  "!": "Non-specific tag (by default, \"!!map\"/\"!!seq\"/\"!!str\")."
-  "!foo": "Primary (by convention, means a local \"!foo\" tag)."
-  "!!foo": "Secondary (by convention, means \"tag:yaml.org,2002:foo\")."
-  "!h!foo": "Requires \"%TAG !h! <prefix>\" (and then means \"<prefix>foo\")."
-  "!<foo>": "Verbatim tag (always means \"foo\")."
+  '!': "Non-specific tag (by default, \"!!map\"/\"!!seq\"/\"!!str\")."
+  '!foo': "Primary (by convention, means a local \"!foo\" tag)."
+  '!!foo': "Secondary (by convention, means \"tag:yaml.org,2002:foo\")."
+  '!h!foo': "Requires \"%TAG !h! <prefix>\" (and then means \"<prefix>foo\")."
+  '!<foo>': "Verbatim tag (always means \"foo\")."
 "Document indicators":
-  "%": "Directive indicator."
-  "---": "Document header."
-  "...": "Document terminator."
+  '%': "Directive indicator."
+  '---': "Document header."
+  '...': "Document terminator."
 "Misc indicators":
-  " #": "Throwaway comment indicator."
-  "`@": "Both reserved for future use."
+  ' #': "Throwaway comment indicator."
+  '`@': "Both reserved for future use."
 "Special keys":
-  "=": "Default \"value\" mapping key."
-  "<<": "Merge keys from another mapping."
+  '=': "Default \"value\" mapping key."
+  '<<': "Merge keys from another mapping."
 "Core types": # Default automatic tags.
-  "!!map": {"Hash table": null, "dictionary": null}
-  "!!seq": {"List": null, "array": null, "tuple": null, "vector": null}
-  "!!str": "Unicode string"
+  '!!map': {"Hash table": null, "dictionary": null}
+  '!!seq': {"List": null, "array": null, "tuple": null, "vector": null}
+  '!!str': "Unicode string"
 "More types":
-  "!!set": {"cherries": null, "plums": null}
-  "!!omap": [{"one": 1},
+  '!!set': {"cherries": null, "plums": null}
+  '!!omap': [{"one": 1},
       {"two": 2}
       ]
 #Language Independent Scalar types: TODO
@@ -58,7 +58,7 @@
 #      Base 64 binary value.
 "Escape codes":
   "Numeric": {"\u0012": "8-bit", "ሴ": "16-bit", "‰": "32-bit"}
-  "Protective": {"\\": "\\", "\"": "\"", " ": " ", "\t": "TAB"}
+  "Protective": {"\\": '\', "\"": '"', " ": ' ', "\t": "TAB"}
   "C": {"\u0000": "NUL", "\u0007": "BEL", "\b": "BS", "\f": "FF", "\n": "LF", "\r": "CR", "\t": "TAB", "\u2B7F": "VTAB"}
   "Additional": {"\u001B": "ESC", "\u00A0": "NBSP", "\u0085": "NEL", "\u2028": "LS", "\u2029": "PS"}
 ...

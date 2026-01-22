@@ -19,25 +19,25 @@ level1:
     property2_8: Content 2_8
     property2_9: Content 2_9
     level3:
-      property3_1: Content 3_1
-      property3_2: Content 3_2
-      property3_3: Content 3_3
-      property3_4: Content 3_4
-      property3_5: Content 3_5
-      property3_6: Content 3_6
-      property3_7: Content 3_7
-      property3_8: Content 3_8
-      property3_9: Content 3_9
+      property3_1: 'Content 3_1'
+      property3_2: 'Content 3_2'
+      property3_3: 'Content 3_3'
+      property3_4: 'Content 3_4'
+      property3_5: 'Content 3_5'
+      property3_6: 'Content 3_6'
+      property3_7: 'Content 3_7'
+      property3_8: 'Content 3_8'
+      property3_9: 'Content 3_9'
       level4:
-        property4_1: Content 4_1
-        property4_2: Content 4_2
-        property4_3: Content 4_3
-        property4_4: Content 4_4
-        property4_5: Content 4_5
-        property4_6: Content 4_6
-        property4_7: Content 4_7
-        property4_8: Content 4_8
-        property4_9: Content 4_9
+        property4_1: "Content 4_1"
+        property4_2: "Content 4_2"
+        property4_3: "Content 4_3"
+        property4_4: "Content 4_4"
+        property4_5: "Content 4_5"
+        property4_6: "Content 4_6"
+        property4_7: "Content 4_7"
+        property4_8: "Content 4_8"
+        property4_9: "Content 4_9"
   property_unlimited000: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\<>(){}[]'\"´`^°¹²³*#.,;:=+-~_|½¼¬"
   property_unlimited001: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\<>(){}[]'\"´`^°¹²³*#.,;:=+-~_|½¼¬"
   property_unlimited002: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\<>(){}[]'\"´`^°¹²³*#.,;:=+-~_|½¼¬"

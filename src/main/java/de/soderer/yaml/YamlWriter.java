@@ -20,6 +20,7 @@ import de.soderer.yaml.data.YamlDocument;
 import de.soderer.yaml.data.YamlMapping;
 import de.soderer.yaml.data.YamlNode;
 import de.soderer.yaml.data.YamlScalar;
+import de.soderer.yaml.data.YamlScalarQuoteType;
 import de.soderer.yaml.data.YamlScalarType;
 import de.soderer.yaml.data.YamlSequence;
 import de.soderer.yaml.data.directive.YamlDirective;
@@ -260,12 +261,12 @@ public class YamlWriter implements Closeable {
 			case STRING:
 				if (inFlow ) {
 					writeIndent(indentLevel);
-					write(escapePlainStringValueInFlow(value));
+					write(escapePlainStringValueInFlow(value, scalar.getQuoteType()));
 				} else if (isKeyContext) {
 					writeIndent(indentLevel);
-					write(escapePlainStringValue(value));
+					write(escapePlainStringValue(value, scalar.getQuoteType()));
 				} else {
-					write(escapePlainStringValue(value) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
+					write(escapePlainStringValue(value, scalar.getQuoteType()) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
 				}
 				break;
 			default:
@@ -342,244 +343,244 @@ public class YamlWriter implements Closeable {
 		return this;
 	}
 
-	private String escapePlainStringKey(final String key) {
-		if (key.isEmpty()) {
-			return "\"\"";
-		} else {
-			boolean needsQuotes = false;
+	private String escapePlainStringKey(final String key, final YamlScalarQuoteType quoteType) {
+		boolean needsQuotes = alwaysQuoteStringValues || key.isEmpty() || (quoteType != null && quoteType != YamlScalarQuoteType.NONE);
 
-			if (alwaysQuoteStringKeys) {
+		if (!needsQuotes) {
+			if (Character.isWhitespace(key.charAt(0))
+					|| Character.isWhitespace(key.charAt(key.length() - 1))) {
 				needsQuotes = true;
-			} else {
-				if (Character.isWhitespace(key.charAt(0))
-						|| Character.isWhitespace(key.charAt(key.length() - 1))) {
+			}
+		}
+
+		if (!needsQuotes) {
+			for (int i = 0; i < key.length(); i++) {
+				final char nextChar = key.charAt(i);
+
+				if ((Character.isWhitespace(nextChar) && nextChar != ' ')
+						|| "#*!'\"%@`".indexOf(nextChar) > -1) {
 					needsQuotes = true;
-				}
-
-				if (!needsQuotes) {
-					for (int i = 0; i < key.length(); i++) {
-						final char nextChar = key.charAt(i);
-
-						if ((Character.isWhitespace(nextChar) && nextChar != ' ')
-								|| "#*!'\"%@`".indexOf(nextChar) > -1) {
-							needsQuotes = true;
-							break;
-						}
-					}
-				}
-
-				if (!needsQuotes) {
-					if (key.contains(": ") || key.contains(":\t") || key.contains(":\n")) {
-						needsQuotes = true;
-					}
-				}
-
-				if (!needsQuotes) {
-					if (key.contains(" &") || key.contains("\t&") || key.startsWith("&")) {
-						needsQuotes = true;
-					}
-				}
-
-				if (!needsQuotes) {
-					if (key.startsWith("[") || key.startsWith("]") || key.startsWith("{") || key.startsWith("}")) {
-						needsQuotes = true;
-					}
-				}
-
-				if (!needsQuotes) {
-					if (key.startsWith("|") || key.startsWith(">")) {
-						needsQuotes = true;
-					}
-				}
-
-				if (!needsQuotes) {
-					if ("true".equalsIgnoreCase(key)
-							|| "y".equalsIgnoreCase(key)
-							|| "yes".equalsIgnoreCase(key)
-							|| "on".equalsIgnoreCase(key)
-							|| "false".equalsIgnoreCase(key)
-							|| "n".equalsIgnoreCase(key)
-							|| "no".equalsIgnoreCase(key)
-							|| "off".equalsIgnoreCase(key)
-							|| "null".equalsIgnoreCase(key)
-							|| "~".equalsIgnoreCase(key)) {
-						needsQuotes = true;
-					}
-				}
-
-				if (!needsQuotes) {
-					if (NumberUtilities.isNumber(key)) {
-						needsQuotes = true;
-					}
+					break;
 				}
 			}
+		}
 
-			if (!needsQuotes) {
-				return key;
-			} else {
+		if (!needsQuotes) {
+			if (key.contains(": ") || key.contains(":\t") || key.contains(":\n")) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			if (key.contains(" &") || key.contains("\t&") || key.startsWith("&")) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			if (key.startsWith("[") || key.startsWith("]") || key.startsWith("{") || key.startsWith("}")) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			if (key.startsWith("|") || key.startsWith(">")) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			if ("true".equalsIgnoreCase(key)
+					|| "y".equalsIgnoreCase(key)
+					|| "yes".equalsIgnoreCase(key)
+					|| "on".equalsIgnoreCase(key)
+					|| "false".equalsIgnoreCase(key)
+					|| "n".equalsIgnoreCase(key)
+					|| "no".equalsIgnoreCase(key)
+					|| "off".equalsIgnoreCase(key)
+					|| "null".equalsIgnoreCase(key)
+					|| "~".equalsIgnoreCase(key)) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			if (NumberUtilities.isNumber(key)) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			return key;
+		} else {
+			if (quoteType == null || quoteType == YamlScalarQuoteType.DOUBLE) {
 				return "\""
 						+ escapeScalarString(key)
 						+ "\"";
+			} else {
+				return "'"
+						+ key.replace("'", "''")
+						+ "'";
 			}
 		}
 	}
 
-	private String escapePlainStringValue(final String value) {
-		if (value.isEmpty()) {
-			return "\"\"";
-		} else {
-			boolean needsQuotes = false;
+	private String escapePlainStringValue(final String value, final YamlScalarQuoteType quoteType) {
+		boolean needsQuotes = alwaysQuoteStringValues || value.isEmpty() || (quoteType != null && quoteType != YamlScalarQuoteType.NONE);
 
-			if (alwaysQuoteStringValues) {
+		if (!needsQuotes) {
+			if (Character.isWhitespace(value.charAt(0))
+					|| Character.isWhitespace(value.charAt(value.length() - 1))) {
 				needsQuotes = true;
-			} else {
-				if (Character.isWhitespace(value.charAt(0))
-						|| Character.isWhitespace(value.charAt(value.length() - 1))) {
+			}
+		}
+
+		if (!needsQuotes) {
+			for (int i = 0; i < value.length(); i++) {
+				final char nextChar = value.charAt(i);
+
+				if ((Character.isWhitespace(nextChar) && nextChar != ' ')
+						|| "#*!'\"%@`".indexOf(nextChar) > -1) {
 					needsQuotes = true;
-				}
-
-				if (!needsQuotes) {
-					for (int i = 0; i < value.length(); i++) {
-						final char nextChar = value.charAt(i);
-
-						if ((Character.isWhitespace(nextChar) && nextChar != ' ')
-								|| "#*!'\"%@`".indexOf(nextChar) > -1) {
-							needsQuotes = true;
-							break;
-						}
-					}
-				}
-
-				if (!needsQuotes) {
-					if (value.contains(": ") || value.contains(":\t") || value.contains(":\n")) {
-						needsQuotes = true;
-					}
-				}
-
-				if (!needsQuotes) {
-					if (value.contains(" &") || value.contains("\t&") || value.startsWith("&")) {
-						needsQuotes = true;
-					}
-				}
-
-				if (!needsQuotes) {
-					if (value.startsWith("[") || value.startsWith("]") || value.startsWith("{") || value.startsWith("}")) {
-						needsQuotes = true;
-					}
-				}
-
-				if (!needsQuotes) {
-					if (value.startsWith("|") || value.startsWith(">")) {
-						needsQuotes = true;
-					}
-				}
-
-				if (!needsQuotes) {
-					if ("true".equalsIgnoreCase(value)
-							|| "yes".equalsIgnoreCase(value)
-							|| "on".equalsIgnoreCase(value)
-							|| "false".equalsIgnoreCase(value)
-							|| "no".equalsIgnoreCase(value)
-							|| "off".equalsIgnoreCase(value)
-							|| "null".equalsIgnoreCase(value)
-							|| "~".equalsIgnoreCase(value)) {
-						needsQuotes = true;
-					}
-				}
-
-				if (!needsQuotes) {
-					if (NumberUtilities.isNumber(value)) {
-						needsQuotes = true;
-					}
+					break;
 				}
 			}
+		}
 
-			if (!needsQuotes) {
-				return value;
-			} else {
+		if (!needsQuotes) {
+			if (value.contains(": ") || value.contains(":\t") || value.contains(":\n")) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			if (value.contains(" &") || value.contains("\t&") || value.startsWith("&")) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			if (value.startsWith("[") || value.startsWith("]") || value.startsWith("{") || value.startsWith("}")) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			if (value.startsWith("|") || value.startsWith(">")) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			if ("true".equalsIgnoreCase(value)
+					|| "yes".equalsIgnoreCase(value)
+					|| "on".equalsIgnoreCase(value)
+					|| "false".equalsIgnoreCase(value)
+					|| "no".equalsIgnoreCase(value)
+					|| "off".equalsIgnoreCase(value)
+					|| "null".equalsIgnoreCase(value)
+					|| "~".equalsIgnoreCase(value)) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			if (NumberUtilities.isNumber(value)) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			return value;
+		} else {
+			if (quoteType == null || quoteType == YamlScalarQuoteType.DOUBLE) {
 				return "\""
 						+ escapeScalarString(value)
 						+ "\"";
+			} else {
+				return "'"
+						+ value.replace("'", "''")
+						+ "'";
 			}
 		}
 	}
 
-	private String escapePlainStringValueInFlow(final String value) {
-		if (value.isEmpty()) {
-			return "\"\"";
-		} else {
-			boolean needsQuotes = false;
+	private String escapePlainStringValueInFlow(final String value, final YamlScalarQuoteType quoteType) {
+		boolean needsQuotes = alwaysQuoteStringValues || value.isEmpty() || (quoteType != null && quoteType != YamlScalarQuoteType.NONE);
 
-			if (alwaysQuoteStringValues) {
+		if (!needsQuotes) {
+			if (Character.isWhitespace(value.charAt(0))
+					|| Character.isWhitespace(value.charAt(value.length() - 1))) {
 				needsQuotes = true;
-			} else {
-				if (Character.isWhitespace(value.charAt(0))
-						|| Character.isWhitespace(value.charAt(value.length() - 1))) {
+			}
+		}
+
+		if (!needsQuotes) {
+			for (int i = 0; i < value.length(); i++) {
+				final char nextChar = value.charAt(i);
+
+				if ((Character.isWhitespace(nextChar) && nextChar != ' ')
+						|| "#*!'\"%@`".indexOf(nextChar) > -1) {
 					needsQuotes = true;
-				}
-
-				if (!needsQuotes) {
-					for (int i = 0; i < value.length(); i++) {
-						final char nextChar = value.charAt(i);
-
-						if ((Character.isWhitespace(nextChar) && nextChar != ' ')
-								|| "#*!'\"%@`".indexOf(nextChar) > -1) {
-							needsQuotes = true;
-							break;
-						}
-					}
-				}
-
-				if (!needsQuotes) {
-					if (value.contains(": ") || value.contains(":\t") || value.contains(":\n")) {
-						needsQuotes = true;
-					}
-				}
-
-				if (!needsQuotes) {
-					if (value.contains(" &") || value.contains("\t&") || value.startsWith("&")) {
-						needsQuotes = true;
-					}
-				}
-
-				if (!needsQuotes) {
-					if (value.contains("[") || value.contains("]") || value.contains("{") || value.contains("}")) {
-						needsQuotes = true;
-					}
-				}
-
-				if (!needsQuotes) {
-					if (value.startsWith("|") || value.startsWith(">")) {
-						needsQuotes = true;
-					}
-				}
-
-				if (!needsQuotes) {
-					if ("true".equalsIgnoreCase(value)
-							|| "yes".equalsIgnoreCase(value)
-							|| "on".equalsIgnoreCase(value)
-							|| "false".equalsIgnoreCase(value)
-							|| "no".equalsIgnoreCase(value)
-							|| "off".equalsIgnoreCase(value)
-							|| "null".equalsIgnoreCase(value)
-							|| "~".equalsIgnoreCase(value)) {
-						needsQuotes = true;
-					}
-				}
-
-				if (!needsQuotes) {
-					if (NumberUtilities.isNumber(value)) {
-						needsQuotes = true;
-					}
+					break;
 				}
 			}
+		}
 
-			if (!needsQuotes) {
-				return value;
-			} else {
+		if (!needsQuotes) {
+			if (value.contains(": ") || value.contains(":\t") || value.contains(":\n")) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			if (value.contains(" &") || value.contains("\t&") || value.startsWith("&")) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			if (value.contains("[") || value.contains("]") || value.contains("{") || value.contains("}")) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			if (value.startsWith("|") || value.startsWith(">")) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			if ("true".equalsIgnoreCase(value)
+					|| "yes".equalsIgnoreCase(value)
+					|| "on".equalsIgnoreCase(value)
+					|| "false".equalsIgnoreCase(value)
+					|| "no".equalsIgnoreCase(value)
+					|| "off".equalsIgnoreCase(value)
+					|| "null".equalsIgnoreCase(value)
+					|| "~".equalsIgnoreCase(value)) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			if (NumberUtilities.isNumber(value)) {
+				needsQuotes = true;
+			}
+		}
+
+		if (!needsQuotes) {
+			return value;
+		} else {
+			if (quoteType == null || quoteType == YamlScalarQuoteType.DOUBLE) {
 				return "\""
 						+ escapeScalarString(value)
 						+ "\"";
+			} else {
+				return "'"
+						+ value.replace("'", "''")
+						+ "'";
 			}
 		}
 	}
@@ -656,11 +657,11 @@ public class YamlWriter implements Closeable {
 				write(scalar.getValueString() + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
 				break;
 			case STRING:
-				write(escapePlainStringValue(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
+				write(escapePlainStringValue(scalar.getValueString(), scalar.getQuoteType()) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
 				break;
 			case MULTILINE:
 			default:
-				write(escapePlainStringValue(scalar.getValueString()) + linebreakString);
+				write(escapePlainStringValue(scalar.getValueString(), scalar.getQuoteType()) + linebreakString);
 		}
 		return this;
 	}
@@ -698,10 +699,10 @@ public class YamlWriter implements Closeable {
 				if (scalarKey.getType() == YamlScalarType.STRING) {
 					if (!isFirstData) {
 						writeIndent(indentLevel);
-						write(escapePlainStringKey(scalarKey.getValueString()));
+						write(escapePlainStringKey(scalarKey.getValueString(), scalarKey.getQuoteType()));
 						isFirstData = false;
 					} else {
-						write(escapePlainStringKey(scalarKey.getValueString()));
+						write(escapePlainStringKey(scalarKey.getValueString(), scalarKey.getQuoteType()));
 					}
 				} else {
 					if (!isFirstData) {
@@ -764,7 +765,7 @@ public class YamlWriter implements Closeable {
 							break;
 						case STRING:
 							write(" ");
-							write(escapePlainStringValue(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
+							write(escapePlainStringValue(scalar.getValueString(), scalar.getQuoteType()) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
 							break;
 						case MULTILINE:
 							write(" ");
@@ -772,7 +773,7 @@ public class YamlWriter implements Closeable {
 							break;
 						default:
 							write(" ");
-							write(escapePlainStringValue(scalar.getValueString()) + linebreakString);
+							write(escapePlainStringValue(scalar.getValueString(), scalar.getQuoteType()) + linebreakString);
 					}
 				} else {
 					write(linebreakString);
@@ -1031,11 +1032,11 @@ public class YamlWriter implements Closeable {
 				write(scalar.getValueString() + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : ""));
 				break;
 			case STRING:
-				write(escapePlainStringValueInFlow(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : ""));
+				write(escapePlainStringValueInFlow(scalar.getValueString(), scalar.getQuoteType()) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : ""));
 				break;
 			case MULTILINE:
 			default:
-				write(escapePlainStringValueInFlow(scalar.getValueString()));
+				write(escapePlainStringValueInFlow(scalar.getValueString(), scalar.getQuoteType()));
 		}
 		return this;
 	}

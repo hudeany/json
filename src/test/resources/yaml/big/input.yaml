@@ -9,25 +9,25 @@ level1:
   property1_8: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\<>(){}[]'\"´`^°¹²³*#.,;:=+-~_|½¼¬"
   property1_9: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\<>(){}[]'\"´`^°¹²³*#.,;:=+-~_|½¼¬"
   level2:
-    property2_1: "Content 2_1"
-    property2_2: "Content 2_2"
-    property2_3: "Content 2_3"
-    property2_4: "Content 2_4"
-    property2_5: "Content 2_5"
-    property2_6: "Content 2_6"
-    property2_7: "Content 2_7"
-    property2_8: "Content 2_8"
-    property2_9: "Content 2_9"
+    property2_1: Content 2_1
+    property2_2: Content 2_2
+    property2_3: Content 2_3
+    property2_4: Content 2_4
+    property2_5: Content 2_5
+    property2_6: Content 2_6
+    property2_7: Content 2_7
+    property2_8: Content 2_8
+    property2_9: Content 2_9
     level3:
-      property3_1: "Content 3_1"
-      property3_2: "Content 3_2"
-      property3_3: "Content 3_3"
-      property3_4: "Content 3_4"
-      property3_5: "Content 3_5"
-      property3_6: "Content 3_6"
-      property3_7: "Content 3_7"
-      property3_8: "Content 3_8"
-      property3_9: "Content 3_9"
+      property3_1: 'Content 3_1'
+      property3_2: 'Content 3_2'
+      property3_3: 'Content 3_3'
+      property3_4: 'Content 3_4'
+      property3_5: 'Content 3_5'
+      property3_6: 'Content 3_6'
+      property3_7: 'Content 3_7'
+      property3_8: 'Content 3_8'
+      property3_9: 'Content 3_9'
       level4:
         property4_1: "Content 4_1"
         property4_2: "Content 4_2"
