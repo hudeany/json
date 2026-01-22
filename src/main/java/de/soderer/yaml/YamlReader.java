@@ -680,7 +680,13 @@ public class YamlReader extends BasicReadAheadReader {
 
 					updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
 
-					valueNode = parseYamlNode();
+					if (getNumberOfIndentationChars() > mappingIndentation
+							|| (peekCharMatch('-') && peekNextCharMatchAny(1, " \t\n"))) {
+						valueNode = parseYamlNode();
+					} else {
+						// Empty mapping property value
+						valueNode = new YamlScalar("", YamlScalarType.NULL_VALUE);
+					}
 					if (pendingAnchor != null) {
 						valueNode.setAnchorName(pendingAnchor);
 						pendingAnchor = null;

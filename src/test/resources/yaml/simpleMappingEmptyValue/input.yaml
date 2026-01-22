@@ -1,2 +1,7 @@
-propertyWithNullValue:
-otherPropertyInSameMapping: abc
+check:
+  propertyWithNullValue:
+  otherPropertyInSameMapping: abc
+  thirdPropertyAlsoNullValue:
+  fourthPropertyInSameMapping: abc
+  fivthPropertyAlsoNullValue:
+  - with early starting sequencee

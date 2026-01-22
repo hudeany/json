@@ -695,21 +695,32 @@ public class YamlWriter implements Closeable {
 				} else if (!startValueInNewLine
 						&& scalar.getAnchorName() == null
 						&& (scalar.getLeadingComments() == null || scalar.getLeadingComments().isEmpty())) {
-					write(" ");
 					final String inlineComment = scalar.getInlineComment();
 					switch (scalar.getType()) {
 						case BOOLEAN:
+							write(" ");
+							write(scalar.getValueString() + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
+							break;
 						case NUMBER:
+							write(" ");
+							write(scalar.getValueString() + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
+							break;
 						case NULL_VALUE:
+							if (!"".equals(scalar.getValueString()) ) {
+								write(" ");
+							}
 							write(scalar.getValueString() + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
 							break;
 						case STRING:
+							write(" ");
 							write(escapePlainStringValue(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
 							break;
 						case MULTILINE:
+							write(" ");
 							writeMultilineStringScalar(scalar, indentLevel);
 							break;
 						default:
+							write(" ");
 							write(escapePlainStringValue(scalar.getValueString()) + linebreakString);
 					}
 				} else {
