@@ -8,7 +8,7 @@ public class YamlScalar extends YamlNode {
 	private final String valueString;
 	private final Object value;
 	private final YamlScalarType type;
-	private YamlScalarQuoteType quoteType = null;
+	private YamlStringQuoteType quoteType = null;
 	private YamlMultilineScalarType multilineType = YamlMultilineScalarType.LITERAL;
 	private YamlMultilineScalarChompingType multilineChompingType = YamlMultilineScalarChompingType.KEEP;
 	private int indentationIndicator = 0;
@@ -174,11 +174,11 @@ public class YamlScalar extends YamlNode {
 		return multilineType;
 	}
 
-	public YamlScalarQuoteType getQuoteType() {
+	public YamlStringQuoteType getQuoteType() {
 		return quoteType;
 	}
 
-	public YamlScalar setQuoteType(final YamlScalarQuoteType quoteType) {
+	public YamlScalar setQuoteType(final YamlStringQuoteType quoteType) {
 		this.quoteType = quoteType;
 		return this;
 	}

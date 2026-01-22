@@ -20,7 +20,7 @@ import de.soderer.yaml.data.YamlDocument;
 import de.soderer.yaml.data.YamlMapping;
 import de.soderer.yaml.data.YamlNode;
 import de.soderer.yaml.data.YamlScalar;
-import de.soderer.yaml.data.YamlScalarQuoteType;
+import de.soderer.yaml.data.YamlStringQuoteType;
 import de.soderer.yaml.data.YamlScalarType;
 import de.soderer.yaml.data.YamlSequence;
 import de.soderer.yaml.data.directive.YamlDirective;
@@ -343,8 +343,8 @@ public class YamlWriter implements Closeable {
 		return this;
 	}
 
-	private String escapePlainStringKey(final String key, final YamlScalarQuoteType quoteType) {
-		boolean needsQuotes = alwaysQuoteStringValues || key.isEmpty() || (quoteType != null && quoteType != YamlScalarQuoteType.NONE);
+	private String escapePlainStringKey(final String key, final YamlStringQuoteType quoteType) {
+		boolean needsQuotes = alwaysQuoteStringValues || key.isEmpty() || (quoteType != null && quoteType != YamlStringQuoteType.NONE);
 
 		if (!needsQuotes) {
 			if (Character.isWhitespace(key.charAt(0))
@@ -413,7 +413,7 @@ public class YamlWriter implements Closeable {
 		if (!needsQuotes) {
 			return key;
 		} else {
-			if (quoteType == null || quoteType == YamlScalarQuoteType.DOUBLE) {
+			if (quoteType == null || quoteType == YamlStringQuoteType.DOUBLE) {
 				return "\""
 						+ escapeScalarString(key)
 						+ "\"";
@@ -425,8 +425,8 @@ public class YamlWriter implements Closeable {
 		}
 	}
 
-	private String escapePlainStringValue(final String value, final YamlScalarQuoteType quoteType) {
-		boolean needsQuotes = alwaysQuoteStringValues || value.isEmpty() || (quoteType != null && quoteType != YamlScalarQuoteType.NONE);
+	private String escapePlainStringValue(final String value, final YamlStringQuoteType quoteType) {
+		boolean needsQuotes = alwaysQuoteStringValues || value.isEmpty() || (quoteType != null && quoteType != YamlStringQuoteType.NONE);
 
 		if (!needsQuotes) {
 			if (Character.isWhitespace(value.charAt(0))
@@ -493,7 +493,7 @@ public class YamlWriter implements Closeable {
 		if (!needsQuotes) {
 			return value;
 		} else {
-			if (quoteType == null || quoteType == YamlScalarQuoteType.DOUBLE) {
+			if (quoteType == null || quoteType == YamlStringQuoteType.DOUBLE) {
 				return "\""
 						+ escapeScalarString(value)
 						+ "\"";
@@ -505,8 +505,8 @@ public class YamlWriter implements Closeable {
 		}
 	}
 
-	private String escapePlainStringValueInFlow(final String value, final YamlScalarQuoteType quoteType) {
-		boolean needsQuotes = alwaysQuoteStringValues || value.isEmpty() || (quoteType != null && quoteType != YamlScalarQuoteType.NONE);
+	private String escapePlainStringValueInFlow(final String value, final YamlStringQuoteType quoteType) {
+		boolean needsQuotes = alwaysQuoteStringValues || value.isEmpty() || (quoteType != null && quoteType != YamlStringQuoteType.NONE);
 
 		if (!needsQuotes) {
 			if (Character.isWhitespace(value.charAt(0))
@@ -573,7 +573,7 @@ public class YamlWriter implements Closeable {
 		if (!needsQuotes) {
 			return value;
 		} else {
-			if (quoteType == null || quoteType == YamlScalarQuoteType.DOUBLE) {
+			if (quoteType == null || quoteType == YamlStringQuoteType.DOUBLE) {
 				return "\""
 						+ escapeScalarString(value)
 						+ "\"";

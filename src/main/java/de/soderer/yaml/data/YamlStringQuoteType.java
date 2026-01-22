@@ -1,6 +1,6 @@
 package de.soderer.yaml.data;
 
-public enum YamlScalarQuoteType {
+public enum YamlStringQuoteType {
 	NONE,
 	DOUBLE,
 	SINGLE

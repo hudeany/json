@@ -23,7 +23,7 @@ import de.soderer.yaml.data.YamlMultilineScalarChompingType;
 import de.soderer.yaml.data.YamlMultilineScalarType;
 import de.soderer.yaml.data.YamlNode;
 import de.soderer.yaml.data.YamlScalar;
-import de.soderer.yaml.data.YamlScalarQuoteType;
+import de.soderer.yaml.data.YamlStringQuoteType;
 import de.soderer.yaml.data.YamlScalarType;
 import de.soderer.yaml.data.YamlSequence;
 import de.soderer.yaml.data.YamlToken;
@@ -562,13 +562,13 @@ public class YamlReader extends BasicReadAheadReader {
 			keyOrScalarNode = firstKeyNode;
 		} else {
 			if (peekCharMatch('\"')) {
-				keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlScalarQuoteType.DOUBLE);
+				keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.DOUBLE);
 				skipBlanks();
 				if (peekCharMatch('#')) {
 					keyOrScalarNode.setInlineComment(readInlineComment());
 				}
 			} else if (peekCharMatch('\'')) {
-				keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlScalarQuoteType.SINGLE);
+				keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.SINGLE);
 				skipBlanks();
 				if (peekCharMatch('#')) {
 					keyOrScalarNode.setInlineComment(readInlineComment());
@@ -641,13 +641,13 @@ public class YamlReader extends BasicReadAheadReader {
 					pendingAnchor = readUpToNextContent(null);
 					return mapping;
 				} else if (peekCharMatch('\"')) {
-					keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlScalarQuoteType.DOUBLE);
+					keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.DOUBLE);
 					skipBlanks();
 					if (peekCharMatch('#')) {
 						keyOrScalarNode.setInlineComment(readInlineComment());
 					}
 				} else if (peekCharMatch('\'')) {
-					keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlScalarQuoteType.SINGLE);
+					keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.SINGLE);
 					skipBlanks();
 					if (peekCharMatch('#')) {
 						keyOrScalarNode.setInlineComment(readInlineComment());
@@ -754,9 +754,9 @@ public class YamlReader extends BasicReadAheadReader {
 
 			YamlNode keyNode;
 			if (peekCharMatch('\"')) {
-				keyNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlScalarQuoteType.DOUBLE);
+				keyNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.DOUBLE);
 			} else if (peekCharMatch('\'')) {
-				keyNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlScalarQuoteType.SINGLE);
+				keyNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.SINGLE);
 			} else if (peekCharMatch('{')) {
 				keyNode = parseFlowMapping();
 			} else if (peekCharMatch('[')) {
@@ -833,9 +833,9 @@ public class YamlReader extends BasicReadAheadReader {
 
 					YamlNode valueNode;
 					if (peekCharMatch('\"')) {
-						valueNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlScalarQuoteType.DOUBLE);
+						valueNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.DOUBLE);
 					} else if (peekCharMatch('\'')) {
-						valueNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlScalarQuoteType.SINGLE);
+						valueNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.SINGLE);
 					} else if (peekCharMatch('{')) {
 						valueNode = parseFlowMapping();
 					} else if (peekCharMatch('[')) {
@@ -936,9 +936,9 @@ public class YamlReader extends BasicReadAheadReader {
 
 			YamlNode itemNode;
 			if (peekCharMatch('\"')) {
-				itemNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlScalarQuoteType.DOUBLE);
+				itemNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.DOUBLE);
 			} else if (peekCharMatch('\'')) {
-				itemNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlScalarQuoteType.SINGLE);
+				itemNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.SINGLE);
 			} else if (peekCharMatch('{')) {
 				itemNode = parseFlowMapping();
 			} else if (peekCharMatch('[')) {
@@ -1002,9 +1002,9 @@ public class YamlReader extends BasicReadAheadReader {
 
 				YamlNode valueNode;
 				if (peekCharMatch('\"')) {
-					valueNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlScalarQuoteType.DOUBLE);
+					valueNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.DOUBLE);
 				} else if (peekCharMatch('\'')) {
-					valueNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlScalarQuoteType.SINGLE);
+					valueNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.SINGLE);
 				} else if (peekCharMatch('{')) {
 					valueNode = parseFlowMapping();
 				} else if (peekCharMatch('[')) {
