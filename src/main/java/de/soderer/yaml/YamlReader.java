@@ -538,9 +538,6 @@ public class YamlReader extends BasicReadAheadReader {
 		pendingLeadingComments = new ArrayList<>();
 
 		if (peekCharMatch('-') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
-			if (peekNextCharNotMatch(1, '\n')) {
-				readChar();
-			}
 			readChar();
 
 			indentations.add(2);
@@ -613,7 +610,6 @@ public class YamlReader extends BasicReadAheadReader {
 				&& mappingIndentation < getCurrentColumn()
 				&& (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
 			readChar();
-			skipBlanks();
 
 			indentations.add(1);
 
@@ -680,9 +676,6 @@ public class YamlReader extends BasicReadAheadReader {
 				if (peekCharMatch(':')
 						&& mappingIndentation < getCurrentColumn()
 						&& (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
-					if (peekNextCharNotMatch(1, '\n')) {
-						readChar();
-					}
 					readChar();
 
 					indentations.add(1);
@@ -790,13 +783,24 @@ public class YamlReader extends BasicReadAheadReader {
 				readChar();
 
 				pendingAnchor = readUpToNextContent(keyNode);
+				if (pendingAnchor != null) {
+					keyNode.setAnchorName(pendingAnchor);
+					pendingAnchor = null;
+				}
 
 				mapping.add(keyNode, new YamlScalar(null));
 			} else if (peekCharMatch(':') && peekNextCharMatchAny(1, ", \t\n")) {
+				readChar();
+
 				indentations.add(1);
 
-				if (peekNextCharMatch(1, ',')) {
-					readChar();
+				pendingAnchor = readUpToNextContent(keyNode);
+				if (pendingAnchor != null) {
+					keyNode.setAnchorName(pendingAnchor);
+					pendingAnchor = null;
+				}
+
+				if (peekCharMatch(',')) {
 					readChar();
 
 					pendingAnchor = readUpToNextContent(keyNode);
@@ -812,68 +816,67 @@ public class YamlReader extends BasicReadAheadReader {
 
 					mapping.add(keyNode, valueNode);
 					continue;
-				} else if (peekNextCharMatch(1, '\n')) {
-					readChar();
 				} else {
-					readChar();
-					readChar();
-				}
+					pendingAnchor = readUpToNextContent(keyNode);
 
-				pendingAnchor = readUpToNextContent(keyNode);
-
-				YamlNode valueNode;
-				if (peekCharMatch('\"')) {
-					valueNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING);
-				} else if (peekCharMatch('\'')) {
-					valueNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING);
-				} else if (peekCharMatch('{')) {
-					valueNode = parseFlowMapping();
-				} else if (peekCharMatch('[')) {
-					valueNode = parseFlowSequence();
-				} else {
-					valueNode = readFlowScalarString();
-				}
-
-				if (pendingAnchor != null) {
-					valueNode.setAnchorName(pendingAnchor);
-					pendingAnchor = null;
-				}
-
-				if (!pendingLeadingComments.isEmpty()) {
-					for (final String commentLine : pendingLeadingComments) {
-						valueNode.addLeadingComment(commentLine);
+					YamlNode valueNode;
+					if (peekCharMatch('\"')) {
+						valueNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING);
+					} else if (peekCharMatch('\'')) {
+						valueNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING);
+					} else if (peekCharMatch('{')) {
+						valueNode = parseFlowMapping();
+					} else if (peekCharMatch('[')) {
+						valueNode = parseFlowSequence();
+					} else {
+						valueNode = readFlowScalarString();
 					}
-					pendingLeadingComments = new ArrayList<>();
-				}
 
-				pendingAnchor = readUpToNextContent(valueNode);
+					if (pendingAnchor != null) {
+						valueNode.setAnchorName(pendingAnchor);
+						pendingAnchor = null;
+					}
 
-				if (pendingAnchor != null) {
-					valueNode.setAnchorName(pendingAnchor);
-					pendingAnchor = null;
-				}
-
-				boolean mapIsClosed = false;
-				if (peekCharMatch('}') || peekCharMatch(',')) {
-					mapIsClosed = peekCharMatch('}');
-					readChar();
+					if (!pendingLeadingComments.isEmpty()) {
+						for (final String commentLine : pendingLeadingComments) {
+							valueNode.addLeadingComment(commentLine);
+						}
+						pendingLeadingComments = new ArrayList<>();
+					}
 
 					pendingAnchor = readUpToNextContent(valueNode);
 
-					mapping.add(keyNode, valueNode);
+					if (pendingAnchor != null) {
+						valueNode.setAnchorName(pendingAnchor);
+						pendingAnchor = null;
+					}
 
-					if (mapIsClosed) {
-						pendingAnchor = readUpToNextContent(mapping);
+					boolean mapIsClosed = false;
+					if (peekCharMatch('}') || peekCharMatch(',')) {
+						mapIsClosed = peekCharMatch('}');
+						readChar();
+
+						pendingAnchor = readUpToNextContent(valueNode);
 						if (pendingAnchor != null) {
 							valueNode.setAnchorName(pendingAnchor);
 							pendingAnchor = null;
 						}
 
-						updatePath(YamlToken.YamlMapping_End, null);
-						return mapping;
+						mapping.add(keyNode, valueNode);
+
+						if (mapIsClosed) {
+							pendingAnchor = readUpToNextContent(mapping);
+							if (pendingAnchor != null) {
+								valueNode.setAnchorName(pendingAnchor);
+								pendingAnchor = null;
+							}
+
+							updatePath(YamlToken.YamlMapping_End, null);
+							return mapping;
+						}
+					} else {
+						throw new YamlParseException("Invalid flow YAML mapping syntax found", getCurrentLine(), getCurrentColumn());
 					}
-				} else {
-					throw new YamlParseException("Invalid flow YAML mapping syntax found", getCurrentLine(), getCurrentColumn());
 				}
 			} else {
 				throw new YamlParseException("Invalid flow YAML mapping syntax found", getCurrentLine(), getCurrentColumn());
@@ -909,6 +912,10 @@ public class YamlReader extends BasicReadAheadReader {
 
 		while (isNotEOF()) {
 			pendingAnchor = readUpToNextContent(sequence);
+			if (pendingAnchor != null) {
+				sequence.setAnchorName(pendingAnchor);
+				pendingAnchor = null;
+			}
 
 			YamlNode itemNode;
 			if (peekCharMatch('\"')) {
@@ -923,6 +930,10 @@ public class YamlReader extends BasicReadAheadReader {
 				readChar();
 
 				pendingAnchor = readUpToNextContent(sequence);
+				if (pendingAnchor != null) {
+					sequence.setAnchorName(pendingAnchor);
+					pendingAnchor = null;
+				}
 
 				updatePath(YamlToken.YamlSequence_End, null);
 				return sequence;
@@ -950,6 +961,10 @@ public class YamlReader extends BasicReadAheadReader {
 				readChar();
 
 				pendingAnchor = readUpToNextContent(sequence);
+				if (pendingAnchor != null) {
+					sequence.setAnchorName(pendingAnchor);
+					pendingAnchor = null;
+				}
 
 				return sequence;
 			} else if (peekCharMatch(',')) {
@@ -957,6 +972,10 @@ public class YamlReader extends BasicReadAheadReader {
 				readChar();
 
 				pendingAnchor = readUpToNextContent(itemNode);
+				if (pendingAnchor != null) {
+					itemNode.setAnchorName(pendingAnchor);
+					pendingAnchor = null;
+				}
 			} else if (peekCharMatch(':')) {
 				readChar();
 
@@ -1008,6 +1027,10 @@ public class YamlReader extends BasicReadAheadReader {
 					readChar();
 
 					pendingAnchor = readUpToNextContent(valueNode);
+					if (pendingAnchor != null) {
+						valueNode.setAnchorName(pendingAnchor);
+						pendingAnchor = null;
+					}
 				}
 			} else {
 				throw new YamlParseException("Invalid flow YAML sequence syntax found", getCurrentLine(), getCurrentColumn());
