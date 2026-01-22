@@ -14,7 +14,7 @@ public class YamlTagDirective extends YamlDirective<YamlTagDirective> {
 			if (parts.length == 3) {
 				final String commentRaw = parts[2].trim();
 				if (commentRaw.startsWith("#")) {
-					setInlineComment(commentRaw.substring(1).trim());
+					setInlineComment(commentRaw.substring(1));
 				} else {
 					throw new Exception("Invalid yaml tag directive data '" + yamlDirective + "'");
 				}
@@ -35,10 +35,10 @@ public class YamlTagDirective extends YamlDirective<YamlTagDirective> {
 		String returnString = "";
 		if (getLeadingComments() != null && !getLeadingComments().isEmpty()) {
 			for (final String commentLine : getLeadingComments()) {
-				returnString += "# " + commentLine + "\n";
+				returnString += "#" + commentLine + "\n";
 			}
 		}
-		returnString += "%TAG " + tag + " " + replacement + (getInlineComment() != null ? " # " + getInlineComment() : "");
+		returnString += "%TAG " + tag + " " + replacement + (getInlineComment() != null ? " #" + getInlineComment() : "");
 		return returnString;
 	}
 }

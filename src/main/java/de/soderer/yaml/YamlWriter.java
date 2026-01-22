@@ -135,7 +135,7 @@ public class YamlWriter implements Closeable {
 
 		if (document.getLeadingComments() != null) {
 			for (final String leadingCommentLine : document.getLeadingComments()) {
-				write("# ");
+				write("#");
 				write(leadingCommentLine);
 				write(linebreakString);
 			}
@@ -144,7 +144,7 @@ public class YamlWriter implements Closeable {
 		if (document.getRoot() != null) {
 			if (document.getRoot().getLeadingComments() != null) {
 				for (final String leadingCommentLine : document.getRoot().getLeadingComments()) {
-					write("# ");
+					write("#");
 					write(leadingCommentLine);
 					write(linebreakString);
 				}
@@ -183,7 +183,7 @@ public class YamlWriter implements Closeable {
 			if (alias.getLeadingComments() != null) {
 				for (final String commentLine : alias.getLeadingComments()) {
 					writeIndent(indentLevel);
-					write("# " + commentLine + linebreakString);
+					write("#" + commentLine + linebreakString);
 				}
 			}
 
@@ -196,15 +196,20 @@ public class YamlWriter implements Closeable {
 				writeFlowSequence(sequence, indentLevel);
 				if (!inFlow) {
 					if (sequence.getInlineComment() != null) {
-						write(" # " + sequence.getInlineComment());
+						write(" #" + sequence.getInlineComment());
 					}
 					write(linebreakString);
 				}
 			} else {
 				if (sequence.getLeadingComments() != null) {
+					boolean firstCommentLine = true;
 					for (final String commentLine : sequence.getLeadingComments()) {
-						write("# " + commentLine + linebreakString);
+						if (!firstCommentLine) {
+							writeIndent(indentLevel);
+						}
+						write("#" + commentLine + linebreakString);
 						writeIndent(indentLevel);
+						firstCommentLine = false;
 					}
 				}
 
@@ -215,7 +220,7 @@ public class YamlWriter implements Closeable {
 				writeFlowMapping(mapping, indentLevel);
 				if (!inFlow) {
 					if (mapping.getInlineComment() != null) {
-						write(" # " + mapping.getInlineComment());
+						write(" #" + mapping.getInlineComment());
 					}
 					write(linebreakString);
 				}
@@ -251,7 +256,7 @@ public class YamlWriter implements Closeable {
 			case NUMBER:
 			case NULL_VALUE:
 				writeIndent(indentLevel);
-				write((value == null ? "null" : value.toString()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + linebreakString);
+				write((value == null ? "null" : value.toString()) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
 				break;
 			case STRING:
 				if (inFlow ) {
@@ -261,7 +266,7 @@ public class YamlWriter implements Closeable {
 					writeIndent(indentLevel);
 					write(escapePlainStringValue(value));
 				} else {
-					write(escapePlainStringValue(value) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + linebreakString);
+					write(escapePlainStringValue(value) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
 				}
 				break;
 			default:
@@ -276,7 +281,7 @@ public class YamlWriter implements Closeable {
 		if (alias.getInlineComment() == null) {
 			write(linebreakString);
 		} else {
-			write(" # " + alias.getInlineComment() + linebreakString);
+			write(" #" + alias.getInlineComment() + linebreakString);
 		}
 		return this;
 	}
@@ -567,10 +572,10 @@ public class YamlWriter implements Closeable {
 			case BOOLEAN:
 			case NUMBER:
 			case NULL_VALUE:
-				write(scalar.getValueString() + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + linebreakString);
+				write(scalar.getValueString() + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
 				break;
 			case STRING:
-				write(escapePlainStringValueInFlow(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + linebreakString);
+				write(escapePlainStringValueInFlow(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
 				break;
 			case MULTILINE_FOLDED:
 			case MULTILINE_LITERAL:
@@ -589,8 +594,13 @@ public class YamlWriter implements Closeable {
 			if (key.getLeadingComments() != null) {
 				if (isFirstData) {
 					if (key.getLeadingComments() != null) {
+						boolean firstCommentLine = true;
 						for (final String commentLine : key.getLeadingComments()) {
-							write("# " + commentLine + linebreakString);
+							if (!firstCommentLine) {
+								writeIndent(indentLevel);
+							}
+							write("#" + commentLine + linebreakString);
+							firstCommentLine = false;
 						}
 					}
 					isFirstData = false;
@@ -598,7 +608,7 @@ public class YamlWriter implements Closeable {
 					if (key.getLeadingComments() != null) {
 						for (final String commentLine : key.getLeadingComments()) {
 							writeIndent(indentLevel);
-							write("# " + commentLine + linebreakString);
+							write("#" + commentLine + linebreakString);
 						}
 					}
 				}
@@ -646,7 +656,7 @@ public class YamlWriter implements Closeable {
 				write(" &" + value.getAnchorName());
 			}
 			if (key.getInlineComment() != null) {
-				write(" # " + key.getInlineComment());
+				write(" #" + key.getInlineComment());
 				startValueInNewLine = true;
 			}
 
@@ -663,10 +673,10 @@ public class YamlWriter implements Closeable {
 						case BOOLEAN:
 						case NUMBER:
 						case NULL_VALUE:
-							write(scalar.getValueString() + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + linebreakString);
+							write(scalar.getValueString() + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
 							break;
 						case STRING:
-							write(escapePlainStringValue(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : "") + linebreakString);
+							write(escapePlainStringValue(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
 							break;
 						case MULTILINE_FOLDED:
 						case MULTILINE_LITERAL:
@@ -678,7 +688,7 @@ public class YamlWriter implements Closeable {
 					if (scalar.getLeadingComments() != null) {
 						for (final String commentLine : scalar.getLeadingComments()) {
 							writeIndent(indentLevel + 1);
-							write("# " + commentLine + linebreakString);
+							write("#" + commentLine + linebreakString);
 						}
 					}
 					writeIndent(indentLevel + 1);
@@ -689,7 +699,7 @@ public class YamlWriter implements Closeable {
 				if (alias.getInlineComment() == null) {
 					write(linebreakString);
 				} else {
-					write(" # " + alias.getInlineComment() + linebreakString);
+					write(" #" + alias.getInlineComment() + linebreakString);
 				}
 			} else if (value instanceof final YamlMapping mapping) {
 				if (!mapping.isFlowStyle()) {
@@ -716,7 +726,7 @@ public class YamlWriter implements Closeable {
 						if (sequence.getLeadingComments() != null) {
 							for (final String commentLine : sequence.getLeadingComments()) {
 								writeIndent(indentLevel + 1);
-								write("# " + commentLine + linebreakString);
+								write("#" + commentLine + linebreakString);
 							}
 						}
 						writeIndent(indentLevel + 1);
@@ -759,7 +769,7 @@ public class YamlWriter implements Closeable {
 					write(", ");
 				} else {
 					if (pendingValueInlineComment != null) {
-						write(", # " + pendingValueInlineComment + linebreakString);
+						write(", #" + pendingValueInlineComment + linebreakString);
 					} else {
 						write("," + linebreakString);
 					}
@@ -771,7 +781,7 @@ public class YamlWriter implements Closeable {
 			if (key.getLeadingComments() != null) {
 				for (final String commentLine : key.getLeadingComments()) {
 					writeIndent(indentLevel + 1);
-					write("# " + commentLine + linebreakString);
+					write("#" + commentLine + linebreakString);
 				}
 			}
 
@@ -797,7 +807,7 @@ public class YamlWriter implements Closeable {
 				}
 			}
 			if (key.getInlineComment() != null) {
-				write(" # " + key.getInlineComment() + linebreakString);
+				write(" #" + key.getInlineComment() + linebreakString);
 			}
 
 			final YamlNode value = entry.getValue();
@@ -813,7 +823,7 @@ public class YamlWriter implements Closeable {
 				for (final String commentLine : value.getLeadingComments()) {
 					write(linebreakString);
 					writeIndent(indentLevel + 2);
-					write("# " + commentLine + linebreakString);
+					write("#" + commentLine + linebreakString);
 				}
 			}
 
@@ -828,7 +838,7 @@ public class YamlWriter implements Closeable {
 				if (alias.getInlineComment() == null) {
 					write(linebreakString);
 				} else {
-					write(" # " + alias.getInlineComment() + linebreakString);
+					write(" #" + alias.getInlineComment() + linebreakString);
 				}
 			} else {
 				writeNode(value, 0, true, false);
@@ -872,7 +882,7 @@ public class YamlWriter implements Closeable {
 					write(", ");
 				} else {
 					if (pendingItemInlineComment != null) {
-						write(", # " + pendingItemInlineComment + linebreakString);
+						write(", #" + pendingItemInlineComment + linebreakString);
 					} else {
 						write("," + linebreakString);
 					}
@@ -882,7 +892,7 @@ public class YamlWriter implements Closeable {
 			if (item.getLeadingComments() != null) {
 				for (final String commentLine : item.getLeadingComments()) {
 					writeIndent(indentLevel + 1);
-					write("# " + commentLine + linebreakString);
+					write("#" + commentLine + linebreakString);
 				}
 			}
 
@@ -901,7 +911,7 @@ public class YamlWriter implements Closeable {
 				if (alias.getInlineComment() == null) {
 					write(linebreakString);
 				} else {
-					write(" # " + alias.getInlineComment() + linebreakString);
+					write(" #" + alias.getInlineComment() + linebreakString);
 				}
 			} else {
 				writeNode(item, indentLevel + 1, true, false);
@@ -929,10 +939,10 @@ public class YamlWriter implements Closeable {
 			case BOOLEAN:
 			case NUMBER:
 			case NULL_VALUE:
-				write(scalar.getValueString() + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : ""));
+				write(scalar.getValueString() + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : ""));
 				break;
 			case STRING:
-				write(escapePlainStringValueInFlow(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " # " + inlineComment : ""));
+				write(escapePlainStringValueInFlow(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : ""));
 				break;
 			case MULTILINE_FOLDED:
 			case MULTILINE_LITERAL:
@@ -1021,7 +1031,7 @@ public class YamlWriter implements Closeable {
 				if (!isFirstData) {
 					writeIndent(indentLevel);
 				}
-				write("# " + commentLine + linebreakString);
+				write("#" + commentLine + linebreakString);
 			}
 			isFirstData = false;
 		}
@@ -1051,7 +1061,7 @@ public class YamlWriter implements Closeable {
 			if (alias.getInlineComment() == null) {
 				write(linebreakString);
 			} else {
-				write(" # " + alias.getInlineComment() + linebreakString);
+				write(" #" + alias.getInlineComment() + linebreakString);
 			}
 		} else if (item instanceof final YamlMapping mapping) {
 			if (!startItemInNewLine) {
@@ -1072,7 +1082,7 @@ public class YamlWriter implements Closeable {
 				if (sequence.getLeadingComments() != null) {
 					for (final String commentLine1 : sequence.getLeadingComments()) {
 						writeIndent(indentLevel + 1);
-						write("# " + commentLine1 + linebreakString);
+						write("#" + commentLine1 + linebreakString);
 					}
 				}
 				writeIndent(indentLevel + 1);

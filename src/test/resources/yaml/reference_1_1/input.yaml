@@ -45,7 +45,7 @@ Core types: # Default automatic tags.
 More types:
   '!!set' : { cherries, plums, apples }
   '!!omap': [ one: 1, two: 2 ]
-#Language Independent Scalar types:
+#Language Independent Scalar types: TODO
 #  { ~, null }              : Null (no value).
 #  [ 1234, 0x4D2, 02333 ]   : [ Decimal int, Hexadecimal int, Octal int ]
 #  [ 1_230.15, 12.3015e+02 ]: [ Fixed float, Exponential float ]

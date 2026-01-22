@@ -178,6 +178,11 @@ public class YamlTest {
 	}
 
 	@Test
+	public void testSimpleMappingEmpty() throws Exception {
+		roundTripMultipleDocumentsInSingleFile("yaml/simpleMappingEmpty/input.yaml", "yaml/simpleMappingEmpty/output.yaml", false);
+	}
+
+	@Test
 	public void testConverter() throws Exception {
 		final String inputDataFileNamem = "yaml/converter/input.yaml";
 		final String outputDataFileName = "yaml/converter/outputWindowsLines.yaml";

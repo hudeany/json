@@ -9,7 +9,7 @@ public class YamlVersionDirective extends YamlDirective<YamlVersionDirective> {
 		if (parts.length == 2) {
 			final String commentRaw = parts[1].trim();
 			if (commentRaw.startsWith("#")) {
-				setInlineComment(commentRaw.substring(1).trim());
+				setInlineComment(commentRaw.substring(1));
 			} else {
 				throw new Exception("Invalid yaml tag directive data '" + yamlVersion + "'");
 			}
@@ -25,10 +25,10 @@ public class YamlVersionDirective extends YamlDirective<YamlVersionDirective> {
 		String returnString = "";
 		if (getLeadingComments() != null && !getLeadingComments().isEmpty()) {
 			for (final String commentLine : getLeadingComments()) {
-				returnString += "# " + commentLine + "\n";
+				returnString += "#" + commentLine + "\n";
 			}
 		}
-		returnString += "%YAML " + yamlVersion + (getInlineComment() != null ? " # " + getInlineComment() : "");
+		returnString += "%YAML " + yamlVersion + (getInlineComment() != null ? " #" + getInlineComment() : "");
 		return returnString;
 	}
 }

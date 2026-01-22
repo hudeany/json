@@ -31,8 +31,6 @@ import de.soderer.yaml.exception.YamlParseException;
 
 /**
  * TODO:
- * Read datatype definitions like "!!str"
- * Read complex mapping keys for maps as keys (Fix test file yaml/reference_1_1/input.yaml)
  * Improve multiline scalars folded and literal
  * Check alias references after document read
  * Check cyclic dependencies in aliases
@@ -302,7 +300,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 		while (peekCharMatch('#')) {
 			readChar();
-			final String commentText = readUpToNext(false, null, '\n').trim();
+			final String commentText = readUpToNext(false, null, '\n');
 			pendingLeadingComments.add(commentText);
 			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 		}
@@ -315,7 +313,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 		readChar();
 
-		final String commentText = readUpToNext(false, null, '\n').trim();
+		final String commentText = readUpToNext(false, null, '\n');
 		return commentText;
 	}
 
@@ -741,6 +739,11 @@ public class YamlReader extends BasicReadAheadReader {
 			pendingLeadingComments = new ArrayList<>();
 		}
 
+		if (peekCharMatch('}')) {
+			readChar();
+			return mapping;
+		}
+
 		while (isNotEOF()) {
 			pendingAnchor = readUpToNextContent(null);
 
@@ -749,6 +752,10 @@ public class YamlReader extends BasicReadAheadReader {
 				keyNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING);
 			} else if (peekCharMatch('\'')) {
 				keyNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING);
+			} else if (peekCharMatch('{')) {
+				keyNode = parseFlowMapping();
+			} else if (peekCharMatch('[')) {
+				keyNode = parseFlowSequence();
 			} else {
 				keyNode = readFlowScalarString();
 			}
@@ -908,6 +915,11 @@ public class YamlReader extends BasicReadAheadReader {
 				sequence.addLeadingComment(commentLine);
 			}
 			pendingLeadingComments = new ArrayList<>();
+		}
+
+		if (peekCharMatch(']')) {
+			readChar();
+			return sequence;
 		}
 
 		while (isNotEOF()) {

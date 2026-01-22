@@ -6,6 +6,17 @@ mapping1:
     property12: value12
     property13: value13
 
+# First comment property mappingX
+# Second comment property mappingX
+mappingX:
+  # First comment property mappingSub
+  # Second comment property mappingSub
+  mappingSub:
+    # Comment item11
+    - property11: value11
+      property12: value12
+      property13: value13
+
 # First comment property mapping2
 # Second comment property mapping2
 mapping2: # Inline comment mapping2
