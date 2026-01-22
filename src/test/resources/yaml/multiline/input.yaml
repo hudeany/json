@@ -80,3 +80,7 @@ folded strip chomped: >-
 withIndentationIndicator: |-3
     Single leading blank and single trailing blank 
      Double leading blank and single trailing blank 
+
+startWithComment: |
+  # Start with comment like line
+  Other text 

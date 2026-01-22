@@ -375,8 +375,7 @@ public class YamlWriter implements Closeable {
 				}
 
 				if (!needsQuotes) {
-					if (key.startsWith("[") || key.startsWith("]") || key.startsWith("{") || key.startsWith("}")
-							|| key.endsWith("[") || key.endsWith("]") || key.endsWith("{") || key.endsWith("}")) {
+					if (key.startsWith("[") || key.startsWith("]") || key.startsWith("{") || key.startsWith("}")) {
 						needsQuotes = true;
 					}
 				}
@@ -446,8 +445,7 @@ public class YamlWriter implements Closeable {
 				}
 
 				if (!needsQuotes) {
-					if (value.startsWith("[") || value.startsWith("]") || value.startsWith("{") || value.startsWith("}")
-							|| value.endsWith("[") || value.endsWith("]") || value.endsWith("{") || value.endsWith("}")) {
+					if (value.startsWith("[") || value.startsWith("]") || value.startsWith("{") || value.startsWith("}")) {
 						needsQuotes = true;
 					}
 				}
@@ -622,11 +620,11 @@ public class YamlWriter implements Closeable {
 				write(scalar.getValueString() + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
 				break;
 			case STRING:
-				write(escapePlainStringValueInFlow(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
+				write(escapePlainStringValue(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
 				break;
 			case MULTILINE:
 			default:
-				write(escapePlainStringValueInFlow(scalar.getValueString()) + linebreakString);
+				write(escapePlainStringValue(scalar.getValueString()) + linebreakString);
 		}
 		return this;
 	}

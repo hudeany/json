@@ -1239,7 +1239,7 @@ public class YamlReader extends BasicReadAheadReader {
 			final YamlMultilineScalarType multilineType,
 			final YamlMultilineScalarChompingType chompingType,
 			final int indentationIndicator) throws Exception {
-		skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+		readNextIndentation();
 
 		final int multilineIndentationLevel = getNumberOfIndentationChars();
 

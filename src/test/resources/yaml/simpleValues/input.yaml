@@ -49,3 +49,8 @@
 - "{}"
 - []
 - {}
+- ${abc}
+- abc?def
+- abc? def
+- abc:def
+- https://abc:8080def?bc
