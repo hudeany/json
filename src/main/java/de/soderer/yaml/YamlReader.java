@@ -228,7 +228,9 @@ public class YamlReader extends BasicReadAheadReader {
 				readChar();
 				nextIndentationSize++;
 			} else if (peekCharMatch('#')) {
-				readLeadingComment();
+				readChar();
+				final String commentText = readUpToNext(false, null, '\n');
+				pendingLeadingComments.add(commentText);
 				nextIndentationSize = getNumberOfIndentationChars();
 			} else if (peekCharMatch('\n')) {
 				readChar();
@@ -292,19 +294,6 @@ public class YamlReader extends BasicReadAheadReader {
 			} else {
 				throw new YamlParseException("Unexpected indentation level: " + nextIndentationSize + " indentations: " + indentations, getCurrentLine(), getCurrentColumn());
 			}
-		}
-	}
-
-	private void readLeadingComment() throws Exception {
-		if (peekCharNotMatch('#')) {
-			throw new YamlParseException("Expected comment not found", getCurrentLine(), getCurrentColumn());
-		}
-
-		while (peekCharMatch('#')) {
-			readChar();
-			final String commentText = readUpToNext(false, null, '\n');
-			pendingLeadingComments.add(commentText);
-			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 		}
 	}
 

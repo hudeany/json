@@ -13,7 +13,7 @@ public abstract class YamlNode {
 	}
 
 	public YamlNode addLeadingComment(final String comment) {
-		if (comment != null && !comment.isEmpty()) {
+		if (comment != null) {
 			if (leadingComments == null) {
 				leadingComments = new ArrayList<>();
 			}
