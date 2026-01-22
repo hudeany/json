@@ -361,7 +361,7 @@ public class YamlWriter implements Closeable {
 						final char nextChar = key.charAt(i);
 
 						if ((Character.isWhitespace(nextChar) && nextChar != ' ')
-								|| "#&*!|>'\"%@`".indexOf(nextChar) > -1) {
+								|| "#*!'\"%@`".indexOf(nextChar) > -1) {
 							needsQuotes = true;
 							break;
 						}
@@ -375,7 +375,19 @@ public class YamlWriter implements Closeable {
 				}
 
 				if (!needsQuotes) {
+					if (key.contains(" &") || key.contains("\t&") || key.startsWith("&")) {
+						needsQuotes = true;
+					}
+				}
+
+				if (!needsQuotes) {
 					if (key.startsWith("[") || key.startsWith("]") || key.startsWith("{") || key.startsWith("}")) {
+						needsQuotes = true;
+					}
+				}
+
+				if (!needsQuotes) {
+					if (key.startsWith("|") || key.startsWith(">")) {
 						needsQuotes = true;
 					}
 				}
@@ -431,7 +443,7 @@ public class YamlWriter implements Closeable {
 						final char nextChar = value.charAt(i);
 
 						if ((Character.isWhitespace(nextChar) && nextChar != ' ')
-								|| "#&*!|>'\"%@`".indexOf(nextChar) > -1) {
+								|| "#*!'\"%@`".indexOf(nextChar) > -1) {
 							needsQuotes = true;
 							break;
 						}
@@ -445,7 +457,19 @@ public class YamlWriter implements Closeable {
 				}
 
 				if (!needsQuotes) {
+					if (value.contains(" &") || value.contains("\t&") || value.startsWith("&")) {
+						needsQuotes = true;
+					}
+				}
+
+				if (!needsQuotes) {
 					if (value.startsWith("[") || value.startsWith("]") || value.startsWith("{") || value.startsWith("}")) {
+						needsQuotes = true;
+					}
+				}
+
+				if (!needsQuotes) {
+					if (value.startsWith("|") || value.startsWith(">")) {
 						needsQuotes = true;
 					}
 				}
@@ -499,7 +523,7 @@ public class YamlWriter implements Closeable {
 						final char nextChar = value.charAt(i);
 
 						if ((Character.isWhitespace(nextChar) && nextChar != ' ')
-								|| "#&*!|>'\"%@`".indexOf(nextChar) > -1) {
+								|| "#*!'\"%@`".indexOf(nextChar) > -1) {
 							needsQuotes = true;
 							break;
 						}
@@ -513,7 +537,19 @@ public class YamlWriter implements Closeable {
 				}
 
 				if (!needsQuotes) {
+					if (value.contains(" &") || value.contains("\t&") || value.startsWith("&")) {
+						needsQuotes = true;
+					}
+				}
+
+				if (!needsQuotes) {
 					if (value.contains("[") || value.contains("]") || value.contains("{") || value.contains("}")) {
+						needsQuotes = true;
+					}
+				}
+
+				if (!needsQuotes) {
+					if (value.startsWith("|") || value.startsWith(">")) {
 						needsQuotes = true;
 					}
 				}
@@ -1084,8 +1120,8 @@ public class YamlWriter implements Closeable {
 					writeIndent(indentLevel);
 				}
 				write("#" + commentLine + linebreakString);
+				isFirstData = false;
 			}
-			isFirstData = false;
 		}
 
 		if (!isFirstData) {

@@ -55,3 +55,7 @@
 # Second comment property item2
 "item2": # Inline comment value2
   "value2" # Inline comment value2
+"sequenceOfMaps":
+  # First comment property1
+  # Second comment property1
+  - "property1": "abc"
