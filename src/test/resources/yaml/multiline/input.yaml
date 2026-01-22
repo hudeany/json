@@ -1,42 +1,82 @@
-# This text will have one trailing newline.
+# This text will have one trailing newline
 literal chomped: |
-  My first line
+  My first line of literal chomped
   # with comment like text
-  And a third line, with comma!
-
+  Starting empty lines here
   
-# This text will have one trailing newline.
+
+  And two empty lines
+  And a third line, with comma!
+    And an indented line
+
+
+
+# This text will have one trailing newline
 folded chomped: >
-  My first line
+  My first line of folded chomped
   # with comment like text
-  And a third line, with comma!
-
+  Starting empty lines here
   
-# This text will keep all trailing newlines.
+
+  And two empty lines
+  And a third line, with comma!
+    And an indented line
+
+
+
+# This will keep all three trailing newlines
 literal not chomped: |+
-  My first line
+  My first line of literal not chomped
   # with comment like text
-  And a third line, with comma!
-
+  Starting empty lines here
   
-# This text will keep all trailing newlines.
+
+  And two empty lines
+  And a third line, with comma!
+    And an indented line
+
+
+
+# This text will keep all three trailing newlines
 folded not chomped: >+
-  My first line
+  My first line of folded not chomped
   # with comment like text
-  And a third line, with comma!
-
+  Starting empty lines here
   
+
+  And two empty lines
+  And a third line, with comma!
+    And an indented line
+
+
+
 # This text will have no trailing newline.
 literal strip chomped: |-
-  My first line
+  My first line of literal strip chomped
   # with comment like text
-  And a third line, with comma!
-
+  Starting empty lines here
   
+
+  And two empty lines
+  And a third line, with comma!
+    And an indented line
+
+
+
 # This text will have no trailing newline.
 folded strip chomped: >-
-  My first line
+  My first line of folded strip chomped
   # with comment like text
-  And a third line, with comma!
-
+  Starting empty lines here
   
+
+  And two empty lines
+  And a third line, with comma!
+    And an indented line
+
+
+
+# This will handle leading line spaces differently
+withIndentationIndicator: |-3
+    Single leading blank and single trailing blank 
+     Double leading blank and single trailing blank 

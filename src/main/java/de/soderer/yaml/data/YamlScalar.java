@@ -8,6 +8,9 @@ public class YamlScalar extends YamlNode {
 	private final String valueString;
 	private final Object value;
 	private final YamlScalarType type;
+	private YamlMultilineScalarType multilineType = YamlMultilineScalarType.LITERAL;
+	private YamlMultilineScalarChompingType multilineChompingType = YamlMultilineScalarChompingType.KEEP;
+	private int indentationIndicator = 0;
 
 	public YamlScalar(final Object value) throws RuntimeException {
 		if (value == null) {
@@ -164,6 +167,39 @@ public class YamlScalar extends YamlNode {
 
 	public YamlScalarType getType() {
 		return type;
+	}
+
+	public YamlMultilineScalarType getMultilineType() {
+		return multilineType;
+	}
+
+	public void setMultilineType(final YamlMultilineScalarType multilineType) throws Exception {
+		this.multilineType = multilineType;
+		if (multilineType == null) {
+			throw new Exception("Invalid empty multilineType");
+		}
+	}
+
+	public YamlMultilineScalarChompingType getMultilineChompingType() {
+		return multilineChompingType;
+	}
+
+	public void setMultilineChompingType(final YamlMultilineScalarChompingType multilineChompingType) throws Exception {
+		this.multilineChompingType = multilineChompingType;
+		if (multilineChompingType == null) {
+			throw new Exception("Invalid empty multilineChompingType");
+		}
+	}
+
+	public int getIndentationIndicator() {
+		return indentationIndicator;
+	}
+
+	public void setIndentationIndicator(final int indentationIndicator) throws Exception {
+		this.indentationIndicator = indentationIndicator;
+		if (indentationIndicator < 0) {
+			throw new Exception("Invalid multiline scalar indentation indicator: indentationIndicator");
+		}
 	}
 
 	@Override

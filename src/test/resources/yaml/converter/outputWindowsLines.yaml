@@ -14,7 +14,7 @@ team:
     - name: Jane Doe
       age: 37
 description: "This is a multiline\nliteral string.\nLinebreaks are kept as they are.\n"
-notes: "This is a folded multiline string, it is folded in  when written.\n"
+notes: "This is a folded multiline string, it is folded in  when written. "
 settings:
   mode: standard
   flags:

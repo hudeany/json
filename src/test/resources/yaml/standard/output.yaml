@@ -24,10 +24,8 @@
   This is a multiline
   literal string.
   Linebreaks are kept as they are.
-  
 "notes": >
-  This is a folded multiline string, it is folded in  when written.
-  
+  This is a folded multiline string, it is folded in  when written. 
 "settings":
   "mode": "standard"
   "flags": ["debug", "verbose", "safe"]

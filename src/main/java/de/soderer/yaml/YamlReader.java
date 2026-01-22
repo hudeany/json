@@ -15,9 +15,12 @@ import de.soderer.json.path.JsonPath;
 import de.soderer.json.path.JsonPathArrayElement;
 import de.soderer.json.path.JsonPathPropertyElement;
 import de.soderer.json.utilities.BasicReadAheadReader;
+import de.soderer.json.utilities.Utilities;
 import de.soderer.yaml.data.YamlAlias;
 import de.soderer.yaml.data.YamlDocument;
 import de.soderer.yaml.data.YamlMapping;
+import de.soderer.yaml.data.YamlMultilineScalarChompingType;
+import de.soderer.yaml.data.YamlMultilineScalarType;
 import de.soderer.yaml.data.YamlNode;
 import de.soderer.yaml.data.YamlScalar;
 import de.soderer.yaml.data.YamlScalarType;
@@ -31,7 +34,6 @@ import de.soderer.yaml.exception.YamlParseException;
 
 /**
  * TODO:
- * Improve multiline scalars folded and literal
  * Check alias references after document read
  * Check cyclic dependencies in aliases
  */
@@ -1144,16 +1146,17 @@ public class YamlReader extends BasicReadAheadReader {
 				scalar.setInlineComment(inlineComment);
 			}
 			return scalar;
-		} else if (scalarString.startsWith(">")) {
-			final char chomping = scalarString.contains("+") ? '+' : scalarString.contains("-") ? '-' : ' ';
-			final YamlScalar scalar = parseMultilineScalar(true, chomping);
-			if (inlineComment != null) {
-				scalar.setInlineComment(inlineComment);
+		} else if (scalarString.startsWith(">") || scalarString.startsWith("|")) {
+			final YamlMultilineScalarType type = YamlMultilineScalarType.getYamlMultilineScalarType(scalarString);
+			final YamlMultilineScalarChompingType comping = YamlMultilineScalarChompingType.getYamlMultilineScalarChompingType(scalarString);
+			final int indentationIndicator = YamlMultilineScalarType.getYamlMultilineScalarIndentationIndicator(scalarString);
+
+			YamlScalar scalar;
+			try {
+				scalar = parseMultilineScalar(type, comping, indentationIndicator);
+			} catch (final Exception e) {
+				throw new YamlParseException("Invalid YAML mulitline scalar: " + e.getMessage(), getCurrentLine(), getCurrentColumn());
 			}
-			return scalar;
-		} else if (scalarString.startsWith("|")) {
-			final char chomping = scalarString.contains("+") ? '+' : scalarString.contains("-") ? '-' : ' ';
-			final YamlScalar scalar = parseMultilineScalar(false, chomping);
 			if (inlineComment != null) {
 				scalar.setInlineComment(inlineComment);
 			}
@@ -1214,15 +1217,15 @@ public class YamlReader extends BasicReadAheadReader {
 			if (inlineComment != null) {
 				scalar.setInlineComment(inlineComment);
 			}
-		} else if (scalarString.startsWith(">")) {
-			final char chomping = scalarString.contains("+") ? '+' : scalarString.contains("-") ? '-' : ' ';
-			scalar = parseMultilineScalar(true, chomping);
-			if (inlineComment != null) {
-				scalar.setInlineComment(inlineComment);
+		} else if (scalarString.startsWith(">") || scalarString.startsWith("|")) {
+			final YamlMultilineScalarType type = YamlMultilineScalarType.getYamlMultilineScalarType(scalarString);
+			final YamlMultilineScalarChompingType comping = YamlMultilineScalarChompingType.getYamlMultilineScalarChompingType(scalarString);
+			final int indentationIndicator = YamlMultilineScalarType.getYamlMultilineScalarIndentationIndicator(scalarString);
+			try {
+				scalar = parseMultilineScalar(type, comping, indentationIndicator);
+			} catch (final Exception e) {
+				throw new YamlParseException("Invalid YAML mulitline scalar: " + e.getMessage(), getCurrentLine(), getCurrentColumn());
 			}
-		} else if (scalarString.startsWith("|")) {
-			final char chomping = scalarString.contains("+") ? '+' : scalarString.contains("-") ? '-' : ' ';
-			scalar = parseMultilineScalar(false, chomping);
 			if (inlineComment != null) {
 				scalar.setInlineComment(inlineComment);
 			}
@@ -1237,43 +1240,60 @@ public class YamlReader extends BasicReadAheadReader {
 		return scalar;
 	}
 
-	private YamlScalar parseMultilineScalar(final boolean folded, final char chomping) throws Exception {
+	private YamlScalar parseMultilineScalar(
+			final YamlMultilineScalarType multilineType,
+			final YamlMultilineScalarChompingType chompingType,
+			final int indentationIndicator) throws Exception {
 		skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 
 		final int multilineIndentationLevel = getNumberOfIndentationChars();
 
 		final StringBuilder raw = new StringBuilder();
 
+		int textEffectiveIndentationLevel = 0;
+		if (indentationIndicator > 0) {
+			final int indentationStart = getNumberOfIndentationChars() - indentations.peek() - 1;
+			textEffectiveIndentationLevel = indentationStart + indentationIndicator;
+		} else {
+			textEffectiveIndentationLevel = getNumberOfIndentationChars();
+		}
+
 		while (isNotEOF() && multilineIndentationLevel <= getNumberOfIndentationChars()) {
-			final String nextLine = readUpToNext(false, null, '\n');
+			final int lineStartColumnIndex = (int) getCurrentColumn() - 1;
+			String nextLine = readUpToNext(false, null, '\n');
+
+			if (textEffectiveIndentationLevel < lineStartColumnIndex) {
+				nextLine = Utilities.repeat(" ", getNumberOfIndentationChars() - textEffectiveIndentationLevel) + nextLine;
+			}
+
+			readChar();
 			raw.append(nextLine);
 			raw.append("\n");
-			readChar();
 			readNextIndentation();
 		}
 
-		if (peekCharMatch('#')) {
-			readLeadingComment();
-		}
-
 		String text = raw.toString();
-		text = applyChomping(text, chomping);
-		if (folded) {
+		text = applyChomping(text, chompingType);
+		if (multilineType == YamlMultilineScalarType.FOLDED) {
 			text = foldLines(text);
 		}
 
-		final YamlScalar scalar = new YamlScalar(text, folded ? YamlScalarType.MULTILINE_FOLDED : YamlScalarType.MULTILINE_LITERAL);
+		final YamlScalar scalar = new YamlScalar(text, YamlScalarType.MULTILINE);
+		scalar.setMultilineType(multilineType);
+		scalar.setMultilineChompingType(chompingType);
+		scalar.setIndentationIndicator(indentationIndicator);
 
 		return scalar;
 	}
 
 	@SuppressWarnings("static-method")
-	private String applyChomping(final String text, final char chomping) {
-		switch (chomping) {
-			case '+':
+	private String applyChomping(final String text, final YamlMultilineScalarChompingType chompingType) {
+		switch (chompingType) {
+			case KEEP:
 				return text;
-			case '-':
+			case STRIP:
 				return text.replaceAll("\\n+$", "");
+			case CLIP:
 			default:
 				return text.replaceAll("\\n+$", "") + "\n";
 		}
@@ -1282,22 +1302,7 @@ public class YamlReader extends BasicReadAheadReader {
 	@SuppressWarnings("static-method")
 	private String foldLines(final String text) {
 		final String[] lines = text.split("\\n", -1);
-		final StringBuilder out = new StringBuilder();
-
-		for (int i = 0; i < lines.length; i++) {
-			final String line = lines[i];
-
-			if (line.isEmpty()) {
-				out.append("\n");
-			} else {
-				out.append(line);
-				if (i < lines.length - 1) {
-					out.append(" ");
-				}
-			}
-		}
-
-		return out.toString().trim() + "\n";
+		return Utilities.join(lines, " ");
 	}
 
 	private int getNumberOfIndentationChars() {

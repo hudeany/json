@@ -97,8 +97,7 @@ public class YamlToJsonConverter {
 				case NULL_VALUE:
 					return new JsonValueNull();
 				case STRING:
-				case MULTILINE_FOLDED:
-				case MULTILINE_LITERAL:
+				case MULTILINE:
 					return new JsonValueString((String) yamlScalar.getValue());
 				case NUMBER:
 					return new JsonValueNumber((Number) yamlScalar.getValue());

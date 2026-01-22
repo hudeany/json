@@ -39,14 +39,11 @@ mapping7: # Mapping with complex mapping keys
 data1: |
   There once was a tall man from Ealing
   Who got on a bus to Darjeeling
-  It said on the door
-  "Please don't sit on the floor"
+      It said on the door
+      "Please don't sit on the floor"
   So he carefully sat on the ceiling
-  
 data2: >
-  Wrapped text will be folded into a single paragraph 
-  Blank lines denote paragraph breaks
-  
+  Wrapped text will be folded into a single paragraph  Blank lines denote paragraph breaks 
 ...
 ---
 # indentation by tabs is not recommended
@@ -117,5 +114,4 @@ base64BinaryData: |
   ar3xxbJ9p0qa7R0YxwzYxwz
   YxwzYxwzYxwzYxwzaFME1IA
   ADs=
-  
 ...

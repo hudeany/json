@@ -20,11 +20,9 @@ bill-to: &id001
     123 Tornado Alley
     Suite 16
     USA
-    
   city: East Centerville
   state: KS
 ship-to: *id001
 specialDelivery: >
-  Follow the instructions as given earlier.
-  
+  Follow the instructions as given earlier. 
 ...

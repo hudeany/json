@@ -10,6 +10,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import de.soderer.json.utilities.Linebreak;
 import de.soderer.json.utilities.NumberUtilities;
@@ -27,6 +28,7 @@ import de.soderer.yaml.data.directive.YamlDirective;
  * TODOs:
  * - Write with ignore settings for flow style
  * - Write with ignore settings for comments
+ * - Write with multiline String scalars as quoted text
  * - Write with resolving aliases (Check cyclic dependencies in aliases)
  */
 public class YamlWriter implements Closeable {
@@ -246,11 +248,8 @@ public class YamlWriter implements Closeable {
 		final String inlineComment = scalar.getInlineComment();
 
 		switch (type) {
-			case MULTILINE_LITERAL:
-				writeMultilineLiteral(scalar, indentLevel);
-				break;
-			case MULTILINE_FOLDED:
-				writeMultilineFolded(scalar, indentLevel);
+			case MULTILINE:
+				writeMultilineStringScalar(scalar, indentLevel);
 				break;
 			case BOOLEAN:
 			case NUMBER:
@@ -286,27 +285,58 @@ public class YamlWriter implements Closeable {
 		return this;
 	}
 
-	private YamlWriter writeMultilineLiteral(final YamlScalar scalar, final int indentLevel) throws IOException {
+	private YamlWriter writeMultilineStringScalar(final YamlScalar scalar, final int indentLevel) throws IOException {
 		if (indentLevel > 0) {
 			write(" ");
 		}
-		write("|" + linebreakString);
 
-		for (final String line : (scalar.getValueString()).split("\n", -1)) {
-			writeIndent(indentLevel);
-			write(line + linebreakString);
+		switch (scalar.getMultilineType()) {
+			case FOLDED:
+				write(">");
+				break;
+			case LITERAL:
+				write("|");
+				break;
+			default:
+				break;
 		}
-		return this;
-	}
-
-	private YamlWriter writeMultilineFolded(final YamlScalar scalar, final int indentLevel) throws IOException {
-		if (indentLevel > 0) {
-			write(" ");
+		switch (scalar.getMultilineChompingType()) {
+			case KEEP:
+				write("+");
+				break;
+			case STRIP:
+				write("-");
+				break;
+			case CLIP:
+			default:
+				break;
 		}
-		write(">" + linebreakString);
+		if (scalar.getIndentationIndicator() > 0) {
+			write(Integer.toString(scalar.getIndentationIndicator()));
+		}
+		write(linebreakString);
 
-		for (final String line : (scalar.getValueString()).split("\n", -1)) {
-			writeIndent(indentLevel);
+		String text;
+		switch (scalar.getMultilineChompingType()) {
+			case KEEP:
+				text = scalar.getValueString();
+				break;
+			case STRIP:
+				text = scalar.getValueString().replaceAll("\\n+$", "");
+				break;
+			case CLIP:
+			default:
+				text = scalar.getValueString().replaceAll("\\n+$", "") + "\n";
+				break;
+		}
+
+		for (final String line : text.lines().collect(Collectors.toList())) {
+			if (scalar.getIndentationIndicator() > 0) {
+				writeIndent(indentLevel - 1);
+				write(Utilities.repeat(" ", scalar.getIndentationIndicator()));
+			} else {
+				writeIndent(indentLevel);
+			}
 			write(line + linebreakString);
 		}
 		return this;
@@ -577,8 +607,7 @@ public class YamlWriter implements Closeable {
 			case STRING:
 				write(escapePlainStringValueInFlow(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
 				break;
-			case MULTILINE_FOLDED:
-			case MULTILINE_LITERAL:
+			case MULTILINE:
 			default:
 				write(escapePlainStringValueInFlow(scalar.getValueString()) + linebreakString);
 		}
@@ -661,8 +690,7 @@ public class YamlWriter implements Closeable {
 			}
 
 			if (value instanceof final YamlScalar scalar) {
-				if (scalar.getType() == YamlScalarType.MULTILINE_LITERAL
-						|| scalar.getType() == YamlScalarType.MULTILINE_FOLDED) {
+				if (scalar.getType() == YamlScalarType.MULTILINE) {
 					writeNode(scalar, indentLevel + 1, false, false);
 				} else if (!startValueInNewLine
 						&& scalar.getAnchorName() == null
@@ -678,8 +706,9 @@ public class YamlWriter implements Closeable {
 						case STRING:
 							write(escapePlainStringValue(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : "") + linebreakString);
 							break;
-						case MULTILINE_FOLDED:
-						case MULTILINE_LITERAL:
+						case MULTILINE:
+							writeMultilineStringScalar(scalar, indentLevel);
+							break;
 						default:
 							write(escapePlainStringValue(scalar.getValueString()) + linebreakString);
 					}
@@ -828,8 +857,7 @@ public class YamlWriter implements Closeable {
 			}
 
 			if (value instanceof final YamlScalar scalarVal
-					&& scalarVal.getType() != YamlScalarType.MULTILINE_LITERAL
-					&& scalarVal.getType() != YamlScalarType.MULTILINE_FOLDED
+					&& scalarVal.getType() != YamlScalarType.MULTILINE
 					&& scalarVal.getAnchorName() == null
 					&& (scalarVal.getLeadingComments() == null || scalarVal.getLeadingComments().isEmpty())) {
 				writeScalarInlineInFlow(scalarVal);
@@ -901,8 +929,7 @@ public class YamlWriter implements Closeable {
 			}
 
 			if (item instanceof final YamlScalar scalar
-					&& scalar.getType() != YamlScalarType.MULTILINE_LITERAL
-					&& scalar.getType() != YamlScalarType.MULTILINE_FOLDED
+					&& scalar.getType() != YamlScalarType.MULTILINE
 					&& scalar.getAnchorName() == null
 					&& (scalar.getLeadingComments() == null || scalar.getLeadingComments().isEmpty())) {
 				writeScalarInlineInFlow(scalar);
@@ -944,8 +971,7 @@ public class YamlWriter implements Closeable {
 			case STRING:
 				write(escapePlainStringValueInFlow(scalar.getValueString()) + (Utilities.isNotBlank(inlineComment) ? " #" + inlineComment : ""));
 				break;
-			case MULTILINE_FOLDED:
-			case MULTILINE_LITERAL:
+			case MULTILINE:
 			default:
 				write(escapePlainStringValueInFlow(scalar.getValueString()));
 		}
@@ -1048,7 +1074,9 @@ public class YamlWriter implements Closeable {
 		}
 
 		if (item instanceof final YamlScalar scalar) {
-			if (startItemInNewLine) {
+			if (scalar.getType() == YamlScalarType.MULTILINE) {
+				writeMultilineStringScalar(scalar, indentLevel + 1);
+			} else if (startItemInNewLine) {
 				write(linebreakString);
 				writeIndent(indentLevel + 1);
 				writeScalarInlineInSequence(scalar);
