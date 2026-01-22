@@ -365,13 +365,19 @@ public class YamlWriter implements Closeable {
 							needsQuotes = true;
 							break;
 						}
+					}
+				}
 
-						if (":{}[]".indexOf(nextChar) > -1) {
-							if (key.length() > i + 1 && " \t\n\r".indexOf(key.charAt(i + 1)) > -1) {
-								needsQuotes = true;
-								break;
-							}
-						}
+				if (!needsQuotes) {
+					if (key.contains(": ") || key.contains(":\t") || key.contains(":\n")) {
+						needsQuotes = true;
+					}
+				}
+
+				if (!needsQuotes) {
+					if (key.startsWith("[") || key.startsWith("]") || key.startsWith("{") || key.startsWith("}")
+							|| key.endsWith("[") || key.endsWith("]") || key.endsWith("{") || key.endsWith("}")) {
+						needsQuotes = true;
 					}
 				}
 
@@ -430,13 +436,19 @@ public class YamlWriter implements Closeable {
 							needsQuotes = true;
 							break;
 						}
+					}
+				}
 
-						if (":{}[]".indexOf(nextChar) > -1) {
-							if (value.length() > i + 1 && " \t\n\r".indexOf(value.charAt(i + 1)) > -1) {
-								needsQuotes = true;
-								break;
-							}
-						}
+				if (!needsQuotes) {
+					if (value.contains(": ") || value.contains(":\t") || value.contains(":\n")) {
+						needsQuotes = true;
+					}
+				}
+
+				if (!needsQuotes) {
+					if (value.startsWith("[") || value.startsWith("]") || value.startsWith("{") || value.startsWith("}")
+							|| value.endsWith("[") || value.endsWith("]") || value.endsWith("{") || value.endsWith("}")) {
+						needsQuotes = true;
 					}
 				}
 
@@ -493,13 +505,18 @@ public class YamlWriter implements Closeable {
 							needsQuotes = true;
 							break;
 						}
+					}
+				}
 
-						if (":{}[]".indexOf(nextChar) > -1) {
-							if (value.length() > i + 1 && " \t\n\r".indexOf(value.charAt(i + 1)) > -1) {
-								needsQuotes = true;
-								break;
-							}
-						}
+				if (!needsQuotes) {
+					if (value.contains(": ") || value.contains(":\t") || value.contains(":\n")) {
+						needsQuotes = true;
+					}
+				}
+
+				if (!needsQuotes) {
+					if (value.contains("[") || value.contains("]") || value.contains("{") || value.contains("}")) {
+						needsQuotes = true;
 					}
 				}
 
