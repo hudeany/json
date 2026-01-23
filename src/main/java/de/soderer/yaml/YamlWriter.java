@@ -352,7 +352,7 @@ public class YamlWriter implements Closeable {
 	}
 
 	private String escapePlainStringKey(final String key, final YamlStringQuoteType quoteType) {
-		boolean needsQuotes = alwaysQuoteStringValues || key.isEmpty() || (quoteType != null && quoteType != YamlStringQuoteType.NONE);
+		boolean needsQuotes = alwaysQuoteStringKeys || key.isEmpty() || (quoteType != null && quoteType != YamlStringQuoteType.NONE);
 
 		if (!needsQuotes) {
 			if (Character.isWhitespace(key.charAt(0))
