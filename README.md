@@ -173,7 +173,7 @@ This library is also available via Maven2 repository
 <repositories>
 	<repository>
 		<id>de.soderer</id>
-		<url>http://soderer.de/maven2</url>
+		<url>https://soderer.de/maven2</url>
 	</repository>
 </repositories>
 
