@@ -20,9 +20,9 @@ import de.soderer.yaml.data.YamlDocument;
 import de.soderer.yaml.data.YamlMapping;
 import de.soderer.yaml.data.YamlNode;
 import de.soderer.yaml.data.YamlScalar;
-import de.soderer.yaml.data.YamlStringQuoteType;
 import de.soderer.yaml.data.YamlScalarType;
 import de.soderer.yaml.data.YamlSequence;
+import de.soderer.yaml.data.YamlStringQuoteType;
 import de.soderer.yaml.data.directive.YamlDirective;
 
 /**
@@ -36,6 +36,7 @@ public class YamlWriter implements Closeable {
 	/** Default output encoding. */
 	public static final Charset DEFAULT_ENCODING = StandardCharsets.UTF_8;
 	private static Linebreak DEFAULT_LINEBREAK = Linebreak.Unix;
+	private YamlStringQuoteType defaultStringValueQuoteType = YamlStringQuoteType.DOUBLE;
 
 	/** Output stream. */
 	private OutputStream outputStream;
@@ -44,8 +45,8 @@ public class YamlWriter implements Closeable {
 	private final Charset encoding;
 
 	/** Output linebreak. */
-	private Linebreak linebreak;
-	private String linebreakString;
+	private final Linebreak linebreak;
+	private final String linebreakString;
 
 	private int indentSize = 2;
 	private boolean alwaysQuoteStringKeys = false;
@@ -79,14 +80,20 @@ public class YamlWriter implements Closeable {
 		outputWriter = new BufferedWriter(new OutputStreamWriter(outputStream, this.encoding));
 	}
 
-	public YamlWriter setIndentSize(final int indentSize) {
-		this.indentSize = indentSize;
-		return this;
+	public Charset getEncoding() {
+		return encoding;
 	}
 
-	public YamlWriter setLinebreakType(final Linebreak linebreak) {
-		this.linebreak = linebreak == null ? DEFAULT_LINEBREAK : linebreak;
-		linebreakString = this.linebreak.toString();
+	public Linebreak getLinebreak() {
+		return linebreak;
+	}
+
+	public int getIndentSize() {
+		return indentSize;
+	}
+
+	public YamlWriter setIndentSize(final int indentSize) {
+		this.indentSize = indentSize;
 		return this;
 	}
 
@@ -114,12 +121,13 @@ public class YamlWriter implements Closeable {
 		return this;
 	}
 
-	public Charset getEncoding() {
-		return encoding;
+	public YamlStringQuoteType getDefaultStringValueQuoteType() {
+		return defaultStringValueQuoteType;
 	}
 
-	public int getIndentSize() {
-		return indentSize;
+	public YamlWriter setDefaultStringValueQuoteType(final YamlStringQuoteType defaultStringValueQuoteType) {
+		this.defaultStringValueQuoteType = defaultStringValueQuoteType;
+		return this;
 	}
 
 	public YamlWriter writeDocument(final YamlDocument document) throws Exception {
@@ -415,7 +423,7 @@ public class YamlWriter implements Closeable {
 		} else {
 			if (quoteType == null || quoteType == YamlStringQuoteType.DOUBLE) {
 				return "\""
-						+ escapeScalarString(key)
+						+ YamlUtilities.escapeScalarString(key)
 						+ "\"";
 			} else {
 				return "'"
@@ -493,9 +501,10 @@ public class YamlWriter implements Closeable {
 		if (!needsQuotes) {
 			return value;
 		} else {
-			if (quoteType == null || quoteType == YamlStringQuoteType.DOUBLE) {
+			if ((quoteType == null && defaultStringValueQuoteType == YamlStringQuoteType.DOUBLE)
+					|| quoteType == YamlStringQuoteType.DOUBLE) {
 				return "\""
-						+ escapeScalarString(value)
+						+ YamlUtilities.escapeScalarString(value)
 						+ "\"";
 			} else {
 				return "'"
@@ -573,9 +582,10 @@ public class YamlWriter implements Closeable {
 		if (!needsQuotes) {
 			return value;
 		} else {
-			if (quoteType == null || quoteType == YamlStringQuoteType.DOUBLE) {
+			if ((quoteType == null && defaultStringValueQuoteType == YamlStringQuoteType.DOUBLE)
+					|| quoteType == YamlStringQuoteType.DOUBLE) {
 				return "\""
-						+ escapeScalarString(value)
+						+ YamlUtilities.escapeScalarString(value)
 						+ "\"";
 			} else {
 				return "'"
@@ -583,59 +593,6 @@ public class YamlWriter implements Closeable {
 						+ "'";
 			}
 		}
-	}
-
-	private static String escapeScalarString(final String value) {
-		final StringBuilder escapedTextBuilder = new StringBuilder();
-
-		for (final char nextChar : value.toCharArray()) {
-			switch (nextChar) {
-				case '\\':
-					escapedTextBuilder.append("\\\\");
-					break;
-				case '\"':
-					escapedTextBuilder.append("\\\"");
-					break;
-				case '\n':
-					escapedTextBuilder.append("\\n");
-					break;
-				case '\r':
-					escapedTextBuilder.append("\\r");
-					break;
-				case '\t':
-					escapedTextBuilder.append("\\t");
-					break;
-				case '\b':
-					escapedTextBuilder.append("\\b");
-					break;
-				case '\f':
-					escapedTextBuilder.append("\\f");
-					break;
-				case '\u2B7F':
-					escapedTextBuilder.append("\\u2B7F"); // VTAB
-					break;
-				case '\u00A0':
-					escapedTextBuilder.append("\\u00A0"); // NBSP
-					break;
-				case '\u0085':
-					escapedTextBuilder.append("\\u0085"); // NEL
-					break;
-				case '\u2028':
-					escapedTextBuilder.append("\\u2028"); // LS
-					break;
-				case '\u2029':
-					escapedTextBuilder.append("\\u2029"); // PS
-					break;
-				default:
-					if (nextChar < 32) {
-						escapedTextBuilder.append(String.format("\\u%04X", (int) nextChar));
-					} else {
-						escapedTextBuilder.append(nextChar);
-					}
-			}
-		}
-
-		return escapedTextBuilder.toString();
 	}
 
 	private YamlWriter writeBlockSequence(final YamlSequence yamlSequence, final int indentLevel) throws Exception {
@@ -1055,26 +1012,10 @@ public class YamlWriter implements Closeable {
 	 */
 	@Override
 	public void close() throws IOException {
-		closeQuietly(outputWriter);
+		YamlUtilities.closeQuietly(outputWriter);
 		outputWriter = null;
-		closeQuietly(outputStream);
+		YamlUtilities.closeQuietly(outputStream);
 		outputStream = null;
-	}
-
-	/**
-	 * Close a Closable item and ignore any Exception thrown by its close method.
-	 *
-	 * @param closeableItem
-	 *            the closeable item
-	 */
-	private static void closeQuietly(final Closeable closeableItem) {
-		if (closeableItem != null) {
-			try {
-				closeableItem.close();
-			} catch (@SuppressWarnings("unused") final IOException e) {
-				// Do nothing
-			}
-		}
 	}
 
 	public static String toString(final YamlDocument yamlDocument) throws Exception {

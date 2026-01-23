@@ -208,8 +208,7 @@ public class YamlTest {
 		final YamlNode yamlNode = JsonToYamlConverter.convert(jsonNode);
 
 		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
-		try (final YamlWriter writer = new YamlWriter(testOutputStream)) {
-			writer.setLinebreakType(Linebreak.Windows);
+		try (final YamlWriter writer = new YamlWriter(testOutputStream, Linebreak.Windows)) {
 			writer.writeDocument(new YamlDocument(yamlNode));
 		}
 

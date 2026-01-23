@@ -194,7 +194,7 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 		return Collections.unmodifiableSet(entries.keySet());
 	}
 
-	public Collection<Object> values() {
+	public Collection<YamlNode> values() {
 		return Collections.unmodifiableCollection(entries.values());
 	}
 
