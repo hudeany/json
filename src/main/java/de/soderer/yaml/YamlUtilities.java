@@ -2,6 +2,7 @@ package de.soderer.yaml;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Map.Entry;
 
 import de.soderer.yaml.data.YamlDocument;
 import de.soderer.yaml.data.YamlMapping;
@@ -63,6 +64,52 @@ public class YamlUtilities {
 		return escapedTextBuilder.toString();
 	}
 
+	public static void removeStringKeyQuoteTypes(final YamlDocument document) {
+		if (document != null && document.getRoot() != null) {
+			if (document.getRoot() instanceof final YamlScalar scalar) {
+				scalar.setQuoteType(null);
+			} else if (document.getRoot() instanceof final YamlMapping mapping) {
+				removeStringKeyQuoteTypes(mapping);
+			} else if (document.getRoot() instanceof final YamlSequence sequence) {
+				removeStringKeyQuoteTypes(sequence);
+			}
+		}
+	}
+
+	private static void removeStringKeyQuoteTypes(final YamlSequence sequence) {
+		for (final YamlNode item : sequence.items()) {
+			if (item instanceof final YamlScalar scalar) {
+				scalar.setQuoteType(null);
+			} else if (item instanceof final YamlMapping subMapping) {
+				removeStringKeyQuoteTypes(subMapping);
+			} else if (item instanceof final YamlSequence subSequence) {
+				removeStringKeyQuoteTypes(subSequence);
+			}
+		}
+	}
+
+	private static void removeStringKeyQuoteTypes(final YamlMapping mapping) {
+		for (final Entry<YamlNode, YamlNode> entry : mapping.entrySet()) {
+			if (entry.getKey() != null) {
+				if (entry.getKey() instanceof final YamlScalar scalar) {
+					scalar.setQuoteType(null);
+				} else if (entry.getKey() instanceof final YamlMapping subMapping) {
+					removeStringKeyQuoteTypes(subMapping);
+				} else if (entry.getKey() instanceof final YamlSequence subSequence) {
+					removeStringKeyQuoteTypes(subSequence);
+				}
+			}
+
+			if (entry.getValue() != null) {
+				if (entry.getValue() instanceof final YamlMapping subMapping) {
+					removeStringKeyQuoteTypes(subMapping);
+				} else if (entry.getValue() instanceof final YamlSequence subSequence) {
+					removeStringKeyQuoteTypes(subSequence);
+				}
+			}
+		}
+	}
+
 	public static void removeStringValueQuoteTypes(final YamlDocument document) {
 		if (document != null && document.getRoot() != null) {
 			if (document.getRoot() instanceof final YamlScalar scalar) {
@@ -88,13 +135,23 @@ public class YamlUtilities {
 	}
 
 	private static void removeStringValueQuoteTypes(final YamlMapping mapping) {
-		for (final YamlNode value : mapping.values()) {
-			if (value instanceof final YamlScalar scalar) {
-				scalar.setQuoteType(null);
-			} else if (value instanceof final YamlMapping subMapping) {
-				removeStringValueQuoteTypes(subMapping);
-			} else if (value instanceof final YamlSequence subSequence) {
-				removeStringValueQuoteTypes(subSequence);
+		for (final Entry<YamlNode, YamlNode> entry : mapping.entrySet()) {
+			if (entry.getKey() != null) {
+				if (entry.getKey() instanceof final YamlMapping subMapping) {
+					removeStringValueQuoteTypes(subMapping);
+				} else if (entry.getKey() instanceof final YamlSequence subSequence) {
+					removeStringValueQuoteTypes(subSequence);
+				}
+			}
+
+			if (entry.getValue() != null) {
+				if (entry.getValue() instanceof final YamlScalar scalar) {
+					scalar.setQuoteType(null);
+				} else if (entry.getValue() instanceof final YamlMapping subMapping) {
+					removeStringValueQuoteTypes(subMapping);
+				} else if (entry.getValue() instanceof final YamlSequence subSequence) {
+					removeStringValueQuoteTypes(subSequence);
+				}
 			}
 		}
 	}
