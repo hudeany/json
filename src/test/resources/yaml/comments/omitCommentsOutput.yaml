@@ -1,0 +1,23 @@
+"mapping1":
+  - "property11": "value11"
+    "property12": "value12"
+    "property13": "value13"
+"mappingX":
+  "mappingSub":
+    - "property11": "value11"
+      "property12": "value12"
+      "property13": "value13"
+"mapping2":
+  - "property21": "value21"
+    "property22": "value22"
+    "property23": "value23"
+  - "property31": "value31"
+    "property32": "value32"
+    "property33": "value33"
+  - "property41": "value41"
+    "property42": "value42"
+    "property43": "value43"
+"item1": "value1"
+"item2": "value2"
+"sequenceOfMaps":
+  - "property1": "abc"
