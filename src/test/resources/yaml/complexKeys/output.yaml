@@ -1,4 +1,11 @@
-"Language Independent Scalar types":
+"Language Independent Scalar types1":
+  ? - 1234
+    - 0x4D2
+    - 02333
+  : - "Decimal int"
+    - "Hexadecimal int"
+    - "Octal int"
+"Language Independent Scalar types2":
   ? [1234, 0x4D2, 02333]
   : ["Decimal int", "Hexadecimal int", "Octal int"]
   ? [1_230.15, 12.3015e+02]
@@ -9,7 +16,6 @@
 "games":
   ? - "Detroit Tigers"
     - "Chicago cubs"
-  :
-    - "2001-07-23"
+  : - "2001-07-23"
   ? ["New York Yankees", "Atlanta Braves"]
   : ["2001-07-02", "2001-08-12", "2001-08-14"]

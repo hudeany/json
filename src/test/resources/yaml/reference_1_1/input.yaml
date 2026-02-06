@@ -45,17 +45,17 @@ Core types: # Default automatic tags.
 More types:
   '!!set' : { cherries, plums, apples }
   '!!omap': [ one: 1, two: 2 ]
-#Language Independent Scalar types: TODO
-#  { ~, null }              : Null (no value).
-#  [ 1234, 0x4D2, 02333 ]   : [ Decimal int, Hexadecimal int, Octal int ]
-#  [ 1_230.15, 12.3015e+02 ]: [ Fixed float, Exponential float ]
-#  [ .inf, -.Inf, .NAN ]    : [ Infinity (float), Negative, Not a number ]
-#  { Y, true, Yes, ON  }    : Boolean true
-#  { n, FALSE, No, off }    : Boolean false
-#  ? !!binary >
-#      R0lG...BADS=
-#  : >-
-#      Base 64 binary value.
+Language Independent Scalar types:
+  { ~ }              : Null (no value).
+  [ 1234, 0x4D2, 02333 ]   : [ Decimal int, Hexadecimal int, Octal int ]
+  [ 1_230.15, 12.3015e+02 ]: [ Fixed float, Exponential float ]
+  [ .inf, -.Inf, .NAN ]    : [ Infinity (float), Negative, Not a number ]
+  { Y }    : Boolean true
+  { n }    : Boolean false
+  ? !!binary >
+      R0lG...BADS=
+  : >-
+      Base 64 binary value.
 Escape codes:
  Numeric   : { "\x12": 8-bit, "\u1234": 16-bit, "\U00102030": 32-bit }
  Protective: { "\\": '\', "\"": '"', "\ ": ' ', "\	": TAB }

@@ -27,7 +27,6 @@ import de.soderer.yaml.data.directive.YamlDirective;
 
 /**
  * TODOs:
- * - Write with ignore settings for flow style
  * - Write with multiline String scalars as quoted text
  * - Write with resolving aliases (Check cyclic dependencies in aliases)
  */
@@ -52,6 +51,7 @@ public class YamlWriter implements Closeable {
 	private boolean alwaysQuoteStringValues = false;
 
 	private boolean omitComments = false;
+	private boolean ignoreFlowStyleSettings = false;
 
 	private BufferedWriter outputWriter = null;
 	private boolean firstDocument = true;
@@ -126,8 +126,18 @@ public class YamlWriter implements Closeable {
 		return omitComments;
 	}
 
-	public void setOmitComments(final boolean omitComments) {
+	public YamlWriter setOmitComments(final boolean omitComments) {
 		this.omitComments = omitComments;
+		return this;
+	}
+
+	public boolean isIgnoreFlowStyleSettings() {
+		return ignoreFlowStyleSettings;
+	}
+
+	public YamlWriter setIgnoreFlowStyleSettings(final boolean ignoreFlowStyleSettings) {
+		this.ignoreFlowStyleSettings = ignoreFlowStyleSettings;
+		return this;
 	}
 
 	public YamlStringQuoteType getDefaultStringValueQuoteType() {
@@ -212,7 +222,7 @@ public class YamlWriter implements Closeable {
 				write(linebreakString);
 			}
 		} else if (node instanceof final YamlSequence sequence) {
-			if (sequence.isFlowStyle() || inFlow) {
+			if ((sequence.isFlowStyle() && !ignoreFlowStyleSettings) || inFlow) {
 				writeFlowSequence(sequence, indentLevel);
 				if (!inFlow) {
 					if (sequence.getInlineComment() != null && !omitComments) {
@@ -236,7 +246,7 @@ public class YamlWriter implements Closeable {
 				writeBlockSequence(sequence, indentLevel);
 			}
 		} else if (node instanceof final YamlMapping mapping) {
-			if (mapping.isFlowStyle() || inFlow) {
+			if ((mapping.isFlowStyle() && !ignoreFlowStyleSettings) || inFlow) {
 				writeFlowMapping(mapping, indentLevel);
 				if (!inFlow) {
 					if (mapping.getInlineComment() != null && !omitComments) {
@@ -273,7 +283,11 @@ public class YamlWriter implements Closeable {
 			case NUMBER:
 			case NULL_VALUE:
 				writeIndent(indentLevel);
-				write((value == null ? "null" : value.toString()) + (Utilities.isNotBlank(inlineComment) && !omitComments ? " #" + inlineComment : "") + linebreakString);
+				if (inFlow) {
+					write((value == null ? "null" : value.toString()));
+				} else {
+					write((value == null ? "null" : value.toString()) + (Utilities.isNotBlank(inlineComment) && !omitComments ? " #" + inlineComment : "") + linebreakString);
+				}
 				break;
 			case STRING:
 				if (inFlow ) {
@@ -760,7 +774,7 @@ public class YamlWriter implements Closeable {
 					write(linebreakString);
 				}
 			} else if (value instanceof final YamlMapping mapping) {
-				if (!mapping.isFlowStyle()) {
+				if (!mapping.isFlowStyle() || ignoreFlowStyleSettings) {
 					write(linebreakString);
 					writeIndent(indentLevel + 1);
 				} else {
@@ -771,15 +785,19 @@ public class YamlWriter implements Closeable {
 				if (!startValueInNewLine
 						&& sequence.getAnchorName() == null
 						&& (sequence.getLeadingComments() == null || sequence.getLeadingComments().isEmpty())) {
-					if (!sequence.isFlowStyle()) {
-						write(linebreakString);
-						writeIndent(indentLevel + 1);
+					if (!sequence.isFlowStyle() || ignoreFlowStyleSettings) {
+						if (key instanceof YamlScalar) {
+							write(linebreakString);
+							writeIndent(indentLevel + 1);
+						} else {
+							write(" ");
+						}
 					} else {
 						write(" ");
 					}
 					writeNode(sequence, indentLevel + 1, false, false);
 				} else {
-					if (!sequence.isFlowStyle()) {
+					if (!sequence.isFlowStyle() || ignoreFlowStyleSettings) {
 						write(linebreakString);
 						if (sequence.getLeadingComments() != null && !omitComments) {
 							for (final String commentLine : sequence.getLeadingComments()) {
@@ -1061,6 +1079,9 @@ public class YamlWriter implements Closeable {
 
 	private YamlWriter write(final String text) throws IOException {
 		outputWriter.write(text);
+
+		// TODO
+		System.out.print(text);
 		return this;
 	}
 

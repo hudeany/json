@@ -23,9 +23,9 @@ import de.soderer.yaml.data.YamlMultilineScalarChompingType;
 import de.soderer.yaml.data.YamlMultilineScalarType;
 import de.soderer.yaml.data.YamlNode;
 import de.soderer.yaml.data.YamlScalar;
-import de.soderer.yaml.data.YamlStringQuoteType;
 import de.soderer.yaml.data.YamlScalarType;
 import de.soderer.yaml.data.YamlSequence;
+import de.soderer.yaml.data.YamlStringQuoteType;
 import de.soderer.yaml.data.YamlToken;
 import de.soderer.yaml.data.directive.YamlDirective;
 import de.soderer.yaml.data.directive.YamlTagDirective;
@@ -652,6 +652,10 @@ public class YamlReader extends BasicReadAheadReader {
 					if (peekCharMatch('#')) {
 						keyOrScalarNode.setInlineComment(readInlineComment());
 					}
+				} else if (peekCharMatch('[')) {
+					keyOrScalarNode = parseFlowSequence();
+				} else if (peekCharMatch('{')) {
+					keyOrScalarNode = parseFlowMapping();
 				} else if (peekCharMatch('?') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
 					readChar();
 					skipBlanks();
@@ -782,6 +786,8 @@ public class YamlReader extends BasicReadAheadReader {
 
 			if (peekCharMatch('}')) {
 				readChar();
+
+				mapping.add(keyNode, new YamlScalar("null", YamlScalarType.NULL_VALUE));
 
 				pendingAnchor = readUpToNextContent(mapping);
 				if (pendingAnchor != null) {
@@ -1193,9 +1199,11 @@ public class YamlReader extends BasicReadAheadReader {
 		if (scalarString.length() == 0) {
 			throw new YamlParseException("Unexpected empty scalar String", getCurrentLine(), getCurrentColumn());
 		} else if ("true".equalsIgnoreCase(scalarString)
+				|| "y".equalsIgnoreCase(scalarString)
 				|| "yes".equalsIgnoreCase(scalarString)
 				|| "on".equalsIgnoreCase(scalarString)
 				|| "false".equalsIgnoreCase(scalarString)
+				|| "n".equalsIgnoreCase(scalarString)
 				|| "no".equalsIgnoreCase(scalarString)
 				|| "off".equalsIgnoreCase(scalarString)) {
 			scalar = new YamlScalar(scalarString, YamlScalarType.BOOLEAN);

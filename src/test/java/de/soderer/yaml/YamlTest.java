@@ -80,6 +80,43 @@ public class YamlTest {
 	}
 
 	@Test
+	public void testIgnoreFlowStyle() throws Exception {
+		String resultYamlFileString;
+		try (InputStream resultDataStream = getClass().getClassLoader().getResourceAsStream("yaml/reference_1_1/ignoreFlowStyleOutput.yaml")) {
+			resultYamlFileString = IoUtilities.toString(resultDataStream, StandardCharsets.UTF_8);
+		}
+
+		final YamlDocument testDocument1;
+		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream("yaml/reference_1_1/input.yaml")) {
+			try (final YamlReader yamlReader1 = new YamlReader(testDataStream)) {
+				testDocument1 = yamlReader1.readDocument();
+			}
+		}
+
+		Assert.assertNotNull("Root node should not be null", testDocument1.getRoot());
+
+		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
+		try (final YamlWriter writer = new YamlWriter(testOutputStream)) {
+			writer.setAlwaysQuoteAllStrings();
+			writer.setIgnoreFlowStyleSettings(true);
+			writer.writeDocument(testDocument1);
+		}
+
+		final String serializedYaml = new String(testOutputStream.toByteArray(), StandardCharsets.UTF_8);
+		Assert.assertFalse("Serialized YAML should not be empty", serializedYaml.isEmpty());
+		Assert.assertEquals(resultYamlFileString, serializedYaml);
+
+		final YamlDocument testDocument2;
+		try (final YamlReader yamlReader = new YamlReader(new ByteArrayInputStream(serializedYaml.getBytes(StandardCharsets.UTF_8)))) {
+			testDocument2 = yamlReader.readDocument();
+		}
+
+		Assert.assertNotNull("Round-trip root should not be null", testDocument2.getRoot());
+
+		Assert.assertTrue( "AST should be equal after round trip", astEquals(testDocument1.getRoot(), testDocument2.getRoot()));
+	}
+
+	@Test
 	public void testComplexKeys() throws Exception {
 		roundTripSingleDocument("yaml/complexKeys/input.yaml", "yaml/complexKeys/output.yaml", true);
 	}
