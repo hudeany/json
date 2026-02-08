@@ -1136,8 +1136,6 @@ public class YamlReader extends BasicReadAheadReader {
 
 		final YamlScalar scalar = interpretScalarValue(scalarString, inlineComment);
 
-		updatePath(YamlToken.YamlScalar, null);
-
 		return scalar;
 	}
 
@@ -1223,9 +1221,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 		skipBlanks();
 
-		final YamlScalar scalar = interpretScalarValue(scalarString, null);
-
-		updatePath(YamlToken.YamlScalar, null);
+		final YamlScalar scalar = interpretScalarValue(scalarString, inlineComment);
 
 		return scalar;
 	}
