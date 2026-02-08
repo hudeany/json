@@ -275,7 +275,7 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(entries, flowStyle);
+		return Objects.hash(entries);
 	}
 
 	@Override
@@ -288,7 +288,7 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 			return false;
 		} else {
 			final YamlMapping other = (YamlMapping) otherObject;
-			return Objects.equals(entries, other.entries) && flowStyle == other.flowStyle;
+			return Objects.equals(entries, other.entries);
 		}
 	}
 }

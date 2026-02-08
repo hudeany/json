@@ -140,7 +140,7 @@ public class YamlSequence extends YamlNode implements Iterable<Object> {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(flowStyle, items);
+		return Objects.hash(items);
 	}
 
 	@Override
@@ -153,7 +153,7 @@ public class YamlSequence extends YamlNode implements Iterable<Object> {
 			return false;
 		} else {
 			final YamlSequence other = (YamlSequence) otherObject;
-			return flowStyle == other.flowStyle && Objects.equals(items, other.items);
+			return Objects.equals(items, other.items);
 		}
 	}
 }

@@ -56,7 +56,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 		setNormalizeLinebreaks(true);
 
-		indentations.add(0);
+		indentationsAdd(0);
 	}
 
 	public YamlDocument readDocument() throws Exception {
@@ -248,7 +248,7 @@ public class YamlReader extends BasicReadAheadReader {
 		if (nextIndentationSize == 0) {
 			return null;
 		} else if (nextIndentationSize > 0) {
-			indentations.add(nextIndentationSize);
+			indentationsAdd(nextIndentationSize);
 			return true;
 		} else {
 			// First entry is always [0]
@@ -283,7 +283,7 @@ public class YamlReader extends BasicReadAheadReader {
 		if (nextIndentationSize == 0) {
 			return null;
 		} else if (nextIndentationSize > 0) {
-			indentations.add(nextIndentationSize);
+			indentationsAdd(nextIndentationSize);
 			return true;
 		} else {
 			// First entry is always [0]
@@ -493,12 +493,12 @@ public class YamlReader extends BasicReadAheadReader {
 			throw new YamlParseException("Expected sequence start not found", getCurrentLine(), getCurrentColumn());
 		}
 
-		final int sequenceIndentation = getNumberOfIndentationChars();
+		final int sequenceIndentation = (int) getCurrentColumn() - 1;
 
 		final YamlSequence sequence = new YamlSequence();
 		updatePath(YamlToken.YamlSequence_Start, null);
 
-		while (isNotEOF() && peekCharMatch('-') && getNumberOfIndentationChars() == sequenceIndentation) {
+		while (isNotEOF() && peekCharMatch('-') && (int) getCurrentColumn() - 1 == sequenceIndentation) {
 			if (peekCharMatch('-') && peekNextCharMatch(1, '-') && peekNextCharMatch(2, '-')) {
 				readChar();
 				readChar();
@@ -520,6 +520,7 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 
 		updatePath(YamlToken.YamlSequence_End, null);
+
 		return sequence;
 	}
 
@@ -530,7 +531,7 @@ public class YamlReader extends BasicReadAheadReader {
 		if (peekCharMatch('-') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
 			readChar();
 
-			indentations.add(2);
+			indentationsAdd(2);
 
 			String pendingAnchor = readUpToNextContent(null);
 
@@ -562,12 +563,18 @@ public class YamlReader extends BasicReadAheadReader {
 			keyOrScalarNode = firstKeyNode;
 		} else {
 			if (peekCharMatch('\"')) {
+				if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
+					indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
+				}
 				keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.DOUBLE);
 				skipBlanks();
 				if (peekCharMatch('#')) {
 					keyOrScalarNode.setInlineComment(readInlineComment());
 				}
 			} else if (peekCharMatch('\'')) {
+				if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
+					indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
+				}
 				keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.SINGLE);
 				skipBlanks();
 				if (peekCharMatch('#')) {
@@ -580,9 +587,12 @@ public class YamlReader extends BasicReadAheadReader {
 			} else if (peekCharMatch('?') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
 				readChar();
 				skipBlanks();
-				indentations.add(2);
+				indentationsAdd(2);
 				keyOrScalarNode = parseYamlNode();
 			} else {
+				if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
+					indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
+				}
 				keyOrScalarNode = readUnquotedScalarString();
 			}
 
@@ -601,8 +611,6 @@ public class YamlReader extends BasicReadAheadReader {
 				&& (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
 			readChar();
 
-			indentations.add(1);
-
 			String pendingAnchor = readUpToNextContent(keyOrScalarNode);
 
 			final YamlMapping mapping = new YamlMapping();
@@ -610,7 +618,7 @@ public class YamlReader extends BasicReadAheadReader {
 			updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
 
 			YamlNode valueNode;
-			if (getNumberOfIndentationChars() > mappingIndentation
+			if (getCurrentColumn() - 1 > mappingIndentation
 					|| (peekCharMatch('-') && peekNextCharMatchAny(1, " \t\n"))) {
 				valueNode = parseYamlNode();
 			} else {
@@ -641,12 +649,18 @@ public class YamlReader extends BasicReadAheadReader {
 					pendingAnchor = readUpToNextContent(null);
 					return mapping;
 				} else if (peekCharMatch('\"')) {
+					if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
+						indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
+					}
 					keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.DOUBLE);
 					skipBlanks();
 					if (peekCharMatch('#')) {
 						keyOrScalarNode.setInlineComment(readInlineComment());
 					}
 				} else if (peekCharMatch('\'')) {
+					if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
+						indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
+					}
 					keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.SINGLE);
 					skipBlanks();
 					if (peekCharMatch('#')) {
@@ -659,9 +673,12 @@ public class YamlReader extends BasicReadAheadReader {
 				} else if (peekCharMatch('?') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
 					readChar();
 					skipBlanks();
-					indentations.add(2);
+					indentationsAdd(2);
 					keyOrScalarNode = parseYamlNode();
 				} else {
+					if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
+						indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
+					}
 					keyOrScalarNode = readUnquotedScalarString();
 				}
 
@@ -679,13 +696,11 @@ public class YamlReader extends BasicReadAheadReader {
 						&& (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
 					readChar();
 
-					indentations.add(1);
-
 					pendingAnchor = readUpToNextContent(keyOrScalarNode);
 
 					updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
 
-					if (getNumberOfIndentationChars() > mappingIndentation
+					if (getCurrentColumn() - 1 > mappingIndentation
 							|| (peekCharMatch('-') && peekNextCharMatchAny(1, " \t\n"))) {
 						valueNode = parseYamlNode();
 					} else {
@@ -810,7 +825,7 @@ public class YamlReader extends BasicReadAheadReader {
 			} else if (peekCharMatch(':') && peekNextCharMatchAny(1, ", \t\n")) {
 				readChar();
 
-				indentations.add(1);
+				indentationsAdd(1);
 
 				pendingAnchor = readUpToNextContent(keyNode);
 				if (pendingAnchor != null) {
@@ -1002,7 +1017,7 @@ public class YamlReader extends BasicReadAheadReader {
 			} else if (peekCharMatch(':')) {
 				readChar();
 
-				indentations.add(1);
+				indentationsAdd(1);
 
 				final YamlMapping mapping = new YamlMapping();
 
@@ -1064,9 +1079,13 @@ public class YamlReader extends BasicReadAheadReader {
 		return sequence;
 	}
 
+	private void indentationsAdd(final int indentationSize) {
+		indentations.add(indentationSize);
+	}
+
 	private YamlNode readUnquotedScalarString() throws Exception {
 		String scalarString = "";
-		final int scalarStartIndentations = getNumberOfIndentationChars();
+		final int scalarStartIndentations = (int) getCurrentColumn() - 1;
 		String nextScalarStringLine = "";
 		String inlineComment = null;
 		while (isNotEOF()) {
@@ -1115,6 +1134,14 @@ public class YamlReader extends BasicReadAheadReader {
 
 		scalarString = scalarString.trim();
 
+		final YamlScalar scalar = interpretScalarValue(scalarString, inlineComment);
+
+		updatePath(YamlToken.YamlScalar, null);
+
+		return scalar;
+	}
+
+	private YamlScalar interpretScalarValue(final String scalarString, final String inlineComment) throws Exception {
 		if (scalarString.length() == 0) {
 			throw new YamlParseException("Unexpected empty scalar String", getCurrentLine(), getCurrentColumn());
 		} else if ("true".equalsIgnoreCase(scalarString)
@@ -1155,6 +1182,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 			YamlScalar scalar;
 			try {
+				indentations.pop();
 				scalar = parseMultilineScalar(type, comping, indentationIndicator);
 			} catch (final Exception e) {
 				throw new YamlParseException("Invalid YAML mulitline scalar: " + e.getMessage(), getCurrentLine(), getCurrentColumn());
@@ -1195,52 +1223,10 @@ public class YamlReader extends BasicReadAheadReader {
 
 		skipBlanks();
 
-		YamlScalar scalar;
-		if (scalarString.length() == 0) {
-			throw new YamlParseException("Unexpected empty scalar String", getCurrentLine(), getCurrentColumn());
-		} else if ("true".equalsIgnoreCase(scalarString)
-				|| "y".equalsIgnoreCase(scalarString)
-				|| "yes".equalsIgnoreCase(scalarString)
-				|| "on".equalsIgnoreCase(scalarString)
-				|| "false".equalsIgnoreCase(scalarString)
-				|| "n".equalsIgnoreCase(scalarString)
-				|| "no".equalsIgnoreCase(scalarString)
-				|| "off".equalsIgnoreCase(scalarString)) {
-			scalar = new YamlScalar(scalarString, YamlScalarType.BOOLEAN);
-			if (inlineComment != null) {
-				scalar.setInlineComment(inlineComment);
-			}
-		} else if ("null".equalsIgnoreCase(scalarString)
-				|| "~".equalsIgnoreCase(scalarString)) {
-			scalar = new YamlScalar(scalarString, YamlScalarType.NULL_VALUE);
-			if (inlineComment != null) {
-				scalar.setInlineComment(inlineComment);
-			}
-		} else if (scalarString.startsWith("-") || scalarString.startsWith(".") || Character.isDigit(scalarString.charAt(0))) {
-			scalar = new YamlScalar(scalarString, YamlScalarType.NUMBER);
-			if (inlineComment != null) {
-				scalar.setInlineComment(inlineComment);
-			}
-		} else if (scalarString.startsWith(">") || scalarString.startsWith("|")) {
-			final YamlMultilineScalarType type = YamlMultilineScalarType.getYamlMultilineScalarType(scalarString);
-			final YamlMultilineScalarChompingType comping = YamlMultilineScalarChompingType.getYamlMultilineScalarChompingType(scalarString);
-			final int indentationIndicator = YamlMultilineScalarType.getYamlMultilineScalarIndentationIndicator(scalarString);
-			try {
-				scalar = parseMultilineScalar(type, comping, indentationIndicator);
-			} catch (final Exception e) {
-				throw new YamlParseException("Invalid YAML mulitline scalar: " + e.getMessage(), getCurrentLine(), getCurrentColumn());
-			}
-			if (inlineComment != null) {
-				scalar.setInlineComment(inlineComment);
-			}
-		} else {
-			scalar = new YamlScalar(scalarString, YamlScalarType.STRING);
-			if (inlineComment != null) {
-				scalar.setInlineComment(inlineComment);
-			}
-		}
+		final YamlScalar scalar = interpretScalarValue(scalarString, null);
 
 		updatePath(YamlToken.YamlScalar, null);
+
 		return scalar;
 	}
 
@@ -1250,24 +1236,21 @@ public class YamlReader extends BasicReadAheadReader {
 			final int indentationIndicator) throws Exception {
 		readNextIndentation();
 
-		final int multilineIndentationLevel = getNumberOfIndentationChars();
-
 		final StringBuilder raw = new StringBuilder();
 
-		int textEffectiveIndentationLevel = 0;
 		if (indentationIndicator > 0) {
-			final int indentationStart = getNumberOfIndentationChars() - indentations.peek() - 1;
-			textEffectiveIndentationLevel = indentationStart + indentationIndicator;
-		} else {
-			textEffectiveIndentationLevel = getNumberOfIndentationChars();
+			indentations.pop();
+			indentationsAdd(indentationIndicator);
 		}
+
+		final int multilineIndentationLevel = getNumberOfIndentationChars();
 
 		while (isNotEOF() && multilineIndentationLevel <= getNumberOfIndentationChars()) {
 			final int lineStartColumnIndex = (int) getCurrentColumn() - 1;
 			String nextLine = readUpToNext(false, null, '\n');
 
-			if (textEffectiveIndentationLevel < lineStartColumnIndex) {
-				nextLine = Utilities.repeat(" ", getNumberOfIndentationChars() - textEffectiveIndentationLevel) + nextLine;
+			if (multilineIndentationLevel < lineStartColumnIndex) {
+				nextLine = Utilities.repeat(" ", lineStartColumnIndex - multilineIndentationLevel) + nextLine;
 			}
 
 			readChar();

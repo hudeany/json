@@ -3,5 +3,5 @@ check:
   otherPropertyInSameMapping: abc
   thirdPropertyAlsoNullValue:
   fourthPropertyInSameMapping: abc
-  fivthPropertyAlsoNullValue:
-  - with early starting sequencee
+  fivthPropertyNotNullValue:
+  - with early starting sequence
