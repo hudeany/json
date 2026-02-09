@@ -162,6 +162,48 @@ try {
 }
 ```
 
+## Sequential read of YAML data objects
+```
+final String testData = ""
+	+ "level1:\n"
+	+ "  items:\n"
+	+ "    - property1: \"property 01\"\n"
+	+ "      property2: \"property 02\"\n"
+	+ "      property3: \"property 03\"\n"
+	+ "\n"
+	+ "    - property1: \"property 11\"\n"
+	+ "      property2: \"property 12\"\n"
+	+ "      property3: \"property 13\"\n"
+	+ "";
+
+try (InputStream testDataStream = new ByteArrayInputStream(testData.getBytes(StandardCharsets.UTF_8))) {
+	try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
+		yamlReader.readUpToPath("$.level1.items");
+		try {
+			yamlReader.readDocument();
+			Assert.fail("Missing expected exception");
+		} catch (final Exception e) {
+			// Expected exception
+			Assert.assertEquals("Search path was already started before by method 'readUpToPath'", e.getMessage());
+		}
+
+		YamlNode nextYamlNode;
+		int count = 0;
+		while ((nextYamlNode = yamlReader.readNextYamlNode()) != null) {
+			final String property1 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property1")).getValue();
+			final String property2 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property2")).getValue();
+			final String property3 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property3")).getValue();
+			Assert.assertTrue(("property " + count + "1").equals(property1));
+			Assert.assertTrue(("property " + count + "2").equals(property2));
+			Assert.assertTrue(("property " + count + "3").equals(property3));
+			count++;
+		}
+	}
+} catch (final Exception e) {
+	e.printStackTrace();
+}
+```
+
 For other simple examples see test class "de.soderer.json.JsonTest" and class "de.soderer.yaml.YamlTest":
 
 https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/json/JsonTest.java
