@@ -83,6 +83,49 @@ try {
 }
 ```
 
+## Sequential read of JSON data objects
+```
+JsonReader jsonReader = null;
+try {
+	final String data = ""
+			+ "{"
+			+ "	\"level1\":"
+			+ "		["
+			+ "			{"
+			+ "				\"property1\": \"value11\","
+			+ "				\"property2\": \"value12\","
+			+ "				\"property3\": \"value13\""
+			+ "			},"
+			+ "			{"
+			+ "				\"property1\": \"value21\","
+			+ "				\"property2\": \"value22\","
+			+ "				\"property3\": \"value23\""
+			+ "			}"
+			+ "		]"
+			+ "}";
+	jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
+	jsonReader.readUpToJsonPath("$.level1");
+	jsonReader.readNextToken();
+
+	JsonNode nextJsonNode;
+	int count = 0;
+	while ((nextJsonNode = jsonReader.readNextJsonNode()) != null) {
+		count++;
+		final String property1 = (String) ((JsonObject) nextJsonNode).getSimpleValue("property1");
+		final String property2 = (String) ((JsonObject) nextJsonNode).getSimpleValue("property2");
+		final String property3 = (String) ((JsonObject) nextJsonNode).getSimpleValue("property3");
+		Assert.assertEquals(("value" + count + "1"), (property1));
+		Assert.assertEquals(("value" + count + "2"), (property2));
+		Assert.assertEquals(("value" + count + "3"), (property3));
+	}
+} catch (final Exception e) {
+	e.printStackTrace();
+	Assert.fail(e.getMessage());
+} finally {
+	Utilities.closeQuietly(jsonReader);
+}
+```
+
 ## YamlMapping with YamlWriter and YamlReader example
 ```
 JsonWriter writer = null;
@@ -170,23 +213,13 @@ final String testData = ""
 	+ "    - property1: \"property 01\"\n"
 	+ "      property2: \"property 02\"\n"
 	+ "      property3: \"property 03\"\n"
-	+ "\n"
 	+ "    - property1: \"property 11\"\n"
 	+ "      property2: \"property 12\"\n"
-	+ "      property3: \"property 13\"\n"
-	+ "";
+	+ "      property3: \"property 13\"\n";
 
 try (InputStream testDataStream = new ByteArrayInputStream(testData.getBytes(StandardCharsets.UTF_8))) {
 	try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
 		yamlReader.readUpToPath("$.level1.items");
-		try {
-			yamlReader.readDocument();
-			Assert.fail("Missing expected exception");
-		} catch (final Exception e) {
-			// Expected exception
-			Assert.assertEquals("Search path was already started before by method 'readUpToPath'", e.getMessage());
-		}
-
 		YamlNode nextYamlNode;
 		int count = 0;
 		while ((nextYamlNode = yamlReader.readNextYamlNode()) != null) {
