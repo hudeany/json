@@ -1,7 +1,7 @@
 package de.soderer.json;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -16,6 +16,8 @@ import org.w3c.dom.Node;
 
 import de.soderer.json.schema.JsonSchema;
 import de.soderer.json.schema.JsonSchemaConfiguration;
+import de.soderer.json.schema.JsonSchemaDataValidationError;
+import de.soderer.json.schema.JsonSchemaDefinitionError;
 import de.soderer.json.schema.JsonSchemaVersion;
 import de.soderer.json.utilities.Utilities;
 
@@ -213,36 +215,40 @@ public class JsonUtilities {
 		return list;
 	}
 
-	public static JsonNode parseJsonDataAndVerifyJsonSchemaSimple(final byte[] jsonData, final Charset encoding, final String jsonSchemaFileName) throws Exception {
-		JsonSchema jsonSchema;
-		try (InputStream jsonSchemaInputStream = new FileInputStream(jsonSchemaFileName)) {
-			jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setEncoding(encoding).setJsonSchemaVersion(JsonSchemaVersion.simple));
-		}
-		return jsonSchema.validate(new ByteArrayInputStream(jsonData), encoding);
+	public static JsonNode parseJsonDataAndVerifyJsonSchemaSimple(final InputStream jsonDataInputStream, final InputStream jsonSchemaInputStream) throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setJsonSchemaVersion(JsonSchemaVersion.simple));
+		return jsonSchema.validate(jsonDataInputStream);
 	}
 
-	public static JsonNode parseJsonDataAndVerifyJsonSchemaV4(final byte[] jsonData, final Charset encoding, final String jsonSchemaFileName) throws Exception {
-		JsonSchema jsonSchema;
-		try (InputStream jsonSchemaInputStream = new FileInputStream(jsonSchemaFileName)) {
-			jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setEncoding(encoding).setJsonSchemaVersion(JsonSchemaVersion.draftV4));
-		}
-		return jsonSchema.validate(new ByteArrayInputStream(jsonData), encoding);
+	public static JsonNode parseJsonDataAndVerifyJsonSchemaV4(final InputStream jsonDataInputStream, final InputStream jsonSchemaInputStream) throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setJsonSchemaVersion(JsonSchemaVersion.draftV4));
+		return jsonSchema.validate(jsonDataInputStream);
 	}
 
-	public static JsonNode parseJsonDataAndVerifyJsonSchemaV6(final byte[] jsonData, final Charset encoding, final String jsonSchemaFileName) throws Exception {
-		JsonSchema jsonSchema;
-		try (InputStream jsonSchemaInputStream = new FileInputStream(jsonSchemaFileName)) {
-			jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setEncoding(encoding).setJsonSchemaVersion(JsonSchemaVersion.draftV6));
-		}
-		return jsonSchema.validate(new ByteArrayInputStream(jsonData), encoding);
+	public static JsonNode parseJsonDataAndVerifyJsonSchemaV6(final InputStream jsonDataInputStream, final InputStream jsonSchemaInputStream) throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setJsonSchemaVersion(JsonSchemaVersion.draftV6));
+		return jsonSchema.validate(jsonDataInputStream);
 	}
 
-	public static JsonNode parseJsonDataAndVerifyJsonSchemaV7(final byte[] jsonData, final Charset encoding, final String jsonSchemaFileName) throws Exception {
-		JsonSchema jsonSchema;
-		try (InputStream jsonSchemaInputStream = new FileInputStream(jsonSchemaFileName)) {
-			jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setEncoding(encoding).setJsonSchemaVersion(JsonSchemaVersion.draftV7));
-		}
-		return jsonSchema.validate(new ByteArrayInputStream(jsonData), encoding);
+	public static JsonNode parseJsonDataAndVerifyJsonSchemaV7(final InputStream jsonDataInputStream, final InputStream jsonSchemaInputStream) throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setJsonSchemaVersion(JsonSchemaVersion.draftV7));
+		return jsonSchema.validate(jsonDataInputStream);
+	}
+
+	/**
+	 * Check for a valid JSON schema definition.
+	 *
+	 * @param jsonSchemaData
+	 * @param encoding
+	 * @return
+	 * @throws JsonSchemaDataValidationError
+	 * @throws JsonSchemaDefinitionError
+	 * @throws IOException
+	 * @throws
+	 * @throws Exception
+	 */
+	public static JsonNode validateJsonSchemaSimple(final InputStream jsonSchemaDataInputStream, final Charset encoding) throws IOException, JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+		return validateJsonSchema(jsonSchemaDataInputStream, encoding, JsonSchemaVersion.simple);
 	}
 
 	/**
@@ -253,8 +259,8 @@ public class JsonUtilities {
 	 * @return
 	 * @throws Exception
 	 */
-	public static JsonNode validateJsonSchemaSimple(final byte[] jsonSchemaData, final Charset encoding) throws Exception {
-		return validateJsonSchema(jsonSchemaData, encoding, JsonSchemaVersion.simple);
+	public static JsonNode validateJsonSchemaV4(final InputStream jsonSchemaDataInputStream, final Charset encoding) throws IOException, JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+		return validateJsonSchema(jsonSchemaDataInputStream, encoding, JsonSchemaVersion.draftV4);
 	}
 
 	/**
@@ -265,8 +271,8 @@ public class JsonUtilities {
 	 * @return
 	 * @throws Exception
 	 */
-	public static JsonNode validateJsonSchemaV4(final byte[] jsonSchemaData, final Charset encoding) throws Exception {
-		return validateJsonSchema(jsonSchemaData, encoding, JsonSchemaVersion.draftV4);
+	public static JsonNode validateJsonSchemaV6(final InputStream jsonSchemaDataInputStream, final Charset encoding) throws IOException, JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+		return validateJsonSchema(jsonSchemaDataInputStream, encoding, JsonSchemaVersion.draftV6);
 	}
 
 	/**
@@ -277,8 +283,8 @@ public class JsonUtilities {
 	 * @return
 	 * @throws Exception
 	 */
-	public static JsonNode validateJsonSchemaV6(final byte[] jsonSchemaData, final Charset encoding) throws Exception {
-		return validateJsonSchema(jsonSchemaData, encoding, JsonSchemaVersion.draftV6);
+	public static JsonNode validateJsonSchemaV7(final InputStream jsonSchemaDataInputStream, final Charset encoding) throws IOException, JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+		return validateJsonSchema(jsonSchemaDataInputStream, encoding, JsonSchemaVersion.draftV7);
 	}
 
 	/**
@@ -287,26 +293,17 @@ public class JsonUtilities {
 	 * @param jsonSchemaData
 	 * @param encoding
 	 * @return
+	 * @throws IOException
+	 * @throws JsonSchemaDefinitionError
+	 * @throws JsonSchemaDataValidationError
 	 * @throws Exception
 	 */
-	public static JsonNode validateJsonSchemaV7(final byte[] jsonSchemaData, final Charset encoding) throws Exception {
-		return validateJsonSchema(jsonSchemaData, encoding, JsonSchemaVersion.draftV7);
-	}
-
-	/**
-	 * Check for a valid JSON schema definition.
-	 *
-	 * @param jsonSchemaData
-	 * @param encoding
-	 * @return
-	 * @throws Exception
-	 */
-	public static JsonNode validateJsonSchema(final byte[] jsonSchemaData, final Charset encoding, final JsonSchemaVersion jsonSchemaVersion) throws Exception {
+	public static JsonNode validateJsonSchema(final InputStream jsonSchemaDataInputStream, final Charset encoding, final JsonSchemaVersion jsonSchemaVersion) throws JsonSchemaDefinitionError, JsonSchemaDataValidationError, IOException {
 		JsonSchema jsonSchema;
 		try (InputStream jsonSchemaInputStream = JsonSchema.class.getClassLoader().getResourceAsStream(jsonSchemaVersion.getLocalFile());) {
 			jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setEncoding(encoding));
 		}
-		return jsonSchema.validate(new ByteArrayInputStream(jsonSchemaData), encoding);
+		return jsonSchema.validate(jsonSchemaDataInputStream, encoding);
 	}
 
 	public static JsonNode validateJson(final byte[] jsonData, final Charset encoding) throws Exception {

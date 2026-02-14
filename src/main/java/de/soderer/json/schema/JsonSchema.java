@@ -102,7 +102,7 @@ public class JsonSchema {
 		this(jsonSchemaDefinitionObject, new JsonSchemaConfiguration(), dependencies);
 	}
 
-	public JsonSchema(final InputStream jsonSchemaInputStream, final JsonSchemaConfiguration jsonSchemaConfiguration, final JsonSchemaDependency... dependencies) throws Exception {
+	public JsonSchema(final InputStream jsonSchemaInputStream, final JsonSchemaConfiguration jsonSchemaConfiguration, final JsonSchemaDependency... dependencies) throws JsonSchemaDefinitionError {
 		JsonNode jsonNode;
 		try (JsonReader jsonReader = new Json5Reader(jsonSchemaInputStream, jsonSchemaConfiguration.getEncoding())) {
 			jsonNode = jsonReader.read();
@@ -116,10 +116,16 @@ public class JsonSchema {
 			validators = new ArrayList<>();
 			validators.add(new BooleanValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(), jsonNode));
 		} else if (jsonNode.isJsonObject()) {
-			readSchemaData((JsonObject) jsonNode, jsonSchemaConfiguration, dependencies);
-			jsonSchemaDependencyResolver.setJsonSchemaVersion(jsonSchemaConfiguration.getJsonSchemaVersion());
-			jsonSchemaDependencyResolver.setDownloadReferencedSchemas(jsonSchemaConfiguration.isDownloadReferencedSchemas());
-			validators = createValidators((JsonObject) jsonNode, jsonSchemaDependencyResolver, new JsonSchemaPath());
+			try {
+				readSchemaData((JsonObject) jsonNode, jsonSchemaConfiguration, dependencies);
+				jsonSchemaDependencyResolver.setJsonSchemaVersion(jsonSchemaConfiguration.getJsonSchemaVersion());
+				jsonSchemaDependencyResolver.setDownloadReferencedSchemas(jsonSchemaConfiguration.isDownloadReferencedSchemas());
+				validators = createValidators((JsonObject) jsonNode, jsonSchemaDependencyResolver, new JsonSchemaPath());
+			} catch (final JsonSchemaDefinitionError e) {
+				throw e;
+			} catch (final Exception e) {
+				throw new JsonSchemaDefinitionError("Invalid JSON schema data: " + e.getMessage(), null, e);
+			}
 		} else {
 			throw new JsonSchemaDefinitionError("Does not contain JsonObject", new JsonSchemaPath());
 		}

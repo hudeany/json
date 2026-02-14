@@ -2,8 +2,13 @@ package de.soderer.yaml;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map.Entry;
 
+import de.soderer.json.JsonNode;
+import de.soderer.json.schema.JsonSchema;
+import de.soderer.json.schema.JsonSchemaConfiguration;
+import de.soderer.json.schema.JsonSchemaVersion;
 import de.soderer.yaml.data.YamlDocument;
 import de.soderer.yaml.data.YamlMapping;
 import de.soderer.yaml.data.YamlNode;
@@ -11,6 +16,79 @@ import de.soderer.yaml.data.YamlScalar;
 import de.soderer.yaml.data.YamlSequence;
 
 public class YamlUtilities {
+	public static YamlDocument validateJsonSchemaOnYamlData(final InputStream yamlDataInputStream, final JsonSchemaVersion jsonSchemaVersion) throws Exception {
+		final YamlDocument yamlDocument;
+		try (YamlReader yamlReader = new YamlReader(yamlDataInputStream)) {
+			yamlDocument = yamlReader.readDocument();
+		}
+
+		final JsonNode jsonNode = YamlToJsonConverter.convert(yamlDocument);
+
+		JsonSchema jsonSchema;
+		try (InputStream jsonSchemaInputStream = JsonSchema.class.getClassLoader().getResourceAsStream(jsonSchemaVersion.getLocalFile())) {
+			jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration());
+		}
+
+		jsonSchema.validate(jsonNode);
+		return yamlDocument;
+	}
+
+	public static YamlDocument validateJsonSchemaOnYamlDataSimple(final InputStream yamlDataInputStream, final InputStream jsonSchemaInputStream) throws Exception {
+		final YamlDocument yamlDocument;
+		try (YamlReader yamlReader = new YamlReader(yamlDataInputStream)) {
+			yamlDocument = yamlReader.readDocument();
+		}
+
+		final JsonNode jsonNode = YamlToJsonConverter.convert(yamlDocument);
+
+		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration());
+
+		jsonSchema.validate(jsonNode);
+		return yamlDocument;
+	}
+
+	public static YamlDocument validateJsonSchemaOnYamlDataV4(final InputStream yamlDataInputStream, final InputStream jsonSchemaInputStream) throws Exception {
+		final YamlDocument yamlDocument;
+		try (YamlReader yamlReader = new YamlReader(yamlDataInputStream)) {
+			yamlDocument = yamlReader.readDocument();
+		}
+
+		final JsonNode jsonNode = YamlToJsonConverter.convert(yamlDocument);
+
+		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setJsonSchemaVersion(JsonSchemaVersion.draftV4));
+
+		jsonSchema.validate(jsonNode);
+		return yamlDocument;
+	}
+
+	public static YamlDocument validateJsonSchemaOnYamlDataV6(final InputStream yamlDataInputStream, final InputStream jsonSchemaInputStream) throws Exception {
+		final YamlDocument yamlDocument;
+		try (YamlReader yamlReader = new YamlReader(yamlDataInputStream)) {
+			yamlDocument = yamlReader.readDocument();
+		}
+
+		final JsonNode jsonNode = YamlToJsonConverter.convert(yamlDocument);
+
+		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setJsonSchemaVersion(JsonSchemaVersion.draftV6));
+
+		jsonSchema.validate(jsonNode);
+		return yamlDocument;
+	}
+
+	public static YamlDocument validateJsonSchemaOnYamlDataV7(final InputStream yamlDataInputStream, final InputStream jsonSchemaInputStream) throws Exception {
+		final YamlDocument yamlDocument;
+		try (YamlReader yamlReader = new YamlReader(yamlDataInputStream)) {
+			yamlDocument = yamlReader.readDocument();
+		}
+
+		final JsonNode jsonNode = YamlToJsonConverter.convert(yamlDocument);
+
+		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setJsonSchemaVersion(JsonSchemaVersion.draftV7));
+
+		jsonSchema.validate(jsonNode);
+		return yamlDocument;
+	}
+
 	public static String escapeScalarString(final String value) {
 		final StringBuilder escapedTextBuilder = new StringBuilder();
 
