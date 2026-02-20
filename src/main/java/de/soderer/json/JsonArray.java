@@ -14,6 +14,9 @@ import java.util.List;
 
 import de.soderer.json.utilities.DateUtilities;
 
+/**
+ * TODO: add "insert", "removeByIndex"
+ */
 public class JsonArray extends JsonNode implements Iterable<Object> {
 	private final List<JsonNode> items = new ArrayList<>();
 

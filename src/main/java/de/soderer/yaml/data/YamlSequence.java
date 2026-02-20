@@ -68,6 +68,43 @@ public class YamlSequence extends YamlNode implements Iterable<Object> {
 		return this;
 	}
 
+	public YamlSequence insertNull(final int index) {
+		insert(index, new YamlScalar(null));
+		return this;
+	}
+
+	public YamlSequence insert(final int index, final String item) {
+		if (item == null) {
+			insert(index, new YamlScalar(null));
+		} else {
+			insert(index, new YamlScalar(item, YamlScalarType.STRING));
+		}
+		return this;
+	}
+
+	public YamlSequence insert(final int index, final Number item) {
+		if (item == null) {
+			insert(index, new YamlScalar(null));
+		} else {
+			insert(index, new YamlScalar(item, YamlScalarType.NUMBER));
+		}
+		return this;
+	}
+
+	public YamlSequence insert(final int index, final Boolean item) {
+		if (item == null) {
+			insert(index, new YamlScalar(null));
+		} else {
+			insert(index, new YamlScalar(item, YamlScalarType.BOOLEAN));
+		}
+		return this;
+	}
+
+	public YamlSequence insert(final int index, final YamlNode item) {
+		items.add(index, item);
+		return this;
+	}
+
 	public boolean remove(final String item) {
 		if (item == null) {
 			return remove(new YamlScalar(null));
@@ -94,6 +131,10 @@ public class YamlSequence extends YamlNode implements Iterable<Object> {
 
 	public boolean remove(final YamlNode item) {
 		return items.remove(item);
+	}
+
+	public YamlNode removeByIndex(final int index) {
+		return items.remove(index);
 	}
 
 	public YamlNode get(final int index) {

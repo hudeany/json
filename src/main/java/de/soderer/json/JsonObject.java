@@ -18,6 +18,7 @@ import java.util.Set;
 
 import de.soderer.json.exception.DuplicateKeyException;
 import de.soderer.json.exception.JsonInvalidValueTypeException;
+import de.soderer.json.exception.MissingKeyException;
 import de.soderer.json.utilities.DateUtilities;
 
 public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, Object>> {
@@ -228,6 +229,306 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 				throw new JsonInvalidValueTypeException(value.getClass());
 			}
 			return this;
+		}
+	}
+
+	/**
+	 * Replacing the property value for the given property key without changing the order of the properties within the JsonObject
+	 *
+	 * @param key
+	 * @return
+	 * @throws MissingKeyException
+	 */
+	public JsonObject replaceNull(final String key) throws MissingKeyException {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else if (properties.containsKey(key)) {
+			properties.put(key, new JsonValueNull());
+			return this;
+		} else {
+			throw new MissingKeyException(key);
+		}
+	}
+
+	/**
+	 * Replacing the property value for the given property key without changing the order of the properties within the JsonObject
+	 *
+	 * @param key
+	 * @param value
+	 * @return
+	 * @throws MissingKeyException
+	 */
+	public JsonObject replace(final String key, final String value) throws MissingKeyException {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else if (properties.containsKey(key)) {
+			if (value == null) {
+				replaceNull(key);
+			} else {
+				properties.put(key, new JsonValueString(value));
+			}
+			return this;
+		} else {
+			throw new MissingKeyException(key);
+		}
+	}
+
+	/**
+	 * Replacing the property value for the given property key without changing the order of the properties within the JsonObject
+	 *
+	 * @param key
+	 * @param value
+	 * @return
+	 * @throws MissingKeyException
+	 */
+	public JsonObject replace(final String key, final Integer value) throws MissingKeyException {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else if (properties.containsKey(key)) {
+			if (value == null) {
+				replaceNull(key);
+			} else {
+				properties.put(key, new JsonValueInteger(value));
+			}
+			return this;
+		} else {
+			throw new MissingKeyException(key);
+		}
+	}
+
+	/**
+	 * Replacing the property value for the given property key without changing the order of the properties within the JsonObject
+	 *
+	 * @param key
+	 * @param value
+	 * @return
+	 * @throws MissingKeyException
+	 */
+	public JsonObject replace(final String key, final Long value) throws MissingKeyException {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else if (properties.containsKey(key)) {
+			if (value == null) {
+				replaceNull(key);
+			} else {
+				properties.put(key, new JsonValueInteger(value));
+			}
+			return this;
+		} else {
+			throw new MissingKeyException(key);
+		}
+	}
+
+	/**
+	 * Replacing the property value for the given property key without changing the order of the properties within the JsonObject
+	 *
+	 * @param key
+	 * @param value
+	 * @return
+	 * @throws MissingKeyException
+	 */
+	public JsonObject replace(final String key, final Number value) throws MissingKeyException {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else if (properties.containsKey(key)) {
+			if (value == null) {
+				replaceNull(key);
+			} else if (value instanceof Integer) {
+				properties.put(key, new JsonValueInteger((Integer) value));
+			} else if (value instanceof Long) {
+				properties.put(key, new JsonValueInteger((Long) value));
+			} else {
+				properties.put(key, new JsonValueNumber(value));
+			}
+			return this;
+		} else {
+			throw new MissingKeyException(key);
+		}
+	}
+
+	/**
+	 * Replacing the property value for the given property key without changing the order of the properties within the JsonObject
+	 *
+	 * @param key
+	 * @param value
+	 * @return
+	 * @throws MissingKeyException
+	 */
+	public JsonObject replace(final String key, final Boolean value) throws MissingKeyException {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else if (properties.containsKey(key)) {
+			if (value == null) {
+				replaceNull(key);
+			} else {
+				properties.put(key, new JsonValueBoolean(value));
+			}
+			return this;
+		} else {
+			throw new MissingKeyException(key);
+		}
+	}
+
+	/**
+	 * Replacing the property value for the given property key without changing the order of the properties within the JsonObject
+	 *
+	 * @param key
+	 * @param value
+	 * @return
+	 * @throws MissingKeyException
+	 */
+	public JsonObject replace(final String key, final Date value) throws MissingKeyException {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else if (properties.containsKey(key)) {
+			if (value == null) {
+				replaceNull(key);
+			} else {
+				properties.put(key, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, value)));
+			}
+			return this;
+		} else {
+			throw new MissingKeyException(key);
+		}
+	}
+
+	/**
+	 * Replacing the property value for the given property key without changing the order of the properties within the JsonObject
+	 *
+	 * @param key
+	 * @param value
+	 * @return
+	 * @throws MissingKeyException
+	 */
+	public JsonObject replace(final String key, final LocalDate value) throws MissingKeyException {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else if (properties.containsKey(key)) {
+			if (value == null) {
+				replaceNull(key);
+			} else {
+				properties.put(key, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE, value)));
+			}
+			return this;
+		} else {
+			throw new MissingKeyException(key);
+		}
+	}
+
+	/**
+	 * Replacing the property value for the given property key without changing the order of the properties within the JsonObject
+	 *
+	 * @param key
+	 * @param value
+	 * @return
+	 * @throws MissingKeyException
+	 */
+	public JsonObject replace(final String key, final LocalDateTime value) throws MissingKeyException {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else if (properties.containsKey(key)) {
+			if (value == null) {
+				replaceNull(key);
+			} else {
+				if (value.getNano() > 0) {
+					properties.put(key, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT_NO_TIMEZONE, value)));
+				} else {
+					properties.put(key, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT_NO_TIMEZONE, value)));
+				}
+			}
+			return this;
+		} else {
+			throw new MissingKeyException(key);
+		}
+	}
+
+	/**
+	 * Replacing the property value for the given property key without changing the order of the properties within the JsonObject
+	 *
+	 * @param key
+	 * @param value
+	 * @return
+	 * @throws MissingKeyException
+	 */
+	public JsonObject replace(final String key, final ZonedDateTime value) throws MissingKeyException {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else if (properties.containsKey(key)) {
+			if (value == null) {
+				replaceNull(key);
+			} else {
+				if (value.getNano() > 0) {
+					properties.put(key, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT, value)));
+				} else {
+					properties.put(key, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, value)));
+				}
+			}
+			return this;
+		} else {
+			throw new MissingKeyException(key);
+		}
+	}
+
+	/**
+	 * Replacing the property value for the given property key without changing the order of the properties within the JsonObject
+	 *
+	 * @param key
+	 * @param value
+	 * @return
+	 * @throws MissingKeyException
+	 */
+	public JsonObject replace(final String key, final JsonNode value) throws MissingKeyException {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else if (properties.containsKey(key)) {
+			properties.put(key, value);
+			return this;
+		} else {
+			throw new MissingKeyException(key);
+		}
+	}
+
+	/**
+	 * Replacing the property value for the given property key without changing the order of the properties within the JsonObject
+	 *
+	 * @param key
+	 * @param value
+	 * @return
+	 * @throws MissingKeyException
+	 * @throws JsonInvalidValueTypeException
+	 */
+	public JsonObject replace(final String key, final Object value) throws MissingKeyException, JsonInvalidValueTypeException {
+		if (key == null) {
+			throw new RuntimeException("Invalid null value for JsonObject property key");
+		} else if (properties.containsKey(key)) {
+			if (value == null) {
+				replaceNull(key);
+			} else if (value instanceof String) {
+				replace(key, (String) value);
+			} else if (value instanceof Integer) {
+				replace(key, (Integer) value);
+			} else if (value instanceof Long) {
+				replace(key, (Long) value);
+			} else if (value instanceof Number) {
+				replace(key, (Number) value);
+			} else if (value instanceof Boolean) {
+				replace(key, (Boolean) value);
+			} else if (value instanceof Date) {
+				replace(key, (Date) value);
+			} else if (value instanceof LocalDate) {
+				replace(key, (LocalDate) value);
+			} else if (value instanceof LocalDateTime) {
+				replace(key, (LocalDateTime) value);
+			} else if (value instanceof ZonedDateTime) {
+				replace(key, (ZonedDateTime) value);
+			} else if (value instanceof JsonNode) {
+				replace(key, (JsonNode) value);
+			} else {
+				throw new JsonInvalidValueTypeException(value.getClass());
+			}
+			return this;
+		} else {
+			throw new MissingKeyException(key);
 		}
 	}
 

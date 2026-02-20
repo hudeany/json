@@ -12,6 +12,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import de.soderer.json.exception.DuplicateKeyException;
+import de.soderer.json.exception.MissingKeyException;
 import de.soderer.yaml.YamlWriter;
 
 public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, Object>> {
@@ -70,6 +71,76 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 			throw new DuplicateKeyException(key.toString());
 		} else {
 			entries.put(key, value);
+		}
+		return this;
+	}
+
+	/**
+	 * Replacing the property value for the given property key without changing the order of the properties within the YamlMapping
+	 *
+	 * @param key
+	 * @param value
+	 * @return
+	 * @throws MissingKeyException
+	 */
+	public YamlMapping replace(final String key, final Object value) throws MissingKeyException {
+		if (key == null) {
+			replace(new YamlScalar(null), new YamlScalar(value));
+		} else if (value instanceof YamlNode) {
+			replace(new YamlScalar(key), (YamlNode) value);
+		} else {
+			replace(new YamlScalar(key, YamlScalarType.STRING), new YamlScalar(value));
+		}
+		return this;
+	}
+
+	/**
+	 * Replacing the property value for the given property key without changing the order of the properties within the YamlMapping
+	 *
+	 * @param key
+	 * @param value
+	 * @return
+	 * @throws MissingKeyException
+	 */
+	public YamlMapping replace(final Number key, final Object value) throws MissingKeyException {
+		if (key == null) {
+			replace(new YamlScalar(null), new YamlScalar(value));
+		} else {
+			replace(new YamlScalar(key, YamlScalarType.NUMBER), new YamlScalar(value));
+		}
+		return this;
+	}
+
+	/**
+	 * Replacing the property value for the given property key without changing the order of the properties within the YamlMapping
+	 *
+	 * @param key
+	 * @param value
+	 * @return
+	 * @throws MissingKeyException
+	 */
+	public YamlMapping replace(final Boolean key, final Object value) throws MissingKeyException {
+		if (key == null) {
+			replace(new YamlScalar(null), new YamlScalar(value));
+		} else {
+			replace(new YamlScalar(key, YamlScalarType.BOOLEAN), new YamlScalar(value));
+		}
+		return this;
+	}
+
+	/**
+	 * Replacing the property value for the given property key without changing the order of the properties within the YamlMapping
+	 *
+	 * @param key
+	 * @param value
+	 * @return
+	 * @throws MissingKeyException
+	 */
+	public YamlMapping replace(final YamlNode key, final YamlNode value) throws MissingKeyException {
+		if (containsKey(key)) {
+			entries.put(key, value);
+		} else {
+			throw new MissingKeyException(key.toString());
 		}
 		return this;
 	}
