@@ -14,9 +14,6 @@ import java.util.List;
 
 import de.soderer.json.utilities.DateUtilities;
 
-/**
- * TODO: add "insert", "removeByIndex"
- */
 public class JsonArray extends JsonNode implements Iterable<Object> {
 	private final List<JsonNode> items = new ArrayList<>();
 
@@ -131,6 +128,113 @@ public class JsonArray extends JsonNode implements Iterable<Object> {
 		return this;
 	}
 
+	public JsonArray insertNull(final int index) {
+		items.add(index, new JsonValueNull());
+		return this;
+	}
+
+	public JsonArray insert(final int index, final String value) {
+		if (value == null) {
+			insertNull(index);
+		} else {
+			insert(index, new JsonValueString(value));
+		}
+		return this;
+	}
+
+	public JsonArray insert(final int index, final Integer value) {
+		if (value == null) {
+			insertNull(index);
+		} else {
+			insert(index, new JsonValueInteger(value));
+		}
+		return this;
+	}
+
+	public JsonArray insert(final int index, final Long value) {
+		if (value == null) {
+			insertNull(index);
+		} else {
+			insert(index, new JsonValueInteger(value));
+		}
+		return this;
+	}
+
+	public JsonArray insert(final int index, final Number value) {
+		if (value == null) {
+			insertNull(index);
+		} else if (value instanceof Integer) {
+			insert(index, new JsonValueInteger((Integer) value));
+		} else if (value instanceof Long) {
+			insert(index, new JsonValueInteger((Long) value));
+		} else {
+			insert(index, new JsonValueNumber(value));
+		}
+		return this;
+	}
+
+	public JsonArray insert(final int index, final Boolean value) {
+		if (value == null) {
+			insertNull(index);
+		} else {
+			insert(index, new JsonValueBoolean(value));
+		}
+		return this;
+	}
+
+	public JsonArray insert(final int index, final Date value) {
+		if (value == null) {
+			insertNull(index);
+		} else {
+			insert(index, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, value)));
+		}
+		return this;
+	}
+
+	public JsonArray insert(final int index, final LocalDate value) {
+		if (value == null) {
+			insertNull(index);
+		} else {
+			insert(index, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE, value)));
+		}
+		return this;
+	}
+
+	public JsonArray insert(final int index, final LocalDateTime value) {
+		if (value == null) {
+			insertNull(index);
+		} else {
+			if (value.getNano() > 0) {
+				insert(index, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT_NO_TIMEZONE, value)));
+			} else {
+				insert(index, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT_NO_TIMEZONE, value)));
+			}
+		}
+		return this;
+	}
+
+	public JsonArray insert(final int index, final ZonedDateTime value) {
+		if (value == null) {
+			insertNull(index);
+		} else {
+			if (value.getNano() > 0) {
+				insert(index, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT, value)));
+			} else {
+				insert(index, new JsonValueString(DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, value)));
+			}
+		}
+		return this;
+	}
+
+	public JsonArray insert(final int index, final JsonNode value) {
+		if (value == null) {
+			insertNull(index);
+		} else {
+			items.add(index, value);
+		}
+		return this;
+	}
+
 	public boolean removeNull() {
 		return items.remove(new JsonValueNull());
 	}
@@ -185,6 +289,10 @@ public class JsonArray extends JsonNode implements Iterable<Object> {
 		} else {
 			return items.remove(value);
 		}
+	}
+
+	public JsonNode removeByIndex(final int index) {
+		return items.remove(index);
 	}
 
 	public boolean containsNull() {

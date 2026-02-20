@@ -233,6 +233,17 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 		return entries.get(key);
 	}
 
+	public Object getSimpleValue(final String key) {
+		final Object value = get(key);
+		if (value == null) {
+			return null;
+		} else if (value instanceof YamlScalar) {
+			return ((YamlScalar) value).getValue();
+		} else {
+			return value;
+		}
+	}
+
 	public boolean containsKey(final String key) {
 		if (key == null) {
 			return containsKey(new YamlScalar(null));
