@@ -59,9 +59,7 @@ public class YamlTest {
 		Assert.assertNotNull("Root node should not be null", testDocument1.getRoot());
 
 		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
-		try (final YamlWriter writer = new YamlWriter(testOutputStream)) {
-			writer.setAlwaysQuoteAllStrings();
-			writer.setOmitComments(true);
+		try (final YamlWriter writer = new YamlWriter(testOutputStream, new YamlFormat().setAlwaysQuoteAllStrings().setOmitComments(true))) {
 			writer.writeDocument(testDocument1);
 		}
 
@@ -96,9 +94,7 @@ public class YamlTest {
 		Assert.assertNotNull("Root node should not be null", testDocument1.getRoot());
 
 		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
-		try (final YamlWriter writer = new YamlWriter(testOutputStream)) {
-			writer.setAlwaysQuoteAllStrings();
-			writer.setIgnoreFlowStyleSettings(true);
+		try (final YamlWriter writer = new YamlWriter(testOutputStream, new YamlFormat().setAlwaysQuoteAllStrings().setIgnoreFlowStyleSettings(true))) {
 			writer.writeDocument(testDocument1);
 		}
 
@@ -282,7 +278,7 @@ public class YamlTest {
 		final YamlNode yamlNode = JsonToYamlConverter.convert(jsonNode);
 
 		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
-		try (final YamlWriter writer = new YamlWriter(testOutputStream, Linebreak.Windows)) {
+		try (final YamlWriter writer = new YamlWriter(testOutputStream, new YamlFormat().setLinebreak(Linebreak.Windows))) {
 			writer.writeDocument(new YamlDocument(yamlNode));
 		}
 
@@ -317,10 +313,11 @@ public class YamlTest {
 		Assert.assertNotNull("Root node should not be null", testDocument1.getRoot());
 
 		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
-		try (final YamlWriter writer = new YamlWriter(testOutputStream)) {
-			if (alwaysQuote) {
-				writer.setAlwaysQuoteAllStrings();
-			}
+		final YamlFormat yamlFormat = new YamlFormat();
+		if (alwaysQuote) {
+			yamlFormat.setAlwaysQuoteAllStrings();
+		}
+		try (final YamlWriter writer = new YamlWriter(testOutputStream, yamlFormat)) {
 			writer.writeDocument(testDocument1);
 		}
 
@@ -345,11 +342,11 @@ public class YamlTest {
 		}
 
 		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
-		try (final YamlWriter writer = new YamlWriter(testOutputStream)) {
-			if (alwaysQuote) {
-				writer.setAlwaysQuoteAllStrings();
-			}
-
+		final YamlFormat yamlFormat = new YamlFormat();
+		if (alwaysQuote) {
+			yamlFormat.setAlwaysQuoteAllStrings();
+		}
+		try (final YamlWriter writer = new YamlWriter(testOutputStream, yamlFormat)) {
 			try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream(inputDataFileNamem)) {
 				try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
 					YamlDocument testDocument;
