@@ -27,6 +27,7 @@ import de.soderer.yaml.data.directive.YamlDirective;
 
 /**
  * TODOs:
+ * - Optionally write less indented YamlSequences after property names
  * - Write with multiline String scalars as quoted text
  * - Write with resolving aliases (Check cyclic dependencies in aliases)
  */
@@ -222,7 +223,15 @@ public class YamlWriter implements Closeable {
 				write(linebreakString);
 			}
 		} else if (node instanceof final YamlSequence sequence) {
-			if ((sequence.isFlowStyle() && !ignoreFlowStyleSettings) || inFlow) {
+			if (sequence.size() == 0) {
+				writeFlowSequence(sequence, indentLevel);
+				if (!inFlow) {
+					if (sequence.getInlineComment() != null && !omitComments) {
+						write(" #" + sequence.getInlineComment());
+					}
+					write(linebreakString);
+				}
+			} else if ((sequence.isFlowStyle() && !ignoreFlowStyleSettings) || inFlow) {
 				writeFlowSequence(sequence, indentLevel);
 				if (!inFlow) {
 					if (sequence.getInlineComment() != null && !omitComments) {
@@ -246,7 +255,15 @@ public class YamlWriter implements Closeable {
 				writeBlockSequence(sequence, indentLevel);
 			}
 		} else if (node instanceof final YamlMapping mapping) {
-			if ((mapping.isFlowStyle() && !ignoreFlowStyleSettings) || inFlow) {
+			if (mapping.size() == 0) {
+				writeFlowMapping(mapping, indentLevel);
+				if (!inFlow) {
+					if (mapping.getInlineComment() != null && !omitComments) {
+						write(" #" + mapping.getInlineComment());
+					}
+					write(linebreakString);
+				}
+			} else if ((mapping.isFlowStyle() && !ignoreFlowStyleSettings) || inFlow) {
 				writeFlowMapping(mapping, indentLevel);
 				if (!inFlow) {
 					if (mapping.getInlineComment() != null && !omitComments) {

@@ -9,6 +9,32 @@ import de.soderer.yaml.data.YamlSequence;
 @SuppressWarnings("static-method")
 public class YamlDataTest {
 	@Test
+	public void testEmptySequenceInYamlMapping() throws Exception {
+		final YamlMapping yamlMapping = new YamlMapping();
+		yamlMapping.add("property1", new YamlSequence());
+		yamlMapping.add("property2", new YamlSequence());
+		yamlMapping.add("property3", new YamlSequence());
+
+		Assert.assertEquals("property1:\n  []\n"
+				+ "property2:\n  []\n"
+				+ "property3:\n  []\n",
+				yamlMapping.toString());
+	}
+
+	@Test
+	public void testEmptyMappingInYamlMapping() throws Exception {
+		final YamlMapping yamlMapping = new YamlMapping();
+		yamlMapping.add("property1", new YamlMapping());
+		yamlMapping.add("property2", new YamlMapping());
+		yamlMapping.add("property3", new YamlMapping());
+
+		Assert.assertEquals("property1:\n  {}\n"
+				+ "property2:\n  {}\n"
+				+ "property3:\n  {}\n",
+				yamlMapping.toString());
+	}
+
+	@Test
 	public void testReplaceInYamlMapping() throws Exception {
 		final YamlMapping yamlMapping = new YamlMapping();
 		yamlMapping.add("property1", "value1");
