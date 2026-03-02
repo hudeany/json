@@ -24,12 +24,6 @@ import de.soderer.yaml.data.YamlSequence;
 import de.soderer.yaml.data.YamlStringQuoteType;
 import de.soderer.yaml.data.directive.YamlDirective;
 
-/**
- * TODOs:
- * - Optionally write less indented YamlSequences after property names
- * - Write with multiline String scalars as quoted text
- * - Write with resolving aliases (Check cyclic dependencies in aliases)
- */
 public class YamlWriter implements Closeable {
 	/** Default output encoding. */
 	public static final Charset DEFAULT_ENCODING = StandardCharsets.UTF_8;

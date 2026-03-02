@@ -6,6 +6,9 @@ import java.util.List;
 import de.soderer.yaml.YamlWriter;
 import de.soderer.yaml.data.directive.YamlDirective;
 
+/**
+ * TODO: Search method for YAML anchor to use when finding YAML references
+ */
 public class YamlDocument {
 	private List<YamlDirective<?>> directives = null;
 	private List<String> leadingComments = null;

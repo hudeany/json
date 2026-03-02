@@ -7,7 +7,7 @@ public class YamlFormat {
 	private static Linebreak DEFAULT_LINEBREAK = Linebreak.Unix;
 	private static YamlStringQuoteType DEFAULT_STRING_VALUE_QUOTETYPE = YamlStringQuoteType.DOUBLE;
 
-	// TODO: Write with multiline String scalars as quoted text
+	// TODO: Write multiline String scalars as quoted text
 
 	private Linebreak linebreak;
 
@@ -23,21 +23,43 @@ public class YamlFormat {
 	private boolean ignoreFlowStyleSettings;
 
 	// TODO
+	private boolean keepEmptyLines;
+
+	// TODO
 	/**
 	 * Use no indentation for YamlSequence items in YamlMapping properties values<br />
 	 * Example result when activated<br />
-	 * <br />
-	 * property:<br />
-	 * - item 1<br />
-	 * - item 2<br />
-	 * <br />
+	 * <pre>
+	 * property:
+	 * - item 1
+	 * - item 2
+	 * </pre>
 	 * Normal default output:<br />
-	 * <br />
-	 * property:<br />
-	 * &nbsp;&nbsp;- item 1<br />
-	 * &nbsp;&nbsp;- item 2<br />
+	 * <pre>
+	 * property:
+	 * &nbsp;&nbsp;- item 1
+	 * &nbsp;&nbsp;- item 2
+	 * </pre>
 	 */
 	private boolean useNoExtraIndentationForYamlSequencesInYamlMappingProperties;
+
+	// TODO
+	/**
+	 * Use no new line for empty YamlSequence or YamlMapping in YamlMapping properties values<br />
+	 * Example result when activated<br />
+	 * <pre>
+	 * property1: []
+	 * property2: {}
+	 * </pre>
+	 * Normal default output:<br />
+	 * <pre>
+	 * property1:
+	 * &nbsp;&nbsp;[]
+	 * property2:
+	 * &nbsp;&nbsp;{}
+	 * </pre>
+	 */
+	private boolean useNoNewLineForEmptyYamlObjectInYamlMappingProperties;
 
 	public YamlFormat() {
 		linebreak = DEFAULT_LINEBREAK;
@@ -130,5 +152,22 @@ public class YamlFormat {
 	public YamlFormat setUseNoExtraIndentationForYamlSequencesInYamlMappingProperties(final boolean useNoExtraIndentationForYamlSequencesInYamlMappingProperties) {
 		this.useNoExtraIndentationForYamlSequencesInYamlMappingProperties = useNoExtraIndentationForYamlSequencesInYamlMappingProperties;
 		return this;
+	}
+
+	public boolean isUseNoNewLineForEmptyYamlObjectInYamlMappingProperties() {
+		return useNoNewLineForEmptyYamlObjectInYamlMappingProperties;
+	}
+
+	public YamlFormat setUseNoNewLineForEmptyYamlObjectInYamlMappingProperties(final boolean useNoNewLineForEmptyYamlObjectInYamlMappingProperties) {
+		this.useNoNewLineForEmptyYamlObjectInYamlMappingProperties = useNoNewLineForEmptyYamlObjectInYamlMappingProperties;
+		return this;
+	}
+
+	public boolean isKeepEmptyLines() {
+		return keepEmptyLines;
+	}
+
+	public void setKeepEmptyLines(final boolean keepEmptyLines) {
+		this.keepEmptyLines = keepEmptyLines;
 	}
 }
