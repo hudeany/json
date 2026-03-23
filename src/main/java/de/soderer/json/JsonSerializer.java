@@ -628,6 +628,32 @@ public class JsonSerializer {
 			throw new Exception("JSON data is null");
 		} else if (jsonData.isJsonObject()) {
 			return deserialize(classType, (JsonObject) jsonData);
+		} else if (classType == String.class) {
+			if (jsonData.isNull()) {
+				return null;
+			} else if (jsonData.isString()) {
+				return ((JsonValueString) jsonData).getValue();
+			} else if (jsonData.isInteger()) {
+				return Integer.toString(((JsonValueInteger) jsonData).getValue().intValue());
+			} else if (jsonData.isNumber()) {
+				return (((JsonValueNumber) jsonData).getValue()).toString();
+			} else if (jsonData.isBoolean()) {
+				return Boolean.toString(((JsonValueBoolean) jsonData).getValue());
+			} else {
+				throw new Exception("JSON data is not a String: '" + jsonData.getClass().getSimpleName() + "'");
+			}
+		} else if (classType == Integer.class) {
+			if (jsonData.isNull()) {
+				return null;
+			} else if (jsonData.isString()) {
+				return Integer.parseInt(((JsonValueString) jsonData).getValue());
+			} else if (jsonData.isInteger()) {
+				return ((JsonValueInteger) jsonData).getValue().intValue();
+			} else if (jsonData.isNumber()) {
+				return ((JsonValueNumber) jsonData).getValue().intValue();
+			} else {
+				throw new Exception("JSON data is not an Integer: '" + jsonData.getClass().getSimpleName() + "'");
+			}
 		} else if (classType == Object.class) {
 			if (jsonData.isNull()) {
 				return null;
