@@ -24,6 +24,9 @@ public class TestObjectComplexForSimpleJson {
 	private final float floatField = (float) Math.PI;
 	private final double doubleField = Math.PI;
 	private final boolean boolField = true;
+	private final String stringField = "Test";
+	private final Integer integerField = 2;
+	private final Boolean booleanField = Boolean.FALSE;
 	private final BigDecimal bigDecimalField = new BigDecimal("1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
 	private final Object nullField = null;
 	private TestObjectComplexForSimpleJson otherObjectField = null;

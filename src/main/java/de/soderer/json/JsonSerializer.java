@@ -628,36 +628,54 @@ public class JsonSerializer {
 			throw new Exception("JSON data is null");
 		} else if (jsonData.isJsonObject()) {
 			return deserialize(classType, (JsonObject) jsonData);
-		} else if (classType == String.class) {
-			if (jsonData.isNull()) {
-				return null;
-			} else if (jsonData.isString()) {
-				return ((JsonValueString) jsonData).getValue();
-			} else if (jsonData.isInteger()) {
-				return Integer.toString(((JsonValueInteger) jsonData).getValue().intValue());
-			} else if (jsonData.isNumber()) {
-				return (((JsonValueNumber) jsonData).getValue()).toString();
-			} else if (jsonData.isBoolean()) {
-				return Boolean.toString(((JsonValueBoolean) jsonData).getValue());
+		} else if (jsonData.isNull()) {
+			return null;
+		} else if (classType == Boolean.TYPE || classType == Boolean.class) {
+			if (jsonData.isBoolean()) {
+				return ((JsonValueBoolean) jsonData).getValue();
 			} else {
-				throw new Exception("JSON data is not a String: '" + jsonData.getClass().getSimpleName() + "'");
+				throw new Exception("JSON data is not a Json Boolean value: '" + jsonData.getClass().getSimpleName() + "'");
 			}
-		} else if (classType == Integer.class) {
-			if (jsonData.isNull()) {
-				return null;
-			} else if (jsonData.isString()) {
-				return Integer.parseInt(((JsonValueString) jsonData).getValue());
-			} else if (jsonData.isInteger()) {
+		} else if (classType == String.class) {
+			if (jsonData.isString()) {
+				return ((JsonValueString) jsonData).getValue();
+			} else {
+				throw new Exception("JSON data is not a String value: '" + jsonData.getClass().getSimpleName() + "'");
+			}
+		} else if (classType == Integer.TYPE || classType == Integer.class) {
+			if (jsonData.isInteger()) {
 				return ((JsonValueInteger) jsonData).getValue().intValue();
 			} else if (jsonData.isNumber()) {
 				return ((JsonValueNumber) jsonData).getValue().intValue();
 			} else {
-				throw new Exception("JSON data is not an Integer: '" + jsonData.getClass().getSimpleName() + "'");
+				throw new Exception("JSON data is not an Integer value: '" + jsonData.getClass().getSimpleName() + "'");
+			}
+		} else if (classType == Long.TYPE || classType == Long.class) {
+			if (jsonData.isInteger()) {
+				return ((JsonValueInteger) jsonData).getValue().intValue();
+			} else if (jsonData.isNumber()) {
+				return ((JsonValueNumber) jsonData).getValue().intValue();
+			} else {
+				throw new Exception("JSON data is not an Integer value: '" + jsonData.getClass().getSimpleName() + "'");
+			}
+		} else if (classType == Double.TYPE || classType == Double.class) {
+			if (jsonData.isInteger()) {
+				return ((JsonValueInteger) jsonData).getValue();
+			} else if (jsonData.isNumber()) {
+				return ((JsonValueNumber) jsonData).getValue();
+			} else {
+				throw new Exception("JSON data is not an Number value: '" + jsonData.getClass().getSimpleName() + "'");
+			}
+		} else if (classType == BigDecimal.class) {
+			if (jsonData.isInteger()) {
+				return ((JsonValueInteger) jsonData).getValue();
+			} else if (jsonData.isNumber()) {
+				return ((JsonValueNumber) jsonData).getValue();
+			} else {
+				throw new Exception("JSON data is not an Number value: '" + jsonData.getClass().getSimpleName() + "'");
 			}
 		} else if (classType == Object.class) {
-			if (jsonData.isNull()) {
-				return null;
-			} else if (jsonData.isString()) {
+			if (jsonData.isString()) {
 				return ((JsonValueString) jsonData).getValue();
 			} else if (jsonData.isInteger()) {
 				return ((JsonValueInteger) jsonData).getValue();
@@ -666,10 +684,10 @@ public class JsonSerializer {
 			} else if (jsonData.isBoolean()) {
 				return ((JsonValueBoolean) jsonData).getValue();
 			} else {
-				throw new Exception("JSON data is not a JsonObject: '" + jsonData.getClass().getSimpleName() + "'");
+				throw new Exception("JSON data is not a simple Json value: '" + jsonData.getClass().getSimpleName() + "'");
 			}
 		} else {
-			throw new Exception("JSON data is not a JsonObject: '" + jsonData.getClass().getSimpleName() + "'");
+			throw new Exception("JSON data is not a simple Json value: '" + jsonData.getClass().getSimpleName() + "'");
 		}
 	}
 
