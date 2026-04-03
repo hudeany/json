@@ -148,6 +148,8 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 	public YamlMapping put(final String key, final Object value) {
 		if (key == null) {
 			put(new YamlScalar(null), new YamlScalar(value));
+		} else if (value instanceof YamlNode) {
+			put(new YamlScalar(key, YamlScalarType.STRING), (YamlNode) value);
 		} else {
 			put(new YamlScalar(key, YamlScalarType.STRING), new YamlScalar(value));
 		}
@@ -157,6 +159,8 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 	public YamlMapping put(final Number key, final Object value) {
 		if (key == null) {
 			put(new YamlScalar(null), new YamlScalar(value));
+		} else if (value instanceof YamlNode) {
+			put(new YamlScalar(key, YamlScalarType.NUMBER), (YamlNode) value);
 		} else {
 			put(new YamlScalar(key, YamlScalarType.NUMBER), new YamlScalar(value));
 		}
@@ -166,6 +170,8 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 	public YamlMapping put(final Boolean key, final Object value) {
 		if (key == null) {
 			put(new YamlScalar(null), new YamlScalar(value));
+		} else if (value instanceof YamlNode) {
+			put(new YamlScalar(key, YamlScalarType.BOOLEAN), (YamlNode) value);
 		} else {
 			put(new YamlScalar(key, YamlScalarType.BOOLEAN), new YamlScalar(value));
 		}
