@@ -102,7 +102,7 @@ public class JsonTest {
 							+ "\t2.0E-6,\n"
 							+ "\t1.3,\n"
 							+ "\t3.0E-6,\n"
-							+ "\t\"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&\\/\\\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
+							+ "\t\"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
 							+ "\t\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT, testDate) + "\"\n"
 							+ "]",
 							result);
@@ -209,7 +209,7 @@ public class JsonTest {
 							+ "\t2.0E-6,\n"
 							+ "\t1.3,\n"
 							+ "\t3.0E-6,\n"
-							+ "\t\"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&\\/\\\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
+							+ "\t\"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
 							+ "\t\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT, testDate) + "\"\n"
 							+ "]",
 							result);
@@ -322,7 +322,7 @@ public class JsonTest {
 							+ "\t\"test_floatE\": 2.0E-6,\n"
 							+ "\t\"test_double\": 1.3,\n"
 							+ "\t\"test_doubleE\": 3.0E-6,\n"
-							+ "\t\"test_äÄ\": \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&\\/\\\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
+							+ "\t\"test_äÄ\": \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
 							+ "\t\"test_multiline\": \"abc\\ndef\",\n"
 							+ "\t\"test_date\": \"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT, testDate) + "\"\n"
 							+ "}",
@@ -381,7 +381,7 @@ public class JsonTest {
 							+ "\t\"test_floatE\": 2.0E-6,\n"
 							+ "\t\"test_double\": 1.3,\n"
 							+ "\t\"test_doubleE\": 3.0E-6,\n"
-							+ "\t\"test_äÄ\": \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&\\/\\\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
+							+ "\t\"test_äÄ\": \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\\\<>(){}[]'\\\"´`^°¹²³*#.,;:=+-~_|½¼¬\",\n"
 							+ "\t\"test_date\": \"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_WITH_NANOS_FORMAT, testDate) + "\",\n"
 							+ "\t\"minInteger\": " + Integer.MIN_VALUE + ",\n"
 							+ "\t\"maxInteger\": " + Integer.MAX_VALUE + "\n"

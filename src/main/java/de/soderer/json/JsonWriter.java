@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.Map.Entry;
 import java.util.Stack;
 
+import de.soderer.json.exception.JsonWriterStateException;
 import de.soderer.json.utilities.DateUtilities;
 import de.soderer.json.utilities.Utilities;
 
@@ -121,7 +122,7 @@ public class JsonWriter implements Closeable {
 			final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 			if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array && latestOpenJsonItem != JsonStackItem.Object_Value) {
 				openJsonStackItems.push(latestOpenJsonItem);
-				throw new Exception("Not matching open Json item for opening object: " + latestOpenJsonItem);
+				throw new JsonWriterStateException("Not matching open Json item for opening object: " + latestOpenJsonItem);
 			} else {
 				if (latestOpenJsonItem == JsonStackItem.Array) {
 					write("," + linebreak, false);
@@ -146,7 +147,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Object_Empty && latestOpenJsonItem != JsonStackItem.Object) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for opening object property: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for opening object property: " + latestOpenJsonItem);
 		} else {
 			if (latestOpenJsonItem == JsonStackItem.Object) {
 				write("," + linebreak, false);
@@ -163,7 +164,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
 		} else {
 			if (propertyValue == null || propertyValue instanceof JsonValueNull) {
 				write(separator + "null", false);
@@ -183,7 +184,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
 		} else {
 			write(separator + "null", false);
 		}
@@ -193,7 +194,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
 		} else {
 			if (propertyValue == null) {
 				write(separator + "null", false);
@@ -207,7 +208,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
 		} else {
 			if (propertyValue == null) {
 				write(separator + "null", false);
@@ -221,7 +222,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
 		} else {
 			if (propertyValue == null) {
 				write(separator + "null", false);
@@ -235,7 +236,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
 		} else {
 			if (propertyValue == null) {
 				write(separator + "null", false);
@@ -253,7 +254,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
 		} else {
 			if (propertyValue == null) {
 				write(separator + "null", false);
@@ -271,7 +272,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
 		} else {
 			if (propertyValue == null) {
 				write(separator + "null", false);
@@ -285,7 +286,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
 		} else {
 			if (propertyValue == null) {
 				write(separator + "null", false);
@@ -299,7 +300,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Object_Empty && latestOpenJsonItem != JsonStackItem.Object) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for closing object: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for closing object: " + latestOpenJsonItem);
 		} else if (latestOpenJsonItem == JsonStackItem.Object_Empty) {
 			write("}", false);
 		} else {
@@ -320,7 +321,7 @@ public class JsonWriter implements Closeable {
 			final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 			if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array && latestOpenJsonItem != JsonStackItem.Object_Value) {
 				openJsonStackItems.push(latestOpenJsonItem);
-				throw new Exception("Not matching open Json item for opening array: " + latestOpenJsonItem);
+				throw new JsonWriterStateException("Not matching open Json item for opening array: " + latestOpenJsonItem);
 			} else {
 				if (latestOpenJsonItem == JsonStackItem.Array) {
 					write("," + linebreak, false);
@@ -345,7 +346,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding array value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
 		} else {
 			if (latestOpenJsonItem == JsonStackItem.Array) {
 				write("," + linebreak, false);
@@ -373,7 +374,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding array value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
 		} else {
 			if (latestOpenJsonItem == JsonStackItem.Array) {
 				write("," + linebreak, false);
@@ -391,7 +392,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding array value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
 		} else {
 			if (latestOpenJsonItem == JsonStackItem.Array) {
 				write("," + linebreak, false);
@@ -413,7 +414,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding array value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
 		} else {
 			if (latestOpenJsonItem == JsonStackItem.Array) {
 				write("," + linebreak, false);
@@ -435,7 +436,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding array value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
 		} else {
 			if (latestOpenJsonItem == JsonStackItem.Array) {
 				write("," + linebreak, false);
@@ -457,7 +458,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding array value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
 		} else {
 			if (latestOpenJsonItem == JsonStackItem.Array) {
 				write("," + linebreak, false);
@@ -483,7 +484,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding array value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
 		} else {
 			if (latestOpenJsonItem == JsonStackItem.Array) {
 				write("," + linebreak, false);
@@ -509,7 +510,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding array value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
 		} else {
 			if (latestOpenJsonItem == JsonStackItem.Array) {
 				write("," + linebreak, false);
@@ -531,7 +532,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for adding array value: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
 		} else {
 			if (latestOpenJsonItem == JsonStackItem.Array) {
 				write("," + linebreak, false);
@@ -551,7 +552,7 @@ public class JsonWriter implements Closeable {
 
 	public void addSimpleValue(final Object value) throws Exception {
 		if (writtenCharacters > 0 || openJsonStackItems.size() != 0) {
-			throw new Exception("Not matching empty Json output for adding simple value");
+			throw new JsonWriterStateException("Not matching empty Json output for adding simple value");
 		} else {
 			if (value == null) {
 				write("null", true);
@@ -576,7 +577,7 @@ public class JsonWriter implements Closeable {
 			} else if (value instanceof Number) {
 				write(value.toString(), true);
 			} else {
-				write("\"" + value.toString().replace("\"", "\\\"") + "\"", true);
+				write("\"" + formatStringOutput(value.toString()) + "\"", true);
 			}
 		}
 	}
@@ -585,7 +586,7 @@ public class JsonWriter implements Closeable {
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
-			throw new Exception("Not matching open Json item for closing array: " + latestOpenJsonItem);
+			throw new JsonWriterStateException("Not matching open Json item for closing array: " + latestOpenJsonItem);
 		} else if (latestOpenJsonItem == JsonStackItem.Array_Empty) {
 			write("]", false);
 		} else {
@@ -600,7 +601,7 @@ public class JsonWriter implements Closeable {
 
 	public void add(final JsonObject jsonObject) throws Exception {
 		if (jsonObject == null) {
-			throw new Exception("Invalid null value added via 'add'. If done by intention use 'addSimpleJsonArrayValue' or 'addSimpleJsonObjectPropertyValue'");
+			throw new JsonWriterStateException("Invalid null value added via 'add'. If done by intention use 'addSimpleJsonArrayValue' or 'addSimpleJsonObjectPropertyValue'");
 		} else {
 			openJsonObject();
 			for (final Entry<String, JsonNode> property : jsonObject.entrySet()) {
@@ -620,7 +621,7 @@ public class JsonWriter implements Closeable {
 
 	public void add(final JsonArray jsonArray) throws Exception {
 		if (jsonArray == null) {
-			throw new Exception("Invalid null value added via 'add'. If done by intention use 'addSimpleJsonArrayValue' or 'addSimpleJsonObjectPropertyValue'");
+			throw new JsonWriterStateException("Invalid null value added via 'add'. If done by intention use 'addSimpleJsonArrayValue' or 'addSimpleJsonObjectPropertyValue'");
 		} else {
 			openJsonArray();
 			for (final JsonNode arrayValue : jsonArray.items()) {
@@ -641,8 +642,11 @@ public class JsonWriter implements Closeable {
 			final JsonStackItem openJsonItem = openJsonStackItems.pop();
 			switch(openJsonItem) {
 				case Array:
+					write(linebreak, false);
+					write("]", true);
+					break;
 				case Array_Empty:
-					closeJsonArray();
+					write("]", false);
 					break;
 				case Object:
 				case Object_Empty:
@@ -651,7 +655,7 @@ public class JsonWriter implements Closeable {
 				case Object_Value:
 					break;
 				default:
-					throw new Exception("Invalid open json item");
+					throw new JsonWriterStateException("Invalid open json item");
 			}
 		}
 	}
@@ -727,7 +731,6 @@ public class JsonWriter implements Closeable {
 		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		try (JsonWriter jsonWriter = new JsonWriter(outputStream, StandardCharsets.UTF_8)) {
 			jsonWriter.add(jsonObject);
-			jsonWriter.close();
 		}
 
 		return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
@@ -744,7 +747,6 @@ public class JsonWriter implements Closeable {
 		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		try (JsonWriter jsonWriter = new JsonWriter(outputStream, StandardCharsets.UTF_8)) {
 			jsonWriter.add(jsonArray);
-			jsonWriter.close();
 		}
 
 		return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
@@ -824,7 +826,6 @@ public class JsonWriter implements Closeable {
 		return value
 				.replace("\\", "\\\\")
 				.replace("\"", "\\\"")
-				.replace("/", "\\/")
 				.replace("\b", "\\b")
 				.replace("\f", "\\f")
 				.replace("\r", "\\r")
