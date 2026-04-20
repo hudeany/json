@@ -8,10 +8,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Stack;
 
 import de.soderer.json.exception.JsonDataException;
+import de.soderer.json.exception.JsonReaderStateException;
 import de.soderer.json.exception.UnexpectedEndOfJsonDataException;
 import de.soderer.json.exception.UnexpectedJsonTokenException;
 import de.soderer.json.path.JsonPath;
 import de.soderer.json.path.JsonPathArrayElement;
+import de.soderer.json.path.JsonPathException;
 import de.soderer.json.path.JsonPathPropertyElement;
 import de.soderer.json.utilities.BasicReader;
 import de.soderer.json.utilities.NumberUtilities;
@@ -192,7 +194,7 @@ public class JsonReader extends BasicReader {
 	 */
 	public JsonNode readNextJsonNode() throws Exception {
 		if (!readWasInitialized()) {
-			throw new Exception("JsonReader position was not initialized for 'readNextJsonNode'. Use 'readNextToken' or 'readUpToJsonPath' to init.");
+			throw new JsonReaderStateException("JsonReader position was not initialized for 'readNextJsonNode'. Use 'readNextToken' or 'readUpToJsonPath' to init.");
 		}
 
 		final JsonToken token = readNextToken();
@@ -232,7 +234,7 @@ public class JsonReader extends BasicReader {
 	 */
 	public JsonNode read() throws Exception {
 		if (readWasInitialized()) {
-			throw new Exception("JsonReader position was already initialized for other read operation");
+			throw new JsonReaderStateException("JsonReader position was already initialized for other read operation");
 		}
 
 		final JsonToken nextToken = readNextToken();
@@ -249,7 +251,7 @@ public class JsonReader extends BasicReader {
 
 	private JsonObject readJsonObject() throws Exception {
 		if (openJsonItems.peek() != JsonToken.JsonObject_Open) {
-			throw new Exception("Invalid read position for JsonObject in line " + (getReadLines() + 1) +" at overall index " + getReadCharacters());
+			throw new JsonReaderStateException("Invalid read position for JsonObject in line " + (getReadLines() + 1) +" at overall index " + getReadCharacters());
 		} else {
 			final JsonObject returnObject = new JsonObject();
 			JsonToken nextToken = readNextToken();
@@ -277,7 +279,7 @@ public class JsonReader extends BasicReader {
 
 	private JsonArray readJsonArray() throws Exception {
 		if (openJsonItems.peek() != JsonToken.JsonArray_Open) {
-			throw new Exception("Invalid read position for JsonArray in line " + (getReadLines() + 1) +" at overall index " + getReadCharacters());
+			throw new JsonReaderStateException("Invalid read position for JsonArray in line " + (getReadLines() + 1) +" at overall index " + getReadCharacters());
 		} else {
 			JsonToken nextToken = readNextToken();
 			if (nextToken == JsonToken.JsonArray_Close
@@ -428,7 +430,7 @@ public class JsonReader extends BasicReader {
 		}
 
 		if (!getCurrentJsonPath().equals(readJsonPath)) {
-			throw new Exception("Path '" + jsonPathString + "' is not part of the JSON data");
+			throw new JsonPathException("Path '" + jsonPathString + "' is not part of the JSON data", null);
 		}
 	}
 
@@ -438,7 +440,7 @@ public class JsonReader extends BasicReader {
 		}
 
 		if (!getCurrentJsonPath().equals(jsonPath)) {
-			throw new Exception("Path '" + jsonPath + "' is not part of the JSON data");
+			throw new JsonPathException("Path '" + jsonPath + "' is not part of the JSON data", null);
 		}
 	}
 }
