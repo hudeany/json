@@ -192,7 +192,7 @@ public class YamlWriter implements Closeable {
 				writeBlockMapping(mapping, indentLevel);
 			}
 		} else {
-			throw new IllegalStateException("Unbekannter Node-Typ: " + node.getClass());
+			throw new IllegalStateException("Unknow type of node: " + node.getClass());
 		}
 		return this;
 	}
