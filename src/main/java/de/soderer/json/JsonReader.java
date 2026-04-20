@@ -49,9 +49,7 @@ public class JsonReader extends BasicReader {
 	}
 
 	public JsonToken readNextToken() throws Exception {
-		final JsonToken jsonToken = readNextTokenInternal(true);
-
-		return jsonToken;
+		return readNextTokenInternal(true);
 	}
 
 	protected JsonToken readNextTokenInternal(final boolean updateJsonPath) throws Exception {
@@ -75,7 +73,7 @@ public class JsonReader extends BasicReader {
 				jsonToken = JsonToken.JsonObject_Open;
 				break;
 			case '}': // Close JsonObject
-				if (openJsonItems.pop() != JsonToken.JsonObject_Open) {
+				if (openJsonItems.size() == 0 || openJsonItems.pop() != JsonToken.JsonObject_Open) {
 					throw new Exception("Invalid json data '" + currentChar + "' in line " + (getReadLines() + 1) +" at overall index " + getReadCharacters());
 				} else {
 					jsonToken = JsonToken.JsonObject_Close;
@@ -89,7 +87,7 @@ public class JsonReader extends BasicReader {
 				jsonToken = JsonToken.JsonArray_Open;
 				break;
 			case ']': // Close JsonArray
-				if (openJsonItems.pop() != JsonToken.JsonArray_Open) {
+				if (openJsonItems.size() == 0 || openJsonItems.pop() != JsonToken.JsonArray_Open) {
 					throw new Exception("Invalid json data '" + currentChar + "' in line " + (getReadLines() + 1) +" at overall index " + getReadCharacters());
 				} else {
 					jsonToken = JsonToken.JsonArray_Close;
@@ -157,13 +155,15 @@ public class JsonReader extends BasicReader {
 						throw new Exception("Invalid json data end in line " + (getReadLines() + 1) + " at overall index " + getReadCharacters());
 					} else if (currentChar == '}') {
 						reuse(currentChar);
-					} else {
+					} else if (currentChar == ',') {
 						currentChar = readNextNonWhitespace();
 						if (currentChar == null || currentChar == '}') {
 							throw new Exception("Invalid json data '" + currentChar + "' in line " + (getReadLines() + 1) +" at overall index " + getReadCharacters());
 						} else {
 							reuse(currentChar);
 						}
+					} else {
+						throw new Exception("Invalid json data '" + currentChar + "' in line " + (getReadLines() + 1) +" at overall index " + getReadCharacters());
 					}
 					jsonToken = JsonToken.JsonSimpleValue;
 				} else {
@@ -184,7 +184,7 @@ public class JsonReader extends BasicReader {
 	 * Use "readNextToken" first to init read by node steps
 	 */
 	public JsonNode readNextJsonNode() throws Exception {
-		if (getReadCharacters() == 0) {
+		if (!readWasInitialized()) {
 			throw new Exception("JsonReader position was not initialized for 'readNextJsonNode'. Use 'readNextToken' or 'readUpToJsonPath' to init.");
 		}
 
@@ -219,7 +219,7 @@ public class JsonReader extends BasicReader {
 	 * @throws Exception
 	 */
 	public JsonNode read() throws Exception {
-		if (getReadCharacters() != 0) {
+		if (readWasInitialized()) {
 			throw new Exception("JsonReader position was already initialized for other read operation");
 		}
 

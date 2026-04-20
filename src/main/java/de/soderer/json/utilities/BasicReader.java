@@ -36,6 +36,7 @@ public class BasicReader implements Closeable {
 	private long readCharacters;
 	private long readCharactersInCurrentLine;
 	private long readLines;
+	private boolean readInitialized;
 
 	public BasicReader(final InputStream inputStream) throws Exception {
 		this(inputStream, null);
@@ -50,6 +51,7 @@ public class BasicReader implements Closeable {
 			inputReader = new PushbackReader(new BufferedReader(new InputStreamReader(countingInputStream, encoding)), 2);
 			readCharacters = 0;
 			readLines = 0;
+			readInitialized = false;
 		}
 	}
 
@@ -67,6 +69,10 @@ public class BasicReader implements Closeable {
 
 	public long getReadCharacters() {
 		return readCharacters;
+	}
+
+	public boolean readWasInitialized() {
+		return readInitialized;
 	}
 
 	public long getReadLines() {
@@ -111,6 +117,7 @@ public class BasicReader implements Closeable {
 	}
 
 	protected Character readNextCharacter() throws IOException {
+		readInitialized = true;
 		final int nextCharInt = inputReader.read();
 
 		if (nextCharInt != -1) {
