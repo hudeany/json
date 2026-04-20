@@ -607,7 +607,7 @@ public class JsonTest {
 			Assert.fail("Missing an expected exception");
 		} catch (final Exception e) {
 			// Expected Exception
-			Assert.assertEquals("Premature end of data", e.getMessage());
+			Assert.assertEquals("Unexpected end of json data in line 1 at column 1 at overall index 1", e.getMessage());
 		} finally {
 			Utilities.closeQuietly(jsonReader);
 		}
