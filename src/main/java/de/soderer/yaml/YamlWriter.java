@@ -58,7 +58,7 @@ public class YamlWriter implements Closeable {
 		this.yamlFormat = yamlFormat;
 
 		if (outputStream == null) {
-			throw new IllegalStateException("YamlWriter is already closed");
+			throw new IllegalStateException("YamlWriter outputStream must not be null");
 		}
 		outputWriter = new BufferedWriter(new OutputStreamWriter(outputStream, this.encoding));
 	}
