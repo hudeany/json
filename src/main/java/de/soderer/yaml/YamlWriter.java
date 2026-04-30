@@ -331,7 +331,7 @@ public class YamlWriter implements Closeable {
 		}
 
 		if (!needsQuotes) {
-			if (key.contains(": ") || key.contains(":\t") || key.contains(":\n")) {
+			if (key.contains(": ") || key.contains(":\t") || key.contains(":\n") || key.endsWith(":")) {
 				needsQuotes = true;
 			}
 		}
@@ -413,7 +413,7 @@ public class YamlWriter implements Closeable {
 		}
 
 		if (!needsQuotes) {
-			if (value.contains(": ") || value.contains(":\t") || value.contains(":\n")) {
+			if (value.contains(": ") || value.contains(":\t") || value.contains(":\n") || value.endsWith(":")) {
 				needsQuotes = true;
 			}
 		}
@@ -494,7 +494,7 @@ public class YamlWriter implements Closeable {
 		}
 
 		if (!needsQuotes) {
-			if (value.contains(": ") || value.contains(":\t") || value.contains(":\n")) {
+			if (value.contains(": ") || value.contains(":\t") || value.contains(":\n") || value.endsWith(":")) {
 				needsQuotes = true;
 			}
 		}
