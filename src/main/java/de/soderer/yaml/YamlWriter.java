@@ -349,7 +349,7 @@ public class YamlWriter implements Closeable {
 		}
 
 		if (!needsQuotes) {
-			if (key.startsWith("|") || key.startsWith(">")) {
+			if (key.startsWith("|") || key.startsWith(">") || key.startsWith("-") || key.startsWith("?")) {
 				needsQuotes = true;
 			}
 		}
@@ -431,7 +431,7 @@ public class YamlWriter implements Closeable {
 		}
 
 		if (!needsQuotes) {
-			if (value.startsWith("|") || value.startsWith(">")) {
+			if (value.startsWith("|") || value.startsWith(">") || value.startsWith("-") || value.startsWith("?")) {
 				needsQuotes = true;
 			}
 		}
@@ -512,7 +512,7 @@ public class YamlWriter implements Closeable {
 		}
 
 		if (!needsQuotes) {
-			if (value.startsWith("|") || value.startsWith(">")) {
+			if (value.startsWith("|") || value.startsWith(">") || value.startsWith("-") || value.startsWith("?")) {
 				needsQuotes = true;
 			}
 		}
