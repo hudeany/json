@@ -229,7 +229,7 @@ public class YamlWriter implements Closeable {
 					write(escapePlainString(value, scalar.getQuoteType(), false, true));
 				} else if (isKeyContext) {
 					writeIndent(indentLevel);
-					write(escapePlainString(value, scalar.getQuoteType(), false, false));
+					write(escapePlainString(value, scalar.getQuoteType(), true, false));
 				} else {
 					write(escapePlainString(value, scalar.getQuoteType(), false, false) + (Utilities.isNotBlank(inlineComment) && !yamlFormat.isOmitComments() ? " #" + inlineComment : "") + yamlFormat.getLinebreakString());
 				}
@@ -640,7 +640,7 @@ public class YamlWriter implements Closeable {
 					&& scalarKey.getType() == YamlScalarType.STRING
 					&& scalarKey.getAnchorName() == null
 					&& (key.getLeadingComments() == null || key.getLeadingComments().isEmpty())) {
-				writeScalarInlineInFlow(scalarKey);
+				writeScalarInlineInFlow(scalarKey, true);
 			} else {
 				writeNode(key, 0, true, true);
 			}
@@ -678,7 +678,7 @@ public class YamlWriter implements Closeable {
 					&& scalarVal.getType() != YamlScalarType.MULTILINE
 					&& scalarVal.getAnchorName() == null
 					&& (scalarVal.getLeadingComments() == null || scalarVal.getLeadingComments().isEmpty())) {
-				writeScalarInlineInFlow(scalarVal);
+				writeScalarInlineInFlow(scalarVal, false);
 			} else if (value instanceof final YamlAlias alias) {
 				write(" *" + alias.getTargetAnchorName());
 				if (alias.getInlineComment() != null && !yamlFormat.isOmitComments()) {
@@ -750,7 +750,7 @@ public class YamlWriter implements Closeable {
 					&& scalar.getType() != YamlScalarType.MULTILINE
 					&& scalar.getAnchorName() == null
 					&& (scalar.getLeadingComments() == null || scalar.getLeadingComments().isEmpty())) {
-				writeScalarInlineInFlow(scalar);
+				writeScalarInlineInFlow(scalar, false);
 			} else if (item instanceof final YamlAlias alias) {
 				write(" *" + alias.getTargetAnchorName());
 				if (alias.getInlineComment() != null && !yamlFormat.isOmitComments()) {
@@ -778,7 +778,7 @@ public class YamlWriter implements Closeable {
 		return this;
 	}
 
-	private YamlWriter writeScalarInlineInFlow(final YamlScalar scalar) throws IOException {
+	private YamlWriter writeScalarInlineInFlow(final YamlScalar scalar, final boolean isKey) throws IOException {
 		final String inlineComment = scalar.getInlineComment();
 		switch (scalar.getType()) {
 			case BOOLEAN:
@@ -787,11 +787,11 @@ public class YamlWriter implements Closeable {
 				write(scalar.getValueString() + (Utilities.isNotBlank(inlineComment) && !yamlFormat.isOmitComments() ? " #" + inlineComment : ""));
 				break;
 			case STRING:
-				write(escapePlainString(scalar.getValueString(), scalar.getQuoteType(), false, true) + (Utilities.isNotBlank(inlineComment) && !yamlFormat.isOmitComments() ? " #" + inlineComment : ""));
+				write(escapePlainString(scalar.getValueString(), scalar.getQuoteType(), isKey, true) + (Utilities.isNotBlank(inlineComment) && !yamlFormat.isOmitComments() ? " #" + inlineComment : ""));
 				break;
 			case MULTILINE:
 			default:
-				write(escapePlainString(scalar.getValueString(), scalar.getQuoteType(), false, true));
+				write(escapePlainString(scalar.getValueString(), scalar.getQuoteType(), isKey, true));
 		}
 		return this;
 	}
