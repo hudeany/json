@@ -226,12 +226,12 @@ public class YamlWriter implements Closeable {
 			case STRING:
 				if (inFlow ) {
 					writeIndent(indentLevel);
-					write(escapePlainStringValueInFlow(value, scalar.getQuoteType()));
+					write(escapePlainString(value, scalar.getQuoteType(), false, true));
 				} else if (isKeyContext) {
 					writeIndent(indentLevel);
-					write(escapePlainStringValue(value, scalar.getQuoteType()));
+					write(escapePlainString(value, scalar.getQuoteType(), false, false));
 				} else {
-					write(escapePlainStringValue(value, scalar.getQuoteType()) + (Utilities.isNotBlank(inlineComment) && !yamlFormat.isOmitComments() ? " #" + inlineComment : "") + yamlFormat.getLinebreakString());
+					write(escapePlainString(value, scalar.getQuoteType(), false, false) + (Utilities.isNotBlank(inlineComment) && !yamlFormat.isOmitComments() ? " #" + inlineComment : "") + yamlFormat.getLinebreakString());
 				}
 				break;
 			default:
@@ -308,22 +308,21 @@ public class YamlWriter implements Closeable {
 		return this;
 	}
 
-	private String escapePlainStringKey(final String key, final YamlStringQuoteType quoteType) {
-		boolean needsQuotes = yamlFormat.isAlwaysQuoteStringKeys() || key.isEmpty() || (quoteType != null && quoteType != YamlStringQuoteType.NONE);
+	private String escapePlainString(final String text, final YamlStringQuoteType quoteType, final boolean isKey, final boolean isFlow) {
+		final boolean alwaysQuote = isKey ? yamlFormat.isAlwaysQuoteStringKeys() : yamlFormat.isAlwaysQuoteStringValues();
+
+		boolean needsQuotes = alwaysQuote || text.isEmpty() || (quoteType != null && quoteType != YamlStringQuoteType.NONE);
 
 		if (!needsQuotes) {
-			if (Character.isWhitespace(key.charAt(0))
-					|| Character.isWhitespace(key.charAt(key.length() - 1))) {
+			if (Character.isWhitespace(text.charAt(0)) || Character.isWhitespace(text.charAt(text.length() - 1))) {
 				needsQuotes = true;
 			}
 		}
 
 		if (!needsQuotes) {
-			for (int i = 0; i < key.length(); i++) {
-				final char nextChar = key.charAt(i);
-
-				if ((Character.isWhitespace(nextChar) && nextChar != ' ')
-						|| "#*!'\"%@`".indexOf(nextChar) > -1) {
+			for (int i = 0; i < text.length(); i++) {
+				final char c = text.charAt(i);
+				if ((Character.isWhitespace(c) && c != ' ') || "#*!'\"%@`".indexOf(c) > -1) {
 					needsQuotes = true;
 					break;
 				}
@@ -331,223 +330,61 @@ public class YamlWriter implements Closeable {
 		}
 
 		if (!needsQuotes) {
-			if (key.contains(": ") || key.contains(":\t") || key.contains(":\n") || key.endsWith(":")) {
+			if (text.contains(": ") || text.contains(":\t") || text.contains(":\n") || text.endsWith(":")) {
 				needsQuotes = true;
 			}
 		}
 
 		if (!needsQuotes) {
-			if (key.contains(" &") || key.contains("\t&") || key.startsWith("&")) {
+			if (text.contains(" &") || text.contains("\t&") || text.startsWith("&")) {
 				needsQuotes = true;
 			}
 		}
 
 		if (!needsQuotes) {
-			if (key.startsWith("[") || key.startsWith("]") || key.startsWith("{") || key.startsWith("}")) {
-				needsQuotes = true;
-			}
-		}
-
-		if (!needsQuotes) {
-			if (key.startsWith("|") || key.startsWith(">") || key.startsWith("-") || key.startsWith("?")) {
-				needsQuotes = true;
-			}
-		}
-
-		if (!needsQuotes) {
-			if ("true".equalsIgnoreCase(key)
-					|| "y".equalsIgnoreCase(key)
-					|| "yes".equalsIgnoreCase(key)
-					|| "on".equalsIgnoreCase(key)
-					|| "false".equalsIgnoreCase(key)
-					|| "n".equalsIgnoreCase(key)
-					|| "no".equalsIgnoreCase(key)
-					|| "off".equalsIgnoreCase(key)
-					|| "null".equalsIgnoreCase(key)
-					|| "~".equalsIgnoreCase(key)) {
-				needsQuotes = true;
-			}
-		}
-
-		if (!needsQuotes) {
-			if (NumberUtilities.isNumber(key)) {
-				needsQuotes = true;
-			}
-		}
-
-		if (!needsQuotes) {
-			return key;
-		} else {
-			if (quoteType == null || quoteType == YamlStringQuoteType.DOUBLE) {
-				return "\""
-						+ YamlUtilities.escapeScalarString(key)
-						+ "\"";
-			} else {
-				return "'"
-						+ key.replace("'", "''")
-						+ "'";
-			}
-		}
-	}
-
-	private String escapePlainStringValue(final String value, final YamlStringQuoteType quoteType) {
-		boolean needsQuotes = yamlFormat.isAlwaysQuoteStringValues() || value.isEmpty() || (quoteType != null && quoteType != YamlStringQuoteType.NONE);
-
-		if (!needsQuotes) {
-			if (Character.isWhitespace(value.charAt(0))
-					|| Character.isWhitespace(value.charAt(value.length() - 1))) {
-				needsQuotes = true;
-			}
-		}
-
-		if (!needsQuotes) {
-			for (int i = 0; i < value.length(); i++) {
-				final char nextChar = value.charAt(i);
-
-				if ((Character.isWhitespace(nextChar) && nextChar != ' ')
-						|| "#*!'\"%@`".indexOf(nextChar) > -1) {
+			if (isFlow) {
+				if (text.contains("[") || text.contains("]") || text.contains("{") || text.contains("}")) {
 					needsQuotes = true;
-					break;
+				}
+			} else {
+				if (text.startsWith("[") || text.startsWith("]") || text.startsWith("{") || text.startsWith("}")) {
+					needsQuotes = true;
 				}
 			}
 		}
 
 		if (!needsQuotes) {
-			if (value.contains(": ") || value.contains(":\t") || value.contains(":\n") || value.endsWith(":")) {
+			if (text.startsWith("|") || text.startsWith(">") || text.startsWith("-") || text.startsWith("?")) {
 				needsQuotes = true;
 			}
 		}
 
 		if (!needsQuotes) {
-			if (value.contains(" &") || value.contains("\t&") || value.startsWith("&")) {
+			if ("true".equalsIgnoreCase(text) || "false".equalsIgnoreCase(text) || "yes".equalsIgnoreCase(text)
+					|| "no".equalsIgnoreCase(text) || "on".equalsIgnoreCase(text) || "off".equalsIgnoreCase(text)
+					|| "null".equalsIgnoreCase(text) || "~".equalsIgnoreCase(text) || "y".equalsIgnoreCase(text)
+					|| "n".equalsIgnoreCase(text)) {
 				needsQuotes = true;
 			}
 		}
 
 		if (!needsQuotes) {
-			if (value.startsWith("[") || value.startsWith("]") || value.startsWith("{") || value.startsWith("}")) {
+			if (NumberUtilities.isNumber(text)) {
 				needsQuotes = true;
 			}
 		}
 
 		if (!needsQuotes) {
-			if (value.startsWith("|") || value.startsWith(">") || value.startsWith("-") || value.startsWith("?")) {
-				needsQuotes = true;
-			}
-		}
-
-		if (!needsQuotes) {
-			if ("true".equalsIgnoreCase(value)
-					|| "yes".equalsIgnoreCase(value)
-					|| "on".equalsIgnoreCase(value)
-					|| "false".equalsIgnoreCase(value)
-					|| "no".equalsIgnoreCase(value)
-					|| "off".equalsIgnoreCase(value)
-					|| "null".equalsIgnoreCase(value)
-					|| "~".equalsIgnoreCase(value)) {
-				needsQuotes = true;
-			}
-		}
-
-		if (!needsQuotes) {
-			if (NumberUtilities.isNumber(value)) {
-				needsQuotes = true;
-			}
-		}
-
-		if (!needsQuotes) {
-			return value;
+			return text;
 		} else {
-			if ((quoteType == null && yamlFormat.getStringValueQuoteType() == YamlStringQuoteType.DOUBLE)
-					|| quoteType == YamlStringQuoteType.DOUBLE) {
-				return "\""
-						+ YamlUtilities.escapeScalarString(value)
-						+ "\"";
+			final boolean useDoubleQuotes = isKey
+					? (quoteType == null || quoteType == YamlStringQuoteType.DOUBLE)
+					: (quoteType == YamlStringQuoteType.DOUBLE || (quoteType == null && yamlFormat.getStringValueQuoteType() == YamlStringQuoteType.DOUBLE));
+
+			if (useDoubleQuotes) {
+				return "\"" + YamlUtilities.escapeScalarString(text) + "\"";
 			} else {
-				return "'"
-						+ value.replace("'", "''")
-						+ "'";
-			}
-		}
-	}
-
-	private String escapePlainStringValueInFlow(final String value, final YamlStringQuoteType quoteType) {
-		boolean needsQuotes = yamlFormat.isAlwaysQuoteStringValues() || value.isEmpty() || (quoteType != null && quoteType != YamlStringQuoteType.NONE);
-
-		if (!needsQuotes) {
-			if (Character.isWhitespace(value.charAt(0))
-					|| Character.isWhitespace(value.charAt(value.length() - 1))) {
-				needsQuotes = true;
-			}
-		}
-
-		if (!needsQuotes) {
-			for (int i = 0; i < value.length(); i++) {
-				final char nextChar = value.charAt(i);
-
-				if ((Character.isWhitespace(nextChar) && nextChar != ' ')
-						|| "#*!'\"%@`".indexOf(nextChar) > -1) {
-					needsQuotes = true;
-					break;
-				}
-			}
-		}
-
-		if (!needsQuotes) {
-			if (value.contains(": ") || value.contains(":\t") || value.contains(":\n") || value.endsWith(":")) {
-				needsQuotes = true;
-			}
-		}
-
-		if (!needsQuotes) {
-			if (value.contains(" &") || value.contains("\t&") || value.startsWith("&")) {
-				needsQuotes = true;
-			}
-		}
-
-		if (!needsQuotes) {
-			if (value.contains("[") || value.contains("]") || value.contains("{") || value.contains("}")) {
-				needsQuotes = true;
-			}
-		}
-
-		if (!needsQuotes) {
-			if (value.startsWith("|") || value.startsWith(">") || value.startsWith("-") || value.startsWith("?")) {
-				needsQuotes = true;
-			}
-		}
-
-		if (!needsQuotes) {
-			if ("true".equalsIgnoreCase(value)
-					|| "yes".equalsIgnoreCase(value)
-					|| "on".equalsIgnoreCase(value)
-					|| "false".equalsIgnoreCase(value)
-					|| "no".equalsIgnoreCase(value)
-					|| "off".equalsIgnoreCase(value)
-					|| "null".equalsIgnoreCase(value)
-					|| "~".equalsIgnoreCase(value)) {
-				needsQuotes = true;
-			}
-		}
-
-		if (!needsQuotes) {
-			if (NumberUtilities.isNumber(value)) {
-				needsQuotes = true;
-			}
-		}
-
-		if (!needsQuotes) {
-			return value;
-		} else {
-			if ((quoteType == null && yamlFormat.getStringValueQuoteType() == YamlStringQuoteType.DOUBLE)
-					|| quoteType == YamlStringQuoteType.DOUBLE) {
-				return "\""
-						+ YamlUtilities.escapeScalarString(value)
-						+ "\"";
-			} else {
-				return "'"
-						+ value.replace("'", "''")
-						+ "'";
+				return "'" + text.replace("'", "''") + "'";
 			}
 		}
 	}
@@ -571,11 +408,11 @@ public class YamlWriter implements Closeable {
 				write(scalar.getValueString() + (Utilities.isNotBlank(inlineComment) && !yamlFormat.isOmitComments() ? " #" + inlineComment : "") + yamlFormat.getLinebreakString());
 				break;
 			case STRING:
-				write(escapePlainStringValue(scalar.getValueString(), scalar.getQuoteType()) + (Utilities.isNotBlank(inlineComment) && !yamlFormat.isOmitComments() ? " #" + inlineComment : "") + yamlFormat.getLinebreakString());
+				write(escapePlainString(scalar.getValueString(), scalar.getQuoteType(), false, false) + (Utilities.isNotBlank(inlineComment) && !yamlFormat.isOmitComments() ? " #" + inlineComment : "") + yamlFormat.getLinebreakString());
 				break;
 			case MULTILINE:
 			default:
-				write(escapePlainStringValue(scalar.getValueString(), scalar.getQuoteType()) + yamlFormat.getLinebreakString());
+				write(escapePlainString(scalar.getValueString(), scalar.getQuoteType(), false, false) + yamlFormat.getLinebreakString());
 		}
 		return this;
 	}
@@ -613,10 +450,10 @@ public class YamlWriter implements Closeable {
 				if (scalarKey.getType() == YamlScalarType.STRING) {
 					if (!isFirstData) {
 						writeIndent(indentLevel);
-						write(escapePlainStringKey(scalarKey.getValueString(), scalarKey.getQuoteType()));
+						write(escapePlainString(scalarKey.getValueString(), scalarKey.getQuoteType(), true, false));
 						isFirstData = false;
 					} else {
-						write(escapePlainStringKey(scalarKey.getValueString(), scalarKey.getQuoteType()));
+						write(escapePlainString(scalarKey.getValueString(), scalarKey.getQuoteType(), true, false));
 					}
 				} else {
 					if (!isFirstData) {
@@ -679,7 +516,7 @@ public class YamlWriter implements Closeable {
 							break;
 						case STRING:
 							write(" ");
-							write(escapePlainStringValue(scalar.getValueString(), scalar.getQuoteType()) + (Utilities.isNotBlank(inlineComment) && !yamlFormat.isOmitComments() ? " #" + inlineComment : "") + yamlFormat.getLinebreakString());
+							write(escapePlainString(scalar.getValueString(), scalar.getQuoteType(), false, false) + (Utilities.isNotBlank(inlineComment) && !yamlFormat.isOmitComments() ? " #" + inlineComment : "") + yamlFormat.getLinebreakString());
 							break;
 						case MULTILINE:
 							write(" ");
@@ -687,7 +524,7 @@ public class YamlWriter implements Closeable {
 							break;
 						default:
 							write(" ");
-							write(escapePlainStringValue(scalar.getValueString(), scalar.getQuoteType()) + yamlFormat.getLinebreakString());
+							write(escapePlainString(scalar.getValueString(), scalar.getQuoteType(), false, false) + yamlFormat.getLinebreakString());
 					}
 				} else {
 					write(yamlFormat.getLinebreakString());
@@ -950,11 +787,11 @@ public class YamlWriter implements Closeable {
 				write(scalar.getValueString() + (Utilities.isNotBlank(inlineComment) && !yamlFormat.isOmitComments() ? " #" + inlineComment : ""));
 				break;
 			case STRING:
-				write(escapePlainStringValueInFlow(scalar.getValueString(), scalar.getQuoteType()) + (Utilities.isNotBlank(inlineComment) && !yamlFormat.isOmitComments() ? " #" + inlineComment : ""));
+				write(escapePlainString(scalar.getValueString(), scalar.getQuoteType(), false, true) + (Utilities.isNotBlank(inlineComment) && !yamlFormat.isOmitComments() ? " #" + inlineComment : ""));
 				break;
 			case MULTILINE:
 			default:
-				write(escapePlainStringValueInFlow(scalar.getValueString(), scalar.getQuoteType()));
+				write(escapePlainString(scalar.getValueString(), scalar.getQuoteType(), false, true));
 		}
 		return this;
 	}
