@@ -297,6 +297,9 @@ public class JsonWriter implements Closeable {
 	}
 
 	public void closeJsonObject() throws Exception {
+		if (openJsonStackItems.isEmpty()) {
+			throw new JsonWriterStateException("Cannot close JsonObject. No open Object left");
+		}
 		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
 		if (latestOpenJsonItem != JsonStackItem.Object_Empty && latestOpenJsonItem != JsonStackItem.Object) {
 			openJsonStackItems.push(latestOpenJsonItem);

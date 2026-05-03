@@ -67,6 +67,13 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 	}
 
+	public YamlNode getYamlNodeByAnchor(final String anchorName) throws Exception {
+		if (!anchorTable.containsKey(anchorName)) {
+			throw new Exception("There is no anchor defined with name '" + anchorName + "'");
+		}
+		return anchorTable.get(anchorName);
+	}
+
 	private YamlDocument parseDocument() throws Exception {
 		try {
 			final YamlDocument document = new YamlDocument();
@@ -357,6 +364,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 			if (pendingAnchor != null) {
 				yamlNode.setAnchorName(pendingAnchor);
+				anchorTable.put(pendingAnchor, yamlNode);
 				pendingAnchor = null;
 			}
 			return yamlNode;
@@ -539,6 +547,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 			if (pendingAnchor != null) {
 				nextItemNode.setAnchorName(pendingAnchor);
+				anchorTable.put(pendingAnchor, nextItemNode);
 				pendingAnchor = null;
 			}
 
@@ -628,6 +637,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 			if (pendingAnchor != null) {
 				valueNode.setAnchorName(pendingAnchor);
+				anchorTable.put(pendingAnchor, valueNode);
 				pendingAnchor = null;
 			}
 
@@ -709,6 +719,7 @@ public class YamlReader extends BasicReadAheadReader {
 					}
 					if (pendingAnchor != null) {
 						valueNode.setAnchorName(pendingAnchor);
+						anchorTable.put(pendingAnchor, valueNode);
 						pendingAnchor = null;
 					}
 
@@ -724,6 +735,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 			if (pendingAnchor != null) {
 				mapping.setAnchorName(pendingAnchor);
+				anchorTable.put(pendingAnchor, mapping);
 				pendingAnchor = null;
 			}
 
@@ -732,6 +744,7 @@ public class YamlReader extends BasicReadAheadReader {
 			String pendingAnchor = readUpToNextContent(null);
 			if (pendingAnchor != null) {
 				keyOrScalarNode.setAnchorName(pendingAnchor);
+				anchorTable.put(pendingAnchor, keyOrScalarNode);
 				pendingAnchor = null;
 			}
 
@@ -753,6 +766,7 @@ public class YamlReader extends BasicReadAheadReader {
 		String pendingAnchor = readUpToNextContent(mapping);
 		if (pendingAnchor != null) {
 			mapping.setAnchorName(pendingAnchor);
+			anchorTable.put(pendingAnchor, mapping);
 			pendingAnchor = null;
 		}
 
@@ -794,6 +808,7 @@ public class YamlReader extends BasicReadAheadReader {
 			pendingAnchor = readUpToNextContent(null);
 			if (pendingAnchor != null) {
 				keyNode.setAnchorName(pendingAnchor);
+				anchorTable.put(pendingAnchor, keyNode);
 				pendingAnchor = null;
 			}
 
@@ -807,6 +822,7 @@ public class YamlReader extends BasicReadAheadReader {
 				pendingAnchor = readUpToNextContent(mapping);
 				if (pendingAnchor != null) {
 					keyNode.setAnchorName(pendingAnchor);
+					anchorTable.put(pendingAnchor, keyNode);
 					pendingAnchor = null;
 				}
 
@@ -818,6 +834,7 @@ public class YamlReader extends BasicReadAheadReader {
 				pendingAnchor = readUpToNextContent(keyNode);
 				if (pendingAnchor != null) {
 					keyNode.setAnchorName(pendingAnchor);
+					anchorTable.put(pendingAnchor, keyNode);
 					pendingAnchor = null;
 				}
 
@@ -830,6 +847,7 @@ public class YamlReader extends BasicReadAheadReader {
 				pendingAnchor = readUpToNextContent(keyNode);
 				if (pendingAnchor != null) {
 					keyNode.setAnchorName(pendingAnchor);
+					anchorTable.put(pendingAnchor, keyNode);
 					pendingAnchor = null;
 				}
 
@@ -844,6 +862,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 					if (pendingAnchor != null) {
 						valueNode.setAnchorName(pendingAnchor);
+						anchorTable.put(pendingAnchor, valueNode);
 						pendingAnchor = null;
 					}
 
@@ -867,6 +886,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 					if (pendingAnchor != null) {
 						valueNode.setAnchorName(pendingAnchor);
+						anchorTable.put(pendingAnchor, valueNode);
 						pendingAnchor = null;
 					}
 
@@ -881,6 +901,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 					if (pendingAnchor != null) {
 						valueNode.setAnchorName(pendingAnchor);
+						anchorTable.put(pendingAnchor, valueNode);
 						pendingAnchor = null;
 					}
 
@@ -892,6 +913,7 @@ public class YamlReader extends BasicReadAheadReader {
 						pendingAnchor = readUpToNextContent(valueNode);
 						if (pendingAnchor != null) {
 							valueNode.setAnchorName(pendingAnchor);
+							anchorTable.put(pendingAnchor, valueNode);
 							pendingAnchor = null;
 						}
 
@@ -901,6 +923,7 @@ public class YamlReader extends BasicReadAheadReader {
 							pendingAnchor = readUpToNextContent(mapping);
 							if (pendingAnchor != null) {
 								valueNode.setAnchorName(pendingAnchor);
+								anchorTable.put(pendingAnchor, valueNode);
 								pendingAnchor = null;
 							}
 
@@ -933,6 +956,7 @@ public class YamlReader extends BasicReadAheadReader {
 		String pendingAnchor = readUpToNextContent(sequence);
 		if (pendingAnchor != null) {
 			sequence.setAnchorName(pendingAnchor);
+			anchorTable.put(pendingAnchor, sequence);
 			pendingAnchor = null;
 		}
 
@@ -952,6 +976,7 @@ public class YamlReader extends BasicReadAheadReader {
 			pendingAnchor = readUpToNextContent(sequence);
 			if (pendingAnchor != null) {
 				sequence.setAnchorName(pendingAnchor);
+				anchorTable.put(pendingAnchor, sequence);
 				pendingAnchor = null;
 			}
 
@@ -970,6 +995,7 @@ public class YamlReader extends BasicReadAheadReader {
 				pendingAnchor = readUpToNextContent(sequence);
 				if (pendingAnchor != null) {
 					sequence.setAnchorName(pendingAnchor);
+					anchorTable.put(pendingAnchor, sequence);
 					pendingAnchor = null;
 				}
 
@@ -989,6 +1015,7 @@ public class YamlReader extends BasicReadAheadReader {
 			pendingAnchor = readUpToNextContent(null);
 			if (pendingAnchor != null) {
 				itemNode.setAnchorName(pendingAnchor);
+				anchorTable.put(pendingAnchor, itemNode);
 				pendingAnchor = null;
 			}
 
@@ -1001,6 +1028,7 @@ public class YamlReader extends BasicReadAheadReader {
 				pendingAnchor = readUpToNextContent(sequence);
 				if (pendingAnchor != null) {
 					sequence.setAnchorName(pendingAnchor);
+					anchorTable.put(pendingAnchor, sequence);
 					pendingAnchor = null;
 				}
 
@@ -1012,6 +1040,7 @@ public class YamlReader extends BasicReadAheadReader {
 				pendingAnchor = readUpToNextContent(itemNode);
 				if (pendingAnchor != null) {
 					itemNode.setAnchorName(pendingAnchor);
+					anchorTable.put(pendingAnchor, itemNode);
 					pendingAnchor = null;
 				}
 			} else if (peekCharMatch(':')) {
@@ -1044,6 +1073,7 @@ public class YamlReader extends BasicReadAheadReader {
 				pendingAnchor = readUpToNextContent(valueNode);
 				if (pendingAnchor != null) {
 					valueNode.setAnchorName(pendingAnchor);
+					anchorTable.put(pendingAnchor, valueNode);
 					pendingAnchor = null;
 				}
 
@@ -1057,6 +1087,7 @@ public class YamlReader extends BasicReadAheadReader {
 					pendingAnchor = readUpToNextContent(sequence);
 					if (pendingAnchor != null) {
 						sequence.setAnchorName(pendingAnchor);
+						anchorTable.put(pendingAnchor, sequence);
 						pendingAnchor = null;
 					}
 
@@ -1067,6 +1098,7 @@ public class YamlReader extends BasicReadAheadReader {
 					pendingAnchor = readUpToNextContent(valueNode);
 					if (pendingAnchor != null) {
 						valueNode.setAnchorName(pendingAnchor);
+						anchorTable.put(pendingAnchor, valueNode);
 						pendingAnchor = null;
 					}
 				}
@@ -1252,7 +1284,11 @@ public class YamlReader extends BasicReadAheadReader {
 			readChar();
 			raw.append(nextLine);
 			raw.append("\n");
-			readNextIndentation();
+			if (isEOF()) {
+				break;
+			} else {
+				readNextIndentation();
+			}
 		}
 
 		String text = raw.toString();

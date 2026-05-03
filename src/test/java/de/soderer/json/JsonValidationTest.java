@@ -4,8 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import de.soderer.json.schema.JsonSchema;
 import de.soderer.json.schema.JsonSchemaConfiguration;
@@ -35,10 +35,10 @@ public class JsonValidationTest {
 			jsonSchema.validate(dataInputStream);
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		} catch (final Exception e) {
 			e.printStackTrace();
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		} finally {
 			Utilities.closeQuietly(dataInputStream);
 			Utilities.closeQuietly(schemaInputStream);
@@ -61,13 +61,13 @@ public class JsonValidationTest {
 					"null\n";
 			dataInputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 			jsonSchema.validate(dataInputStream);
-			Assert.fail("Missing expected exception");
+			Assertions.fail("Missing expected exception");
 		} catch (final JsonSchemaDefinitionError e) {
 			// Expected exception
 			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("$"));
 		} catch (final Exception e) {
 			e.printStackTrace();
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		} finally {
 			Utilities.closeQuietly(dataInputStream);
 			Utilities.closeQuietly(schemaInputStream);
@@ -83,10 +83,10 @@ public class JsonValidationTest {
 			}
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		} catch (final Exception e) {
 			e.printStackTrace();
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 	}
 
@@ -99,10 +99,10 @@ public class JsonValidationTest {
 			}
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		} catch (final Exception e) {
 			e.printStackTrace();
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 	}
 
@@ -115,10 +115,10 @@ public class JsonValidationTest {
 			}
 		} catch (final JsonSchemaDataValidationError e) {
 			e.printStackTrace();
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		} catch (final Exception e) {
 			e.printStackTrace();
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 	}
 
@@ -145,32 +145,32 @@ public class JsonValidationTest {
 					final JsonSchema jsonSchema = new JsonSchema(schema, new JsonSchemaConfiguration(StandardCharsets.UTF_8, JsonSchemaVersion.simple, true));
 					jsonSchema.validate(data);
 					if (!validSchema) {
-						Assert.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
+						Assertions.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
 					}
 					if (!valid) {
-						Assert.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
+						Assertions.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
 					}
 				} catch (final JsonSchemaDataValidationError e) {
 					if (valid) {
 						e.printStackTrace();
-						Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+						Assertions.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
 					}
 				} catch (final JsonSchemaDefinitionError e) {
 					if (validSchema) {
 						e.printStackTrace();
-						Assert.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+						Assertions.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
 					}
 				} catch (final Exception e) {
 					e.printStackTrace();
-					Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+					Assertions.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
 				} catch (final Throwable e) {
 					e.printStackTrace();
-					Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+					Assertions.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
 				}
 			}
 		} catch (final Exception e) {
 			e.printStackTrace();
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 	}
 
@@ -197,29 +197,29 @@ public class JsonValidationTest {
 					final JsonSchema jsonSchema = new JsonSchema(schema, new JsonSchemaConfiguration(StandardCharsets.UTF_8, JsonSchemaVersion.draftV4, true));
 					jsonSchema.validate(data);
 					if (!validSchema) {
-						Assert.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
+						Assertions.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
 					}
 					if (!valid) {
-						Assert.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
+						Assertions.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
 					}
 				} catch (final JsonSchemaDataValidationError e) {
 					if (valid) {
 						e.printStackTrace();
-						Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+						Assertions.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
 					}
 				} catch (final JsonSchemaDefinitionError e) {
 					if (validSchema) {
 						e.printStackTrace();
-						Assert.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+						Assertions.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
 					}
 				} catch (final Exception e) {
 					e.printStackTrace();
-					Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+					Assertions.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
 				}
 			}
 		} catch (final Exception e) {
 			e.printStackTrace();
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 	}
 
@@ -246,29 +246,29 @@ public class JsonValidationTest {
 					final JsonSchema jsonSchema = new JsonSchema(schema, new JsonSchemaConfiguration(StandardCharsets.UTF_8, JsonSchemaVersion.draftV6, true));
 					jsonSchema.validate(data);
 					if (!validSchema) {
-						Assert.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
+						Assertions.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
 					}
 					if (!valid) {
-						Assert.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
+						Assertions.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
 					}
 				} catch (final JsonSchemaDataValidationError e) {
 					if (valid) {
 						e.printStackTrace();
-						Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+						Assertions.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
 					}
 				} catch (final JsonSchemaDefinitionError e) {
 					if (validSchema) {
 						e.printStackTrace();
-						Assert.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+						Assertions.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
 					}
 				} catch (final Exception e) {
 					e.printStackTrace();
-					Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+					Assertions.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
 				}
 			}
 		} catch (final Exception e) {
 			e.printStackTrace();
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 	}
 
@@ -295,42 +295,42 @@ public class JsonValidationTest {
 					final JsonSchema jsonSchema = new JsonSchema(schema, new JsonSchemaConfiguration(StandardCharsets.UTF_8, JsonSchemaVersion.draftV7, true));
 					jsonSchema.validate(data);
 					if (!validSchema) {
-						Assert.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
+						Assertions.fail("(Test#: " + testCount + ") JSON Schema Error in test '" + description + "': Missing expected error");
 					}
 					if (!valid) {
-						Assert.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
+						Assertions.fail("(Test#: " + testCount + ") Error in test '" + description + "': Missing expected error");
 					}
 				} catch (final JsonSchemaDataValidationError e) {
 					if (valid) {
 						e.printStackTrace();
-						Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+						Assertions.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
 					}
 				} catch (final JsonSchemaDefinitionError e) {
 					if (validSchema) {
 						e.printStackTrace();
-						Assert.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+						Assertions.fail("(Test#: " + testCount + ") JSON Schema Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
 					}
 				} catch (final Exception e) {
 					e.printStackTrace();
-					Assert.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
+					Assertions.fail("(Test#: " + testCount + ") Error '" + e.getClass().getSimpleName() + "' in test '" + description + "': " + e.getMessage());
 				}
 			}
 		} catch (final Exception e) {
 			e.printStackTrace();
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 	}
 
 	private void assertJsonSchemaDefinitionErrorJsonSchemaPath(final JsonSchemaDefinitionError e, final JsonSchemaPath jsonSchemaPath) {
 		if (e == null || e.getMessage() == null) {
-			Assert.fail("JsonSchemaDefinitionError json path expected '" + jsonSchemaPath + "' but exception was null");
+			Assertions.fail("JsonSchemaDefinitionError json path expected '" + jsonSchemaPath + "' but exception was null");
 		} else {
 			if (e.getJsonSchemaPath() == null) {
 				e.printStackTrace();
-				Assert.fail("JsonSchemaDefinitionError json schema path expected '" + jsonSchemaPath + "' but exception json schema path was null");
+				Assertions.fail("JsonSchemaDefinitionError json schema path expected '" + jsonSchemaPath + "' but exception json schema path was null");
 			} else if (!e.getJsonSchemaPath().equals(jsonSchemaPath)) {
 				e.printStackTrace();
-				Assert.fail("JsonSchemaDefinitionError json schema path expected '" + jsonSchemaPath + "' but exception json schema path was '" + e.getJsonSchemaPath().getDotFormattedPath() + "'");
+				Assertions.fail("JsonSchemaDefinitionError json schema path expected '" + jsonSchemaPath + "' but exception json schema path was '" + e.getJsonSchemaPath().getDotFormattedPath() + "'");
 			}
 		}
 	}

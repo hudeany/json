@@ -7,8 +7,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonToYamlConverter;
@@ -56,7 +56,7 @@ public class YamlTest {
 			}
 		}
 
-		Assert.assertNotNull("Root node should not be null", testDocument1.getRoot());
+		Assertions.assertNotNull(testDocument1.getRoot(), "Root node should not be null");
 
 		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
 		try (final YamlWriter writer = new YamlWriter(testOutputStream, new YamlFormat().setAlwaysQuoteAllStrings().setOmitComments(true))) {
@@ -64,17 +64,17 @@ public class YamlTest {
 		}
 
 		final String serializedYaml = new String(testOutputStream.toByteArray(), StandardCharsets.UTF_8);
-		Assert.assertFalse("Serialized YAML should not be empty", serializedYaml.isEmpty());
-		Assert.assertEquals(resultYamlFileString, serializedYaml);
+		Assertions.assertFalse(serializedYaml.isEmpty(), "Serialized YAML should not be empty");
+		Assertions.assertEquals(resultYamlFileString, serializedYaml);
 
 		final YamlDocument testDocument2;
 		try (final YamlReader yamlReader = new YamlReader(new ByteArrayInputStream(serializedYaml.getBytes(StandardCharsets.UTF_8)))) {
 			testDocument2 = yamlReader.readDocument();
 		}
 
-		Assert.assertNotNull("Round-trip root should not be null", testDocument2.getRoot());
+		Assertions.assertNotNull(testDocument2.getRoot(), "Round-trip root should not be null");
 
-		Assert.assertTrue( "AST should be equal after round trip", astEquals(testDocument1.getRoot(), testDocument2.getRoot()));
+		Assertions.assertTrue(astEquals(testDocument1.getRoot(), testDocument2.getRoot()), "AST should be equal after round trip");
 	}
 
 	@Test
@@ -91,7 +91,7 @@ public class YamlTest {
 			}
 		}
 
-		Assert.assertNotNull("Root node should not be null", testDocument1.getRoot());
+		Assertions.assertNotNull(testDocument1.getRoot(), "Root node should not be null");
 
 		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
 		try (final YamlWriter writer = new YamlWriter(testOutputStream, new YamlFormat().setAlwaysQuoteAllStrings().setIgnoreFlowStyleSettings(true))) {
@@ -99,17 +99,17 @@ public class YamlTest {
 		}
 
 		final String serializedYaml = new String(testOutputStream.toByteArray(), StandardCharsets.UTF_8);
-		Assert.assertFalse("Serialized YAML should not be empty", serializedYaml.isEmpty());
-		Assert.assertEquals(resultYamlFileString, serializedYaml);
+		Assertions.assertFalse(serializedYaml.isEmpty(), "Serialized YAML should not be empty");
+		Assertions.assertEquals(resultYamlFileString, serializedYaml);
 
 		final YamlDocument testDocument2;
 		try (final YamlReader yamlReader = new YamlReader(new ByteArrayInputStream(serializedYaml.getBytes(StandardCharsets.UTF_8)))) {
 			testDocument2 = yamlReader.readDocument();
 		}
 
-		Assert.assertNotNull("Round-trip root should not be null", testDocument2.getRoot());
+		Assertions.assertNotNull(testDocument2.getRoot(), "Round-trip root should not be null");
 
-		Assert.assertTrue( "AST should be equal after round trip", astEquals(testDocument1.getRoot(), testDocument2.getRoot()));
+		Assertions.assertTrue(astEquals(testDocument1.getRoot(), testDocument2.getRoot()), "AST should be equal after round trip");
 	}
 
 	@Test
@@ -125,13 +125,13 @@ public class YamlTest {
 				YamlNode nextYamlNode;
 				int count = 0;
 				while ((nextYamlNode = yamlReader.readNextYamlNode()) != null) {
-					Assert.assertNotNull(nextYamlNode);
+					Assertions.assertNotNull(nextYamlNode);
 					count++;
 				}
-				Assert.assertEquals(4, count);
+				Assertions.assertEquals(4, count);
 			}
 		} catch (final Exception e) {
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 	}
 
@@ -143,13 +143,13 @@ public class YamlTest {
 				YamlNode nextYamlNode;
 				int count = 0;
 				while ((nextYamlNode = yamlReader.readNextYamlNode()) != null) {
-					Assert.assertNotNull(nextYamlNode);
+					Assertions.assertNotNull(nextYamlNode);
 					count++;
 				}
-				Assert.assertEquals(4, count);
+				Assertions.assertEquals(4, count);
 			}
 		} catch (final Exception e) {
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		}
 	}
 
@@ -174,11 +174,11 @@ public class YamlTest {
 					|| description.toLowerCase().contains("time")) {
 				final String numberString = (String) ((YamlScalar) numerItem.get("number")).getValue();
 				final String normalizedValue = (String) ((YamlScalar) numerItem.get("normalized")).getValue();
-				Assert.assertEquals(description, numberString, normalizedValue);
+				Assertions.assertEquals(numberString, normalizedValue, description);
 			} else {
 				final Number number = (Number) ((YamlScalar) numerItem.get("number")).getValue();
 				final Number normalizedValue = (Number) ((YamlScalar) numerItem.get("normalized")).getValue();
-				Assert.assertEquals(description, normalizedValue, number);
+				Assertions.assertEquals(normalizedValue, number, description);
 			}
 		}
 
@@ -194,7 +194,7 @@ public class YamlTest {
 			resultYamlFileString = IoUtilities.toString(resultDataStream, StandardCharsets.UTF_8);
 		}
 
-		Assert.assertEquals(resultYamlFileString, serializedYaml);
+		Assertions.assertEquals(resultYamlFileString, serializedYaml);
 	}
 
 	@Test
@@ -287,9 +287,9 @@ public class YamlTest {
 		if (!resultYamlFileString.contains("\r\n")) {
 			resultYamlFileString = resultYamlFileString.replace("\n", "\r\n");
 		}
-		Assert.assertTrue(resultYamlFileString.contains("\r\n"));
+		Assertions.assertTrue(resultYamlFileString.contains("\r\n"));
 
-		Assert.assertEquals(resultYamlFileString, serializedYaml);
+		Assertions.assertEquals(resultYamlFileString, serializedYaml);
 	}
 
 	@Test
@@ -310,7 +310,7 @@ public class YamlTest {
 			}
 		}
 
-		Assert.assertNotNull("Root node should not be null", testDocument1.getRoot());
+		Assertions.assertNotNull(testDocument1.getRoot(), "Root node should not be null");
 
 		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
 		final YamlFormat yamlFormat = new YamlFormat();
@@ -322,17 +322,17 @@ public class YamlTest {
 		}
 
 		final String serializedYaml = new String(testOutputStream.toByteArray(), StandardCharsets.UTF_8);
-		Assert.assertFalse("Serialized YAML should not be empty", serializedYaml.isEmpty());
-		Assert.assertEquals(resultYamlFileString, serializedYaml);
+		Assertions.assertFalse(serializedYaml.isEmpty(), "Serialized YAML should not be empty");
+		Assertions.assertEquals(resultYamlFileString, serializedYaml);
 
 		final YamlDocument testDocument2;
 		try (final YamlReader yamlReader = new YamlReader(new ByteArrayInputStream(serializedYaml.getBytes(StandardCharsets.UTF_8)))) {
 			testDocument2 = yamlReader.readDocument();
 		}
 
-		Assert.assertNotNull("Round-trip root should not be null", testDocument2.getRoot());
+		Assertions.assertNotNull(testDocument2.getRoot(), "Round-trip root should not be null");
 
-		Assert.assertTrue( "AST should be equal after round trip", astEquals(testDocument1.getRoot(), testDocument2.getRoot()));
+		Assertions.assertTrue(astEquals(testDocument1.getRoot(), testDocument2.getRoot()), "AST should be equal after round trip");
 	}
 
 	private void roundTripMultipleDocumentsInSingleFile(final String inputDataFileNamem, final String outputDataFileName, final boolean alwaysQuote) throws Exception {
@@ -358,8 +358,8 @@ public class YamlTest {
 		}
 
 		final String serializedYaml = new String(testOutputStream.toByteArray(), StandardCharsets.UTF_8);
-		Assert.assertFalse("Serialized YAML should not be empty", serializedYaml.isEmpty());
-		Assert.assertEquals(resultYamlFileString, serializedYaml);
+		Assertions.assertFalse(serializedYaml.isEmpty(), "Serialized YAML should not be empty");
+		Assertions.assertEquals(resultYamlFileString, serializedYaml);
 	}
 
 	private boolean astEquals(final YamlNode a, final YamlNode b) {

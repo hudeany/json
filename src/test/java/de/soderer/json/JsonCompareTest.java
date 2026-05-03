@@ -2,8 +2,8 @@ package de.soderer.json;
 
 import java.time.LocalDateTime;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import de.soderer.json.compare.JsonCompare;
 import de.soderer.json.compare.JsonCompareSettings;
@@ -54,7 +54,7 @@ public class JsonCompareTest {
 
 		final JsonObject compareResultJson = new JsonCompare(jsonObjectLeft, jsonObjectRight).compare();
 
-		Assert.assertNull(compareResultJson);
+		Assertions.assertNull(compareResultJson);
 	}
 
 	@Test
@@ -79,7 +79,7 @@ public class JsonCompareTest {
 
 		final JsonObject compareResultJson = new JsonCompare(jsonObjectLeft, jsonObjectRight).compare();
 
-		Assert.assertEquals(compareResultJson.toString(), 2, ((JsonArray) compareResultJson.get("differences")).size());
+		Assertions.assertEquals(2, ((JsonArray) compareResultJson.get("differences")).size(), compareResultJson.toString());
 	}
 
 	@Test
@@ -104,7 +104,7 @@ public class JsonCompareTest {
 
 		final JsonObject compareResultJson = new JsonCompare(jsonObjectLeft, jsonObjectRight).compare();
 
-		Assert.assertEquals(compareResultJson.toString(), 1, ((JsonArray) compareResultJson.get("differences")).size());
+		Assertions.assertEquals(1, ((JsonArray) compareResultJson.get("differences")).size(), compareResultJson.toString());
 	}
 
 	@Test
@@ -133,8 +133,8 @@ public class JsonCompareTest {
 
 		final JsonObject compareResultJson = new JsonCompare(jsonObjectLeft, jsonObjectRight).compare();
 
-		Assert.assertEquals(compareResultJson.toString(), 1, ((JsonArray) compareResultJson.get("differences")).size());
-		Assert.assertEquals(compareResultJson.toString(), 2, ((JsonArray) ((JsonObject) ((JsonArray) compareResultJson.get("differences")).get(0)).get("differences")).size());
+		Assertions.assertEquals(1, ((JsonArray) compareResultJson.get("differences")).size(), compareResultJson.toString());
+		Assertions.assertEquals(2, ((JsonArray) ((JsonObject) ((JsonArray) compareResultJson.get("differences")).get(0)).get("differences")).size(), compareResultJson.toString());
 	}
 
 	@Test
@@ -161,7 +161,7 @@ public class JsonCompareTest {
 
 		final JsonObject compareResultJson = new JsonCompare(jsonArrayLeft, jsonArrayRight).compare();
 
-		Assert.assertEquals(compareResultJson.toString(), 1, ((JsonArray) compareResultJson.get("differences")).size());
+		Assertions.assertEquals(1, ((JsonArray) compareResultJson.get("differences")).size(), compareResultJson.toString());
 	}
 
 	@Test
@@ -178,7 +178,7 @@ public class JsonCompareTest {
 
 		final JsonObject compareResultJson = new JsonCompare(jsonArrayLeft, jsonArrayRight).compare();
 
-		Assert.assertEquals(compareResultJson.toString(), 2, ((JsonArray) compareResultJson.get("differences")).size());
+		Assertions.assertEquals(2, ((JsonArray) compareResultJson.get("differences")).size(), compareResultJson.toString());
 	}
 
 	@Test
@@ -195,7 +195,7 @@ public class JsonCompareTest {
 
 		final JsonObject compareResultJson = new JsonCompare(jsonArrayLeft, jsonArrayRight).setCompareSettings(new JsonCompareSettings().setAllowArrayMixedOrder(true)).compare();
 
-		Assert.assertNull(compareResultJson);
+		Assertions.assertNull(compareResultJson);
 	}
 
 	@Test
@@ -212,6 +212,6 @@ public class JsonCompareTest {
 
 		final JsonObject compareResultJson = new JsonCompare(jsonArrayLeft, jsonArrayRight).setCompareSettings(new JsonCompareSettings().setAllowArrayMixedOrder(true)).compare();
 
-		Assert.assertEquals(compareResultJson.toString(), 2, ((JsonArray) compareResultJson.get("differences")).size());
+		Assertions.assertEquals(2, ((JsonArray) compareResultJson.get("differences")).size(), compareResultJson.toString());
 	}
 }

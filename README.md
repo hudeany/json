@@ -114,13 +114,13 @@ try {
 		final String property1 = (String) ((JsonObject) nextJsonNode).getSimpleValue("property1");
 		final String property2 = (String) ((JsonObject) nextJsonNode).getSimpleValue("property2");
 		final String property3 = (String) ((JsonObject) nextJsonNode).getSimpleValue("property3");
-		Assert.assertEquals(("value" + count + "1"), (property1));
-		Assert.assertEquals(("value" + count + "2"), (property2));
-		Assert.assertEquals(("value" + count + "3"), (property3));
+		Assertions.assertEquals(("value" + count + "1"), (property1));
+		Assertions.assertEquals(("value" + count + "2"), (property2));
+		Assertions.assertEquals(("value" + count + "3"), (property3));
 	}
 } catch (final Exception e) {
 	e.printStackTrace();
-	Assert.fail(e.getMessage());
+	Assertions.fail(e.getMessage());
 } finally {
 	Utilities.closeQuietly(jsonReader);
 }
@@ -226,9 +226,9 @@ try (InputStream testDataStream = new ByteArrayInputStream(testData.getBytes(Sta
 			final String property1 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property1")).getValue();
 			final String property2 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property2")).getValue();
 			final String property3 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property3")).getValue();
-			Assert.assertTrue(("property " + count + "1").equals(property1));
-			Assert.assertTrue(("property " + count + "2").equals(property2));
-			Assert.assertTrue(("property " + count + "3").equals(property3));
+			Assertions.assertTrue(("property " + count + "1").equals(property1));
+			Assertions.assertTrue(("property " + count + "2").equals(property2));
+			Assertions.assertTrue(("property " + count + "3").equals(property3));
 			count++;
 		}
 	}

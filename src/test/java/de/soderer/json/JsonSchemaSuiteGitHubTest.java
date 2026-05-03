@@ -17,8 +17,8 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import de.soderer.json.schema.JsonSchema;
 import de.soderer.json.schema.JsonSchemaConfiguration;
@@ -384,7 +384,7 @@ public class JsonSchemaSuiteGitHubTest {
 				+ (overallResult.getSecond() > 0 ? " SKIPPED: "  + overallResult.getSecond() + " (" + Math.round(overallResult.getSecond() * 100f / overallSum) + "%)" : "")
 				+ (overallResult.getThird() > 0 ? " FAILED: "  + overallResult.getThird() + " (" + Math.round(overallResult.getThird() * 100f / overallSum) + "%)" : ""));
 		if (overallResult.getThird() > 0) {
-			Assert.fail("Test failed. See output for reasons");
+			Assertions.fail("Test failed. See output for reasons");
 		}
 	}
 

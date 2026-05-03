@@ -6,8 +6,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import de.soderer.json.JsonDataType;
 import de.soderer.json.JsonNode;
@@ -22,8 +22,8 @@ import de.soderer.yaml.data.YamlMapping;
 import de.soderer.yaml.data.YamlNode;
 import de.soderer.yaml.data.YamlScalar;
 
-@SuppressWarnings("static-method")
 public class YamlExampleTest {
+	@SuppressWarnings("static-method")
 	@Test
 	public void testExampleYamlMapping() throws Exception {
 		JsonWriter writer = null;
@@ -65,6 +65,7 @@ public class YamlExampleTest {
 		}
 	}
 
+	@SuppressWarnings("static-method")
 	@Test
 	public void testExampleYamlSequence() throws Exception {
 		YamlWriter writer = null;
@@ -103,6 +104,7 @@ public class YamlExampleTest {
 		}
 	}
 
+	@SuppressWarnings("static-method")
 	@Test
 	public void testExampleYamlSequentialRead() throws Exception {
 		final String testData = ""
@@ -124,9 +126,9 @@ public class YamlExampleTest {
 					final String property1 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property1")).getValue();
 					final String property2 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property2")).getValue();
 					final String property3 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property3")).getValue();
-					Assert.assertTrue(("property " + count + "1").equals(property1));
-					Assert.assertTrue(("property " + count + "2").equals(property2));
-					Assert.assertTrue(("property " + count + "3").equals(property3));
+					Assertions.assertTrue(("property " + count + "1").equals(property1));
+					Assertions.assertTrue(("property " + count + "2").equals(property2));
+					Assertions.assertTrue(("property " + count + "3").equals(property3));
 					count++;
 				}
 			}

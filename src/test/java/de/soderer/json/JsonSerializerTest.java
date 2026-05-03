@@ -3,8 +3,8 @@ package de.soderer.json;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import de.soderer.utilities.TestObjectComplex;
 import de.soderer.utilities.TestObjectComplexForSimpleJson;
@@ -25,11 +25,11 @@ public class JsonSerializerTest {
 		final TestObjectSimple deserializedObject = (TestObjectSimple) JsonSerializer.deserialize(dataNodeOriginal);
 		final JsonNode dataNodeSerialized = JsonSerializer.serialize(deserializedObject, false, false, false, true);
 		final String jsonStringSerialized = JsonWriter.getJsonItemString(dataNodeSerialized);
-		Assert.assertEquals(jsonStringOriginal, jsonStringSerialized);
+		Assertions.assertEquals(jsonStringOriginal, jsonStringSerialized);
 		final TestObjectSimple deserializedObject2 = (TestObjectSimple) JsonSerializer.deserialize((JsonObject) JsonReader.readJsonItemString(jsonStringOriginal));
 		final JsonNode dataNodeSerialized2 = JsonSerializer.serialize(deserializedObject2, false, false, false, true);
 		final String jsonStringSerialized2 = JsonWriter.getJsonItemString(dataNodeSerialized2);
-		Assert.assertEquals(jsonStringOriginal, jsonStringSerialized2);
+		Assertions.assertEquals(jsonStringOriginal, jsonStringSerialized2);
 	}
 
 	@Test
@@ -47,7 +47,7 @@ public class JsonSerializerTest {
 		@SuppressWarnings("unused")
 		final String jsonStringDeserialized = JsonWriter.getJsonItemString(dataNodeSerialized);
 		// Hashset item order may have changed
-		//Assert.assertEquals(jsonStringOriginal, jsonStringDeserialized);
+		//Assertions.assertEquals(jsonStringOriginal, jsonStringDeserialized);
 	}
 
 	@Test
@@ -57,7 +57,7 @@ public class JsonSerializerTest {
 		final TestObjectComplexForSimpleJson deserializedObject = (TestObjectComplexForSimpleJson) JsonSerializer.deserialize(TestObjectComplexForSimpleJson.class, JsonReader.readJsonItemString(jsonStringOriginal));
 		final JsonNode dataNodeSerialized = JsonSerializer.serialize(deserializedObject);
 		final String jsonStringDeserialized = JsonWriter.getJsonItemString(dataNodeSerialized);
-		Assert.assertEquals(jsonStringOriginal, jsonStringDeserialized);
+		Assertions.assertEquals(jsonStringOriginal, jsonStringDeserialized);
 	}
 
 	@Test
@@ -70,10 +70,10 @@ public class JsonSerializerTest {
 			list.add(list);
 			list.add(4);
 			JsonSerializer.serialize(list);
-			Assert.fail("Missing expected Exception");
+			Assertions.fail("Missing expected Exception");
 		} catch (final Exception e) {
 			// Expected Exception
-			Assert.assertTrue(e.getMessage().contains("Cyclic reference detected"));
+			Assertions.assertTrue(e.getMessage().contains("Cyclic reference detected"));
 		}
 	}
 
@@ -97,10 +97,10 @@ public class JsonSerializerTest {
 			list2.add(list1);
 			list2.add(someObject);
 			JsonSerializer.serialize(list1);
-			Assert.fail("Missing expected Exception");
+			Assertions.fail("Missing expected Exception");
 		} catch (final Exception e) {
 			// Expected Exception
-			Assert.assertTrue(e.getMessage().contains("Cyclic reference detected"));
+			Assertions.assertTrue(e.getMessage().contains("Cyclic reference detected"));
 		}
 	}
 

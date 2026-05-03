@@ -5,8 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import de.soderer.json.JsonArray;
 import de.soderer.json.JsonDataType;
@@ -129,13 +129,13 @@ public class JsonExampleTest {
 				final String property1 = (String) ((JsonObject) nextJsonNode).getSimpleValue("property1");
 				final String property2 = (String) ((JsonObject) nextJsonNode).getSimpleValue("property2");
 				final String property3 = (String) ((JsonObject) nextJsonNode).getSimpleValue("property3");
-				Assert.assertEquals(("value" + count + "1"), (property1));
-				Assert.assertEquals(("value" + count + "2"), (property2));
-				Assert.assertEquals(("value" + count + "3"), (property3));
+				Assertions.assertEquals(("value" + count + "1"), (property1));
+				Assertions.assertEquals(("value" + count + "2"), (property2));
+				Assertions.assertEquals(("value" + count + "3"), (property3));
 			}
 		} catch (final Exception e) {
 			e.printStackTrace();
-			Assert.fail(e.getMessage());
+			Assertions.fail(e.getMessage());
 		} finally {
 			Utilities.closeQuietly(jsonReader);
 		}

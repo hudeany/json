@@ -1,7 +1,7 @@
 package de.soderer.yaml;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import de.soderer.yaml.data.YamlMapping;
 import de.soderer.yaml.data.YamlSequence;
@@ -15,7 +15,7 @@ public class YamlDataTest {
 		yamlMapping.add("property2", new YamlSequence());
 		yamlMapping.add("property3", new YamlSequence());
 
-		Assert.assertEquals("property1:\n  []\n"
+		Assertions.assertEquals("property1:\n  []\n"
 				+ "property2:\n  []\n"
 				+ "property3:\n  []\n",
 				yamlMapping.toString());
@@ -28,7 +28,7 @@ public class YamlDataTest {
 		yamlMapping.add("property2", new YamlMapping());
 		yamlMapping.add("property3", new YamlMapping());
 
-		Assert.assertEquals("property1:\n  {}\n"
+		Assertions.assertEquals("property1:\n  {}\n"
 				+ "property2:\n  {}\n"
 				+ "property3:\n  {}\n",
 				yamlMapping.toString());
@@ -41,14 +41,14 @@ public class YamlDataTest {
 		yamlMapping.add("property2", "value2");
 		yamlMapping.add("property3", "value3");
 
-		Assert.assertEquals("property1: value1\n"
+		Assertions.assertEquals("property1: value1\n"
 				+ "property2: value2\n"
 				+ "property3: value3\n",
 				yamlMapping.toString());
 
 		yamlMapping.replace("property2", "valueReplacement");
 
-		Assert.assertEquals("property1: value1\n"
+		Assertions.assertEquals("property1: value1\n"
 				+ "property2: valueReplacement\n"
 				+ "property3: value3\n",
 				yamlMapping.toString());
@@ -61,14 +61,14 @@ public class YamlDataTest {
 		yamlSequence.add("item2");
 		yamlSequence.add("item3");
 
-		Assert.assertEquals("- item1\n"
+		Assertions.assertEquals("- item1\n"
 				+ "- item2\n"
 				+ "- item3\n",
 				yamlSequence.toString());
 
 		yamlSequence.removeByIndex(1);
 
-		Assert.assertEquals("- item1\n"
+		Assertions.assertEquals("- item1\n"
 				+ "- item3\n",
 				yamlSequence.toString());
 	}
@@ -80,14 +80,14 @@ public class YamlDataTest {
 		yamlSequence.add("item2");
 		yamlSequence.add("item3");
 
-		Assert.assertEquals("- item1\n"
+		Assertions.assertEquals("- item1\n"
 				+ "- item2\n"
 				+ "- item3\n",
 				yamlSequence.toString());
 
 		yamlSequence.insert(2, "item2.5");
 
-		Assert.assertEquals("- item1\n"
+		Assertions.assertEquals("- item1\n"
 				+ "- item2\n"
 				+ "- item2.5\n"
 				+ "- item3\n",

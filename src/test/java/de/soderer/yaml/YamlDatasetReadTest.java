@@ -4,8 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import de.soderer.yaml.data.YamlMapping;
 import de.soderer.yaml.data.YamlNode;
@@ -19,10 +19,10 @@ public class YamlDatasetReadTest {
 			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
 				try {
 					yamlReader.readUpToPath("$.level1.notExists");
-					Assert.fail("Missing expected exception");
+					Assertions.fail("Missing expected exception");
 				} catch (final Exception e) {
 					// Expected exception
-					Assert.assertEquals("Path '$.level1.notExists' is not part of the YAML data", e.getMessage());
+					Assertions.assertEquals("Path '$.level1.notExists' is not part of the YAML data", e.getMessage());
 				}
 			}
 		}
@@ -35,7 +35,7 @@ public class YamlDatasetReadTest {
 				yamlReader.readUpToPath("$.level1");
 
 				final YamlNode nodeMustBeNull = yamlReader.readNextYamlNode();
-				Assert.assertNull(nodeMustBeNull);
+				Assertions.assertNull(nodeMustBeNull);
 			}
 		}
 	}
@@ -47,10 +47,10 @@ public class YamlDatasetReadTest {
 				yamlReader.readUpToPath("$.level1.items");
 				try {
 					yamlReader.readDocument();
-					Assert.fail("Missing expected exception");
+					Assertions.fail("Missing expected exception");
 				} catch (final Exception e) {
 					// Expected exception
-					Assert.assertEquals("Search path was already started before by method 'readUpToPath'", e.getMessage());
+					Assertions.assertEquals("Search path was already started before by method 'readUpToPath'", e.getMessage());
 				}
 
 				YamlNode nextYamlNode;
@@ -59,9 +59,9 @@ public class YamlDatasetReadTest {
 					final String property1 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property1")).getValue();
 					final String property2 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property2")).getValue();
 					final String property3 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property3")).getValue();
-					Assert.assertTrue(("property " + count + "1").equals(property1));
-					Assert.assertTrue(("property " + count + "2").equals(property2));
-					Assert.assertTrue(("property " + count + "3").equals(property3));
+					Assertions.assertTrue(("property " + count + "1").equals(property1));
+					Assertions.assertTrue(("property " + count + "2").equals(property2));
+					Assertions.assertTrue(("property " + count + "3").equals(property3));
 					count++;
 				}
 			}
@@ -90,9 +90,9 @@ public class YamlDatasetReadTest {
 					final String property1 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property1")).getValue();
 					final String property2 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property2")).getValue();
 					final String property3 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property3")).getValue();
-					Assert.assertTrue(("property " + count + "1").equals(property1));
-					Assert.assertTrue(("property " + count + "2").equals(property2));
-					Assert.assertTrue(("property " + count + "3").equals(property3));
+					Assertions.assertTrue(("property " + count + "1").equals(property1));
+					Assertions.assertTrue(("property " + count + "2").equals(property2));
+					Assertions.assertTrue(("property " + count + "3").equals(property3));
 					count++;
 				}
 			}
