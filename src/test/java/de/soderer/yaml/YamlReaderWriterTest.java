@@ -970,6 +970,23 @@ class YamlReaderWriterTest {
             final YamlDocument doc = read("");
             assertNull(doc, "Empty input should return null");
         }
+
+        @Test
+        @DisplayName("Whitespace-only document returns null")
+        void whitespaceOnlyDocumentReturnsNull() throws Exception {
+            final YamlDocument doc = read("   \n  \n");
+            final YamlNode root = doc.getRoot();
+            assert(root != null && root instanceof YamlScalar && ((YamlScalar) root).getType() == YamlScalarType.NULL_VALUE);
+        }
+
+        @Test
+        @DisplayName("Comment-only document returns null")
+        void commentOnlyDocumentReturnsNull() throws Exception {
+            // A pure comment document without any content
+            final YamlDocument doc = read("# just a comment\n");
+            final YamlNode root = doc.getRoot();
+            assert(root != null && root instanceof YamlScalar && ((YamlScalar) root).getType() == YamlScalarType.NULL_VALUE);
+        }
     }
 
     // =========================================================================
@@ -1011,30 +1028,6 @@ class YamlReaderWriterTest {
                 try (final YamlReader reader = new YamlReader(
                         new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)))) {
                     reader.readUpToPath("$.list");
-                    reader.readDocument(); // must fail
-                }
-            });
-        }
-
-        @Test
-        @DisplayName("readwhitespaceOnlyDocument throws exception")
-        void readwhitespaceOnlyDocumentThrowsException() {
-            final String yaml = "   \n  \n";
-            assertThrows(Exception.class, () -> {
-                try (final YamlReader reader = new YamlReader(
-                        new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)))) {
-                    reader.readDocument(); // must fail
-                }
-            });
-        }
-
-        @Test
-        @DisplayName("readcommentOnlyDocument throws exception")
-        void readcommentOnlyDocumentThrowsException() {
-            final String yaml = "# just a comment\n";
-            assertThrows(Exception.class, () -> {
-                try (final YamlReader reader = new YamlReader(
-                        new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)))) {
                     reader.readDocument(); // must fail
                 }
             });

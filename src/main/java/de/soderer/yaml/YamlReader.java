@@ -1173,7 +1173,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 	private YamlScalar interpretScalarValue(final String scalarString, final String inlineComment) throws Exception {
 		if (scalarString.length() == 0) {
-			throw new YamlParseException("Unexpected empty scalar String", getCurrentLine(), getCurrentColumn());
+			return new YamlScalar(null);
 		} else if ("true".equalsIgnoreCase(scalarString)
 				|| "y".equalsIgnoreCase(scalarString)
 				|| "yes".equalsIgnoreCase(scalarString)
