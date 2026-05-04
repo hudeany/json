@@ -4,16 +4,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import de.soderer.json.JsonDataType;
-import de.soderer.json.JsonNode;
-import de.soderer.json.JsonObject;
-import de.soderer.json.JsonReader;
-import de.soderer.json.JsonWriter;
 import de.soderer.json.utilities.Utilities;
 import de.soderer.yaml.YamlReader;
 import de.soderer.yaml.YamlWriter;
@@ -21,41 +15,36 @@ import de.soderer.yaml.data.YamlDocument;
 import de.soderer.yaml.data.YamlMapping;
 import de.soderer.yaml.data.YamlNode;
 import de.soderer.yaml.data.YamlScalar;
+import de.soderer.yaml.data.YamlSequence;
 
 public class YamlExampleTest {
 	@SuppressWarnings("static-method")
 	@Test
 	public void testExampleYamlMapping() throws Exception {
-		JsonWriter writer = null;
+		YamlWriter writer = null;
 		ByteArrayOutputStream output = null;
-		JsonReader reader = null;
+		YamlReader reader = null;
 		try {
 			output = new ByteArrayOutputStream();
-			writer = new JsonWriter(output, StandardCharsets.UTF_8);
-			writer.openJsonObject();
-			writer.openJsonObjectProperty("abc");
-			writer.addSimpleJsonObjectPropertyValue("1");
-			writer.openJsonObjectProperty("def");
-			writer.addSimpleJsonObjectPropertyValue(2);
-			writer.openJsonObjectProperty("ghi");
-			writer.addSimpleJsonObjectPropertyValue(3.00);
-			writer.closeJsonObject();
-			writer.close();
-			output.close();
+			writer = new YamlWriter(output, StandardCharsets.UTF_8);
+
+			final YamlMapping outputMapping = new YamlMapping();
+			outputMapping.put("abc", "1");
+			outputMapping.put("def", 2);
+			outputMapping.put("ghi", 3.00);
+			final YamlDocument outputDocument = new YamlDocument().setRoot(outputMapping);
+			writer.writeDocument(outputDocument);
 
 			final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 
-			reader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
-			final JsonNode nodevalue = reader.read();
-			System.out.println(nodevalue.getJsonDataType() == JsonDataType.OBJECT);
-			// true
-			final JsonObject jsonObject = (JsonObject) nodevalue;
-			for (final Map.Entry<String, Object> jsonObjectProperty : jsonObject) {
-				System.out.println(jsonObjectProperty.getKey() + ": " + jsonObjectProperty.getValue().getClass().getSimpleName() + ": " + jsonObjectProperty.getValue());
-				// abc: String: 1
-				// def: Integer: 2
-				// ghi: Float: 3.0
-			}
+			reader = new YamlReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
+			final YamlDocument document = reader.readDocument();
+			Assertions.assertTrue(document.getRoot() instanceof YamlMapping);
+			final YamlMapping yamlMapping = (YamlMapping) document.getRoot();
+			Assertions.assertEquals(3, yamlMapping.size());
+			Assertions.assertEquals("YamlScalar: 1", yamlMapping.get("abc").getClass().getSimpleName() + ": " + yamlMapping.get("abc"));
+			Assertions.assertEquals("YamlScalar: 2", yamlMapping.get("def").getClass().getSimpleName() + ": " + yamlMapping.get("def"));
+			Assertions.assertEquals("YamlScalar: 3.0", yamlMapping.get("ghi").getClass().getSimpleName() + ": " + yamlMapping.get("ghi"));
 		} catch (final Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -75,10 +64,10 @@ public class YamlExampleTest {
 			output = new ByteArrayOutputStream();
 			writer = new YamlWriter(output, StandardCharsets.UTF_8);
 
-			final YamlMapping outputSequence = new YamlMapping();
-			outputSequence.put("abc", "1");
-			outputSequence.put("def", 2);
-			outputSequence.put("ghi", 3.00);
+			final YamlSequence outputSequence = new YamlSequence();
+			outputSequence.add("1");
+			outputSequence.add(2);
+			outputSequence.add(3.00);
 			final YamlDocument outputDocument = new YamlDocument().setRoot(outputSequence);
 			writer.writeDocument(outputDocument);
 
@@ -86,15 +75,12 @@ public class YamlExampleTest {
 
 			reader = new YamlReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
 			final YamlDocument document = reader.readDocument();
-			System.out.println(document.getRoot() instanceof YamlMapping);
-			// true
-			final YamlMapping yamlMapping = (YamlMapping) document.getRoot();
-			for (final Map.Entry<String, Object> yamlObjectProperty : yamlMapping) {
-				System.out.println(yamlObjectProperty.getKey() + ": " + yamlObjectProperty.getValue().getClass().getSimpleName() + ": " + yamlObjectProperty.getValue());
-				// String: 1
-				// Integer: 2
-				// Float: 3.0
-			}
+			Assertions.assertTrue(document.getRoot() instanceof YamlSequence);
+			final YamlSequence yamlSequence = (YamlSequence) document.getRoot();
+			Assertions.assertEquals(3, yamlSequence.size());
+			Assertions.assertEquals("YamlScalar: 1", yamlSequence.get(0).getClass().getSimpleName() + ": " + yamlSequence.get(0));
+			Assertions.assertEquals("YamlScalar: 2", yamlSequence.get(1).getClass().getSimpleName() + ": " + yamlSequence.get(1));
+			Assertions.assertEquals("YamlScalar: 3.0", yamlSequence.get(2).getClass().getSimpleName() + ": " + yamlSequence.get(2));
 		} catch (final Exception e) {
 			e.printStackTrace();
 		} finally {
