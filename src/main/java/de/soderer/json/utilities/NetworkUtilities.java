@@ -75,7 +75,7 @@ public class NetworkUtilities {
 	public static boolean testConnection(final String hostname, final int port) throws Exception {
 		try (Socket socket = new Socket()) {
 			final InetSocketAddress endPoint = new InetSocketAddress(hostname, port);
-			final int timeout = 2000; // 2 Sekunden
+			final int timeout = 2000; // 2 seconds
 			if (endPoint.isUnresolved()) {
 				throw new Exception("Cannot resolve hostname '" + hostname + "'");
 			} else {
