@@ -520,4 +520,25 @@ public class JsonArray extends JsonNode implements Iterable<Object> {
 			return ascending ? result : -result;
 		}
 	}
+
+	public boolean isEmpty() {
+		return size() == 0;
+	}
+
+	public JsonArray merge(final JsonArray other, final JsonArrayMergeStrategy strategy) {
+		if (other == null) {
+			return this;
+		} else {
+			for (final JsonNode item : other.items()) {
+				if (strategy == JsonArrayMergeStrategy.APPEND_ALL) {
+					items.add(item);
+				} else if (!items.contains(item)) {
+					items.add(item);
+				} else {
+					// SKIP_DUPLICATES: nichts tun
+				}
+			}
+			return this;
+		}
+	}
 }

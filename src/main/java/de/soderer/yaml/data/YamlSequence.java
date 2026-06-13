@@ -272,4 +272,25 @@ public class YamlSequence extends YamlNode implements Iterable<Object> {
 			return ascending ? result : -result;
 		}
 	}
+
+	public boolean isEmpty() {
+		return size() == 0;
+	}
+
+	public YamlSequence merge(final YamlSequence other, final YamlSequenceMergeStrategy strategy) {
+		if (other == null) {
+			return this;
+		} else {
+			for (final YamlNode item : other.items()) {
+				if (strategy == YamlSequenceMergeStrategy.APPEND_ALL) {
+					items.add(item);
+				} else if (!items.contains(item)) {
+					items.add(item);
+				} else {
+					// SKIP_DUPLICATES: nichts tun
+				}
+			}
+			return this;
+		}
+	}
 }

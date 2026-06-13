@@ -430,4 +430,25 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 		}
 		return ascending ? result : -result;
 	}
+
+	public boolean isEmpty() {
+		return size() == 0;
+	}
+
+	public YamlMapping merge(final YamlMapping other, final YamlMappingMergeStrategy strategy) {
+		if (other == null) {
+			return this;
+		} else {
+			for (final Map.Entry<YamlNode, YamlNode> entry : other.entrySet()) {
+				if (!entries.containsKey(entry.getKey())) {
+					entries.put(entry.getKey(), entry.getValue());
+				} else if (strategy == YamlMappingMergeStrategy.OVERWRITE) {
+					entries.put(entry.getKey(), entry.getValue());
+				} else {
+					// KEEP_EXISTING: nichts tun
+				}
+			}
+			return this;
+		}
+	}
 }

@@ -865,4 +865,25 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 
 		return this;
 	}
+
+	public boolean isEmpty() {
+		return size() == 0;
+	}
+
+	public JsonObject merge(final JsonObject other, final JsonObjectMergeStrategy strategy) {
+		if (other == null) {
+			return this;
+		} else {
+			for (final Map.Entry<String, JsonNode> entry : other.entrySet()) {
+				if (!properties.containsKey(entry.getKey())) {
+					properties.put(entry.getKey(), entry.getValue());
+				} else if (strategy == JsonObjectMergeStrategy.OVERWRITE) {
+					properties.put(entry.getKey(), entry.getValue());
+				} else {
+					// KEEP_EXISTING: nichts tun
+				}
+			}
+			return this;
+		}
+	}
 }
