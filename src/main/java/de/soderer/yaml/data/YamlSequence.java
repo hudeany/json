@@ -197,4 +197,79 @@ public class YamlSequence extends YamlNode implements Iterable<Object> {
 			return Objects.equals(items, other.items);
 		}
 	}
+
+	public YamlSequence sort(final boolean ascending) {
+		items.sort((a, b) -> {
+			final boolean aIsNull = isNullScalar(a);
+			final boolean bIsNull = isNullScalar(b);
+
+			if (aIsNull && bIsNull) {
+				return 0;
+			} else if (aIsNull) {
+				return ascending ? -1 : 1;
+			} else if (bIsNull) {
+				return ascending ? 1 : -1;
+			} else {
+				return compareValues(getSimpleValue(a), getSimpleValue(b), ascending);
+			}
+		});
+		return this;
+	}
+
+	public YamlSequence sortByAttribute(final String attributeName, final boolean ascending) {
+		items.sort((a, b) -> {
+			if (!(a instanceof YamlMapping) || !(b instanceof YamlMapping)) {
+				return 0;
+			} else {
+				final YamlNode aNode = ((YamlMapping) a).get(attributeName);
+				final YamlNode bNode = ((YamlMapping) b).get(attributeName);
+
+				final boolean aIsNull = aNode == null || isNullScalar(aNode);
+				final boolean bIsNull = bNode == null || isNullScalar(bNode);
+
+				if (aIsNull && bIsNull) {
+					return 0;
+				} else if (aIsNull) {
+					return ascending ? -1 : 1;
+				} else if (bIsNull) {
+					return ascending ? 1 : -1;
+				} else {
+					return compareValues(getSimpleValue(aNode), getSimpleValue(bNode), ascending);
+				}
+			}
+		});
+		return this;
+	}
+
+	private static boolean isNullScalar(final YamlNode node) {
+		return node instanceof YamlScalar && ((YamlScalar) node).getType() == YamlScalarType.NULL_VALUE;
+	}
+
+	private static Object getSimpleValue(final YamlNode node) {
+		if (node instanceof YamlScalar) {
+			return ((YamlScalar) node).getValue();
+		} else {
+			return null;
+		}
+	}
+
+	private static int compareValues(final Object a, final Object b, final boolean ascending) {
+		if (a == null && b == null) {
+			return 0;
+		} else if (a == null) {
+			return ascending ? -1 : 1;
+		} else if (b == null) {
+			return ascending ? 1 : -1;
+		} else {
+			final int result;
+			if (a instanceof Number && b instanceof Number) {
+				result = Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
+			} else if (a instanceof Boolean && b instanceof Boolean) {
+				result = Boolean.compare((Boolean) a, (Boolean) b);
+			} else {
+				result = a.toString().compareTo(b.toString());
+			}
+			return ascending ? result : -result;
+		}
+	}
 }

@@ -379,4 +379,55 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 			return Objects.equals(entries, other.entries);
 		}
 	}
+
+	public YamlMapping sortKeys(final boolean ascending) {
+		final List<Map.Entry<YamlNode, YamlNode>> sortedEntries = new ArrayList<>(entries.entrySet());
+
+		sortedEntries.sort((a, b) -> {
+			final Object aKey = getScalarValue(a.getKey());
+			final Object bKey = getScalarValue(b.getKey());
+
+			if (aKey == null && bKey == null) {
+				return 0;
+			} else if (aKey == null) {
+				return ascending ? -1 : 1;
+			} else if (bKey == null) {
+				return ascending ? 1 : -1;
+			} else {
+				return compareKeys(aKey, bKey, ascending);
+			}
+		});
+
+		entries.clear();
+		for (final Map.Entry<YamlNode, YamlNode> entry : sortedEntries) {
+			entries.put(entry.getKey(), entry.getValue());
+		}
+
+		return this;
+	}
+
+	private static Object getScalarValue(final YamlNode node) {
+		if (!(node instanceof YamlScalar)) {
+			return null;
+		} else {
+			final YamlScalar scalar = (YamlScalar) node;
+			if (scalar.getType() == YamlScalarType.NULL_VALUE) {
+				return null;
+			} else {
+				return scalar.getValue();
+			}
+		}
+	}
+
+	private static int compareKeys(final Object a, final Object b, final boolean ascending) {
+		final int result;
+		if (a instanceof Number && b instanceof Number) {
+			result = Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
+		} else if (a instanceof Boolean && b instanceof Boolean) {
+			result = Boolean.compare((Boolean) a, (Boolean) b);
+		} else {
+			result = a.toString().compareTo(b.toString());
+		}
+		return ascending ? result : -result;
+	}
 }

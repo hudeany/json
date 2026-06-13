@@ -448,4 +448,76 @@ public class JsonArray extends JsonNode implements Iterable<Object> {
 		result = prime * result + ((items == null) ? 0 : items.hashCode());
 		return result;
 	}
+
+	public JsonArray sort(final boolean ascending) {
+		items.sort((a, b) -> {
+			if (a instanceof JsonValueNull && b instanceof JsonValueNull) {
+				return 0;
+			} else if (a instanceof JsonValueNull) {
+				return ascending ? -1 : 1;
+			} else if (b instanceof JsonValueNull) {
+				return ascending ? 1 : -1;
+			} else {
+				return compareValues(getSimpleValue(a), getSimpleValue(b), ascending);
+			}
+		});
+		return this;
+	}
+
+	public JsonArray sortByAttribute(final String attributeName, final boolean ascending) {
+		items.sort((a, b) -> {
+			if (!(a instanceof JsonObject) || !(b instanceof JsonObject)) {
+				return 0;
+			} else {
+				final JsonNode aNode = ((JsonObject) a).get(attributeName);
+				final JsonNode bNode = ((JsonObject) b).get(attributeName);
+
+				if (aNode == null || aNode instanceof JsonValueNull) {
+					return ascending ? -1 : 1;
+				}
+				if (bNode == null || bNode instanceof JsonValueNull) {
+					return ascending ? 1 : -1;
+				}
+
+				return compareValues(getSimpleValue(aNode), getSimpleValue(bNode), ascending);
+			}
+		});
+		return this;
+	}
+
+	private static Object getSimpleValue(final JsonNode node) {
+		if (node instanceof JsonValueString) {
+			return ((JsonValueString) node).getValue();
+		} else if (node instanceof JsonValueInteger) {
+			return ((JsonValueInteger) node).getValue();
+		} else if (node instanceof JsonValueNumber) {
+			return ((JsonValueNumber) node).getValue();
+		} else if (node instanceof JsonValueBoolean) {
+			return ((JsonValueBoolean) node).getValue();
+		} else {
+			return null;
+		}
+	}
+
+	private static int compareValues(final Object a, final Object b, final boolean ascending) {
+		if (a == null && b == null) {
+			return 0;
+		} else if (a == null) {
+			return ascending ? -1 : 1;
+		} else if (b == null) {
+			return ascending ? 1 : -1;
+		} else {
+			final int result;
+			if (a instanceof String && b instanceof String) {
+				result = ((String) a).compareTo((String) b);
+			} else if (a instanceof Number && b instanceof Number) {
+				result = Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
+			} else if (a instanceof Boolean && b instanceof Boolean) {
+				result = Boolean.compare((Boolean) a, (Boolean) b);
+			} else {
+				result = a.toString().compareTo(b.toString());
+			}
+			return ascending ? result : -result;
+		}
+	}
 }

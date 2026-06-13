@@ -844,4 +844,25 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 		result = prime * result + ((properties == null) ? 0 : properties.hashCode());
 		return result;
 	}
+
+	public JsonObject sortKeys(final boolean ascending) {
+		final List<String> sortedKeys = new ArrayList<>(properties.keySet());
+		if (ascending) {
+			Collections.sort(sortedKeys);
+		} else {
+			sortedKeys.sort(Collections.reverseOrder());
+		}
+
+		final List<Map.Entry<String, JsonNode>> sortedEntries = new ArrayList<>();
+		for (final String key : sortedKeys) {
+			sortedEntries.add(Map.entry(key, properties.get(key)));
+		}
+
+		properties.clear();
+		for (final Map.Entry<String, JsonNode> entry : sortedEntries) {
+			properties.put(entry.getKey(), entry.getValue());
+		}
+
+		return this;
+	}
 }
