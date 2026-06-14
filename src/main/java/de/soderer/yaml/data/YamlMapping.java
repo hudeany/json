@@ -445,7 +445,7 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 				} else if (strategy == YamlMappingMergeStrategy.OVERWRITE) {
 					entries.put(entry.getKey(), entry.getValue());
 				} else {
-					// KEEP_EXISTING: nichts tun
+					// KEEP_EXISTING
 				}
 			}
 			return this;

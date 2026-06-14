@@ -880,7 +880,7 @@ public class JsonObject extends JsonNode implements Iterable<Map.Entry<String, O
 				} else if (strategy == JsonObjectMergeStrategy.OVERWRITE) {
 					properties.put(entry.getKey(), entry.getValue());
 				} else {
-					// KEEP_EXISTING: nichts tun
+					// KEEP_EXISTING
 				}
 			}
 			return this;

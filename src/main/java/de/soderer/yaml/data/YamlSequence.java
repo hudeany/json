@@ -287,7 +287,7 @@ public class YamlSequence extends YamlNode implements Iterable<Object> {
 				} else if (!items.contains(item)) {
 					items.add(item);
 				} else {
-					// SKIP_DUPLICATES: nichts tun
+					// SKIP_DUPLICATES
 				}
 			}
 			return this;
