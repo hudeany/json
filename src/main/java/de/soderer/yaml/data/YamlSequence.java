@@ -105,6 +105,43 @@ public class YamlSequence extends YamlNode implements Iterable<Object> {
 		return this;
 	}
 
+	public YamlSequence setNull(final int index) {
+		set(index, new YamlScalar(null));
+		return this;
+	}
+
+	public YamlSequence set(final int index, final String item) {
+		if (item == null) {
+			set(index, new YamlScalar(null));
+		} else {
+			set(index, new YamlScalar(item, YamlScalarType.STRING));
+		}
+		return this;
+	}
+
+	public YamlSequence set(final int index, final Number item) {
+		if (item == null) {
+			set(index, new YamlScalar(null));
+		} else {
+			set(index, new YamlScalar(item, YamlScalarType.NUMBER));
+		}
+		return this;
+	}
+
+	public YamlSequence set(final int index, final Boolean item) {
+		if (item == null) {
+			set(index, new YamlScalar(null));
+		} else {
+			set(index, new YamlScalar(item, YamlScalarType.BOOLEAN));
+		}
+		return this;
+	}
+
+	public YamlSequence set(final int index, final YamlNode item) {
+		items.set(index, item);
+		return this;
+	}
+
 	public boolean remove(final String item) {
 		if (item == null) {
 			return remove(new YamlScalar(null));
