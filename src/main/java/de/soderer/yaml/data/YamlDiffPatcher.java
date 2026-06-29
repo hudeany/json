@@ -265,7 +265,7 @@ public class YamlDiffPatcher {
 			} else {
 				final YamlNode currentChild = parentSequence.get(lastSegment.index);
 				checkScalarValueMatches(currentChild, patchEntry.getOldValueText(), patchEntry);
-				parentSequence.remove(lastSegment.index);
+				parentSequence.removeByIndex(lastSegment.index);
 			}
 		} else {
 			final YamlMapping parentMapping = asMapping(navigationResult.parent, patchEntry);
