@@ -305,6 +305,37 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 	}
 
+	/**
+	 * Measures the indentation (number of leading spaces/tabs) of the next line without
+	 * touching the {@link #indentations} stack and without comparing it against any
+	 * previously known indentation level.
+	 * This is used while reading the raw content lines of a multiline block scalar,
+	 * where each line's indentation must only be compared against the block scalar's own
+	 * base indentation, not against the general block-structure indentation stack.
+	 *
+	 * @return
+	 * 	the number of leading spaces/tabs of the next line<br />
+	 * 	or -1 if the next line is empty (only a linebreak or EOF, no indentation consumed)
+	 */
+	private int peekNextLineIndentation() throws Exception {
+		int nextIndentationSize = 0;
+		while (isNotEOF()) {
+			if (peekCharMatch(' ') || peekCharMatch('\t')) {
+				readChar();
+				nextIndentationSize++;
+			} else if (peekCharMatch('\n')) {
+				return -1;
+			} else {
+				break;
+			}
+		}
+		if (isEOF()) {
+			return -1;
+		} else {
+			return nextIndentationSize;
+		}
+	}
+
 	private String readInlineComment() throws Exception {
 		if (peekCharNotMatch('#')) {
 			throw new YamlParseException("Expected comment not found", getCurrentLine(), getCurrentColumn());
@@ -602,7 +633,7 @@ public class YamlReader extends BasicReadAheadReader {
 				if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
 					indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
 				}
-				keyOrScalarNode = readUnquotedScalarString();
+				keyOrScalarNode = readUnquotedScalarString(mappingIndentation);
 			}
 
 			if (!pendingLeadingComments.isEmpty()) {
@@ -689,7 +720,7 @@ public class YamlReader extends BasicReadAheadReader {
 					if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
 						indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
 					}
-					keyOrScalarNode = readUnquotedScalarString();
+					keyOrScalarNode = readUnquotedScalarString(mappingIndentation);
 				}
 
 				if (!pendingLeadingComments.isEmpty()) {
@@ -1115,7 +1146,14 @@ public class YamlReader extends BasicReadAheadReader {
 		indentations.add(indentationSize);
 	}
 
-	private YamlNode readUnquotedScalarString() throws Exception {
+	/**
+	 * @param mappingIndentation
+	 * 	the indentation level of the enclosing mapping/sequence *before* the caller possibly
+	 * 	added a temporary indentation level reflecting the column this scalar starts on. Used to
+	 * 	determine whether such a temporary level was actually added and therefore needs to be
+	 * 	removed again before parsing a multiline block scalar's own, independent indentation.
+	 */
+	private YamlNode readUnquotedScalarString(final int mappingIndentation) throws Exception {
 		String scalarString = "";
 		final int scalarStartIndentations = (int) getCurrentColumn() - 1;
 		String nextScalarStringLine = "";
@@ -1166,12 +1204,29 @@ public class YamlReader extends BasicReadAheadReader {
 
 		scalarString = scalarString.trim();
 
-		final YamlScalar scalar = interpretScalarValue(scalarString, inlineComment);
+		// A temporary indentation level reflecting the scalar's start column was only actually
+		// added by the caller if that column was indented further than the enclosing
+		// mapping/sequence; this must be removed again before parsing a multiline block scalar.
+		final boolean removeCallerColumnIndentationBeforeMultiline = scalarStartIndentations > mappingIndentation;
+
+		final YamlScalar scalar = interpretScalarValue(scalarString, inlineComment, removeCallerColumnIndentationBeforeMultiline);
 
 		return scalar;
 	}
 
 	private YamlScalar interpretScalarValue(final String scalarString, final String inlineComment) throws Exception {
+		return interpretScalarValue(scalarString, inlineComment, false);
+	}
+
+	/**
+	 * @param removeCallerColumnIndentationBeforeMultiline
+	 * 	true if the caller (readUnquotedScalarString, via parseBlockMappingOrScalar) has added a
+	 * 	temporary indentation level reflecting the column the scalar started on, which must be
+	 * 	removed before parsing a multiline block scalar's own, independent content indentation.
+	 * 	false for callers (e.g. readFlowScalarString) that never add such a level, so nothing
+	 * 	must be popped off the shared indentations stack here.
+	 */
+	private YamlScalar interpretScalarValue(final String scalarString, final String inlineComment, final boolean removeCallerColumnIndentationBeforeMultiline) throws Exception {
 		if (scalarString.length() == 0) {
 			return new YamlScalar(null);
 		} else if ("true".equalsIgnoreCase(scalarString)
@@ -1212,8 +1267,10 @@ public class YamlReader extends BasicReadAheadReader {
 
 			YamlScalar scalar;
 			try {
-				indentations.pop();
-				scalar = parseMultilineScalar(type, comping, indentationIndicator);
+				if (removeCallerColumnIndentationBeforeMultiline) {
+					indentations.pop();
+				}
+				scalar = parseMultilineScalar(type, comping, indentationIndicator, !removeCallerColumnIndentationBeforeMultiline);
 			} catch (final Exception e) {
 				throw new YamlParseException("Invalid YAML mulitline scalar: " + e.getMessage(), getCurrentLine(), getCurrentColumn());
 			}
@@ -1258,36 +1315,122 @@ public class YamlReader extends BasicReadAheadReader {
 		return scalar;
 	}
 
+	/**
+	 * @param parentColumnIsValidContentColumn
+	 * 	true if {@code parentIndentationLevel} (derived from the shared indentations stack) is
+	 * 	itself already a valid column for the block scalar's content to start at, as is the case
+	 * 	for a multiline scalar used directly as a sequence item's value (e.g. "- |-"), where the
+	 * 	sequence item's dash already established the column content is expected to align with.
+	 * 	false if content must be indented strictly more than {@code parentIndentationLevel}, as is
+	 * 	the case for a multiline scalar used as a mapping value (e.g. "key: |-"), where the column
+	 * 	the scalar indicator happens to start on carries no meaning for the content's indentation.
+	 */
 	private YamlScalar parseMultilineScalar(
 			final YamlMultilineScalarType multilineType,
 			final YamlMultilineScalarChompingType chompingType,
-			final int indentationIndicator) throws Exception {
-		readNextIndentation();
+			final int indentationIndicator,
+			final boolean parentColumnIsValidContentColumn) throws Exception {
+		// Indentation level of the block-structure context the multiline scalar starts in
+		// (e.g. the mapping or sequence it is a value of). Content lines of the block scalar
+		// must be indented at least as much as this (exactly this, for a sequence item's direct
+		// value; strictly more, for a mapping value). Each content line's *own* indentation may
+		// vary (it may decrease compared to a previous content line, as long as it does not
+		// fall below the base indentation established by the first content line), which is
+		// unrelated to the block-structure indentations stack used elsewhere for mappings and
+		// sequences, so that stack must not be used to validate content line indentation here.
+		final int parentIndentationLevel = getNumberOfIndentationChars();
 
 		final StringBuilder raw = new StringBuilder();
 
-		if (indentationIndicator > 0) {
-			indentations.pop();
-			indentationsAdd(indentationIndicator);
-		}
+		// Base indentation column of the block scalar's content, determined either by an
+		// explicit indentation indicator or automatically from the first non-empty content line
+		int contentIndentation = indentationIndicator > 0 ? parentIndentationLevel + indentationIndicator : -1;
 
-		final int multilineIndentationLevel = getNumberOfIndentationChars();
+		int pendingEmptyLines = 0;
 
-		while (isNotEOF() && multilineIndentationLevel <= getNumberOfIndentationChars()) {
-			final int lineStartColumnIndex = (int) getCurrentColumn() - 1;
-			String nextLine = readUpToNext(false, null, '\n');
+		// Indentation (in spaces/tabs) already consumed while looking ahead at the line that
+		// turned out to not belong to the scalar anymore. This must be restored to the shared
+		// indentations stack afterwards, since it was consumed from the input but never validated
+		// nor accounted for there.
+		int trailingNonScalarLineIndentation = -1;
 
-			if (multilineIndentationLevel < lineStartColumnIndex) {
-				nextLine = Utilities.repeat(" ", lineStartColumnIndex - multilineIndentationLevel) + nextLine;
+		while (isNotEOF()) {
+			final int lineIndentation = peekNextLineIndentation();
+
+			if (lineIndentation == -1) {
+				// Empty line (or EOF right after a linebreak): belongs to the scalar regardless
+				// of indentation, collect it and continue looking ahead
+				if (isEOF()) {
+					break;
+				}
+				readChar();
+				pendingEmptyLines++;
+				continue;
 			}
 
-			readChar();
-			raw.append(nextLine);
+			if (contentIndentation < 0) {
+				// First non-empty line establishes the base indentation
+				final boolean lineIsTooShallow = parentColumnIsValidContentColumn
+						? lineIndentation < parentIndentationLevel
+						: lineIndentation <= parentIndentationLevel;
+				if (lineIsTooShallow) {
+					// Empty lines collected so far were only ever look-ahead within the block
+					// scalar's own region (between the indicator line and this non-scalar line)
+					// and never belonged to actual content; with no content line establishing
+					// the scalar at all, they are leading blank lines outside the scalar's value.
+					trailingNonScalarLineIndentation = lineIndentation;
+					break;
+				}
+				contentIndentation = lineIndentation;
+			} else if (lineIndentation < contentIndentation) {
+				// Indented less than the block scalar's own content: this line belongs to the
+				// surrounding block structure again, the scalar has ended. Blank lines collected
+				// before this point are still trailing newlines of the scalar's value (per the
+				// chomping rules applied below) and must be flushed, not discarded.
+				for (int i = 0; i < pendingEmptyLines; i++) {
+					raw.append("\n");
+				}
+				pendingEmptyLines = 0;
+				trailingNonScalarLineIndentation = lineIndentation;
+				break;
+			}
+
+			for (int i = 0; i < pendingEmptyLines; i++) {
+				raw.append("\n");
+			}
+			pendingEmptyLines = 0;
+
+			final String restOfLine = readUpToNext(false, null, '\n');
+			if (lineIndentation > contentIndentation) {
+				raw.append(Utilities.repeat(" ", lineIndentation - contentIndentation));
+			}
+			raw.append(restOfLine);
 			raw.append("\n");
+
 			if (isEOF()) {
 				break;
 			} else {
-				readNextIndentation();
+				readChar();
+			}
+		}
+
+		if (trailingNonScalarLineIndentation >= 0) {
+			// Restore the indentation of the trailing, non-scalar line to the shared
+			// indentations stack so the caller continuing to parse the surrounding block
+			// structure (mapping/sequence) sees the correct current indentation level again.
+			int remaining = trailingNonScalarLineIndentation;
+			for (final int existingIndentationSize : indentations) {
+				remaining -= existingIndentationSize;
+			}
+			if (remaining > 0) {
+				indentationsAdd(remaining);
+			} else {
+				while (remaining < 0 && indentations.size() > 1) {
+					remaining += indentations.pop();
+				}
+				if (remaining != 0) {
+					throw new YamlParseException("Unexpected indentation level: " + remaining + " indentations: " + indentations, getCurrentLine(), getCurrentColumn());
+				}
 			}
 		}
 
