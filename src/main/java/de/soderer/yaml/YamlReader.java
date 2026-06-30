@@ -602,6 +602,12 @@ public class YamlReader extends BasicReadAheadReader {
 		if (firstKeyNode != null) {
 			keyOrScalarNode = firstKeyNode;
 		} else {
+			// Comments collected while parsing the node itself (e.g. by a multiline block
+			// scalar's own lookahead past its content, which may run into a trailing comment
+			// belonging to whatever follows) must not be mistaken for comments that preceded
+			// this node; only comments already pending before parsing started belong to it.
+			final int leadingCommentsCountBeforeNode = pendingLeadingComments.size();
+
 			if (peekCharMatch('\"')) {
 				if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
 					indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
@@ -636,11 +642,12 @@ public class YamlReader extends BasicReadAheadReader {
 				keyOrScalarNode = readUnquotedScalarString(mappingIndentation);
 			}
 
-			if (!pendingLeadingComments.isEmpty()) {
-				for (final String commentLine1 : pendingLeadingComments) {
+			if (leadingCommentsCountBeforeNode > 0) {
+				for (final String commentLine1 : pendingLeadingComments.subList(0, leadingCommentsCountBeforeNode)) {
 					keyOrScalarNode.addLeadingComment(commentLine1);
 				}
-				pendingLeadingComments = new ArrayList<>();
+				pendingLeadingComments = new ArrayList<>(
+						pendingLeadingComments.subList(leadingCommentsCountBeforeNode, pendingLeadingComments.size()));
 			}
 
 			skipBlanks();
@@ -1374,6 +1381,21 @@ public class YamlReader extends BasicReadAheadReader {
 						? lineIndentation < parentIndentationLevel
 						: lineIndentation <= parentIndentationLevel;
 				if (lineIsTooShallow) {
+					if (peekCharMatch('#')) {
+						// A comment line is not subject to indentation rules at all, so it must
+						// not be mistaken for a non-scalar line ending lookahead, nor be allowed
+						// to influence the (not yet established) content indentation or the
+						// shared indentations stack. Skip over it, but keep its text as a leading
+						// comment for whichever node follows the multiline scalar, the same way
+						// such comments are collected outside of multiline scalar parsing.
+						pendingLeadingComments.add(readInlineComment());
+						if (isEOF()) {
+							break;
+						} else {
+							readChar();
+						}
+						continue;
+					}
 					// Empty lines collected so far were only ever look-ahead within the block
 					// scalar's own region (between the indicator line and this non-scalar line)
 					// and never belonged to actual content; with no content line establishing
@@ -1383,6 +1405,18 @@ public class YamlReader extends BasicReadAheadReader {
 				}
 				contentIndentation = lineIndentation;
 			} else if (lineIndentation < contentIndentation) {
+				if (peekCharMatch('#')) {
+					// Same as above: a less-indented comment line does not belong to the block
+					// scalar's content and must not be treated as the line ending the scalar;
+					// keep its text as a leading comment for the node that follows.
+					pendingLeadingComments.add(readInlineComment());
+					if (isEOF()) {
+						break;
+					} else {
+						readChar();
+					}
+					continue;
+				}
 				// Indented less than the block scalar's own content: this line belongs to the
 				// surrounding block structure again, the scalar has ended. Blank lines collected
 				// before this point are still trailing newlines of the scalar's value (per the

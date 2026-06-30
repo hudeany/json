@@ -15,6 +15,27 @@ import de.soderer.yaml.data.YamlSequence;
 
 @SuppressWarnings("static-method")
 public class YamlStringDataTest {
+	@Test
+	public void testMultiLine1() throws Exception {
+		try {
+			final String yamlTestString =
+				"level_1:\n"
+				+ "  level_2_1:\n"
+				+ "    level_3_1: |-\n"
+				+ "      - text_1: abc\n"
+				+ "# comment\n"
+				+ "    level_3_2: |-\n"
+				+ "      - text_2: abc\n"
+				+ "  level_2_2: abc\n";
+
+			try (YamlReader reader = new YamlReader(new ByteArrayInputStream(yamlTestString.getBytes(StandardCharsets.UTF_8)))) {
+				reader.readDocument();
+			}
+		} catch (final Exception e) {
+			Assertions.fail("Unexpected exception: " + e.getMessage());
+		}
+	}
+
 	/**
 	 * Original bug report: a literal block scalar ("|-") whose content lines have varying
 	 * indentation, where a later line is indented *less* than a previous line but still more
@@ -22,7 +43,7 @@ public class YamlStringDataTest {
 	 * This used to throw "Invalid YAML mulitline scalar: Unexpected indentation level".
 	 */
 	@Test
-	public void testMultiLine() throws Exception {
+	public void testMultiLine2() throws Exception {
 		try {
 			final String yamlTestString =
 				"extraVolumes: |-\n"
