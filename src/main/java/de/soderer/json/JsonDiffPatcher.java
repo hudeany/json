@@ -1,13 +1,16 @@
-package de.soderer.yaml.data;
+package de.soderer.json;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.soderer.json.utilities.NumberUtilities;
+
 /**
- * Parses a diff text in the format produced by {@link YamlComparator#renderAsText}
- * and applies it as a patch onto a YamlNode tree, e.g.:
+ * Parses a diff text in the format produced by {@link JsonComparator#renderAsText}
+ * and applies it as a patch onto a JsonNode tree, e.g.:
  *   ~ rooting.abc: "123" -> "124"
  *   + servers[3].host: "10.0.0.5"
  *   - servers[4]: "oldHost"
@@ -21,12 +24,15 @@ import java.util.regex.Pattern;
  *                                   must already exist, but its prior value is not checked
  *
  * Values are rendered as either the literal "null" or a double-quoted string
- * (see YamlComparator#formatValue). Quotes are stripped while parsing. Since
+ * (see JsonComparator#formatValue). Quotes are stripped while parsing. Since
  * the diff text does not preserve the original scalar type, patched scalar
- * values are re-interpreted the same way YamlReader interprets unquoted
+ * values are re-interpreted the same way JsonReader interprets unquoted
  * scalars (number, boolean, null, or string), to produce a reasonable type.
+ *
+ * This is the JSON counterpart of {@code YamlDiffPatcher}, using the same
+ * diff text format and path syntax.
  */
-public class YamlDiffPatcher {
+public class JsonDiffPatcher {
 	public enum PatchLineType {
 		ADDED,
 		REMOVED,
@@ -83,7 +89,7 @@ public class YamlDiffPatcher {
 
 	/**
 	 * Thrown when a patch cannot be applied because the current value in the
-	 * YAML tree does not match the expected "old value" from the diff, or when
+	 * JSON tree does not match the expected "old value" from the diff, or when
 	 * a structural precondition (node exists / does not exist) is violated.
 	 */
 	public static class PatchConflictException extends Exception {
@@ -100,7 +106,7 @@ public class YamlDiffPatcher {
 	private static final Pattern CHANGED_LINE_PATTERN_NO_OLD_VALUE = Pattern.compile("^~\\s+(.+?):\\s+(.+)$");
 
 	/**
-	 * Parses a diff text (as produced by YamlComparator#renderAsText) into a
+	 * Parses a diff text (as produced by JsonComparator#renderAsText) into a
 	 * list of patch entries. Blank lines and the "No differences found"
 	 * placeholder text are ignored. Lines that match none of the known
 	 * patterns cause a PatchConflictException, since silently skipping
@@ -159,7 +165,7 @@ public class YamlDiffPatcher {
 	}
 
 	/**
-	 * Strips the surrounding double quotes added by YamlComparator#formatValue,
+	 * Strips the surrounding double quotes added by JsonComparator#formatValue,
 	 * or returns null for the literal "null" marker.
 	 */
 	private static String unquote(final String valueText) {
@@ -174,8 +180,8 @@ public class YamlDiffPatcher {
 	}
 
 	/**
-	 * A single path segment, either a mapping key (by its simple string
-	 * representation) or a sequence index.
+	 * A single path segment, either an object key (by its simple string
+	 * representation) or an array index.
 	 */
 	private static class PathSegment {
 		private final String key;
@@ -203,7 +209,7 @@ public class YamlDiffPatcher {
 
 	/**
 	 * Splits a path like "servers[2].name" or "rooting.abc" into ordered
-	 * path segments. A leading "root" segment (as produced by YamlComparator
+	 * path segments. A leading "root" segment (as produced by JsonComparator
 	 * for top level keys) is treated like any other key segment, since the
 	 * comparator only adds a literal "root." prefix for nested paths, not
 	 * for the root document itself -- top level keys appear without that prefix.
@@ -223,21 +229,21 @@ public class YamlDiffPatcher {
 
 	/**
 	 * Applies all given patch entries onto the given root node, in order.
-	 * The root node is modified in place where possible; for mapping/sequence
+	 * The root node is modified in place where possible; for object/array
 	 * root replacements the original root instance is reused (its content is
 	 * mutated), so the same reference passed in remains valid after patching.
 	 *
 	 * @throws PatchConflictException if any entry's expected old value does not
 	 *         match the current value, or a structural precondition is violated
-	 * @throws Exception propagated from underlying YamlMapping/YamlSequence operations
+	 * @throws Exception propagated from underlying JsonObject/JsonArray operations
 	 */
-	public static void applyPatch(final YamlNode root, final List<PatchEntry> patchEntries) throws Exception {
+	public static void applyPatch(final JsonNode root, final List<PatchEntry> patchEntries) throws Exception {
 		for (final PatchEntry patchEntry : patchEntries) {
 			applyPatchEntry(root, patchEntry);
 		}
 	}
 
-	private static void applyPatchEntry(final YamlNode root, final PatchEntry patchEntry) throws Exception {
+	private static void applyPatchEntry(final JsonNode root, final PatchEntry patchEntry) throws Exception {
 		final List<PathSegment> pathSegments = splitPath(patchEntry.getPath());
 
 		if (pathSegments.isEmpty()) {
@@ -257,86 +263,89 @@ public class YamlDiffPatcher {
 		}
 	}
 
-	private static void applyAdded(final YamlNode root, final List<PathSegment> pathSegments, final PatchEntry patchEntry) throws Exception {
+	private static void applyAdded(final JsonNode root, final List<PathSegment> pathSegments, final PatchEntry patchEntry) throws Exception {
 		final NavigationResult navigationResult = navigateToParent(root, pathSegments, patchEntry, true);
 		final PathSegment lastSegment = pathSegments.get(pathSegments.size() - 1);
 
 		if (lastSegment.isIndex()) {
-			final YamlSequence parentSequence = asSequence(navigationResult.parent, patchEntry);
-			if (lastSegment.index < parentSequence.size()) {
-				throw new PatchConflictException("Cannot add, sequence index already exists at path '" + patchEntry.getPath() + "'");
+			final JsonArray parentArray = asArray(navigationResult.parent, patchEntry);
+			if (lastSegment.index < parentArray.size()) {
+				throw new PatchConflictException("Cannot add, array index already exists at path '" + patchEntry.getPath() + "'");
 			} else {
-				parentSequence.add(createScalarFromText(patchEntry.getNewValueText()));
+				parentArray.add(createValueFromText(patchEntry.getNewValueText()));
 			}
 		} else {
-			final YamlMapping parentMapping = asMapping(navigationResult.parent, patchEntry);
-			if (parentMapping.containsKey(lastSegment.key)) {
+			final JsonObject parentObject = asObject(navigationResult.parent, patchEntry);
+			if (parentObject.containsKey(lastSegment.key)) {
 				throw new PatchConflictException("Cannot add, key already exists at path '" + patchEntry.getPath() + "'");
 			} else {
-				parentMapping.add(lastSegment.key, createScalarFromText(patchEntry.getNewValueText()));
+				parentObject.put(lastSegment.key, createValueFromText(patchEntry.getNewValueText()));
 			}
 		}
 	}
 
-	private static void applyRemoved(final YamlNode root, final List<PathSegment> pathSegments, final PatchEntry patchEntry) throws Exception {
+	private static void applyRemoved(final JsonNode root, final List<PathSegment> pathSegments, final PatchEntry patchEntry) throws Exception {
 		final NavigationResult navigationResult = navigateToParent(root, pathSegments, patchEntry, false);
 		final PathSegment lastSegment = pathSegments.get(pathSegments.size() - 1);
 
 		if (lastSegment.isIndex()) {
-			final YamlSequence parentSequence = asSequence(navigationResult.parent, patchEntry);
-			if (lastSegment.index >= parentSequence.size()) {
-				throw new PatchConflictException("Cannot remove, sequence index missing at path '" + patchEntry.getPath() + "'");
+			final JsonArray parentArray = asArray(navigationResult.parent, patchEntry);
+			if (lastSegment.index >= parentArray.size()) {
+				throw new PatchConflictException("Cannot remove, array index missing at path '" + patchEntry.getPath() + "'");
 			} else {
-				final YamlNode currentChild = parentSequence.get(lastSegment.index);
+				final JsonNode currentChild = parentArray.get(lastSegment.index);
 				checkScalarValueMatches(currentChild, patchEntry.getOldValueText(), patchEntry);
-				parentSequence.removeByIndex(lastSegment.index);
+				parentArray.removeByIndex(lastSegment.index);
 			}
 		} else {
-			final YamlMapping parentMapping = asMapping(navigationResult.parent, patchEntry);
-			if (!parentMapping.containsKey(lastSegment.key)) {
+			final JsonObject parentObject = asObject(navigationResult.parent, patchEntry);
+			if (!parentObject.containsKey(lastSegment.key)) {
 				throw new PatchConflictException("Cannot remove, key missing at path '" + patchEntry.getPath() + "'");
 			} else {
-				final YamlNode currentChild = parentMapping.get(lastSegment.key);
+				final JsonNode currentChild = parentObject.get(lastSegment.key);
 				checkScalarValueMatches(currentChild, patchEntry.getOldValueText(), patchEntry);
-				parentMapping.remove(lastSegment.key);
+				parentObject.remove(lastSegment.key);
 			}
 		}
 	}
 
-	private static void applyChanged(final YamlNode root, final List<PathSegment> pathSegments, final PatchEntry patchEntry) throws Exception {
+	private static void applyChanged(final JsonNode root, final List<PathSegment> pathSegments, final PatchEntry patchEntry) throws Exception {
 		final NavigationResult navigationResult = navigateToParent(root, pathSegments, patchEntry, false);
 		final PathSegment lastSegment = pathSegments.get(pathSegments.size() - 1);
 
 		if (lastSegment.isIndex()) {
-			final YamlSequence parentSequence = asSequence(navigationResult.parent, patchEntry);
-			if (lastSegment.index >= parentSequence.size()) {
-				throw new PatchConflictException("Cannot change, sequence index missing at path '" + patchEntry.getPath() + "'");
+			final JsonArray parentArray = asArray(navigationResult.parent, patchEntry);
+			if (lastSegment.index >= parentArray.size()) {
+				throw new PatchConflictException("Cannot change, array index missing at path '" + patchEntry.getPath() + "'");
 			} else {
-				final YamlNode currentChild = parentSequence.get(lastSegment.index);
+				final JsonNode currentChild = parentArray.get(lastSegment.index);
 				if (!patchEntry.isIgnoreOldValue()) {
 					checkScalarValueMatches(currentChild, patchEntry.getOldValueText(), patchEntry);
 				} else {
 					// Old value is irrelevant for this patch entry, skip the check
 				}
-				parentSequence.set(lastSegment.index, createScalarFromText(patchEntry.getNewValueText()));
+				// JsonArray has no in-place "set", so the index is replaced via
+				// remove + insert at the same position.
+				parentArray.removeByIndex(lastSegment.index);
+				parentArray.insert(lastSegment.index, createValueFromText(patchEntry.getNewValueText()));
 			}
 		} else {
-			final YamlMapping parentMapping = asMapping(navigationResult.parent, patchEntry);
-			if (!parentMapping.containsKey(lastSegment.key)) {
+			final JsonObject parentObject = asObject(navigationResult.parent, patchEntry);
+			if (!parentObject.containsKey(lastSegment.key)) {
 				throw new PatchConflictException("Cannot change, key missing at path '" + patchEntry.getPath() + "'");
 			} else {
-				final YamlNode currentChild = parentMapping.get(lastSegment.key);
+				final JsonNode currentChild = parentObject.get(lastSegment.key);
 				if (!patchEntry.isIgnoreOldValue()) {
 					checkScalarValueMatches(currentChild, patchEntry.getOldValueText(), patchEntry);
 				} else {
 					// Old value is irrelevant for this patch entry, skip the check
 				}
-				parentMapping.replace(lastSegment.key, createScalarFromText(patchEntry.getNewValueText()));
+				parentObject.put(lastSegment.key, createValueFromText(patchEntry.getNewValueText()));
 			}
 		}
 	}
 
-	private static void checkScalarValueMatches(final YamlNode currentChild, final String expectedValueText, final PatchEntry patchEntry) throws PatchConflictException {
+	private static void checkScalarValueMatches(final JsonNode currentChild, final String expectedValueText, final PatchEntry patchEntry) throws PatchConflictException {
 		final String currentValueText = scalarToComparableText(currentChild);
 		final boolean matches;
 		if (currentValueText == null && expectedValueText == null) {
@@ -355,12 +364,17 @@ public class YamlDiffPatcher {
 		}
 	}
 
-	private static String scalarToComparableText(final YamlNode node) throws PatchConflictException {
-		if (node == null) {
+	private static String scalarToComparableText(final JsonNode node) throws PatchConflictException {
+		if (node == null || node instanceof JsonValueNull) {
 			return null;
-		} else if (node instanceof YamlScalar) {
-			final Object value = ((YamlScalar) node).getValue();
-			return value == null ? null : value.toString();
+		} else if (node instanceof JsonValueString) {
+			return ((JsonValueString) node).getValue();
+		} else if (node instanceof JsonValueInteger) {
+			return ((JsonValueInteger) node).getValue().toString();
+		} else if (node instanceof JsonValueNumber) {
+			return ((JsonValueNumber) node).getValue().toString();
+		} else if (node instanceof JsonValueBoolean) {
+			return ((JsonValueBoolean) node).getValue().toString();
 		} else {
 			throw new PatchConflictException("Expected a scalar value but found a complex node");
 		}
@@ -370,45 +384,45 @@ public class YamlDiffPatcher {
 	 * Result of navigating to the parent node of the final path segment.
 	 */
 	private static class NavigationResult {
-		private final YamlNode parent;
+		private final JsonNode parent;
 
-		private NavigationResult(final YamlNode parent) {
+		private NavigationResult(final JsonNode parent) {
 			this.parent = parent;
 		}
 	}
 
 	/**
 	 * Walks all but the last path segment, descending into the tree. If
-	 * createMissing is true, missing intermediate mappings are created on
+	 * createMissing is true, missing intermediate objects are created on
 	 * the fly (used for ADDED entries so that new nested keys can be added
 	 * without requiring every ancestor to already exist); otherwise a
 	 * missing intermediate node is a conflict.
 	 */
-	private static NavigationResult navigateToParent(final YamlNode root, final List<PathSegment> pathSegments, final PatchEntry patchEntry, final boolean createMissing) throws Exception {
-		YamlNode current = root;
+	private static NavigationResult navigateToParent(final JsonNode root, final List<PathSegment> pathSegments, final PatchEntry patchEntry, final boolean createMissing) throws Exception {
+		JsonNode current = root;
 
 		for (int i = 0; i < pathSegments.size() - 1; i++) {
 			final PathSegment segment = pathSegments.get(i);
 
 			if (segment.isIndex()) {
-				final YamlSequence currentSequence = asSequence(current, patchEntry);
-				if (segment.index >= currentSequence.size()) {
+				final JsonArray currentArray = asArray(current, patchEntry);
+				if (segment.index >= currentArray.size()) {
 					throw new PatchConflictException("Path segment [" + segment.index + "] missing at path '" + patchEntry.getPath() + "'");
 				} else {
-					current = currentSequence.get(segment.index);
+					current = currentArray.get(segment.index);
 				}
 			} else {
-				final YamlMapping currentMapping = asMapping(current, patchEntry);
-				if (!currentMapping.containsKey(segment.key)) {
+				final JsonObject currentObject = asObject(current, patchEntry);
+				if (!currentObject.containsKey(segment.key)) {
 					if (createMissing) {
-						final YamlMapping newChildMapping = new YamlMapping();
-						currentMapping.add(segment.key, newChildMapping);
-						current = newChildMapping;
+						final JsonObject newChildObject = new JsonObject();
+						currentObject.put(segment.key, newChildObject);
+						current = newChildObject;
 					} else {
 						throw new PatchConflictException("Path segment '" + segment.key + "' missing at path '" + patchEntry.getPath() + "'");
 					}
 				} else {
-					current = currentMapping.get(segment.key);
+					current = currentObject.get(segment.key);
 				}
 			}
 		}
@@ -416,39 +430,46 @@ public class YamlDiffPatcher {
 		return new NavigationResult(current);
 	}
 
-	private static YamlMapping asMapping(final YamlNode node, final PatchEntry patchEntry) throws PatchConflictException {
-		if (node instanceof YamlMapping) {
-			return (YamlMapping) node;
+	private static JsonObject asObject(final JsonNode node, final PatchEntry patchEntry) throws PatchConflictException {
+		if (node instanceof JsonObject) {
+			return (JsonObject) node;
 		} else {
-			throw new PatchConflictException("Expected a mapping at path '" + patchEntry.getPath() + "' but found a different node type");
+			throw new PatchConflictException("Expected an object at path '" + patchEntry.getPath() + "' but found a different node type");
 		}
 	}
 
-	private static YamlSequence asSequence(final YamlNode node, final PatchEntry patchEntry) throws PatchConflictException {
-		if (node instanceof YamlSequence) {
-			return (YamlSequence) node;
+	private static JsonArray asArray(final JsonNode node, final PatchEntry patchEntry) throws PatchConflictException {
+		if (node instanceof JsonArray) {
+			return (JsonArray) node;
 		} else {
-			throw new PatchConflictException("Expected a sequence at path '" + patchEntry.getPath() + "' but found a different node type");
+			throw new PatchConflictException("Expected an array at path '" + patchEntry.getPath() + "' but found a different node type");
 		}
 	}
 
 	/**
-	 * Re-interprets a plain text value the same way YamlReader interprets an
+	 * Re-interprets a plain text value the same way JsonReader interprets an
 	 * unquoted scalar: boolean, number, null, or string (in that priority).
 	 * The diff text format does not preserve the original scalar type, so
 	 * this is a best-effort reconstruction.
 	 */
-	private static YamlScalar createScalarFromText(final String valueText) {
+	private static JsonNode createValueFromText(final String valueText) {
 		if (valueText == null) {
-			return new YamlScalar(null);
-		} else if ("true".equals(valueText) || "false".equals(valueText)) {
-			return new YamlScalar(valueText, YamlScalarType.BOOLEAN);
-		} else {
-			try {
-				return new YamlScalar(valueText, YamlScalarType.NUMBER);
-			} catch (@SuppressWarnings("unused") final NumberFormatException e) {
-				return new YamlScalar(valueText, YamlScalarType.STRING);
+			return new JsonValueNull();
+		} else if ("true".equalsIgnoreCase(valueText) || "false".equalsIgnoreCase(valueText)) {
+			return new JsonValueBoolean(Boolean.parseBoolean(valueText));
+		} else if (NumberUtilities.isNumber(valueText)) {
+			final Number value = NumberUtilities.parseNumber(valueText);
+			if (value instanceof Integer) {
+				return new JsonValueInteger((Integer) value);
+			} else if (value instanceof Long) {
+				return new JsonValueInteger((Long) value);
+			} else if (value instanceof BigDecimal && NumberUtilities.isInteger((BigDecimal) value)) {
+				return new JsonValueInteger((BigDecimal) value);
+			} else {
+				return new JsonValueNumber(value);
 			}
+		} else {
+			return new JsonValueString(valueText);
 		}
 	}
 }
