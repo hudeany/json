@@ -42,6 +42,8 @@ public class YamlReader extends BasicReadAheadReader {
 	private final Stack<Integer> indentations = new Stack<>();
 	private final Map<String, YamlNode> anchorTable = new HashMap<>();
 	private List<String> pendingLeadingComments = new ArrayList<>();
+	private int pendingLeadingEmptyLines = 0;
+	private int pendingTrailingEmptyLinesAfterComments = 0;
 	private Boolean documentContentStarted = null;
 	protected JsonPath currentPath = new JsonPath();
 	protected JsonPath searchPath = null;
@@ -84,6 +86,9 @@ public class YamlReader extends BasicReadAheadReader {
 				}
 				pendingLeadingComments = new ArrayList<>();
 			}
+			// Note: YamlDocument is not a YamlNode and has no leadingEmptyLinesCount of its own;
+			// any pendingLeadingEmptyLines accumulated so far are intentionally left untouched
+			// here so they naturally end up attributed to the document's root node instead.
 
 			while (isNotEOF()) {
 				readUpToNextContent(null);
@@ -186,6 +191,93 @@ public class YamlReader extends BasicReadAheadReader {
 		return currentPath;
 	}
 
+	/**
+	 * Immutable snapshot of the pending leading comments and pending leading/post-comment empty
+	 * lines counts at a certain point during parsing, taken before recursively parsing a nested
+	 * node whose own parsing may collect further pending leading state (which then belongs to
+	 * whatever follows that nested node, not to the nested node itself).
+	 */
+	private static final class PendingLeadingState {
+		private final List<String> comments;
+		private final int emptyLinesCount;
+		private final int postCommentEmptyLinesCount;
+
+		private PendingLeadingState(final List<String> comments, final int emptyLinesCount, final int postCommentEmptyLinesCount) {
+			this.comments = comments;
+			this.emptyLinesCount = emptyLinesCount;
+			this.postCommentEmptyLinesCount = postCommentEmptyLinesCount;
+		}
+	}
+
+	/**
+	 * Takes away the currently pending leading comments and pending empty lines counts,
+	 * resetting all of them to their empty/zero state, so that further parsing does not
+	 * attribute them to the wrong node.
+	 */
+	private PendingLeadingState takePendingLeadingState() {
+		final PendingLeadingState pendingLeadingState = new PendingLeadingState(
+				pendingLeadingComments, pendingLeadingEmptyLines, pendingTrailingEmptyLinesAfterComments);
+		pendingLeadingComments = new ArrayList<>();
+		pendingLeadingEmptyLines = 0;
+		pendingTrailingEmptyLinesAfterComments = 0;
+		return pendingLeadingState;
+	}
+
+	/**
+	 * Applies a previously taken {@link PendingLeadingState} onto the given node.
+	 */
+	private static void applyPendingLeadingState(final PendingLeadingState pendingLeadingState, final YamlNode node) {
+		if (!pendingLeadingState.comments.isEmpty()) {
+			for (final String commentLine : pendingLeadingState.comments) {
+				node.addLeadingComment(commentLine);
+			}
+		}
+		if (pendingLeadingState.emptyLinesCount > 0) {
+			node.setLeadingEmptyLinesCount(pendingLeadingState.emptyLinesCount);
+		}
+		if (pendingLeadingState.postCommentEmptyLinesCount > 0) {
+			node.setPostCommentEmptyLinesCount(pendingLeadingState.postCommentEmptyLinesCount);
+		}
+	}
+
+	/**
+	 * Transfers all currently pending leading comments and the currently pending empty lines
+	 * counts directly onto the given node and clears all pending states.
+	 */
+	private void applyAndClearPendingLeadingState(final YamlNode node) {
+		if (!pendingLeadingComments.isEmpty()) {
+			for (final String commentLine : pendingLeadingComments) {
+				node.addLeadingComment(commentLine);
+			}
+			pendingLeadingComments = new ArrayList<>();
+		}
+		if (pendingLeadingEmptyLines > 0) {
+			node.setLeadingEmptyLinesCount(pendingLeadingEmptyLines);
+			pendingLeadingEmptyLines = 0;
+		}
+		if (pendingTrailingEmptyLinesAfterComments > 0) {
+			node.setPostCommentEmptyLinesCount(pendingTrailingEmptyLinesAfterComments);
+			pendingTrailingEmptyLinesAfterComments = 0;
+		}
+	}
+
+	/**
+	 * Adds newly found blank source lines to the correct pending bucket: lines found before any
+	 * comment is currently pending are counted towards the leading empty lines (written before
+	 * the comments), while lines found once at least one comment is already pending are counted
+	 * towards the post-comment empty lines (written after the comments, still before the node).
+	 */
+	private void addPendingEmptyLines(final int count) {
+		if (count <= 0) {
+			return;
+		}
+		if (pendingLeadingComments.isEmpty()) {
+			pendingLeadingEmptyLines += count;
+		} else {
+			pendingTrailingEmptyLinesAfterComments += count;
+		}
+	}
+
 	public YamlNode readNextYamlNode() throws Exception {
 		try {
 			if (isEOF()) {
@@ -231,6 +323,12 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 
 		int nextIndentationSize = 0;
+		// If the reader is currently positioned mid-line (i.e. after some content, such as a
+		// scalar value or an already consumed inline comment, was read by the caller), that
+		// line already has content and its upcoming linebreak must not be counted as an empty
+		// line. Only lines consisting purely of whitespace (or nothing) between two linebreaks
+		// are counted as empty lines.
+		boolean currentLineHasContent = getCurrentColumn() > 1;
 		while (isNotEOF()) {
 			if (peekCharMatch(' ') || peekCharMatch('\t')) {
 				readChar();
@@ -240,8 +338,13 @@ public class YamlReader extends BasicReadAheadReader {
 				final String commentText = readUpToNext(false, null, '\n');
 				pendingLeadingComments.add(commentText);
 				nextIndentationSize = getNumberOfIndentationChars();
+				currentLineHasContent = true;
 			} else if (peekCharMatch('\n')) {
 				readChar();
+				if (!currentLineHasContent) {
+					addPendingEmptyLines(1);
+				}
+				currentLineHasContent = false;
 				nextIndentationSize = 0;
 			} else {
 				break;
@@ -400,32 +503,20 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 			return yamlNode;
 		} else if (peekCharMatch('*')) {
-			List<String> interimPendingLeadingComments = pendingLeadingComments;
-			pendingLeadingComments = new ArrayList<>();
+			final PendingLeadingState pendingLeadingState = takePendingLeadingState();
 
 			final YamlNode alias = parseAlias();
 
-			if (!interimPendingLeadingComments.isEmpty()) {
-				for (final String commentLine : interimPendingLeadingComments) {
-					alias.addLeadingComment(commentLine);
-				}
-				interimPendingLeadingComments = new ArrayList<>();
-			}
+			applyPendingLeadingState(pendingLeadingState, alias);
 
 			return alias;
 		} else if (peekCharMatch('{')) {
 			final int flowStartIndentations = getNumberOfIndentationChars();
-			List<String> interimPendingLeadingComments = pendingLeadingComments;
-			pendingLeadingComments = new ArrayList<>();
+			final PendingLeadingState pendingLeadingState = takePendingLeadingState();
 
 			final YamlNode flowMapping = parseFlowMapping();
 
-			if (!interimPendingLeadingComments.isEmpty()) {
-				for (final String commentLine : interimPendingLeadingComments) {
-					flowMapping.addLeadingComment(commentLine);
-				}
-				interimPendingLeadingComments = new ArrayList<>();
-			}
+			applyPendingLeadingState(pendingLeadingState, flowMapping);
 
 			readUpToNextContent(flowMapping);
 
@@ -436,17 +527,11 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 		} else if (peekCharMatch('[')) {
 			final int flowStartIndentations = getNumberOfIndentationChars();
-			List<String> interimPendingLeadingComments = pendingLeadingComments;
-			pendingLeadingComments = new ArrayList<>();
+			final PendingLeadingState pendingLeadingState = takePendingLeadingState();
 
 			final YamlNode flowSequence = parseFlowSequence();
 
-			if (!interimPendingLeadingComments.isEmpty()) {
-				for (final String commentLine : interimPendingLeadingComments) {
-					flowSequence.addLeadingComment(commentLine);
-				}
-				interimPendingLeadingComments = new ArrayList<>();
-			}
+			applyPendingLeadingState(pendingLeadingState, flowSequence);
 
 			readUpToNextContent(flowSequence);
 
@@ -564,8 +649,7 @@ public class YamlReader extends BasicReadAheadReader {
 	}
 
 	private YamlNode readNextSequenceItem() throws Exception {
-		List<String> interimPendingLeadingComments = pendingLeadingComments;
-		pendingLeadingComments = new ArrayList<>();
+		final PendingLeadingState pendingLeadingState = takePendingLeadingState();
 
 		if (peekCharMatch('-') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
 			readChar();
@@ -582,12 +666,7 @@ public class YamlReader extends BasicReadAheadReader {
 				pendingAnchor = null;
 			}
 
-			if (!interimPendingLeadingComments.isEmpty()) {
-				for (final String commentLine : interimPendingLeadingComments) {
-					nextItemNode.addLeadingComment(commentLine);
-				}
-				interimPendingLeadingComments = new ArrayList<>();
-			}
+			applyPendingLeadingState(pendingLeadingState, nextItemNode);
 
 			return nextItemNode;
 		} else {
@@ -607,6 +686,8 @@ public class YamlReader extends BasicReadAheadReader {
 			// belonging to whatever follows) must not be mistaken for comments that preceded
 			// this node; only comments already pending before parsing started belong to it.
 			final int leadingCommentsCountBeforeNode = pendingLeadingComments.size();
+			final int leadingEmptyLinesCountBeforeNode = pendingLeadingEmptyLines;
+			final int postCommentEmptyLinesCountBeforeNode = pendingTrailingEmptyLinesAfterComments;
 
 			if (peekCharMatch('\"')) {
 				if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
@@ -648,6 +729,16 @@ public class YamlReader extends BasicReadAheadReader {
 				}
 				pendingLeadingComments = new ArrayList<>(
 						pendingLeadingComments.subList(leadingCommentsCountBeforeNode, pendingLeadingComments.size()));
+			}
+
+			if (leadingEmptyLinesCountBeforeNode > 0) {
+				keyOrScalarNode.setLeadingEmptyLinesCount(leadingEmptyLinesCountBeforeNode);
+				pendingLeadingEmptyLines -= leadingEmptyLinesCountBeforeNode;
+			}
+
+			if (postCommentEmptyLinesCountBeforeNode > 0) {
+				keyOrScalarNode.setPostCommentEmptyLinesCount(postCommentEmptyLinesCountBeforeNode);
+				pendingTrailingEmptyLinesAfterComments -= postCommentEmptyLinesCountBeforeNode;
 			}
 
 			skipBlanks();
@@ -730,12 +821,7 @@ public class YamlReader extends BasicReadAheadReader {
 					keyOrScalarNode = readUnquotedScalarString(mappingIndentation);
 				}
 
-				if (!pendingLeadingComments.isEmpty()) {
-					for (final String commentLine2 : pendingLeadingComments) {
-						keyOrScalarNode.addLeadingComment(commentLine2);
-					}
-					pendingLeadingComments = new ArrayList<>();
-				}
+				applyAndClearPendingLeadingState(keyOrScalarNode);
 
 				skipBlanks();
 
@@ -808,12 +894,7 @@ public class YamlReader extends BasicReadAheadReader {
 			pendingAnchor = null;
 		}
 
-		if (!pendingLeadingComments.isEmpty()) {
-			for (final String commentLine : pendingLeadingComments) {
-				mapping.addLeadingComment(commentLine);
-			}
-			pendingLeadingComments = new ArrayList<>();
-		}
+		applyAndClearPendingLeadingState(mapping);
 
 		if (peekCharMatch('}')) {
 			readChar();
@@ -836,12 +917,7 @@ public class YamlReader extends BasicReadAheadReader {
 				keyNode = readFlowScalarString();
 			}
 
-			if (!pendingLeadingComments.isEmpty()) {
-				for (final String commentLine : pendingLeadingComments) {
-					keyNode.addLeadingComment(commentLine);
-				}
-				pendingLeadingComments = new ArrayList<>();
-			}
+			applyAndClearPendingLeadingState(keyNode);
 
 			pendingAnchor = readUpToNextContent(null);
 			if (pendingAnchor != null) {
@@ -928,12 +1004,7 @@ public class YamlReader extends BasicReadAheadReader {
 						pendingAnchor = null;
 					}
 
-					if (!pendingLeadingComments.isEmpty()) {
-						for (final String commentLine : pendingLeadingComments) {
-							valueNode.addLeadingComment(commentLine);
-						}
-						pendingLeadingComments = new ArrayList<>();
-					}
+					applyAndClearPendingLeadingState(valueNode);
 
 					pendingAnchor = readUpToNextContent(valueNode);
 
@@ -998,12 +1069,7 @@ public class YamlReader extends BasicReadAheadReader {
 			pendingAnchor = null;
 		}
 
-		if (!pendingLeadingComments.isEmpty()) {
-			for (final String commentLine : pendingLeadingComments) {
-				sequence.addLeadingComment(commentLine);
-			}
-			pendingLeadingComments = new ArrayList<>();
-		}
+		applyAndClearPendingLeadingState(sequence);
 
 		if (peekCharMatch(']')) {
 			readChar();
@@ -1043,12 +1109,7 @@ public class YamlReader extends BasicReadAheadReader {
 				itemNode = readFlowScalarString();
 			}
 
-			if (!pendingLeadingComments.isEmpty()) {
-				for (final String commentLine : pendingLeadingComments) {
-					itemNode.addLeadingComment(commentLine);
-				}
-				pendingLeadingComments = new ArrayList<>();
-			}
+			applyAndClearPendingLeadingState(itemNode);
 
 			pendingAnchor = readUpToNextContent(null);
 			if (pendingAnchor != null) {
@@ -1101,12 +1162,7 @@ public class YamlReader extends BasicReadAheadReader {
 					valueNode = readFlowScalarString();
 				}
 
-				if (!pendingLeadingComments.isEmpty()) {
-					for (final String commentLine : pendingLeadingComments) {
-						valueNode.addLeadingComment(commentLine);
-					}
-					pendingLeadingComments = new ArrayList<>();
-				}
+				applyAndClearPendingLeadingState(valueNode);
 
 				pendingAnchor = readUpToNextContent(valueNode);
 				if (pendingAnchor != null) {
@@ -1208,6 +1264,20 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 			scalarString += nextScalarStringLine.trim();
 		}
+
+		// While looking ahead for a possible continuation of this plain scalar onto further
+		// lines, any blank lines found were speculatively appended above as literal "\n"
+		// characters (matching plain-scalar folding rules, in case real content followed them
+		// on a later line). If parsing then stopped right here instead (this scalar has ended),
+		// those trailing "\n" characters are about to be discarded by trim() below and never
+		// end up part of this scalar's value; they were genuinely blank lines in the source
+		// between this scalar and whatever node follows, so they must be counted as such here.
+		int trailingBlankLineCount = 0;
+		while (trailingBlankLineCount < scalarString.length()
+				&& scalarString.charAt(scalarString.length() - 1 - trailingBlankLineCount) == '\n') {
+			trailingBlankLineCount++;
+		}
+		addPendingEmptyLines(trailingBlankLineCount);
 
 		scalarString = scalarString.trim();
 
@@ -1355,6 +1425,13 @@ public class YamlReader extends BasicReadAheadReader {
 
 		int pendingEmptyLines = 0;
 
+		// How much of pendingEmptyLines has already been reported to the leading/post-comment
+		// empty lines metadata (see addPendingEmptyLines below). This is tracked separately so
+		// that pendingEmptyLines itself keeps accumulating uninterrupted for the raw scalar
+		// content flushing further down, exactly as before; only the metadata bucketing needs
+		// to happen at the precise chronological point relative to any interleaved comments.
+		int emptyLinesAlreadyReportedAsMetadata = 0;
+
 		// Indentation (in spaces/tabs) already consumed while looking ahead at the line that
 		// turned out to not belong to the scalar anymore. This must be restored to the shared
 		// indentations stack afterwards, since it was consumed from the input but never validated
@@ -1388,6 +1465,13 @@ public class YamlReader extends BasicReadAheadReader {
 						// shared indentations stack. Skip over it, but keep its text as a leading
 						// comment for whichever node follows the multiline scalar, the same way
 						// such comments are collected outside of multiline scalar parsing.
+						// Any blank lines collected so far occurred *before* this comment in the
+						// source and must be flushed into the correct bucket now, before the
+						// comment itself is added to the pending comments below - otherwise they
+						// would later be seen as occurring after a comment that is already
+						// pending and be misattributed to the wrong bucket.
+						addPendingEmptyLines(pendingEmptyLines);
+						pendingEmptyLines = 0;
 						pendingLeadingComments.add(readInlineComment());
 						if (isEOF()) {
 							break;
@@ -1399,7 +1483,10 @@ public class YamlReader extends BasicReadAheadReader {
 					// Empty lines collected so far were only ever look-ahead within the block
 					// scalar's own region (between the indicator line and this non-scalar line)
 					// and never belonged to actual content; with no content line establishing
-					// the scalar at all, they are leading blank lines outside the scalar's value.
+					// the scalar at all, they are leading blank lines outside the scalar's value,
+					// i.e. genuinely blank source lines preceding whatever node follows.
+					addPendingEmptyLines(pendingEmptyLines);
+					pendingEmptyLines = 0;
 					trailingNonScalarLineIndentation = lineIndentation;
 					break;
 				}
@@ -1408,7 +1495,13 @@ public class YamlReader extends BasicReadAheadReader {
 				if (peekCharMatch('#')) {
 					// Same as above: a less-indented comment line does not belong to the block
 					// scalar's content and must not be treated as the line ending the scalar;
-					// keep its text as a leading comment for the node that follows.
+					// keep its text as a leading comment for the node that follows. Report any
+					// blank lines collected so far as metadata now, before the comment itself is
+					// added to the pending comments below (see the field comment on
+					// emptyLinesAlreadyReportedAsMetadata for why pendingEmptyLines itself must
+					// not be reset here).
+					addPendingEmptyLines(pendingEmptyLines - emptyLinesAlreadyReportedAsMetadata);
+					emptyLinesAlreadyReportedAsMetadata = pendingEmptyLines;
 					pendingLeadingComments.add(readInlineComment());
 					if (isEOF()) {
 						break;
@@ -1423,6 +1516,14 @@ public class YamlReader extends BasicReadAheadReader {
 				// chomping rules applied below) and must be flushed, not discarded.
 				for (int i = 0; i < pendingEmptyLines; i++) {
 					raw.append("\n");
+				}
+				if (chompingType != YamlMultilineScalarChompingType.KEEP) {
+					// Unless the chomping indicator explicitly keeps trailing blank lines as
+					// part of the scalar's own value, these were genuinely blank source lines
+					// preceding whatever node follows the block scalar (chomping will strip them
+					// back out of the scalar's text below, in applyChomping). Only the portion not
+					// already reported at an earlier interleaved comment is reported here.
+					addPendingEmptyLines(pendingEmptyLines - emptyLinesAlreadyReportedAsMetadata);
 				}
 				pendingEmptyLines = 0;
 				trailingNonScalarLineIndentation = lineIndentation;

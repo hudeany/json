@@ -90,6 +90,7 @@ public class YamlWriter implements Closeable {
 		}
 
 		if (document.getRoot() != null) {
+			writeLeadingEmptyLines(document.getRoot());
 			if (document.getRoot().getLeadingComments() != null && !yamlFormat.isOmitComments()) {
 				for (final String leadingCommentLine : document.getRoot().getLeadingComments()) {
 					write("#");
@@ -97,6 +98,7 @@ public class YamlWriter implements Closeable {
 					write(yamlFormat.getLinebreakString());
 				}
 			}
+			writePostCommentEmptyLines(document.getRoot());
 			writeNode(document.getRoot(), 0, false, false);
 		}
 
@@ -128,6 +130,7 @@ public class YamlWriter implements Closeable {
 		if (node instanceof final YamlScalar scalar) {
 			writeScalar(scalar, indentLevel, inFlow, isKeyContext);
 		} else if (node instanceof final YamlAlias alias) {
+			writeLeadingEmptyLines(alias);
 			if (alias.getLeadingComments() != null && !yamlFormat.isOmitComments()) {
 				for (final String commentLine : alias.getLeadingComments()) {
 					writeIndent(indentLevel);
@@ -135,6 +138,7 @@ public class YamlWriter implements Closeable {
 				}
 			}
 
+			writePostCommentEmptyLines(alias);
 			writeAlias(alias, indentLevel);
 			if (!inFlow) {
 				write(yamlFormat.getLinebreakString());
@@ -157,6 +161,7 @@ public class YamlWriter implements Closeable {
 					write(yamlFormat.getLinebreakString());
 				}
 			} else {
+				writeLeadingEmptyLines(sequence);
 				if (sequence.getLeadingComments() != null && !yamlFormat.isOmitComments()) {
 					boolean firstCommentLine = true;
 					for (final String commentLine : sequence.getLeadingComments()) {
@@ -169,6 +174,11 @@ public class YamlWriter implements Closeable {
 					}
 				}
 
+				final int sequencePostCommentEmptyLines = yamlFormat.isOmitEmptyLines() ? 0 : sequence.getPostCommentEmptyLinesCount();
+				writePostCommentEmptyLines(sequence);
+				if (sequencePostCommentEmptyLines > 0) {
+					writeIndent(indentLevel);
+				}
 				writeBlockSequence(sequence, indentLevel);
 			}
 		} else if (node instanceof final YamlMapping mapping) {
@@ -423,6 +433,7 @@ public class YamlWriter implements Closeable {
 			final YamlNode key = entry.getKey();
 			final YamlNode value = entry.getValue();
 
+			writeLeadingEmptyLines(key);
 			if (key.getLeadingComments() != null && !yamlFormat.isOmitComments()) {
 				if (isFirstData) {
 					if (key.getLeadingComments() != null && !yamlFormat.isOmitComments()) {
@@ -445,6 +456,8 @@ public class YamlWriter implements Closeable {
 					}
 				}
 			}
+
+			writePostCommentEmptyLines(key);
 
 			if (key instanceof final YamlScalar scalarKey) {
 				if (scalarKey.getType() == YamlScalarType.STRING) {
@@ -528,12 +541,14 @@ public class YamlWriter implements Closeable {
 					}
 				} else {
 					write(yamlFormat.getLinebreakString());
+					writeLeadingEmptyLines(scalar);
 					if (scalar.getLeadingComments() != null && !yamlFormat.isOmitComments()) {
 						for (final String commentLine : scalar.getLeadingComments()) {
 							writeIndent(indentLevel + 1);
 							write("#" + commentLine + yamlFormat.getLinebreakString());
 						}
 					}
+					writePostCommentEmptyLines(scalar);
 					writeIndent(indentLevel + 1);
 					writeNode(scalar, indentLevel + 1, false, false);
 				}
@@ -570,12 +585,14 @@ public class YamlWriter implements Closeable {
 				} else {
 					if (!sequence.isFlowStyle() || yamlFormat.isIgnoreFlowStyleSettings()) {
 						write(yamlFormat.getLinebreakString());
+						writeLeadingEmptyLines(sequence);
 						if (sequence.getLeadingComments() != null && !yamlFormat.isOmitComments()) {
 							for (final String commentLine : sequence.getLeadingComments()) {
 								writeIndent(indentLevel + 1);
 								write("#" + commentLine + yamlFormat.getLinebreakString());
 							}
 						}
+						writePostCommentEmptyLines(sequence);
 						writeIndent(indentLevel + 1);
 					} else {
 						write(" ");
@@ -853,7 +870,37 @@ public class YamlWriter implements Closeable {
 		return this;
 	}
 
+	/**
+	 * Writes the number of leading empty lines stored on the given node (if any) as plain
+	 * linebreaks, directly before its leading comments or content are written. Writes nothing
+	 * if the format is configured to omit empty lines.
+	 */
+	private YamlWriter writeLeadingEmptyLines(final YamlNode node) throws IOException {
+		if (!yamlFormat.isOmitEmptyLines()) {
+			for (int i = 0; i < node.getLeadingEmptyLinesCount(); i++) {
+				write(yamlFormat.getLinebreakString());
+			}
+		}
+		return this;
+	}
+
+	/**
+	 * Writes the number of empty lines stored on the given node that were found after its
+	 * leading comments (if any) but still before the node itself, directly after its leading
+	 * comments have been written and before its own content follows. Writes nothing if the
+	 * format is configured to omit empty lines.
+	 */
+	private YamlWriter writePostCommentEmptyLines(final YamlNode node) throws IOException {
+		if (!yamlFormat.isOmitEmptyLines()) {
+			for (int i = 0; i < node.getPostCommentEmptyLinesCount(); i++) {
+				write(yamlFormat.getLinebreakString());
+			}
+		}
+		return this;
+	}
+
 	public YamlWriter addSequenceItem(final YamlNode item, final int indentLevel, boolean isFirstData) throws Exception {
+		writeLeadingEmptyLines(item);
 		if (item.getLeadingComments() != null && !item.getLeadingComments().isEmpty() && !yamlFormat.isOmitComments()) {
 			for (final String commentLine : item.getLeadingComments()) {
 				if (!isFirstData) {
@@ -863,6 +910,8 @@ public class YamlWriter implements Closeable {
 				isFirstData = false;
 			}
 		}
+
+		writePostCommentEmptyLines(item);
 
 		if (!isFirstData) {
 			writeIndent(indentLevel);

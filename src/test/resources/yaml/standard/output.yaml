@@ -1,6 +1,8 @@
 # Example-YAML for round trip tests
 # Contains lots of YAML features
+
 "title with blank": "Example document"
+
 "person": &p1 # Anchor p1 comment
   "name": "John Doe" # Name of team leader
   "age": 42
@@ -9,6 +11,7 @@
     - "Reading"
     - "Swiming"
     - "Programming"
+
 "team":
   # Descriptive comment for team
   "leader": *p1 # Alias p1 comment
@@ -20,16 +23,20 @@
     - *p2 # Alias p2 comment
     - "name": "Brother John" # Name of team third employee
       "age": 48
+
 "description": |
   This is a multiline
   literal string.
   Linebreaks are kept as they are.
+
 "notes": >
   This is a folded multiline string, it is folded in  when written. 
+
 "settings":
   "mode": "standard"
   "flags": ["debug", "verbose", "safe"]
   "values": {"a": 1, "b": 2, "c": 3}
+
 "list":
   - "one"
   - "two"

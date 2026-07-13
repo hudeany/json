@@ -19,11 +19,9 @@ public class YamlFormat {
 	private boolean alwaysQuoteStringValues;
 
 	private boolean omitComments;
+	private boolean omitEmptyLines;
 
 	private boolean ignoreFlowStyleSettings;
-
-	// TODO
-	private boolean keepEmptyLines;
 
 	// TODO
 	/**
@@ -68,8 +66,10 @@ public class YamlFormat {
 		alwaysQuoteStringKeys = false;
 		alwaysQuoteStringValues = false;
 		omitComments = false;
+		omitEmptyLines = false;
 		ignoreFlowStyleSettings = false;
 		useNoExtraIndentationForYamlSequencesInYamlMappingProperties = false;
+		useNoNewLineForEmptyYamlObjectInYamlMappingProperties = false;
 	}
 
 	public Linebreak getLinebreak() {
@@ -136,6 +136,15 @@ public class YamlFormat {
 		return this;
 	}
 
+	public boolean isOmitEmptyLines() {
+		return omitEmptyLines;
+	}
+
+	public YamlFormat setOmitEmptyLines(final boolean omitEmptyLines) {
+		this.omitEmptyLines = omitEmptyLines;
+		return this;
+	}
+
 	public boolean isIgnoreFlowStyleSettings() {
 		return ignoreFlowStyleSettings;
 	}
@@ -161,13 +170,5 @@ public class YamlFormat {
 	public YamlFormat setUseNoNewLineForEmptyYamlObjectInYamlMappingProperties(final boolean useNoNewLineForEmptyYamlObjectInYamlMappingProperties) {
 		this.useNoNewLineForEmptyYamlObjectInYamlMappingProperties = useNoNewLineForEmptyYamlObjectInYamlMappingProperties;
 		return this;
-	}
-
-	public boolean isKeepEmptyLines() {
-		return keepEmptyLines;
-	}
-
-	public void setKeepEmptyLines(final boolean keepEmptyLines) {
-		this.keepEmptyLines = keepEmptyLines;
 	}
 }
