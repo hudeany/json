@@ -560,7 +560,9 @@ public class YamlWriter implements Closeable {
 					write(yamlFormat.getLinebreakString());
 				}
 			} else if (value instanceof final YamlMapping mapping) {
-				if (!mapping.isFlowStyle() || yamlFormat.isIgnoreFlowStyleSettings()) {
+				if (mapping.size() == 0 && yamlFormat.isUseNoNewLineForEmptyYamlObjectInYamlMappingProperties()) {
+					write(" ");
+				} else if (!mapping.isFlowStyle() || yamlFormat.isIgnoreFlowStyleSettings()) {
 					write(yamlFormat.getLinebreakString());
 					writeIndent(indentLevel + 1);
 				} else {
@@ -568,36 +570,42 @@ public class YamlWriter implements Closeable {
 				}
 				writeNode(mapping, indentLevel + 1, false, false);
 			} else if (value instanceof final YamlSequence sequence) {
-				if (!startValueInNewLine
-						&& sequence.getAnchorName() == null
-						&& (sequence.getLeadingComments() == null || sequence.getLeadingComments().isEmpty())) {
-					if (!sequence.isFlowStyle() || yamlFormat.isIgnoreFlowStyleSettings()) {
-						if (key instanceof YamlScalar) {
-							write(yamlFormat.getLinebreakString());
-							writeIndent(indentLevel + 1);
+				if (sequence.size() == 0 && yamlFormat.isUseNoNewLineForEmptyYamlObjectInYamlMappingProperties()) {
+					write(" ");
+					writeNode(sequence, indentLevel + 1, false, false);
+				} else {
+					final int sequenceIndentLevel = yamlFormat.isUseNoExtraIndentationForYamlSequencesInYamlMappingProperties() ? indentLevel : indentLevel + 1;
+					if (!startValueInNewLine
+							&& sequence.getAnchorName() == null
+							&& (sequence.getLeadingComments() == null || sequence.getLeadingComments().isEmpty())) {
+						if (!sequence.isFlowStyle() || yamlFormat.isIgnoreFlowStyleSettings()) {
+							if (key instanceof YamlScalar) {
+								write(yamlFormat.getLinebreakString());
+								writeIndent(sequenceIndentLevel);
+							} else {
+								write(" ");
+							}
 						} else {
 							write(" ");
 						}
+						writeNode(sequence, sequenceIndentLevel, false, false);
 					} else {
-						write(" ");
-					}
-					writeNode(sequence, indentLevel + 1, false, false);
-				} else {
-					if (!sequence.isFlowStyle() || yamlFormat.isIgnoreFlowStyleSettings()) {
-						write(yamlFormat.getLinebreakString());
-						writeLeadingEmptyLines(sequence);
-						if (sequence.getLeadingComments() != null && !yamlFormat.isOmitComments()) {
-							for (final String commentLine : sequence.getLeadingComments()) {
-								writeIndent(indentLevel + 1);
-								write("#" + commentLine + yamlFormat.getLinebreakString());
+						if (!sequence.isFlowStyle() || yamlFormat.isIgnoreFlowStyleSettings()) {
+							write(yamlFormat.getLinebreakString());
+							writeLeadingEmptyLines(sequence);
+							if (sequence.getLeadingComments() != null && !yamlFormat.isOmitComments()) {
+								for (final String commentLine : sequence.getLeadingComments()) {
+									writeIndent(sequenceIndentLevel);
+									write("#" + commentLine + yamlFormat.getLinebreakString());
+								}
 							}
+							writePostCommentEmptyLines(sequence);
+							writeIndent(sequenceIndentLevel);
+						} else {
+							write(" ");
 						}
-						writePostCommentEmptyLines(sequence);
-						writeIndent(indentLevel + 1);
-					} else {
-						write(" ");
+						writeNode(sequence, sequenceIndentLevel, false, false);
 					}
-					writeNode(sequence, indentLevel + 1, false, false);
 				}
 			} else {
 				throw new Exception("Unknown YAML node type: '" + value.getClass().getSimpleName() + "'");

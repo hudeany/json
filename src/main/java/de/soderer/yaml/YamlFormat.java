@@ -23,33 +23,31 @@ public class YamlFormat {
 
 	private boolean ignoreFlowStyleSettings;
 
-	// TODO
 	/**
 	 * Use no indentation for YamlSequence items in YamlMapping properties values<br />
-	 * Example result when activated<br />
-	 * <pre>
-	 * property:
-	 * - item 1
-	 * - item 2
-	 * </pre>
 	 * Normal default output:<br />
 	 * <pre>
 	 * property:
 	 * &nbsp;&nbsp;- item 1
 	 * &nbsp;&nbsp;- item 2
 	 * </pre>
+	 * Example result when activated<br />
+	 * <pre>
+	 * property:
+	 * - item 1
+	 * - item 2
+	 * </pre>
 	 */
 	private boolean useNoExtraIndentationForYamlSequencesInYamlMappingProperties;
 
-	// TODO
 	/**
 	 * Use no new line for empty YamlSequence or YamlMapping in YamlMapping properties values<br />
-	 * Example result when activated<br />
+	 * Normal default output:<br />
 	 * <pre>
 	 * property1: []
 	 * property2: {}
 	 * </pre>
-	 * Normal default output:<br />
+	 * Example result when deactivated:<br />
 	 * <pre>
 	 * property1:
 	 * &nbsp;&nbsp;[]
@@ -69,7 +67,7 @@ public class YamlFormat {
 		omitEmptyLines = false;
 		ignoreFlowStyleSettings = false;
 		useNoExtraIndentationForYamlSequencesInYamlMappingProperties = false;
-		useNoNewLineForEmptyYamlObjectInYamlMappingProperties = false;
+		useNoNewLineForEmptyYamlObjectInYamlMappingProperties = true;
 	}
 
 	public Linebreak getLinebreak() {
@@ -154,19 +152,79 @@ public class YamlFormat {
 		return this;
 	}
 
+	/**
+	 * Use no indentation for YamlSequence items in YamlMapping properties values<br />
+	 * Normal default output:<br />
+	 * <pre>
+	 * property:
+	 * &nbsp;&nbsp;- item 1
+	 * &nbsp;&nbsp;- item 2
+	 * </pre>
+	 * Example result when activated<br />
+	 * <pre>
+	 * property:
+	 * - item 1
+	 * - item 2
+	 * </pre>
+	 */
 	public boolean isUseNoExtraIndentationForYamlSequencesInYamlMappingProperties() {
 		return useNoExtraIndentationForYamlSequencesInYamlMappingProperties;
 	}
 
+	/**
+	 * Use no indentation for YamlSequence items in YamlMapping properties values<br />
+	 * Normal default output:<br />
+	 * <pre>
+	 * property:
+	 * &nbsp;&nbsp;- item 1
+	 * &nbsp;&nbsp;- item 2
+	 * </pre>
+	 * Example result when activated<br />
+	 * <pre>
+	 * property:
+	 * - item 1
+	 * - item 2
+	 * </pre>
+	 */
 	public YamlFormat setUseNoExtraIndentationForYamlSequencesInYamlMappingProperties(final boolean useNoExtraIndentationForYamlSequencesInYamlMappingProperties) {
 		this.useNoExtraIndentationForYamlSequencesInYamlMappingProperties = useNoExtraIndentationForYamlSequencesInYamlMappingProperties;
 		return this;
 	}
 
+	/**
+	 * Use no new line for empty YamlSequence or YamlMapping in YamlMapping properties values<br />
+	 * Normal default output:<br />
+	 * <pre>
+	 * property1: []
+	 * property2: {}
+	 * </pre>
+	 * Example result when deactivated:<br />
+	 * <pre>
+	 * property1:
+	 * &nbsp;&nbsp;[]
+	 * property2:
+	 * &nbsp;&nbsp;{}
+	 * </pre>
+	 */
 	public boolean isUseNoNewLineForEmptyYamlObjectInYamlMappingProperties() {
 		return useNoNewLineForEmptyYamlObjectInYamlMappingProperties;
 	}
 
+	/**
+	 * Use no new line for empty YamlSequence or YamlMapping in YamlMapping properties values<br />
+	 * Normal default output:<br />
+	 * <pre>
+	 * property1: []
+	 * property2: {}
+	 * </pre>
+	 * Example result when deactivated:<br />
+	 * <pre>
+	 * property1:
+	 * &nbsp;&nbsp;[]
+	 * property2:
+	 * &nbsp;&nbsp;{}
+	 * </pre>
+	 */
 	public YamlFormat setUseNoNewLineForEmptyYamlObjectInYamlMappingProperties(final boolean useNoNewLineForEmptyYamlObjectInYamlMappingProperties) {
 		this.useNoNewLineForEmptyYamlObjectInYamlMappingProperties = useNoNewLineForEmptyYamlObjectInYamlMappingProperties;
 		return this;
