@@ -15,9 +15,9 @@ public class YamlDataTest {
 		yamlMapping.add("property2", new YamlSequence());
 		yamlMapping.add("property3", new YamlSequence());
 
-		Assertions.assertEquals("property1:\n  []\n"
-				+ "property2:\n  []\n"
-				+ "property3:\n  []\n",
+		Assertions.assertEquals("property1: []\n"
+				+ "property2: []\n"
+				+ "property3: []\n",
 				yamlMapping.toString());
 	}
 
@@ -28,9 +28,9 @@ public class YamlDataTest {
 		yamlMapping.add("property2", new YamlMapping());
 		yamlMapping.add("property3", new YamlMapping());
 
-		Assertions.assertEquals("property1:\n  {}\n"
-				+ "property2:\n  {}\n"
-				+ "property3:\n  {}\n",
+		Assertions.assertEquals("property1: {}\n"
+				+ "property2: {}\n"
+				+ "property3: {}\n",
 				yamlMapping.toString());
 	}
 
