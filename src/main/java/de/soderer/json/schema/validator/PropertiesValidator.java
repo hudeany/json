@@ -36,12 +36,12 @@ public class PropertiesValidator extends BaseJsonSchemaValidator {
 				subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, entry.getValue()));
 				propertiesDefinitions.put(entry.getKey(), subValidators);
 			} else if (!(entry.getValue().isJsonObject())) {
-				throw new JsonSchemaDefinitionError("Properties data is not a JsonObject", jsonSchemaPath.addPropertyKey(entry.getKey()));
+				throw new JsonSchemaDefinitionError("Properties data is not a JsonObject", new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()));
 			} else {
 				final List<BaseJsonSchemaValidator> subValidators = JsonSchema.createValidators((JsonObject) entry.getValue(), jsonSchemaDependencyResolver, new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()));
 				propertiesDefinitions.put(entry.getKey(), subValidators);
 
-				if (jsonSchemaDependencyResolver.isDraftV3Mode() && ((JsonObject) entry).containsKey("required") && ((JsonObject) entry).get("required").isBoolean() && ((JsonValueBoolean) ((JsonObject) entry).get("required")).getValue()) {
+				if (jsonSchemaDependencyResolver.isDraftV3Mode() && ((JsonObject) entry.getValue()).containsKey("required") && ((JsonObject) entry.getValue()).get("required").isBoolean() && ((JsonValueBoolean) ((JsonObject) entry.getValue()).get("required")).getValue()) {
 					if (requiredKeysV3 == null) {
 						requiredKeysV3 = new ArrayList<>();
 					}

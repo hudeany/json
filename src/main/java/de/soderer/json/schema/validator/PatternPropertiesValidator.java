@@ -36,13 +36,13 @@ public class PatternPropertiesValidator extends BaseJsonSchemaValidator {
 
 		for (final Entry<String, JsonNode> entry : ((JsonObject) validatorData).entrySet()) {
 			if (entry.getValue() == null) {
-				throw new JsonSchemaDefinitionError("PatternProperties data is null", jsonSchemaPath.addPropertyKey(entry.getKey()));
+				throw new JsonSchemaDefinitionError("PatternProperties data is null", new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()));
 			} else if (entry.getValue().isBoolean()) {
 				Pattern propertyKeyPattern;
 				try {
 					propertyKeyPattern = Pattern.compile(entry.getKey());
 				} catch (final Exception e) {
-					throw new JsonSchemaDefinitionError("PatternProperties data contains invalid RegEx pattern: " + entry.getKey(), jsonSchemaPath.addPropertyKey(entry.getKey()), e);
+					throw new JsonSchemaDefinitionError("PatternProperties data contains invalid RegEx pattern: " + entry.getKey(), new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()), e);
 				}
 
 				final List<BaseJsonSchemaValidator> subValidators = new ArrayList<>();
@@ -53,13 +53,13 @@ public class PatternPropertiesValidator extends BaseJsonSchemaValidator {
 				try {
 					propertyKeyPattern = Pattern.compile(entry.getKey());
 				} catch (final Exception e) {
-					throw new JsonSchemaDefinitionError("PatternProperties data contains invalid RegEx pattern: " + entry.getKey(), jsonSchemaPath.addPropertyKey(entry.getKey()), e);
+					throw new JsonSchemaDefinitionError("PatternProperties data contains invalid RegEx pattern: " + entry.getKey(), new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()), e);
 				}
 
 				final List<BaseJsonSchemaValidator> subValidators = JsonSchema.createValidators((JsonObject) entry.getValue(), jsonSchemaDependencyResolver, new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()));
 				propertiesDefinitionsByPattern.put(propertyKeyPattern, subValidators);
 			} else {
-				throw new JsonSchemaDefinitionError("PatternProperties data is not a JsonObject", jsonSchemaPath.addPropertyKey(entry.getKey()));
+				throw new JsonSchemaDefinitionError("PatternProperties data is not a JsonObject", new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()));
 			}
 		}
 	}

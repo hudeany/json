@@ -26,6 +26,11 @@ public class RequiredValidator extends BaseJsonSchemaValidator {
 
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
+		if (jsonSchemaDependencyResolver.isDraftV3Mode() && validatorData.isBoolean()) {
+			// Handled in PropertiesValidator, nothing to do here (validatorData is not a JsonArray in this case)
+			return;
+		}
+
 		if (!(jsonNode.isJsonObject())) {
 			if (jsonSchemaDependencyResolver.isSimpleMode()) {
 				throw new JsonSchemaDataValidationError("Expected data type 'object' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);

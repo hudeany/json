@@ -46,7 +46,7 @@ public class ContentEncodingValidator extends BaseJsonSchemaValidator {
 		} else {
 			if ("base64".equalsIgnoreCase(((JsonValueString) validatorData).getValue())) {
 				try {
-					Base64.getDecoder().decode(((JsonValueString) validatorData).getValue());
+					Base64.getDecoder().decode(((JsonValueString) jsonNode).getValue());
 				} catch (final Exception e) {
 					throw new JsonSchemaDataValidationError("Invalid base64 encoded data: " + e.getMessage(), jsonPath);
 				}

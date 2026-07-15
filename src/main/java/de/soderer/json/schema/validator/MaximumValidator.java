@@ -50,14 +50,14 @@ public class MaximumValidator extends ExtendedBaseJsonSchemaValidator {
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		if (jsonNode.isInteger()) {
-			final Number dataValue = ((JsonValueInteger) jsonNode).getValue().doubleValue();
+			final Number dataValue = ((JsonValueInteger) jsonNode).getValue();
 			final Number maximumValue;
 			if (validatorData.isString()) {
-				maximumValue = NumberUtilities.parseNumber(((JsonValueString) validatorData).getValue()).doubleValue();
+				maximumValue = NumberUtilities.parseNumber(((JsonValueString) validatorData).getValue());
 			} else if (validatorData.isInteger()) {
-				maximumValue = ((JsonValueInteger) validatorData).getValue().doubleValue();
+				maximumValue = ((JsonValueInteger) validatorData).getValue();
 			} else {
-				maximumValue = ((JsonValueNumber) validatorData).getValue().doubleValue();
+				maximumValue = ((JsonValueNumber) validatorData).getValue();
 			}
 
 			if (NumberUtilities.compare(dataValue, maximumValue) > 0) {
@@ -66,14 +66,14 @@ public class MaximumValidator extends ExtendedBaseJsonSchemaValidator {
 				throw new JsonSchemaDataValidationError("Exclusive maximum number is '" + validatorData + "' but value was '" + dataValue.toString() + "'", jsonPath);
 			}
 		} else if (jsonNode.isNumber()) {
-			final Number dataValue = ((JsonValueNumber) jsonNode).getValue().doubleValue();
+			final Number dataValue = ((JsonValueNumber) jsonNode).getValue();
 			final Number maximumValue;
 			if (validatorData.isString()) {
-				maximumValue = NumberUtilities.parseNumber(((JsonValueString) validatorData).getValue()).doubleValue();
+				maximumValue = NumberUtilities.parseNumber(((JsonValueString) validatorData).getValue());
 			} else if (validatorData.isInteger()) {
-				maximumValue = ((JsonValueInteger) validatorData).getValue().doubleValue();
+				maximumValue = ((JsonValueInteger) validatorData).getValue();
 			} else {
-				maximumValue = ((JsonValueNumber) validatorData).getValue().doubleValue();
+				maximumValue = ((JsonValueNumber) validatorData).getValue();
 			}
 
 			if (NumberUtilities.compare(dataValue, maximumValue) > 0) {

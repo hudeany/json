@@ -1,6 +1,7 @@
 package de.soderer.json.schema;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Map.Entry;
 
 import de.soderer.json.Json5Reader;
@@ -65,7 +66,9 @@ public class JsonSchemaDependency {
 	}
 
 	private void redirectReferences(final JsonObject jsonObject, final String referenceDefinitionStart, final String referenceDefinitionReplacement) throws Exception {
-		for (final Entry<String, JsonNode> entry : jsonObject.entrySet()) {
+		// Iterate over a snapshot of the entries: the loop body calls jsonObject.remove(...)/add(...) on "$ref",
+		// which would otherwise modify the map while entrySet() is being iterated (ConcurrentModificationException).
+		for (final Entry<String, JsonNode> entry : new ArrayList<>(jsonObject.entrySet())) {
 			if ("$ref".equals(entry.getKey()) && entry.getValue() != null && entry.getValue() instanceof JsonValueString && ((JsonValueString) entry.getValue()).getValue().startsWith(referenceDefinitionStart)) {
 				jsonObject.remove("$ref");
 				jsonObject.add("$ref", referenceDefinitionReplacement + ((JsonValueString) entry.getValue()).getValue().substring(referenceDefinitionStart.length()));

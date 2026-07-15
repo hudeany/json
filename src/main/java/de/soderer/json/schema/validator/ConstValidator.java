@@ -38,6 +38,10 @@ public class ConstValidator extends BaseJsonSchemaValidator {
 			return;
 		} else if (jsonNode.isNumber() && validatorDataInclusiveNull.isNumber() && NumberUtilities.compare((((JsonValueNumber) jsonNode).getValue()), (((JsonValueNumber) validatorDataInclusiveNull).getValue())) == 0) {
 			return;
+		} else if (jsonNode.isInteger() && validatorDataInclusiveNull.isNumber() && NumberUtilities.compare((((JsonValueInteger) jsonNode).getValue()), (((JsonValueNumber) validatorDataInclusiveNull).getValue())) == 0) {
+			return;
+		} else if (jsonNode.isNumber() && validatorDataInclusiveNull.isInteger() && NumberUtilities.compare((((JsonValueNumber) jsonNode).getValue()), (((JsonValueInteger) validatorDataInclusiveNull).getValue())) == 0) {
+			return;
 		} else if (jsonNode.isJsonObject() && validatorDataInclusiveNull.isJsonObject() && ((JsonObject) jsonNode).equals(validatorDataInclusiveNull)) {
 			return;
 		} else if (jsonNode.isJsonArray() && validatorDataInclusiveNull.isJsonArray() && ((JsonArray) jsonNode).equals(validatorDataInclusiveNull)) {

@@ -50,14 +50,14 @@ public class MinimumValidator extends ExtendedBaseJsonSchemaValidator {
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		if (jsonNode.isInteger()) {
-			final Number dataValue = ((JsonValueInteger) jsonNode).getValue().doubleValue();
+			final Number dataValue = ((JsonValueInteger) jsonNode).getValue();
 			final Number minimumValue;
 			if (validatorData.isString()) {
-				minimumValue = NumberUtilities.parseNumber(((JsonValueString) validatorData).getValue()).doubleValue();
+				minimumValue = NumberUtilities.parseNumber(((JsonValueString) validatorData).getValue());
 			} else if (validatorData.isInteger()) {
-				minimumValue = ((JsonValueInteger) validatorData).getValue().doubleValue();
+				minimumValue = ((JsonValueInteger) validatorData).getValue();
 			} else {
-				minimumValue = ((JsonValueNumber) validatorData).getValue().doubleValue();
+				minimumValue = ((JsonValueNumber) validatorData).getValue();
 			}
 
 			if (NumberUtilities.compare(dataValue, minimumValue) < 0) {
@@ -66,14 +66,14 @@ public class MinimumValidator extends ExtendedBaseJsonSchemaValidator {
 				throw new JsonSchemaDataValidationError("Exclusive minimum number is '" + validatorData + "' but value was '" + dataValue.toString() + "'", jsonPath);
 			}
 		} else if (jsonNode.isNumber()) {
-			final Number dataValue = ((JsonValueNumber) jsonNode).getValue().doubleValue();
+			final Number dataValue = ((JsonValueNumber) jsonNode).getValue();
 			final Number minimumValue;
 			if (validatorData.isString()) {
-				minimumValue = NumberUtilities.parseNumber(((JsonValueString) validatorData).getValue()).doubleValue();
+				minimumValue = NumberUtilities.parseNumber(((JsonValueString) validatorData).getValue());
 			} else if (validatorData.isInteger()) {
-				minimumValue = ((JsonValueInteger) validatorData).getValue().doubleValue();
+				minimumValue = ((JsonValueInteger) validatorData).getValue();
 			} else {
-				minimumValue = ((JsonValueNumber) validatorData).getValue().doubleValue();
+				minimumValue = ((JsonValueNumber) validatorData).getValue();
 			}
 
 			if (NumberUtilities.compare(dataValue, minimumValue) < 0) {

@@ -8,7 +8,6 @@ import de.soderer.json.JsonArray;
 import de.soderer.json.JsonDataType;
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
-import de.soderer.json.JsonValueInteger;
 import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.exception.DuplicateKeyException;
@@ -102,7 +101,7 @@ public class DisallowValidator extends BaseJsonSchemaValidator {
 			} else {
 				String stringRepresentation = ((JsonValueNumber) jsonNode).getValue().toString();
 				if (stringRepresentation.contains("E")) {
-					final BigDecimal bigDecimal = new BigDecimal(((JsonValueInteger) jsonNode).getValue().toString());
+					final BigDecimal bigDecimal = new BigDecimal(stringRepresentation);
 					return bigDecimal.stripTrailingZeros().scale() <= 0;
 				} else {
 					while (stringRepresentation.contains(".0")) {
