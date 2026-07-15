@@ -156,7 +156,9 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 						throw new JsonSchemaDataValidationError("Maximum amount of array items is 0 but was " + ((JsonArray) jsonNode).size(), jsonPath);
 					}
 				} else if (additionalItemsDefinitions != null) {
-					for (int i = indexedValidatorPacks.size(); i < ((JsonArray) jsonNode).size(); i++) {
+					// indexedValidatorPacks is null in this branch (no "items" array / "prefixItems" defined),
+					// so all array entries starting at index 0 are "additional" items.
+					for (int i = 0; i < ((JsonArray) jsonNode).size(); i++) {
 						JsonNode newJsonNode;
 						try {
 							newJsonNode = ((JsonArray) jsonNode).get(i).setRootNode(false);

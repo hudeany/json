@@ -14,20 +14,32 @@ import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
 
 /**
- * JSON subschema that matches a simple data value to a regex pattern
+ * JSON subschema that matches a simple data value to a regex pattern<br />
+ * <br />
+ * Security note: The regex pattern is taken directly from the JSON schema and compiled/executed via
+ * {@link java.util.regex.Pattern}, without any complexity or timeout guard. A schema from an untrusted source could
+ * contain a pattern causing catastrophic backtracking (ReDoS) against crafted input data. Only use JSON schemas from
+ * trusted sources, or validate/sanitize patterns before using this library with schemas of unknown origin.
  */
 public class PatternValidator extends BaseJsonSchemaValidator {
+	private final Pattern pattern;
+
 	public PatternValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
 		if (!(validatorData.isString())) {
 			throw new JsonSchemaDefinitionError("Pattern is no string", jsonSchemaPath);
 		}
+
+		try {
+			pattern = Pattern.compile(((JsonValueString) validatorData).getValue());
+		} catch (final Exception e) {
+			throw new JsonSchemaDefinitionError("Pattern '" + ((JsonValueString) validatorData).getValue() + "' is not a valid RegEx pattern", jsonSchemaPath, e);
+		}
 	}
 
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
-		final Pattern pattern = Pattern.compile(((JsonValueString) validatorData).getValue());
 		if (jsonNode.isInteger()) {
 			if (jsonSchemaDependencyResolver.isSimpleMode()) {
 				if (!pattern.matcher(((JsonValueInteger) jsonNode).getValue().toString()).find()) {

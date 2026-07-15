@@ -114,7 +114,10 @@ public class JsonSchema {
 			throw new JsonSchemaDefinitionError("Contains null data", null);
 		} else if (jsonNode.isBoolean()) {
 			validators = new ArrayList<>();
-			validators.add(new BooleanValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(), jsonNode));
+			// A top-level boolean schema has no "$ref"/"definitions" of its own, so no dependency resolver is needed
+			// or available yet at this point (readSchemaData(), which creates it, is only called in the JsonObject
+			// branch below).
+			validators.add(new BooleanValidator(null, new JsonSchemaPath(), jsonNode));
 		} else if (jsonNode.isJsonObject()) {
 			try {
 				readSchemaData((JsonObject) jsonNode, jsonSchemaConfiguration, dependencies);

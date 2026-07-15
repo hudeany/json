@@ -36,14 +36,42 @@ public class ReferenceValidator extends BaseJsonSchemaValidator {
 
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
-		List<BaseJsonSchemaValidator> subValidators;
+		final String referenceKey = ((JsonValueString) validatorData).getValue();
+		final String jsonPathString = jsonPath == null ? "" : jsonPath.toString();
+
+		// Detect a genuine cycle: the same "$ref" being resolved again for the exact same JSON data path means the
+		// schema keeps referring back to itself without ever descending into a different part of the data.
+		if (jsonSchemaDependencyResolver.enterReferenceResolution(referenceKey, jsonPathString)) {
+			throw new JsonSchemaDataValidationError("Cyclic reference detected for '" + referenceKey + "'", jsonPath);
+		}
 		try {
-			final JsonObject dereferencedValue = jsonSchemaDependencyResolver.getDependencyByReference(((JsonValueString) validatorData).getValue(), jsonSchemaPath);
+			final List<BaseJsonSchemaValidator> subValidators = getOrBuildSubValidators(referenceKey, jsonPath);
+			for (final BaseJsonSchemaValidator subValidator : subValidators) {
+				subValidator.validate(jsonNode, jsonPath);
+			}
+		} finally {
+			jsonSchemaDependencyResolver.exitReferenceResolution(referenceKey, jsonPathString);
+		}
+	}
+
+	/**
+	 * Builds the sub-validators for this reference once and caches them on the shared
+	 * {@link JsonSchemaDependencyResolver}, instead of rebuilding the whole sub-validator tree on every single data
+	 * node that this "$ref" is applied to.
+	 */
+	private List<BaseJsonSchemaValidator> getOrBuildSubValidators(final String referenceKey, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
+		List<BaseJsonSchemaValidator> subValidators = jsonSchemaDependencyResolver.getCachedReferenceValidators(referenceKey);
+		if (subValidators != null) {
+			return subValidators;
+		}
+
+		try {
+			final JsonObject dereferencedValue = jsonSchemaDependencyResolver.getDependencyByReference(referenceKey, jsonSchemaPath);
 			if (dereferencedValue == null) {
 				throw new JsonSchemaDefinitionError("Invalid JSON schema reference data type for key '" + validatorData + "'. Expected 'object' but was 'null'", jsonSchemaPath);
 			} else {
-				jsonSchemaPath = new JsonSchemaPath(((JsonValueString) validatorData).getValue());
-				subValidators = JsonSchema.createValidators(dereferencedValue, jsonSchemaDependencyResolver, jsonSchemaPath);
+				final JsonSchemaPath referenceSchemaPath = new JsonSchemaPath(referenceKey);
+				subValidators = JsonSchema.createValidators(dereferencedValue, jsonSchemaDependencyResolver, referenceSchemaPath);
 			}
 		} catch (final JsonSchemaDefinitionError e) {
 			throw new JsonSchemaDataValidationError("JsonSchemaDefinitionError while using JSON schema reference: " + e.getMessage(), jsonPath, e);
@@ -51,12 +79,7 @@ public class ReferenceValidator extends BaseJsonSchemaValidator {
 			throw new JsonSchemaDataValidationError("JsonSchemaDefinitionError while using JSON schema reference: " + e.getMessage(), jsonPath, e);
 		}
 
-		try {
-			for (final BaseJsonSchemaValidator subValidator : subValidators) {
-				subValidator.validate(jsonNode, jsonPath);
-			}
-		} catch (@SuppressWarnings("unused") final StackOverflowError e) {
-			throw new JsonSchemaDataValidationError("Cyclic reference detected", jsonPath);
-		}
+		jsonSchemaDependencyResolver.putCachedReferenceValidators(referenceKey, subValidators);
+		return subValidators;
 	}
 }

@@ -17,7 +17,11 @@ import de.soderer.json.utilities.NetworkUtilities;
 import de.soderer.json.utilities.TextUtilities;
 
 /**
- * Validates string values against special data formats
+ * Validates string values against special data formats<br />
+ * <br />
+ * Security note: see {@link PatternValidator} regarding ReDoS risk — the "regex" format only checks that a data
+ * value compiles as a pattern, but "pattern"/"patternProperties"/"propertyNames" elsewhere in a schema execute
+ * regex patterns from the schema against data without any complexity or timeout guard.
  */
 public class FormatValidator extends BaseJsonSchemaValidator {
 	public FormatValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError {

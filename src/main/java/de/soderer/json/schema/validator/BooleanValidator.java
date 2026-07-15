@@ -25,7 +25,7 @@ public class BooleanValidator extends BaseJsonSchemaValidator {
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		if (!((JsonValueBoolean) validatorData).getValue()) {
-			throw new JsonSchemaDataValidationError("No option of 'anyOf' property did apply to JsonNode", jsonPath);
+			throw new JsonSchemaDataValidationError("JSON schema is boolean 'false' at '" + jsonSchemaPath + "', no data is valid against it", jsonPath);
 		}
 	}
 }
