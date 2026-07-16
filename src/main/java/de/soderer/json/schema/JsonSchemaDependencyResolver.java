@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -286,7 +285,7 @@ public class JsonSchemaDependencyResolver {
 	 * network policy that callers should enforce via {@link #setDownloadReferencedSchemas(boolean)} and/or a
 	 * network-level egress restriction. Downloading of referenced schemas is disabled by default for this reason.
 	 */
-	private void validateDownloadUrl(final String url, final String originalPackageName) throws JsonSchemaDefinitionError {
+	private static void validateDownloadUrl(final String url, final String originalPackageName) throws JsonSchemaDefinitionError {
 		final URI uri;
 		try {
 			uri = URI.create(url);
