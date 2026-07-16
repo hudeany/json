@@ -47,7 +47,7 @@
 	</target>
 
 	<target name="create_jar" depends="cleanup_before, download_dependencies">
-		<javac srcdir="src/main/java" destdir="${buildPath}/bin" source="17" target="17" includeantruntime="false" encoding="UTF-8" debug="true" deprecation="false" nowarn="true">
+		<javac release="17" srcdir="src/main/java" destdir="${buildPath}/bin" includeantruntime="false" encoding="UTF-8" debug="true" deprecation="false" nowarn="true">
 			<compilerarg value="-Xlint:unchecked" />
 			<compilerarg value="-parameters" />
 		</javac>
@@ -94,7 +94,7 @@
 			<pathelement path="${buildPath}/testbin" />
 		</path>
 
-		<javac destdir="${buildPath}/testbin" srcdir="src/test/java" includeantruntime="false" source="17" target="17" failonerror="true">
+		<javac release="17" destdir="${buildPath}/testbin" srcdir="src/test/java" includeantruntime="false" failonerror="true">
 			<classpath refid="test.classpath" />
 			<include name="**/*.java" />
 		</javac>
