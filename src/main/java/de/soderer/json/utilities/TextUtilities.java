@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.LineNumberReader;
 import java.io.StringReader;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +18,8 @@ import java.util.regex.Pattern;
  * This class does no Logging via Log4J, because it is often used before its initialisation
  */
 public class TextUtilities {
+	public static final int EOF = -1;
+
 	/**
 	 * A simple string for testing, which includes all ASCII characters
 	 */
@@ -33,6 +34,59 @@ public class TextUtilities {
 	 * A simple string for testing, which includes all special characters
 	 */
 	public static final String SPECIAL_TEST_STRING = "\n\r\t\b\f\u00c4\u00e4\u00d6\u00f6\u00dc\u00fc\u00df";
+
+	/**
+	 * Enum to represent a linebreak type of an text
+	 */
+	public enum LineBreak {
+		/**
+		 * No linebreak
+		 */
+		Unknown(null),
+
+		/**
+		 * Multiple linebreak types
+		 */
+		Mixed(null),
+
+		/**
+		 * Unix/Linux linebreak ("\n")
+		 */
+		Unix("\n"),
+
+		/**
+		 * Mac/Apple linebreak ("\r")
+		 */
+		Mac("\r"),
+
+		/**
+		 * Windows linebreak ("\r\n")
+		 */
+		Windows("\r\n");
+
+		private final String representationString;
+
+		@Override
+		public String toString() {
+			return representationString;
+		}
+
+		LineBreak(final String representationString) {
+			this.representationString = representationString;
+		}
+
+		public static LineBreak getLineBreakTypeByName(final String lineBreakTypeName) {
+			if ("WINDOWS".equalsIgnoreCase(lineBreakTypeName)) {
+				return LineBreak.Windows;
+			} else if ("UNIX".equalsIgnoreCase(lineBreakTypeName)) {
+				return LineBreak.Unix;
+			} else if ("MAC".equalsIgnoreCase(lineBreakTypeName)) {
+				return LineBreak.Mac;
+			} else {
+				return LineBreak.Unknown;
+			}
+		}
+	}
 
 	/**
 	 * Trim a string to an exact length with alignment right for display purposes If the string underruns the length, it will be filled up with blanks on the left side. If the string exceeds the
@@ -119,68 +173,32 @@ public class TextUtilities {
 	}
 
 	/**
-	 * Reduce a text to a maximum number of lines. The type of linebreaks in the result string will not be changed. If the text has less lines then maximum it will be returned unchanged.
-	 *
-	 * @param value
-	 * @param maxLines
-	 * @return
-	 */
-	public static String trimToMaxNumberOfLines(final String value, final int maxLines) {
-		final String normalizedValue = normalizeLinebreaks(value, Linebreak.Unix);
-		int count = 0;
-		int nextLinebreak = 0;
-		while (nextLinebreak != -1 && count < maxLines) {
-			nextLinebreak = normalizedValue.indexOf(Linebreak.Unix.toString(), nextLinebreak + 1);
-			count++;
-		}
-
-		if (nextLinebreak != -1) {
-			final Linebreak originalLinebreakType = detectLinebreakType(value);
-			return normalizeLinebreaks(normalizedValue.substring(0, nextLinebreak + 1), originalLinebreakType) + "...";
-		} else {
-			return value;
-		}
-	}
-
-	/**
-	 * Detect the type of linebreaks in a text.
-	 *
-	 * @param value
-	 * @return
-	 */
-	public static Linebreak detectLinebreakType(final String value) {
-		final TextPropertiesReader textPropertiesReader = new TextPropertiesReader(value);
-		textPropertiesReader.readProperties();
-		return textPropertiesReader.getLinebreakType();
-	}
-
-	/**
 	 * Change all linebreaks of a text, no matter what type they are, to a given type
 	 *
 	 * @param value
 	 * @param type
 	 * @return
 	 */
-	public static String normalizeLinebreaks(final String value, final Linebreak type) {
+	public static String normalizeLineBreaks(final String value, final LineBreak type) {
 		if (value == null) {
 			return value;
 		} else {
-			final String returnString = value.replace(Linebreak.Windows.toString(), Linebreak.Unix.toString()).replace(Linebreak.Mac.toString(), Linebreak.Unix.toString());
-			if (type == Linebreak.Mac) {
-				return returnString.replace(Linebreak.Unix.toString(), Linebreak.Mac.toString());
-			} else if (type == Linebreak.Windows) {
-				return returnString.replace(Linebreak.Unix.toString(), Linebreak.Windows.toString());
+			final String returnString = value.replace(LineBreak.Windows.toString(), LineBreak.Unix.toString()).replace(LineBreak.Mac.toString(), LineBreak.Unix.toString());
+			if (type == LineBreak.Mac) {
+				return returnString.replace(LineBreak.Unix.toString(), LineBreak.Mac.toString());
+			} else if (type == LineBreak.Windows) {
+				return returnString.replace(LineBreak.Unix.toString(), LineBreak.Windows.toString());
 			} else {
 				return returnString;
 			}
 		}
 	}
 
-	public static String normalizeLinebreaksForCurrentSystem(final String value) {
+	public static String normalizeLineBreaksForCurrentSystem(final String value) {
 		if (SystemUtilities.isWindowsSystem()) {
-			return normalizeLinebreaks(value, Linebreak.Windows);
+			return normalizeLineBreaks(value, LineBreak.Windows);
 		} else {
-			return normalizeLinebreaks(value, Linebreak.Unix);
+			return normalizeLineBreaks(value, LineBreak.Unix);
 		}
 	}
 
@@ -211,7 +229,7 @@ public class TextUtilities {
 	 * @return
 	 * @throws IOException
 	 */
-	public static int getLineCount(final String dataString) throws IOException {
+	public static int getLineCount(final String dataString) {
 		if (dataString == null) {
 			return 0;
 		} else if ("".equals(dataString)) {
@@ -223,6 +241,8 @@ public class TextUtilities {
 				}
 
 				return lineNumberReader.getLineNumber();
+			} catch (final IOException e) {
+				throw new RuntimeException(e);
 			}
 		}
 	}
@@ -267,19 +287,19 @@ public class TextUtilities {
 			int lineCount = 1;
 			int position = 0;
 			while (lineCount < lineNumber) {
-				final int nextLinebreakMac = dataString.indexOf(Linebreak.Mac.toString(), position);
-				final int nextLinebreakUnix = dataString.indexOf(Linebreak.Unix.toString(), position);
-				final int nextLinebreakWindows = dataString.indexOf(Linebreak.Windows.toString(), position);
+				final int nextLineBreakMac = dataString.indexOf(LineBreak.Mac.toString(), position);
+				final int nextLineBreakUnix = dataString.indexOf(LineBreak.Unix.toString(), position);
+				final int nextLineBreakWindows = dataString.indexOf(LineBreak.Windows.toString(), position);
 				int nextPosition = -1;
 				int lineBreakSize = 0;
-				if (nextLinebreakMac >= 0 && (nextLinebreakUnix < 0 || nextLinebreakMac < nextLinebreakUnix) && (nextLinebreakWindows < 0 || nextLinebreakMac < nextLinebreakWindows)) {
-					nextPosition = nextLinebreakMac;
+				if (nextLineBreakMac >= 0 && (nextLineBreakUnix < 0 || nextLineBreakMac < nextLineBreakUnix) && (nextLineBreakWindows < 0 || nextLineBreakMac < nextLineBreakWindows)) {
+					nextPosition = nextLineBreakMac;
 					lineBreakSize = 1;
-				} else if (nextLinebreakUnix >= 0 && (nextLinebreakWindows < 0 || nextLinebreakUnix < nextLinebreakWindows)) {
-					nextPosition = nextLinebreakUnix;
+				} else if (nextLineBreakUnix >= 0 && (nextLineBreakWindows < 0 || nextLineBreakUnix < nextLineBreakWindows)) {
+					nextPosition = nextLineBreakUnix;
 					lineBreakSize = 1;
-				} else if (nextLinebreakWindows >= 0) {
-					nextPosition = nextLinebreakWindows;
+				} else if (nextLineBreakWindows >= 0) {
+					nextPosition = nextLineBreakWindows;
 					lineBreakSize = 2;
 				}
 
@@ -310,16 +330,16 @@ public class TextUtilities {
 		} else if (index == 0) {
 			return 0;
 		} else {
-			final int nextLinebreakMac = dataString.lastIndexOf(Linebreak.Mac.toString(), index);
-			final int nextLinebreakUnix = dataString.lastIndexOf(Linebreak.Unix.toString(), index);
-			final int nextLinebreakWindows = dataString.lastIndexOf(Linebreak.Windows.toString(), index);
+			final int nextLineBreakMac = dataString.lastIndexOf(LineBreak.Mac.toString(), index);
+			final int nextLineBreakUnix = dataString.lastIndexOf(LineBreak.Unix.toString(), index);
+			final int nextLineBreakWindows = dataString.lastIndexOf(LineBreak.Windows.toString(), index);
 
-			if (nextLinebreakMac >= 0 && (nextLinebreakUnix < 0 || nextLinebreakMac < nextLinebreakUnix) && (nextLinebreakWindows < 0 || nextLinebreakMac < nextLinebreakWindows)) {
-				return nextLinebreakMac + Linebreak.Mac.toString().length();
-			} else if (nextLinebreakUnix >= 0 && (nextLinebreakWindows < 0 || nextLinebreakUnix < nextLinebreakWindows)) {
-				return nextLinebreakUnix + Linebreak.Unix.toString().length();
-			} else if (nextLinebreakWindows >= 0) {
-				return nextLinebreakWindows + Linebreak.Windows.toString().length();
+			if (nextLineBreakMac >= 0 && (nextLineBreakUnix < 0 || nextLineBreakMac < nextLineBreakUnix) && (nextLineBreakWindows < 0 || nextLineBreakMac < nextLineBreakWindows)) {
+				return nextLineBreakMac + LineBreak.Mac.toString().length();
+			} else if (nextLineBreakUnix >= 0 && (nextLineBreakWindows < 0 || nextLineBreakUnix < nextLineBreakWindows)) {
+				return nextLineBreakUnix + LineBreak.Unix.toString().length();
+			} else if (nextLineBreakWindows >= 0) {
+				return nextLineBreakWindows + LineBreak.Windows.toString().length();
 			} else {
 				return 0;
 			}
@@ -339,16 +359,16 @@ public class TextUtilities {
 		} else if (index == 0) {
 			return 0;
 		} else {
-			final int nextLinebreakMac = dataString.indexOf(Linebreak.Mac.toString(), index);
-			final int nextLinebreakUnix = dataString.indexOf(Linebreak.Unix.toString(), index);
-			final int nextLinebreakWindows = dataString.indexOf(Linebreak.Windows.toString(), index);
+			final int nextLineBreakMac = dataString.indexOf(LineBreak.Mac.toString(), index);
+			final int nextLineBreakUnix = dataString.indexOf(LineBreak.Unix.toString(), index);
+			final int nextLineBreakWindows = dataString.indexOf(LineBreak.Windows.toString(), index);
 
-			if (nextLinebreakMac >= 0 && (nextLinebreakUnix < 0 || nextLinebreakMac > nextLinebreakUnix) && (nextLinebreakWindows < 0 || nextLinebreakMac > nextLinebreakWindows)) {
-				return nextLinebreakMac;
-			} else if (nextLinebreakUnix >= 0 && (nextLinebreakWindows < 0 || nextLinebreakUnix - 1 > nextLinebreakWindows)) {
-				return nextLinebreakUnix;
-			} else if (nextLinebreakWindows >= 0) {
-				return nextLinebreakWindows;
+			if (nextLineBreakMac >= 0 && (nextLineBreakUnix < 0 || nextLineBreakMac > nextLineBreakUnix) && (nextLineBreakWindows < 0 || nextLineBreakMac > nextLineBreakWindows)) {
+				return nextLineBreakMac;
+			} else if (nextLineBreakUnix >= 0 && (nextLineBreakWindows < 0 || nextLineBreakUnix - 1 > nextLineBreakWindows)) {
+				return nextLineBreakUnix;
+			} else if (nextLineBreakWindows >= 0) {
+				return nextLineBreakWindows;
 			} else {
 				return dataString.length();
 			}
@@ -491,13 +511,10 @@ public class TextUtilities {
 					textPart = dataString.substring(0, textPosition);
 				}
 				int lineNumber = getLineCount(textPart);
-				if (textPart.endsWith(Linebreak.Unix.toString()) || textPart.endsWith(Linebreak.Mac.toString())) {
+				if (textPart.endsWith(LineBreak.Unix.toString()) || textPart.endsWith(LineBreak.Mac.toString())) {
 					lineNumber++;
 				}
 				return lineNumber;
-			} catch (final IOException e) {
-				e.printStackTrace();
-				return -1;
 			} catch (final Exception e) {
 				e.printStackTrace();
 				return -1;
@@ -550,9 +567,8 @@ public class TextUtilities {
 	 * @param insertText
 	 * @param lineNumber
 	 * @return
-	 * @throws IOException
 	 */
-	public static String insertTextBeforeLine(final String dataString, final String insertText, final int lineNumber) throws IOException {
+	public static String insertTextBeforeLine(final String dataString, final String insertText, final int lineNumber) {
 		if (lineNumber > -1) {
 			final int startIndex = TextUtilities.getStartIndexOfLine(dataString, lineNumber);
 			final StringBuilder dataBuilder = new StringBuilder(dataString);
@@ -570,9 +586,8 @@ public class TextUtilities {
 	 * @param insertText
 	 * @param lineNumber
 	 * @return
-	 * @throws IOException
 	 */
-	public static String insertTextAfterLine(final String dataString, final String insertText, final int lineNumber) throws IOException {
+	public static String insertTextAfterLine(final String dataString, final String insertText, final int lineNumber) {
 		if (lineNumber > -1) {
 			final int startIndex = TextUtilities.getStartIndexOfLine(dataString, lineNumber + 1);
 			final StringBuilder dataBuilder = new StringBuilder(dataString);
@@ -580,76 +595,6 @@ public class TextUtilities {
 			return dataBuilder.toString();
 		} else {
 			return dataString;
-		}
-	}
-
-	/**
-	 * Try to detect the encoding of a byte array xml data.
-	 *
-	 *
-	 * @param data
-	 * @return
-	 */
-	public static Tuple<String, Boolean> detectEncoding(final byte[] data) {
-		if (data.length > 2 && data[0] == BOM.UTF_16_BE.getBytes()[0] && data[1] == BOM.UTF_16_BE.getBytes()[1]) {
-			return new Tuple<>("UTF-16BE", true);
-		} else if (data.length > 2 && data[0] == BOM.UTF_16_LE.getBytes()[0] && data[1] == BOM.UTF_16_LE.getBytes()[1]) {
-			return new Tuple<>("UTF-16LE", true);
-		} else if (data.length > 3 && data[0] == BOM.UTF_8.getBytes()[0] && data[1] == BOM.UTF_8.getBytes()[1] && data[2] == BOM.UTF_8.getBytes()[2]) {
-			return new Tuple<>(StandardCharsets.UTF_8.name(), true);
-		} else {
-			// Detect Xml Encoding
-			try {
-				// Use first data part only to speed up
-				final String interimString = new String(data, 0, Math.min(data.length, 100), StandardCharsets.UTF_8).toLowerCase();
-				final String reducedInterimString = interimString.replace("\u0000", "");
-				int encodingStart = reducedInterimString.indexOf("encoding");
-				if (encodingStart >= 0) {
-					encodingStart = reducedInterimString.indexOf("=", encodingStart);
-					if (encodingStart >= 0) {
-						encodingStart++;
-						while (reducedInterimString.charAt(encodingStart) == ' ') {
-							encodingStart++;
-						}
-						if (reducedInterimString.charAt(encodingStart) == '"' || reducedInterimString.charAt(encodingStart) == '\'') {
-							encodingStart++;
-						}
-						final StringBuilder encodingString = new StringBuilder();
-						while (Character.isLetter(reducedInterimString.charAt(encodingStart)) || Character.isDigit(reducedInterimString.charAt(encodingStart))
-								|| reducedInterimString.charAt(encodingStart) == '-') {
-							encodingString.append(reducedInterimString.charAt(encodingStart));
-							encodingStart++;
-						}
-						Charset.forName(encodingString.toString());
-						if (encodingString.toString().toLowerCase().startsWith("utf-16") && data[0] == 0) {
-							return new Tuple<>("UTF-16BE", false);
-						} else if (encodingString.toString().toLowerCase().startsWith("utf-16") && data[1] == 0) {
-							return new Tuple<>("UTF-16LE", false);
-						} else {
-							return new Tuple<>(encodingString.toString().toUpperCase(), false);
-						}
-					}
-				}
-			} catch (final Exception e) {
-				e.printStackTrace();
-			}
-
-			final String interimString = new String(data, StandardCharsets.UTF_8).toLowerCase();
-
-			final int zeroIndex = interimString.indexOf('\u0000');
-			if (zeroIndex >= 0 && zeroIndex <= 100) {
-				if (zeroIndex % 2 == 0) {
-					return new Tuple<>("UTF-16BE", false);
-				} else {
-					return new Tuple<>("UTF-16LE", false);
-				}
-			}
-
-			if (interimString.contains("ä") || interimString.contains("ö") || interimString.contains("ü") || interimString.contains("Ä") || interimString.contains("Ö") || interimString.contains("Ü") || interimString.contains("ß")) {
-				return new Tuple<>(StandardCharsets.UTF_8.name(), false);
-			}
-
-			return null;
 		}
 	}
 
@@ -799,7 +744,7 @@ public class TextUtilities {
 		int bufferPrevious = 0;
 		int bufferNext;
 		returnList.add(0L);
-		while ((bufferNext = input.read()) != -1) {
+		while ((bufferNext = input.read()) != EOF) {
 			if ((char) bufferNext == '\n') {
 				returnList.add(position + 1);
 			} else if ((char) bufferPrevious == '\r') {
@@ -836,7 +781,7 @@ public class TextUtilities {
 			input.skip(startIndex);
 			position = startIndex;
 		}
-		while ((bufferNext = input.read()) != -1) {
+		while ((bufferNext = input.read()) != EOF) {
 			if ((char) bufferNext == '\n') {
 				returnList.add(position + 1);
 			} else if ((char) bufferPrevious == '\r') {
@@ -866,7 +811,7 @@ public class TextUtilities {
 		long position = 0;
 		int bufferPrevious = 0;
 		int bufferNext;
-		while ((bufferNext = dataInputStream.read()) != -1) {
+		while ((bufferNext = dataInputStream.read()) != EOF) {
 			if ((char) bufferNext == '\n' && (char) bufferPrevious != '\r') {
 				returnList.add(position);
 			} else if ((char) bufferNext == '\r') {
@@ -887,7 +832,23 @@ public class TextUtilities {
 	 * @return
 	 */
 	public static String breakLinesAfterMaximumLength(final String dataString, final int maximumLength) {
-		return Utilities.join(dataString.split("(?<=\\G.{" + maximumLength + "})"), "\n");
+		if (maximumLength <= 0) {
+			return dataString;
+		}
+		final String[] originalLines = dataString.split("\n", -1);
+		final StringBuilder result = new StringBuilder();
+		for (int i = 0; i < originalLines.length; i++) {
+			final String line = originalLines[i];
+			if (line.length() > maximumLength) {
+				result.append(Utilities.join(line.split("(?<=\\G.{" + maximumLength + "})"), "\n"));
+			} else {
+				result.append(line);
+			}
+			if (i < originalLines.length - 1) {
+				result.append("\n");
+			}
+		}
+		return result.toString();
 	}
 
 	/**
@@ -1042,7 +1003,7 @@ public class TextUtilities {
 		return null;
 	}
 
-	public static String getProsaParameter(final String text, final String parameterName) throws Exception {
+	public static String getProsaParameter(final String text, final String parameterName) {
 		if (Utilities.isBlank(text)) {
 			return null;
 		} else {
@@ -1125,6 +1086,24 @@ public class TextUtilities {
 		return text.replaceFirst("(?s)" + Pattern.quote(searchText) + "(?!.*?" + Pattern.quote(searchText) + ")", replacement);
 	}
 
+	public static String removeHtmlTags(final String data) {
+		String returnValue = data;
+		int nextTagStart = returnValue.indexOf("<");
+		int nextTagEnd = -1;
+		if (nextTagStart > -1) {
+			nextTagEnd = returnValue.indexOf(">", nextTagStart + 1);
+		}
+		while (nextTagStart > -1 && nextTagEnd > -1) {
+			returnValue = returnValue.substring(0, nextTagStart) + returnValue.substring(nextTagEnd + 1);
+			nextTagStart = returnValue.indexOf("<");
+			nextTagEnd = -1;
+			if (nextTagStart > -1) {
+				nextTagEnd = returnValue.indexOf(">", nextTagStart + 1);
+			}
+		}
+		return returnValue;
+	}
+
 	public static String decodeUnicodeEncoding(final String input) {
 		final Pattern pattern = Pattern.compile("\\\\u[0-9a-fA-F]{4}");
 		final Matcher matcher = pattern.matcher(input);
@@ -1143,5 +1122,25 @@ public class TextUtilities {
 
 	public static int getUnicodeStringLength(final String input) {
 		return input.codePointCount(0, input.length());
+	}
+
+	public static int getMaximumLineLength(final String text) throws IOException {
+		int maximum = 0;
+		for (final String line : getLines(text)) {
+			maximum = Math.max(maximum, line.length());
+		}
+		return maximum;
+	}
+
+	public static String ensureMaximumLineLength(final String text, final int maxLineLength) throws IOException {
+		String returnText = "";
+		for (String line : getLines(text)) {
+			while (line.length() > maxLineLength) {
+				returnText += line.substring(0, maxLineLength) + "\n";
+				line = line.substring(maxLineLength);
+			}
+			returnText += line + "\n";
+		}
+		return returnText;
 	}
 }
