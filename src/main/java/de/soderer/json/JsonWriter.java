@@ -57,17 +57,25 @@ public class JsonWriter implements Closeable {
 		this.encoding = encoding == null ? DEFAULT_ENCODING : encoding;
 	}
 
-	public JsonWriter setIndentation(final String indentation) {
+	public void setIndentation(final String indentation) {
 		if (indentation == null) {
 			this.indentation = "";
 		} else {
 			this.indentation = indentation;
 		}
+	}
+
+	public JsonWriter withIndentation(final String newIndentation) {
+		setIndentation(newIndentation);
 		return this;
 	}
 
-	public JsonWriter setIndentation(final char indentationCharacter) {
+	public void setIndentation(final char indentationCharacter) {
 		indentation = Character.toString(indentationCharacter);
+	}
+
+	public JsonWriter withIndentation(final char newIndentationCharacter) {
+		setIndentation(newIndentationCharacter);
 		return this;
 	}
 
@@ -75,12 +83,16 @@ public class JsonWriter implements Closeable {
 		return linebreak;
 	}
 
-	public JsonWriter setLinebreak(final String linebreak) {
+	public void setLinebreak(final String linebreak) {
 		if (linebreak == null) {
 			this.linebreak = "";
 		} else {
 			this.linebreak = linebreak;
 		}
+	}
+
+	public JsonWriter withLinebreak(final String newLinebreak) {
+		setLinebreak(newLinebreak);
 		return this;
 	}
 
@@ -88,12 +100,16 @@ public class JsonWriter implements Closeable {
 		return separator;
 	}
 
-	public JsonWriter setSeparator(final String separator) {
+	public void setSeparator(final String separator) {
 		if (separator == null) {
 			this.separator = "";
 		} else {
 			this.separator = separator;
 		}
+	}
+
+	public JsonWriter withSeparator(final String newSeparator) {
+		setSeparator(newSeparator);
 		return this;
 	}
 
@@ -101,7 +117,7 @@ public class JsonWriter implements Closeable {
 		return writtenCharacters;
 	}
 
-	public JsonWriter setUglify(final boolean value) {
+	public void setUglify(final boolean value) {
 		if (value) {
 			linebreak = "";
 			indentation = "";
@@ -111,6 +127,10 @@ public class JsonWriter implements Closeable {
 			indentation = "\t";
 			separator = " ";
 		}
+	}
+
+	public JsonWriter withUglify(final boolean newValue) {
+		setUglify(newValue);
 		return this;
 	}
 

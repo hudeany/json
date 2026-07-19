@@ -554,7 +554,7 @@ public class YamlReader extends BasicReadAheadReader {
 		if ("str".equals(datatype)) {
 			if (yamlNode instanceof final YamlScalar scalar) {
 				if (scalar.getType() != YamlScalarType.STRING) {
-					return new YamlScalar(scalar.getValueString(), YamlScalarType.STRING).setInlineComment(scalar.getInlineComment());
+					return new YamlScalar(scalar.getValueString(), YamlScalarType.STRING).withInlineComment(scalar.getInlineComment());
 				} else {
 					return yamlNode;
 				}
@@ -564,7 +564,7 @@ public class YamlReader extends BasicReadAheadReader {
 		} else if ("float".equals(datatype)) {
 			if (yamlNode instanceof final YamlScalar scalar) {
 				if (scalar.getType() != YamlScalarType.NUMBER) {
-					return new YamlScalar(scalar.getValueString(), YamlScalarType.NUMBER).setInlineComment(scalar.getInlineComment());
+					return new YamlScalar(scalar.getValueString(), YamlScalarType.NUMBER).withInlineComment(scalar.getInlineComment());
 				} else {
 					return yamlNode;
 				}
@@ -693,7 +693,7 @@ public class YamlReader extends BasicReadAheadReader {
 				if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
 					indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
 				}
-				keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.DOUBLE);
+				keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.DOUBLE);
 				skipBlanks();
 				if (peekCharMatch('#')) {
 					keyOrScalarNode.setInlineComment(readInlineComment());
@@ -702,7 +702,7 @@ public class YamlReader extends BasicReadAheadReader {
 				if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
 					indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
 				}
-				keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.SINGLE);
+				keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.SINGLE);
 				skipBlanks();
 				if (peekCharMatch('#')) {
 					keyOrScalarNode.setInlineComment(readInlineComment());
@@ -791,7 +791,7 @@ public class YamlReader extends BasicReadAheadReader {
 					if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
 						indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
 					}
-					keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.DOUBLE);
+					keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.DOUBLE);
 					skipBlanks();
 					if (peekCharMatch('#')) {
 						keyOrScalarNode.setInlineComment(readInlineComment());
@@ -800,7 +800,7 @@ public class YamlReader extends BasicReadAheadReader {
 					if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
 						indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
 					}
-					keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.SINGLE);
+					keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.SINGLE);
 					skipBlanks();
 					if (peekCharMatch('#')) {
 						keyOrScalarNode.setInlineComment(readInlineComment());
@@ -906,9 +906,9 @@ public class YamlReader extends BasicReadAheadReader {
 
 			YamlNode keyNode;
 			if (peekCharMatch('\"')) {
-				keyNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.DOUBLE);
+				keyNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.DOUBLE);
 			} else if (peekCharMatch('\'')) {
-				keyNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.SINGLE);
+				keyNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.SINGLE);
 			} else if (peekCharMatch('{')) {
 				keyNode = parseFlowMapping();
 			} else if (peekCharMatch('[')) {
@@ -987,9 +987,9 @@ public class YamlReader extends BasicReadAheadReader {
 
 					YamlNode valueNode;
 					if (peekCharMatch('\"')) {
-						valueNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.DOUBLE);
+						valueNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.DOUBLE);
 					} else if (peekCharMatch('\'')) {
-						valueNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.SINGLE);
+						valueNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.SINGLE);
 					} else if (peekCharMatch('{')) {
 						valueNode = parseFlowMapping();
 					} else if (peekCharMatch('[')) {
@@ -1086,9 +1086,9 @@ public class YamlReader extends BasicReadAheadReader {
 
 			YamlNode itemNode;
 			if (peekCharMatch('\"')) {
-				itemNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.DOUBLE);
+				itemNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.DOUBLE);
 			} else if (peekCharMatch('\'')) {
-				itemNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.SINGLE);
+				itemNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.SINGLE);
 			} else if (peekCharMatch('{')) {
 				itemNode = parseFlowMapping();
 			} else if (peekCharMatch('[')) {
@@ -1151,9 +1151,9 @@ public class YamlReader extends BasicReadAheadReader {
 
 				YamlNode valueNode;
 				if (peekCharMatch('\"')) {
-					valueNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.DOUBLE);
+					valueNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.DOUBLE);
 				} else if (peekCharMatch('\'')) {
-					valueNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).setQuoteType(YamlStringQuoteType.SINGLE);
+					valueNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.SINGLE);
 				} else if (peekCharMatch('{')) {
 					valueNode = parseFlowMapping();
 				} else if (peekCharMatch('[')) {

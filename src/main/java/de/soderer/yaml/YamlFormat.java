@@ -78,8 +78,12 @@ public class YamlFormat {
 		return linebreak.toString();
 	}
 
-	public YamlFormat setLinebreak(final Linebreak linebreak) {
+	public void setLinebreak(final Linebreak linebreak) {
 		this.linebreak = linebreak;
+	}
+
+	public YamlFormat withLinebreak(final Linebreak newLinebreak) {
+		setLinebreak(newLinebreak);
 		return this;
 	}
 
@@ -87,8 +91,12 @@ public class YamlFormat {
 		return indentationSize;
 	}
 
-	public YamlFormat setIndentationSize(final int indentationSize) {
+	public void setIndentationSize(final int indentationSize) {
 		this.indentationSize = indentationSize;
+	}
+
+	public YamlFormat withIndentationSize(final int newIndentationSize) {
+		setIndentationSize(newIndentationSize);
 		return this;
 	}
 
@@ -96,8 +104,12 @@ public class YamlFormat {
 		return stringValueQuoteType;
 	}
 
-	public YamlFormat setStringValueQuoteType(final YamlStringQuoteType stringValueQuoteType) {
+	public void setStringValueQuoteType(final YamlStringQuoteType stringValueQuoteType) {
 		this.stringValueQuoteType = stringValueQuoteType;
+	}
+
+	public YamlFormat withStringValueQuoteType(final YamlStringQuoteType newStringValueQuoteType) {
+		setStringValueQuoteType(newStringValueQuoteType);
 		return this;
 	}
 
@@ -105,8 +117,12 @@ public class YamlFormat {
 		return alwaysQuoteStringKeys;
 	}
 
-	public YamlFormat setAlwaysQuoteStringKeys(final boolean alwaysQuoteStringKeys) {
+	public void setAlwaysQuoteStringKeys(final boolean alwaysQuoteStringKeys) {
 		this.alwaysQuoteStringKeys = alwaysQuoteStringKeys;
+	}
+
+	public YamlFormat withAlwaysQuoteStringKeys(final boolean newAlwaysQuoteStringKeys) {
+		setAlwaysQuoteStringKeys(newAlwaysQuoteStringKeys);
 		return this;
 	}
 
@@ -114,14 +130,22 @@ public class YamlFormat {
 		return alwaysQuoteStringValues;
 	}
 
-	public YamlFormat setAlwaysQuoteStringValues(final boolean alwaysQuoteStringValues) {
+	public void setAlwaysQuoteStringValues(final boolean alwaysQuoteStringValues) {
 		this.alwaysQuoteStringValues = alwaysQuoteStringValues;
+	}
+
+	public YamlFormat withAlwaysQuoteStringValues(final boolean newAlwaysQuoteStringValues) {
+		setAlwaysQuoteStringValues(newAlwaysQuoteStringValues);
 		return this;
 	}
 
-	public YamlFormat setAlwaysQuoteAllStrings() {
+	public void setAlwaysQuoteAllStrings() {
 		alwaysQuoteStringKeys = true;
 		alwaysQuoteStringValues = true;
+	}
+
+	public YamlFormat withAlwaysQuoteAllStrings() {
+		setAlwaysQuoteAllStrings();
 		return this;
 	}
 
@@ -129,8 +153,12 @@ public class YamlFormat {
 		return omitComments;
 	}
 
-	public YamlFormat setOmitComments(final boolean omitComments) {
+	public void setOmitComments(final boolean omitComments) {
 		this.omitComments = omitComments;
+	}
+
+	public YamlFormat withOmitComments(final boolean newOmitComments) {
+		setOmitComments(newOmitComments);
 		return this;
 	}
 
@@ -138,8 +166,12 @@ public class YamlFormat {
 		return omitEmptyLines;
 	}
 
-	public YamlFormat setOmitEmptyLines(final boolean omitEmptyLines) {
+	public void setOmitEmptyLines(final boolean omitEmptyLines) {
 		this.omitEmptyLines = omitEmptyLines;
+	}
+
+	public YamlFormat withOmitEmptyLines(final boolean newOmitEmptyLines) {
+		setOmitEmptyLines(newOmitEmptyLines);
 		return this;
 	}
 
@@ -147,8 +179,12 @@ public class YamlFormat {
 		return ignoreFlowStyleSettings;
 	}
 
-	public YamlFormat setIgnoreFlowStyleSettings(final boolean ignoreFlowStyleSettings) {
+	public void setIgnoreFlowStyleSettings(final boolean ignoreFlowStyleSettings) {
 		this.ignoreFlowStyleSettings = ignoreFlowStyleSettings;
+	}
+
+	public YamlFormat withIgnoreFlowStyleSettings(final boolean newIgnoreFlowStyleSettings) {
+		setIgnoreFlowStyleSettings(newIgnoreFlowStyleSettings);
 		return this;
 	}
 
@@ -186,8 +222,12 @@ public class YamlFormat {
 	 * - item 2
 	 * </pre>
 	 */
-	public YamlFormat setUseNoExtraIndentationForYamlSequencesInYamlMappingProperties(final boolean useNoExtraIndentationForYamlSequencesInYamlMappingProperties) {
+	public void setUseNoExtraIndentationForYamlSequencesInYamlMappingProperties(final boolean useNoExtraIndentationForYamlSequencesInYamlMappingProperties) {
 		this.useNoExtraIndentationForYamlSequencesInYamlMappingProperties = useNoExtraIndentationForYamlSequencesInYamlMappingProperties;
+	}
+
+	public YamlFormat withUseNoExtraIndentationForYamlSequencesInYamlMappingProperties(final boolean newUseNoExtraIndentationForYamlSequencesInYamlMappingProperties) {
+		setUseNoExtraIndentationForYamlSequencesInYamlMappingProperties(newUseNoExtraIndentationForYamlSequencesInYamlMappingProperties);
 		return this;
 	}
 
@@ -225,8 +265,12 @@ public class YamlFormat {
 	 * &nbsp;&nbsp;{}
 	 * </pre>
 	 */
-	public YamlFormat setUseNoNewLineForEmptyYamlObjectInYamlMappingProperties(final boolean useNoNewLineForEmptyYamlObjectInYamlMappingProperties) {
+	public void setUseNoNewLineForEmptyYamlObjectInYamlMappingProperties(final boolean useNoNewLineForEmptyYamlObjectInYamlMappingProperties) {
 		this.useNoNewLineForEmptyYamlObjectInYamlMappingProperties = useNoNewLineForEmptyYamlObjectInYamlMappingProperties;
+	}
+
+	public YamlFormat withUseNoNewLineForEmptyYamlObjectInYamlMappingProperties(final boolean newUseNoNewLineForEmptyYamlObjectInYamlMappingProperties) {
+		setUseNoNewLineForEmptyYamlObjectInYamlMappingProperties(newUseNoNewLineForEmptyYamlObjectInYamlMappingProperties);
 		return this;
 	}
 }

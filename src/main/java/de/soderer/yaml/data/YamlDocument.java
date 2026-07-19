@@ -51,8 +51,12 @@ public class YamlDocument {
 		return root;
 	}
 
-	public YamlDocument setRoot(final YamlNode root) {
+	public void setRoot(final YamlNode root) {
 		this.root = root;
+	}
+
+	public YamlDocument withRoot(final YamlNode newRoot) {
+		setRoot(newRoot);
 		return this;
 	}
 

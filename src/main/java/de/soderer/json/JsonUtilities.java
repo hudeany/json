@@ -216,22 +216,22 @@ public class JsonUtilities {
 	}
 
 	public static JsonNode parseJsonDataAndVerifyJsonSchemaSimple(final InputStream jsonDataInputStream, final InputStream jsonSchemaInputStream) throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
-		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setJsonSchemaVersion(JsonSchemaVersion.simple));
+		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().withJsonSchemaVersion(JsonSchemaVersion.simple));
 		return jsonSchema.validate(jsonDataInputStream);
 	}
 
 	public static JsonNode parseJsonDataAndVerifyJsonSchemaV4(final InputStream jsonDataInputStream, final InputStream jsonSchemaInputStream) throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
-		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setJsonSchemaVersion(JsonSchemaVersion.draftV4));
+		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().withJsonSchemaVersion(JsonSchemaVersion.draftV4));
 		return jsonSchema.validate(jsonDataInputStream);
 	}
 
 	public static JsonNode parseJsonDataAndVerifyJsonSchemaV6(final InputStream jsonDataInputStream, final InputStream jsonSchemaInputStream) throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
-		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setJsonSchemaVersion(JsonSchemaVersion.draftV6));
+		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().withJsonSchemaVersion(JsonSchemaVersion.draftV6));
 		return jsonSchema.validate(jsonDataInputStream);
 	}
 
 	public static JsonNode parseJsonDataAndVerifyJsonSchemaV7(final InputStream jsonDataInputStream, final InputStream jsonSchemaInputStream) throws JsonSchemaDefinitionError, JsonSchemaDataValidationError {
-		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setJsonSchemaVersion(JsonSchemaVersion.draftV7));
+		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().withJsonSchemaVersion(JsonSchemaVersion.draftV7));
 		return jsonSchema.validate(jsonDataInputStream);
 	}
 
@@ -301,7 +301,7 @@ public class JsonUtilities {
 	public static JsonNode validateJsonSchema(final InputStream jsonSchemaDataInputStream, final Charset encoding, final JsonSchemaVersion jsonSchemaVersion) throws JsonSchemaDefinitionError, JsonSchemaDataValidationError, IOException {
 		JsonSchema jsonSchema;
 		try (InputStream jsonSchemaInputStream = JsonSchema.class.getClassLoader().getResourceAsStream(jsonSchemaVersion.getLocalFile());) {
-			jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setEncoding(encoding));
+			jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().withEncoding(encoding));
 		}
 		return jsonSchema.validate(jsonSchemaDataInputStream, encoding);
 	}

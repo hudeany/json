@@ -61,131 +61,131 @@ public class JsonSerializer {
 		if (dataObject == null) {
 			if (excludeNull) {
 				// This may only occur on top level of data
-				return new JsonValueNull().setRootNode(true);
+				return new JsonValueNull().withRootNode(true);
 			} else if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.addNull("class");
 				jsonObjectWithTypeInfo.addNull("value");
-				return jsonObjectWithTypeInfo.setRootNode(true);
+				return jsonObjectWithTypeInfo.withRootNode(true);
 			} else {
-				return new JsonValueNull().setRootNode(true);
+				return new JsonValueNull().withRootNode(true);
 			}
 		} else if (dataObject instanceof String) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", (String) dataObject);
-				return jsonObjectWithTypeInfo.setRootNode(true);
+				return jsonObjectWithTypeInfo.withRootNode(true);
 			} else {
-				return new JsonValueString((String) dataObject).setRootNode(true);
+				return new JsonValueString((String) dataObject).withRootNode(true);
 			}
 		} else if (dataObject instanceof Integer) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", (Integer) dataObject);
-				return jsonObjectWithTypeInfo.setRootNode(true);
+				return jsonObjectWithTypeInfo.withRootNode(true);
 			} else {
-				return new JsonValueInteger((Integer) dataObject).setRootNode(true);
+				return new JsonValueInteger((Integer) dataObject).withRootNode(true);
 			}
 		} else if (dataObject instanceof Long) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", (Long) dataObject);
-				return jsonObjectWithTypeInfo.setRootNode(true);
+				return jsonObjectWithTypeInfo.withRootNode(true);
 			} else {
-				return new JsonValueInteger((Long) dataObject).setRootNode(true);
+				return new JsonValueInteger((Long) dataObject).withRootNode(true);
 			}
 		} else if (dataObject instanceof Float) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", (Float) dataObject);
-				return jsonObjectWithTypeInfo.setRootNode(true);
+				return jsonObjectWithTypeInfo.withRootNode(true);
 			} else {
-				return new JsonValueNumber((Float) dataObject).setRootNode(true);
+				return new JsonValueNumber((Float) dataObject).withRootNode(true);
 			}
 		} else if (dataObject instanceof Double) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", (Double) dataObject);
-				return jsonObjectWithTypeInfo.setRootNode(true);
+				return jsonObjectWithTypeInfo.withRootNode(true);
 			} else {
-				return new JsonValueNumber((Double) dataObject).setRootNode(true);
+				return new JsonValueNumber((Double) dataObject).withRootNode(true);
 			}
 		} else if (dataObject instanceof Number) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", (Number) dataObject);
-				return jsonObjectWithTypeInfo.setRootNode(true);
+				return jsonObjectWithTypeInfo.withRootNode(true);
 			} else {
-				return new JsonValueNumber((Number) dataObject).setRootNode(true);
+				return new JsonValueNumber((Number) dataObject).withRootNode(true);
 			}
 		} else if (dataObject instanceof Character) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", ((Character) dataObject).toString());
-				return jsonObjectWithTypeInfo.setRootNode(true);
+				return jsonObjectWithTypeInfo.withRootNode(true);
 			} else {
-				return new JsonValueString(((Character) dataObject).toString()).setRootNode(true);
+				return new JsonValueString(((Character) dataObject).toString()).withRootNode(true);
 			}
 		} else if (dataObject instanceof Boolean) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", (Boolean) dataObject);
-				return jsonObjectWithTypeInfo.setRootNode(true);
+				return jsonObjectWithTypeInfo.withRootNode(true);
 			} else {
-				return new JsonValueBoolean((Boolean) dataObject).setRootNode(true);
+				return new JsonValueBoolean((Boolean) dataObject).withRootNode(true);
 			}
 		} else if (dataObject instanceof Charset) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", Charset.class.getName());
 				jsonObjectWithTypeInfo.add("value", ((Charset) dataObject).toString());
-				return jsonObjectWithTypeInfo.setRootNode(true);
+				return jsonObjectWithTypeInfo.withRootNode(true);
 			} else {
-				return new JsonValueString(dataObject.toString()).setRootNode(true);
+				return new JsonValueString(dataObject.toString()).withRootNode(true);
 			}
 		} else if (dataObject instanceof Date) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (Date) dataObject));
-				return jsonObjectWithTypeInfo.setRootNode(true);
+				return jsonObjectWithTypeInfo.withRootNode(true);
 			} else {
-				return new JsonValueString(dataObject.toString()).setRootNode(true);
+				return new JsonValueString(dataObject.toString()).withRootNode(true);
 			}
 		} else if (dataObject instanceof LocalDateTime) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT_NO_TIMEZONE, (LocalDateTime) dataObject));
-				return jsonObjectWithTypeInfo.setRootNode(true);
+				return jsonObjectWithTypeInfo.withRootNode(true);
 			} else {
-				return new JsonValueString(dataObject.toString()).setRootNode(true);
+				return new JsonValueString(dataObject.toString()).withRootNode(true);
 			}
 		} else if (dataObject instanceof LocalDate) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value",DateUtilities.formatDate(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE, (LocalDate) dataObject));
-				return jsonObjectWithTypeInfo.setRootNode(true);
+				return jsonObjectWithTypeInfo.withRootNode(true);
 			} else {
-				return new JsonValueString(dataObject.toString()).setRootNode(true);
+				return new JsonValueString(dataObject.toString()).withRootNode(true);
 			}
 		} else if (dataObject instanceof ZonedDateTime) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (ZonedDateTime) dataObject));
-				return jsonObjectWithTypeInfo.setRootNode(true);
+				return jsonObjectWithTypeInfo.withRootNode(true);
 			} else {
-				return new JsonValueString(dataObject.toString()).setRootNode(true);
+				return new JsonValueString(dataObject.toString()).withRootNode(true);
 			}
 		} else if (dataObject instanceof File) {
 			final File fileObject = (File) dataObject;
@@ -193,18 +193,18 @@ public class JsonSerializer {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", fileObject.getAbsolutePath());
-				return jsonObjectWithTypeInfo.setRootNode(true);
+				return jsonObjectWithTypeInfo.withRootNode(true);
 			} else {
-				return new JsonValueString(dataObject.toString()).setRootNode(true);
+				return new JsonValueString(dataObject.toString()).withRootNode(true);
 			}
 		} else if (dataObject instanceof Enum) {
 			if (addObjectTypeInfo) {
 				final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 				jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 				jsonObjectWithTypeInfo.add("value", dataObject.toString());
-				return jsonObjectWithTypeInfo.setRootNode(true);
+				return jsonObjectWithTypeInfo.withRootNode(true);
 			} else {
-				return new JsonValueString(dataObject.toString()).setRootNode(true);
+				return new JsonValueString(dataObject.toString()).withRootNode(true);
 			}
 		} else if (dataObject.getClass().isArray()) {
 			if (Utilities.containsObject(alreadyVisitedObjects, dataObject)) {
@@ -229,9 +229,9 @@ public class JsonSerializer {
 					final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 					jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 					jsonObjectWithTypeInfo.add("value", jsonArray);
-					return jsonObjectWithTypeInfo.setRootNode(true);
+					return jsonObjectWithTypeInfo.withRootNode(true);
 				} else {
-					return jsonArray.setRootNode(true);
+					return jsonArray.withRootNode(true);
 				}
 			}
 		} else if (dataObject instanceof Iterable<?>) {
@@ -255,9 +255,9 @@ public class JsonSerializer {
 					final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 					jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 					jsonObjectWithTypeInfo.add("value", jsonArray);
-					return jsonObjectWithTypeInfo.setRootNode(true);
+					return jsonObjectWithTypeInfo.withRootNode(true);
 				} else {
-					return jsonArray.setRootNode(true);
+					return jsonArray.withRootNode(true);
 				}
 			}
 		} else if (dataObject instanceof Map<?, ?>) {
@@ -293,9 +293,9 @@ public class JsonSerializer {
 					final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 					jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 					jsonObjectWithTypeInfo.add("value", jsonArray);
-					return jsonObjectWithTypeInfo.setRootNode(true);
+					return jsonObjectWithTypeInfo.withRootNode(true);
 				} else {
-					return jsonArray.setRootNode(true);
+					return jsonArray.withRootNode(true);
 				}
 			}
 		} else {
@@ -343,9 +343,9 @@ public class JsonSerializer {
 					final JsonObject jsonObjectWithTypeInfo = new JsonObject();
 					jsonObjectWithTypeInfo.add("class", dataObject.getClass().getName());
 					jsonObjectWithTypeInfo.add("value", dataJsonObject);
-					return jsonObjectWithTypeInfo.setRootNode(true);
+					return jsonObjectWithTypeInfo.withRootNode(true);
 				} else {
-					return dataJsonObject.setRootNode(true);
+					return dataJsonObject.withRootNode(true);
 				}
 			}
 		}

@@ -33,12 +33,27 @@ public class Triple<T1, T2, T3> {
 		this.value1 = value1;
 	}
 
+	public Triple<T1, T2, T3> withFirst(final T1 newValue1) {
+		setFirst(newValue1);
+		return this;
+	}
+
 	public void setSecond(T2 value2) {
 		this.value2 = value2;
 	}
 
+	public Triple<T1, T2, T3> withSecond(final T2 newValue2) {
+		setSecond(newValue2);
+		return this;
+	}
+
 	public void setThird(T3 value3) {
 		this.value3 = value3;
+	}
+
+	public Triple<T1, T2, T3> withThird(final T3 newValue3) {
+		setThird(newValue3);
+		return this;
 	}
 
 	@Override

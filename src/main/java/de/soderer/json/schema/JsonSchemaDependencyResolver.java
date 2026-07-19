@@ -460,6 +460,11 @@ public class JsonSchemaDependencyResolver {
 		this.jsonSchemaVersion = jsonSchemaVersion;
 	}
 
+	public JsonSchemaDependencyResolver withJsonSchemaVersion(final JsonSchemaVersion newJsonSchemaVersion) {
+		setJsonSchemaVersion(newJsonSchemaVersion);
+		return this;
+	}
+
 	public boolean isSimpleMode() {
 		return jsonSchemaVersion == null || jsonSchemaVersion == JsonSchemaVersion.simple;
 	}
@@ -484,8 +489,18 @@ public class JsonSchemaDependencyResolver {
 		this.downloadReferencedSchemas = downloadReferencedSchemas;
 	}
 
+	public JsonSchemaDependencyResolver withDownloadReferencedSchemas(final boolean newDownloadReferencedSchemas) {
+		setDownloadReferencedSchemas(newDownloadReferencedSchemas);
+		return this;
+	}
+
 	public void setLazyFailOnMissingExternalSchemas(final boolean lazyFailOnMissingExternalSchemas) {
 		this.lazyFailOnMissingExternalSchemas = lazyFailOnMissingExternalSchemas;
+	}
+
+	public JsonSchemaDependencyResolver withLazyFailOnMissingExternalSchemas(final boolean newLazyFailOnMissingExternalSchemas) {
+		setLazyFailOnMissingExternalSchemas(newLazyFailOnMissingExternalSchemas);
+		return this;
 	}
 
 	/**

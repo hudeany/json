@@ -24,8 +24,12 @@ public class JsonNode {
 		return rootNode;
 	}
 
-	public JsonNode setRootNode(final boolean rootNode) {
+	public void setRootNode(final boolean rootNode) {
 		this.rootNode = rootNode;
+	}
+
+	public JsonNode withRootNode(final boolean newRootNode) {
+		setRootNode(newRootNode);
 		return this;
 	}
 

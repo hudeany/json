@@ -22,8 +22,12 @@ public class YamlDirective<T extends YamlDirective<T>> {
 		return inlineComment;
 	}
 
-	public YamlDirective<T> setInlineComment(final String inlineComment) {
+	public void setInlineComment(final String inlineComment) {
 		this.inlineComment = inlineComment;
+	}
+
+	public YamlDirective<T> withInlineComment(final String newInlineComment) {
+		setInlineComment(newInlineComment);
 		return this;
 	}
 }

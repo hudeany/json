@@ -55,7 +55,7 @@ public class YamlUtilities {
 
 		final JsonNode jsonNode = YamlToJsonConverter.convert(yamlDocument);
 
-		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setJsonSchemaVersion(JsonSchemaVersion.draftV4));
+		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().withJsonSchemaVersion(JsonSchemaVersion.draftV4));
 
 		jsonSchema.validate(jsonNode);
 		return yamlDocument;
@@ -69,7 +69,7 @@ public class YamlUtilities {
 
 		final JsonNode jsonNode = YamlToJsonConverter.convert(yamlDocument);
 
-		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setJsonSchemaVersion(JsonSchemaVersion.draftV6));
+		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().withJsonSchemaVersion(JsonSchemaVersion.draftV6));
 
 		jsonSchema.validate(jsonNode);
 		return yamlDocument;
@@ -83,7 +83,7 @@ public class YamlUtilities {
 
 		final JsonNode jsonNode = YamlToJsonConverter.convert(yamlDocument);
 
-		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().setJsonSchemaVersion(JsonSchemaVersion.draftV7));
+		final JsonSchema jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().withJsonSchemaVersion(JsonSchemaVersion.draftV7));
 
 		jsonSchema.validate(jsonNode);
 		return yamlDocument;

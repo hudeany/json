@@ -203,12 +203,12 @@ public class JsonReader extends BasicReader {
 		} else {
 			switch (token) {
 				case JsonObject_Open:
-					return readJsonObject().setRootNode(false);
+					return readJsonObject().withRootNode(false);
 				case JsonArray_Open:
-					return readJsonArray().setRootNode(false);
+					return readJsonArray().withRootNode(false);
 				case JsonSimpleValue:
 					// value was already read
-					return currentObject.setRootNode(false);
+					return currentObject.withRootNode(false);
 				case JsonObject_Close:
 					reuseCurrentChar();
 					openJsonItems.push(JsonToken.JsonObject_Open);
@@ -218,7 +218,7 @@ public class JsonReader extends BasicReader {
 					openJsonItems.push(JsonToken.JsonArray_Open);
 					return null;
 				case JsonObject_PropertyKey:
-					return currentObject.setRootNode(false);
+					return currentObject.withRootNode(false);
 				default:
 					throw new UnexpectedJsonTokenException(token, getReadLines(), getReadCharactersInCurrentLine(), getReadCharacters());
 			}
@@ -239,11 +239,11 @@ public class JsonReader extends BasicReader {
 
 		final JsonToken nextToken = readNextToken();
 		if (nextToken == JsonToken.JsonObject_Open) {
-			return readJsonObject().setRootNode(true);
+			return readJsonObject().withRootNode(true);
 		} else if (nextToken == JsonToken.JsonArray_Open) {
-			return readJsonArray().setRootNode(true);
+			return readJsonArray().withRootNode(true);
 		} else if (nextToken == JsonToken.JsonSimpleValue) {
-			return currentObject.setRootNode(true);
+			return currentObject.withRootNode(true);
 		} else {
 			throw new UnexpectedEndOfJsonDataException(getReadLines(), getReadCharactersInCurrentLine(), getReadCharacters());
 		}

@@ -28,8 +28,12 @@ public class JsonSchemaConfiguration {
 		return encoding;
 	}
 
-	public JsonSchemaConfiguration setEncoding(final Charset encoding) {
+	public void setEncoding(final Charset encoding) {
 		this.encoding = encoding;
+	}
+
+	public JsonSchemaConfiguration withEncoding(final Charset newEncoding) {
+		setEncoding(newEncoding);
 		return this;
 	}
 
@@ -37,8 +41,12 @@ public class JsonSchemaConfiguration {
 		return jsonSchemaVersion;
 	}
 
-	public JsonSchemaConfiguration setJsonSchemaVersion(final JsonSchemaVersion jsonSchemaVersion) {
+	public void setJsonSchemaVersion(final JsonSchemaVersion jsonSchemaVersion) {
 		this.jsonSchemaVersion = jsonSchemaVersion;
+	}
+
+	public JsonSchemaConfiguration withJsonSchemaVersion(final JsonSchemaVersion newJsonSchemaVersion) {
+		setJsonSchemaVersion(newJsonSchemaVersion);
 		return this;
 	}
 
@@ -54,8 +62,12 @@ public class JsonSchemaConfiguration {
 	 * Download of any additional data is prevented by default.<br />
 	 * Especially because there is no check for internet connection in forehand.<br />
 	 */
-	public JsonSchemaConfiguration setDownloadReferencedSchemas(final boolean downloadReferencedSchemas) {
+	public void setDownloadReferencedSchemas(final boolean downloadReferencedSchemas) {
 		this.downloadReferencedSchemas = downloadReferencedSchemas;
+	}
+
+	public JsonSchemaConfiguration withDownloadReferencedSchemas(final boolean newDownloadReferencedSchemas) {
+		setDownloadReferencedSchemas(newDownloadReferencedSchemas);
 		return this;
 	}
 }

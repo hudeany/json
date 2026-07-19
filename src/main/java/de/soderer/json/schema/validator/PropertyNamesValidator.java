@@ -43,7 +43,7 @@ public class PropertyNamesValidator extends BaseJsonSchemaValidator {
 			}
 		} else {
 			for (final String propertyName : ((JsonObject) jsonNode).keySet()) {
-				final JsonNode newJsonNode = new JsonValueString(propertyName).setRootNode(false);
+				final JsonNode newJsonNode = new JsonValueString(propertyName).withRootNode(false);
 				for (final BaseJsonSchemaValidator subValidator : subValidators) {
 					subValidator.validate(newJsonNode, jsonPath);
 				}

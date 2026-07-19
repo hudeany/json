@@ -62,7 +62,7 @@ public class PropertiesValidator extends BaseJsonSchemaValidator {
 				if (propertiesDefinitions.containsKey(propertyEntry.getKey())) {
 					JsonNode newJsonNode;
 					try {
-						newJsonNode = propertyEntry.getValue().setRootNode(false);
+						newJsonNode = propertyEntry.getValue().withRootNode(false);
 					} catch (final Exception e) {
 						throw new JsonSchemaDataValidationError("Invalid data type '" + propertyEntry.getValue().getClass().getSimpleName() + "'", new JsonPath(jsonPath).addPropertyKey(propertyEntry.getKey()), e);
 					}

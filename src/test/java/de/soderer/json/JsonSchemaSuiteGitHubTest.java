@@ -416,9 +416,9 @@ public class JsonSchemaSuiteGitHubTest {
 				if (schemaJsonObject == null) {
 					throw new JsonSchemaDefinitionError("JsonSchema is null", new JsonSchemaPath("$"));
 				} else if (schemaJsonObject.isBoolean()) {
-					jsonSchema = new JsonSchema(((JsonValueBoolean) schemaJsonObject).getValue(), new JsonSchemaConfiguration().setJsonSchemaVersion(jsonSchemaVersion).setDownloadReferencedSchemas(true));
+					jsonSchema = new JsonSchema(((JsonValueBoolean) schemaJsonObject).getValue(), new JsonSchemaConfiguration().withJsonSchemaVersion(jsonSchemaVersion).withDownloadReferencedSchemas(true));
 				} else if (schemaJsonObject.isJsonObject()) {
-					jsonSchema = new JsonSchema((JsonObject) schemaJsonObject, new JsonSchemaConfiguration().setJsonSchemaVersion(jsonSchemaVersion).setDownloadReferencedSchemas(true));
+					jsonSchema = new JsonSchema((JsonObject) schemaJsonObject, new JsonSchemaConfiguration().withJsonSchemaVersion(jsonSchemaVersion).withDownloadReferencedSchemas(true));
 				} else {
 					throw new JsonSchemaDefinitionError("JsonSchema is not JsonObject or Boolean", new JsonSchemaPath("$"));
 				}

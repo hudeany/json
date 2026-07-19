@@ -35,7 +35,7 @@ public class YamlExampleTest {
 			outputMapping.put("abc", "1");
 			outputMapping.put("def", 2);
 			outputMapping.put("ghi", 3.00);
-			final YamlDocument outputDocument = new YamlDocument().setRoot(outputMapping);
+			final YamlDocument outputDocument = new YamlDocument().withRoot(outputMapping);
 			writer.writeDocument(outputDocument);
 
 			final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
@@ -74,7 +74,7 @@ public class YamlExampleTest {
 			outputSequence.add("1");
 			outputSequence.add(2);
 			outputSequence.add(3.00);
-			final YamlDocument outputDocument = new YamlDocument().setRoot(outputSequence);
+			final YamlDocument outputDocument = new YamlDocument().withRoot(outputSequence);
 			writer.writeDocument(outputDocument);
 
 			final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);

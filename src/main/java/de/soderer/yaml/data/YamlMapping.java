@@ -32,8 +32,12 @@ public class YamlMapping extends YamlNode implements Iterable<Map.Entry<String, 
 		return flowStyle;
 	}
 
-	public YamlMapping setFlowStyle(final boolean flowStyle) {
+	public void setFlowStyle(final boolean flowStyle) {
 		this.flowStyle = flowStyle;
+	}
+
+	public YamlMapping withFlowStyle(final boolean newFlowStyle) {
+		setFlowStyle(newFlowStyle);
 		return this;
 	}
 

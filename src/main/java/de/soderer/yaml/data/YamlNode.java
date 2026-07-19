@@ -28,8 +28,12 @@ public abstract class YamlNode {
 		return inlineComment;
 	}
 
-	public YamlNode setInlineComment(final String inlineComment) {
+	public void setInlineComment(final String inlineComment) {
 		this.inlineComment = inlineComment;
+	}
+
+	public YamlNode withInlineComment(final String newInlineComment) {
+		setInlineComment(newInlineComment);
 		return this;
 	}
 
@@ -37,8 +41,12 @@ public abstract class YamlNode {
 		return anchorName;
 	}
 
-	public YamlNode setAnchorName(final String anchorName) {
+	public void setAnchorName(final String anchorName) {
 		this.anchorName = anchorName;
+	}
+
+	public YamlNode withAnchorName(final String newAnchorName) {
+		setAnchorName(newAnchorName);
 		return this;
 	}
 
@@ -51,8 +59,12 @@ public abstract class YamlNode {
 		return leadingEmptyLinesCount;
 	}
 
-	public YamlNode setLeadingEmptyLinesCount(final int leadingEmptyLinesCount) {
+	public void setLeadingEmptyLinesCount(final int leadingEmptyLinesCount) {
 		this.leadingEmptyLinesCount = leadingEmptyLinesCount;
+	}
+
+	public YamlNode withLeadingEmptyLinesCount(final int newLeadingEmptyLinesCount) {
+		setLeadingEmptyLinesCount(newLeadingEmptyLinesCount);
 		return this;
 	}
 
@@ -64,8 +76,12 @@ public abstract class YamlNode {
 		return postCommentEmptyLinesCount;
 	}
 
-	public YamlNode setPostCommentEmptyLinesCount(final int postCommentEmptyLinesCount) {
+	public void setPostCommentEmptyLinesCount(final int postCommentEmptyLinesCount) {
 		this.postCommentEmptyLinesCount = postCommentEmptyLinesCount;
+	}
+
+	public YamlNode withPostCommentEmptyLinesCount(final int newPostCommentEmptyLinesCount) {
+		setPostCommentEmptyLinesCount(newPostCommentEmptyLinesCount);
 		return this;
 	}
 

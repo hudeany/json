@@ -59,7 +59,7 @@ public class YamlTest {
 		Assertions.assertNotNull(testDocument1.getRoot(), "Root node should not be null");
 
 		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
-		try (final YamlWriter writer = new YamlWriter(testOutputStream, new YamlFormat().setAlwaysQuoteAllStrings().setOmitComments(true))) {
+		try (final YamlWriter writer = new YamlWriter(testOutputStream, new YamlFormat().withAlwaysQuoteAllStrings().withOmitComments(true))) {
 			writer.writeDocument(testDocument1);
 		}
 
@@ -94,7 +94,7 @@ public class YamlTest {
 		Assertions.assertNotNull(testDocument1.getRoot(), "Root node should not be null");
 
 		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
-		try (final YamlWriter writer = new YamlWriter(testOutputStream, new YamlFormat().setAlwaysQuoteAllStrings().setIgnoreFlowStyleSettings(true))) {
+		try (final YamlWriter writer = new YamlWriter(testOutputStream, new YamlFormat().withAlwaysQuoteAllStrings().withIgnoreFlowStyleSettings(true))) {
 			writer.writeDocument(testDocument1);
 		}
 
@@ -278,7 +278,7 @@ public class YamlTest {
 		final YamlNode yamlNode = JsonToYamlConverter.convert(jsonNode);
 
 		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
-		try (final YamlWriter writer = new YamlWriter(testOutputStream, new YamlFormat().setLinebreak(Linebreak.Windows))) {
+		try (final YamlWriter writer = new YamlWriter(testOutputStream, new YamlFormat().withLinebreak(Linebreak.Windows))) {
 			writer.writeDocument(new YamlDocument(yamlNode));
 		}
 

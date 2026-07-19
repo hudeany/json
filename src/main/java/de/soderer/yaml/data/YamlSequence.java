@@ -26,8 +26,12 @@ public class YamlSequence extends YamlNode implements Iterable<Object> {
 		return flowStyle;
 	}
 
-	public YamlSequence setFlowStyle(final boolean flowStyle) {
+	public void setFlowStyle(final boolean flowStyle) {
 		this.flowStyle = flowStyle;
+	}
+
+	public YamlSequence withFlowStyle(final boolean newFlowStyle) {
+		setFlowStyle(newFlowStyle);
 		return this;
 	}
 

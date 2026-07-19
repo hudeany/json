@@ -178,16 +178,24 @@ public class YamlScalar extends YamlNode {
 		return quoteType;
 	}
 
-	public YamlScalar setQuoteType(final YamlStringQuoteType quoteType) {
+	public void setQuoteType(final YamlStringQuoteType quoteType) {
 		this.quoteType = quoteType;
+	}
+
+	public YamlScalar withQuoteType(final YamlStringQuoteType newQuoteType) {
+		setQuoteType(newQuoteType);
 		return this;
 	}
 
-	public YamlScalar setMultilineType(final YamlMultilineScalarType multilineType) throws Exception {
+	public void setMultilineType(final YamlMultilineScalarType multilineType) throws Exception {
 		this.multilineType = multilineType;
 		if (multilineType == null) {
 			throw new Exception("Invalid empty multilineType");
 		}
+	}
+
+	public YamlScalar withMultilineType(final YamlMultilineScalarType newMultilineType) throws Exception {
+		setMultilineType(newMultilineType);
 		return this;
 	}
 
@@ -195,11 +203,15 @@ public class YamlScalar extends YamlNode {
 		return multilineChompingType;
 	}
 
-	public YamlScalar setMultilineChompingType(final YamlMultilineScalarChompingType multilineChompingType) throws Exception {
+	public void setMultilineChompingType(final YamlMultilineScalarChompingType multilineChompingType) throws Exception {
 		this.multilineChompingType = multilineChompingType;
 		if (multilineChompingType == null) {
 			throw new Exception("Invalid empty multilineChompingType");
 		}
+	}
+
+	public YamlScalar withMultilineChompingType(final YamlMultilineScalarChompingType newMultilineChompingType) throws Exception {
+		setMultilineChompingType(newMultilineChompingType);
 		return this;
 	}
 
@@ -207,11 +219,15 @@ public class YamlScalar extends YamlNode {
 		return indentationIndicator;
 	}
 
-	public YamlScalar setIndentationIndicator(final int indentationIndicator) throws Exception {
+	public void setIndentationIndicator(final int indentationIndicator) throws Exception {
 		this.indentationIndicator = indentationIndicator;
 		if (indentationIndicator < 0) {
 			throw new Exception("Invalid multiline scalar indentation indicator: indentationIndicator");
 		}
+	}
+
+	public YamlScalar withIndentationIndicator(final int newIndentationIndicator) throws Exception {
+		setIndentationIndicator(newIndentationIndicator);
 		return this;
 	}
 

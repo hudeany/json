@@ -288,7 +288,7 @@ public class JsonSchema {
 	public void validate(final JsonNode jsonData) throws JsonSchemaDataValidationError {
 		JsonNode jsonDataNode;
 		try {
-			jsonDataNode = jsonData.setRootNode(true);
+			jsonDataNode = jsonData.withRootNode(true);
 		} catch (final Exception e) {
 			throw new JsonSchemaDataValidationError(e.getMessage(), new JsonPath(), e);
 		}

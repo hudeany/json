@@ -48,7 +48,7 @@ public class IfThenElseValidatorTest {
 					+ "\"else\": true\n"
 					+ "}\n";
 			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream, new JsonSchemaConfiguration().setJsonSchemaVersion(JsonSchemaVersion.draftV7));
+			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream, new JsonSchemaConfiguration().withJsonSchemaVersion(JsonSchemaVersion.draftV7));
 
 			final String data =
 					"{}\n";
@@ -101,7 +101,7 @@ public class IfThenElseValidatorTest {
 					+ "\"else\": false\n"
 					+ "}\n";
 			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream, new JsonSchemaConfiguration().setJsonSchemaVersion(JsonSchemaVersion.draftV7));
+			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream, new JsonSchemaConfiguration().withJsonSchemaVersion(JsonSchemaVersion.draftV7));
 
 			final String data =
 					"{\n"
@@ -157,7 +157,7 @@ public class IfThenElseValidatorTest {
 					+ "\"else\": false\n"
 					+ "}\n";
 			schemaInputStream = new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8));
-			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream, new JsonSchemaConfiguration().setJsonSchemaVersion(JsonSchemaVersion.draftV7));
+			final JsonSchema jsonSchema = new JsonSchema(schemaInputStream, new JsonSchemaConfiguration().withJsonSchemaVersion(JsonSchemaVersion.draftV7));
 
 			final String data =
 					"{\"foo\": \"needsBar\"}\n";
