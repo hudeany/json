@@ -660,6 +660,28 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	public void add(final JsonNode jsonNode) throws Exception {
+		if (jsonNode == null) {
+			throw new JsonWriterStateException("Invalid null value added via 'add'. If done by intention use 'addSimpleJsonArrayValue' or 'addSimpleJsonObjectPropertyValue'");
+		} else if (jsonNode instanceof JsonObject) {
+			add((JsonObject) jsonNode);
+		} else if (jsonNode instanceof JsonArray) {
+			add((JsonArray) jsonNode);
+		} else if (jsonNode instanceof JsonValueNull) {
+			write("null", true);
+		} else if (jsonNode instanceof JsonValueBoolean) {
+			write(Boolean.toString(((JsonValueBoolean) jsonNode).getValue()), true);
+		} else if (jsonNode instanceof JsonValueInteger) {
+			write(((JsonValueInteger) jsonNode).getValue().toString(), true);
+		} else if (jsonNode instanceof JsonValueNumber) {
+			write(((JsonValueNumber) jsonNode).getValue().toString(), true);
+		} else if (jsonNode instanceof JsonValueString) {
+			write("\"" + formatStringOutput(((JsonValueString) jsonNode).getValue()) + "\"", true);
+		} else {
+			throw new RuntimeException("Unsupported JsonNode type for 'add': '" + jsonNode.getClass().getSimpleName() + "'");
+		}
+	}
+
 	public void closeAllOpenJsonItems() throws Exception {
 		while (!openJsonStackItems.isEmpty()) {
 			final JsonStackItem openJsonItem = openJsonStackItems.pop();
