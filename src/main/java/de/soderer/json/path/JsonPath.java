@@ -2,12 +2,24 @@ package de.soderer.json.path;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.Stack;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import de.soderer.json.path.JsonPathFilterElement.FilterOperator;
 import de.soderer.json.schema.JsonSchemaDefinitionError;
 import de.soderer.json.utilities.BasicReader;
 
 public class JsonPath {
+	/**
+	 * Matches a filter expression's bracket content, e.g. "[?(@.version=='26.1.72')]":
+	 * group 1 = property name ("version"), group 2 = operator ("=="), group 3 = raw literal
+	 * text ("'26.1.72'", still quoted if it is a string). Only a single property level after
+	 * "@." is supported (no nested "@.a.b").
+	 */
+	private static final Pattern FILTER_PATTERN = Pattern.compile("^\\[\\?\\(\\s*@\\.([A-Za-z_][A-Za-z0-9_]*)\\s*(==|!=|<=|>=|<|>)\\s*(.+?)\\s*\\)\\]$");
+
 	private Stack<JsonPathElement> jsonPathElements = new Stack<>();
 
 	public JsonPath() {
@@ -28,6 +40,19 @@ public class JsonPath {
 	 *
 	 * external schema-reference-notation:
 	 * 	otherSchema.json#/store/customer/item
+	 *
+	 * wildcard (matches every property value of an object, or every item of an array; only
+	 * usable with {@link de.soderer.json.JsonNode#getDataListByJsonPath}, which can return
+	 * several matches):
+	 * 	$.store.*
+	 * 	$.store[*]
+	 *
+	 * filter expression (keeps only the candidates - every property value of an object, or
+	 * every item of an array - whose own given property compares as specified; only a single
+	 * property level after "@." is supported, and only usable with
+	 * {@link de.soderer.json.JsonNode#getDataListByJsonPath}):
+	 * 	$.store.item[?(@.price<10)]
+	 * 	$.*[?(@.version=='26.1.72')]
 	 *
 	 * @param jsonPathString
 	 * @throws JsonSchemaDefinitionError
@@ -55,6 +80,10 @@ public class JsonPath {
 				returnValue.append(".").append(jsonPathElement.toString().replace(".", "\\."));
 			} else if (jsonPathElement instanceof JsonPathArrayElement) {
 				returnValue.append("[").append(jsonPathElement).append("]");
+			} else if (jsonPathElement instanceof JsonPathWildcardElement) {
+				returnValue.append(".*");
+			} else if (jsonPathElement instanceof JsonPathFilterElement) {
+				returnValue.append(jsonPathElement);
 			}
 		}
 		return returnValue.toString();
@@ -69,6 +98,10 @@ public class JsonPath {
 				returnValue.append("['").append(jsonPathElement.toString().replace("'", "\\'")).append("']");
 			} else if (jsonPathElement instanceof JsonPathArrayElement) {
 				returnValue.append("[").append(jsonPathElement).append("]");
+			} else if (jsonPathElement instanceof JsonPathWildcardElement) {
+				returnValue.append("[*]");
+			} else if (jsonPathElement instanceof JsonPathFilterElement) {
+				returnValue.append(jsonPathElement);
 			}
 		}
 		return returnValue.toString();
@@ -83,6 +116,10 @@ public class JsonPath {
 				returnValue.append("/").append(jsonPathElement.toString().replace("/", "\\/"));
 			} else if (jsonPathElement instanceof JsonPathArrayElement) {
 				returnValue.append("[").append(jsonPathElement).append("]");
+			} else if (jsonPathElement instanceof JsonPathWildcardElement) {
+				returnValue.append("/*");
+			} else if (jsonPathElement instanceof JsonPathFilterElement) {
+				returnValue.append(jsonPathElement);
 			}
 		}
 		return returnValue.toString();
@@ -111,6 +148,16 @@ public class JsonPath {
 
 	public JsonPath addPropertyKey(final String propertyKey) {
 		jsonPathElements.push(new JsonPathPropertyElement(propertyKey));
+		return this;
+	}
+
+	public JsonPath addWildcard() {
+		jsonPathElements.push(new JsonPathWildcardElement());
+		return this;
+	}
+
+	public JsonPath addFilter(final String propertyName, final FilterOperator operator, final Object literalValue) {
+		jsonPathElements.push(new JsonPathFilterElement(propertyName, operator, literalValue));
 		return this;
 	}
 
@@ -167,12 +214,57 @@ public class JsonPath {
 
 	private static JsonPathElement parseJsonPathElement(final String value) {
 		final String valueRaw = value.replace("~0", "~").replace("~1", "/").replace("%25", "%");
-		if (valueRaw.startsWith("['") && valueRaw.endsWith("']")) {
+		if ("*".equals(valueRaw) || "[*]".equals(valueRaw)) {
+			return new JsonPathWildcardElement();
+		} else if (valueRaw.startsWith("[?") && valueRaw.endsWith(")]")) {
+			return parseFilterElement(valueRaw);
+		} else if (valueRaw.startsWith("['") && valueRaw.endsWith("']")) {
 			return new JsonPathPropertyElement(valueRaw.substring(2, valueRaw.length() - 2));
 		} else if (valueRaw.startsWith("[") && valueRaw.endsWith("]")) {
 			return new JsonPathArrayElement(Integer.parseInt(valueRaw.substring(1, valueRaw.length() - 1)));
 		} else  {
 			return new JsonPathPropertyElement(valueRaw);
+		}
+	}
+
+	private static JsonPathFilterElement parseFilterElement(final String bracketContent) {
+		final Matcher matcher = FILTER_PATTERN.matcher(bracketContent);
+		if (!matcher.matches()) {
+			throw new RuntimeException("Invalid JSON path filter expression: '" + bracketContent + "'");
+		}
+		final String propertyName = matcher.group(1);
+		final FilterOperator operator = FilterOperator.getBySymbol(matcher.group(2));
+		final Object literalValue = parseFilterLiteral(matcher.group(3));
+		return new JsonPathFilterElement(propertyName, operator, literalValue);
+	}
+
+	/**
+	 * Parses the right-hand side of a filter comparison into its Java value: a quoted string
+	 * (single or double quotes) becomes a String, "true"/"false" a Boolean, "null" a null
+	 * value, and everything else is parsed as a number (Long if it has no decimal point or
+	 * exponent, Double otherwise).
+	 */
+	private static Object parseFilterLiteral(final String rawValue) {
+		if (rawValue.length() >= 2
+				&& ((rawValue.startsWith("'") && rawValue.endsWith("'"))
+						|| (rawValue.startsWith("\"") && rawValue.endsWith("\"")))) {
+			return rawValue.substring(1, rawValue.length() - 1);
+		} else if ("true".equalsIgnoreCase(rawValue)) {
+			return Boolean.TRUE;
+		} else if ("false".equalsIgnoreCase(rawValue)) {
+			return Boolean.FALSE;
+		} else if ("null".equalsIgnoreCase(rawValue)) {
+			return null;
+		} else {
+			try {
+				if (rawValue.contains(".") || rawValue.toLowerCase(Locale.ROOT).contains("e")) {
+					return Double.parseDouble(rawValue);
+				} else {
+					return Long.parseLong(rawValue);
+				}
+			} catch (@SuppressWarnings("unused") final NumberFormatException e) {
+				throw new RuntimeException("Invalid JSON path filter literal value: '" + rawValue + "'");
+			}
 		}
 	}
 
