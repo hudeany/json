@@ -138,8 +138,20 @@
 				<fileset dir="${buildPath}/testbin">
 					<include name="**/*.class" />
 				</fileset>
+				<!-- Writes a report per test class to TEST-*.txt, including details of failed tests -->
+				<listener type="legacy-brief" sendSysOut="false" sendSysErr="false" />
 			</testclasses>
 		</junitlauncher>
+
+		<!-- Show which tests failed and why before stopping the build (only reports with failures or errors) -->
+		<concat if:set="test.failed" xmlns:if="ant:if">
+			<fileset dir="${buildPath}" includes="TEST-*.txt">
+				<or>
+					<contains text="FAILED" />
+					<contains text="Caused an ERROR" />
+				</or>
+			</fileset>
+		</concat>
 		<fail if="test.failed" message="Tests failed!" />
 	</target>
 
