@@ -766,11 +766,13 @@ public class JsonWriter implements Closeable {
 	}
 
 	/**
-	 * This method should only be used to write small Json items
+	 * This method should only be used to write small JSON items
 	 *
-	 * @param jsonItem
-	 * @return
+	 * @param jsonObject
+	 *            JSON object to write
+	 * @return JSON item as string
 	 * @throws Exception
+	 *             if the item cannot be written
 	 */
 	public static String getJsonItemString(final JsonObject jsonObject) throws Exception {
 		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -782,11 +784,13 @@ public class JsonWriter implements Closeable {
 	}
 
 	/**
-	 * This method should only be used to write small Json items
+	 * This method should only be used to write small JSON items
 	 *
-	 * @param jsonItem
-	 * @return
+	 * @param jsonArray
+	 *            JSON array to write
+	 * @return JSON item as string
 	 * @throws Exception
+	 *             if the item cannot be written
 	 */
 	public static String getJsonItemString(final JsonArray jsonArray) throws Exception {
 		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -798,11 +802,19 @@ public class JsonWriter implements Closeable {
 	}
 
 	/**
-	 * This method should only be used to write small Json items
+	 * This method should only be used to write small JSON items
 	 *
-	 * @param jsonItem
-	 * @return
+	 * @param jsonObject
+	 *            JSON object to write
+	 * @param linebreak
+	 *            linebreak to use
+	 * @param indentation
+	 *            indentation to use per level
+	 * @param separator
+	 *            separator after the colon of a property
+	 * @return JSON item as string
 	 * @throws Exception
+	 *             if the item cannot be written
 	 */
 	public static String getJsonItemString(final JsonObject jsonObject, final String linebreak, final String indentation, final String separator) throws Exception {
 		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -817,11 +829,19 @@ public class JsonWriter implements Closeable {
 	}
 
 	/**
-	 * This method should only be used to write small Json items
+	 * This method should only be used to write small JSON items
 	 *
-	 * @param jsonItem
-	 * @return
+	 * @param jsonArray
+	 *            JSON array to write
+	 * @param linebreak
+	 *            linebreak to use
+	 * @param indentation
+	 *            indentation to use per level
+	 * @param separator
+	 *            separator after the colon of a property
+	 * @return JSON item as string
 	 * @throws Exception
+	 *             if the item cannot be written
 	 */
 	public static String getJsonItemString(final JsonArray jsonArray, final String linebreak, final String indentation, final String separator) throws Exception {
 		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -842,9 +862,17 @@ public class JsonWriter implements Closeable {
 	/**
 	 * This method should only be used to write small JSON items
 	 *
-	 * @param jsonItem
-	 * @return
+	 * @param jsonNode
+	 *            JSON item to write
+	 * @param linebreak
+	 *            linebreak to use
+	 * @param indentation
+	 *            indentation to use per level
+	 * @param separator
+	 *            separator after the colon of a property
+	 * @return JSON item as string, a string value is quoted and escaped
 	 * @throws Exception
+	 *             if the item cannot be written
 	 */
 	public static String getJsonItemString(final JsonNode jsonNode, final String linebreak, final String indentation, final String separator) throws Exception {
 		switch (jsonNode.getJsonDataType()) {
@@ -853,7 +881,8 @@ public class JsonWriter implements Closeable {
 			case ARRAY:
 				return getJsonItemString((JsonArray) jsonNode, linebreak, indentation, separator);
 			case STRING:
-				return ((JsonValueString) jsonNode).getValue();
+				// Quoted and escaped like in JsonWriter output, so the result is valid JSON
+				return "\"" + formatStringOutput(((JsonValueString) jsonNode).getValue()) + "\"";
 			case INTEGER:
 				return ((JsonValueInteger) jsonNode).getValue().toString();
 			case NUMBER:
@@ -867,14 +896,49 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Escape a string value for JSON output (without the surrounding quotes).
+	 * Backslash, quote and all control characters U+0000 to U+001F are escaped as required by the JSON specification.
+	 *
+	 * @param value
+	 *            string value to escape
+	 * @return escaped string value
+	 */
 	public static String formatStringOutput(final String value) {
-		return value
-				.replace("\\", "\\\\")
-				.replace("\"", "\\\"")
-				.replace("\b", "\\b")
-				.replace("\f", "\\f")
-				.replace("\r", "\\r")
-				.replace("\n", "\\n")
-				.replace("\t", "\\t");
+		final StringBuilder result = new StringBuilder(value.length() + 16);
+		for (int i = 0; i < value.length(); i++) {
+			final char character = value.charAt(i);
+			switch (character) {
+				case '\\':
+					result.append("\\\\");
+					break;
+				case '"':
+					result.append("\\\"");
+					break;
+				case '\b':
+					result.append("\\b");
+					break;
+				case '\f':
+					result.append("\\f");
+					break;
+				case '\r':
+					result.append("\\r");
+					break;
+				case '\n':
+					result.append("\\n");
+					break;
+				case '\t':
+					result.append("\\t");
+					break;
+				default:
+					if (character < 0x20) {
+						// Other control characters have no short escape sequence in JSON
+						result.append(String.format("\\u%04x", (int) character));
+					} else {
+						result.append(character);
+					}
+			}
+		}
+		return result.toString();
 	}
 }

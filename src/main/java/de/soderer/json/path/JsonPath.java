@@ -27,36 +27,29 @@ public class JsonPath {
 	}
 
 	/**
-	 * Allowed syntax for JSON path:
+	 * Parse a JSON path string.
 	 *
-	 * dot-notation:
-	 * 	$.store.customer[5].item[2]
+	 * <p>Allowed syntax for JSON path:</p>
+	 * <pre>
+	 * dot-notation:                        $.store.customer[5].item[2]
+	 * bracket-notation:                    $['store']['customer'][5]['item'][2]
+	 * schema-reference-notation:           #/store/customer/item
+	 * external schema-reference-notation:  otherSchema.json#/store/customer/item
+	 * wildcard:                            $.store.*   or   $.store[*]
+	 * filter expression:                   $.store.item[?(@.price&lt;10)]
+	 *                                      $.*[?(@.version=='26.1.72')]
+	 * </pre>
 	 *
-	 * bracket-notation:
-	 * 	$['store']['customer'][5]['item'][2]
-	 *
-	 * schema-reference-notation:
-	 * 	#/store/customer/item
-	 *
-	 * external schema-reference-notation:
-	 * 	otherSchema.json#/store/customer/item
-	 *
-	 * wildcard (matches every property value of an object, or every item of an array; only
-	 * usable with {@link de.soderer.json.JsonNode#getDataListByJsonPath}, which can return
-	 * several matches):
-	 * 	$.store.*
-	 * 	$.store[*]
-	 *
-	 * filter expression (keeps only the candidates - every property value of an object, or
-	 * every item of an array - whose own given property compares as specified; only a single
-	 * property level after "@." is supported, and only usable with
-	 * {@link de.soderer.json.JsonNode#getDataListByJsonPath}):
-	 * 	$.store.item[?(@.price<10)]
-	 * 	$.*[?(@.version=='26.1.72')]
+	 * <p>A wildcard matches every property value of an object, or every item of an array.
+	 * A filter expression keeps only the candidates (every property value of an object, or
+	 * every item of an array) whose own given property compares as specified. Only a single
+	 * property level after "@." is supported. Paths with wildcards or filters can match several
+	 * nodes and are only usable with {@link de.soderer.json.JsonNode#getDataListByJsonPath}.</p>
 	 *
 	 * @param jsonPathString
+	 *            JSON path string
 	 * @throws JsonSchemaDefinitionError
-	 * @throws Exception
+	 *             if the JSON path string is invalid
 	 */
 	public JsonPath(final String jsonPathString) throws JsonSchemaDefinitionError {
 		try (JsonPathReader jsonPathReader = new JsonPathReader(jsonPathString)) {
@@ -243,6 +236,12 @@ public class JsonPath {
 	 * (single or double quotes) becomes a String, "true"/"false" a Boolean, "null" a null
 	 * value, and everything else is parsed as a number (Long if it has no decimal point or
 	 * exponent, Double otherwise).
+	 *
+	 * @param rawValue
+	 *            literal text of the filter expression
+	 * @return parsed value
+	 * @throws RuntimeException
+	 *             if the value is no valid literal
 	 */
 	private static Object parseFilterLiteral(final String rawValue) {
 		if (rawValue.length() >= 2
@@ -303,7 +302,8 @@ public class JsonPath {
 
 	/**
 	 * Size is the number of elements within the JsonPath without the first root element
-	 * @return
+	 *
+	 * @return number of path elements without the root element
 	 */
 	public int size() {
 		return jsonPathElements.size() - 1;

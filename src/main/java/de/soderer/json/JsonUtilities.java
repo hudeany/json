@@ -236,67 +236,97 @@ public class JsonUtilities {
 	}
 
 	/**
-	 * Check for a valid JSON schema definition.
+	 * Check for a valid JSON schema definition (simple JSON schema).
 	 *
-	 * @param jsonSchemaData
+	 * @param jsonSchemaDataInputStream
+	 *            JSON schema definition to check
 	 * @param encoding
-	 * @return
-	 * @throws JsonSchemaDataValidationError
-	 * @throws JsonSchemaDefinitionError
+	 *            encoding of the JSON schema definition
+	 * @return parsed JSON schema definition
 	 * @throws IOException
-	 * @throws
-	 * @throws Exception
+	 *             if the data cannot be read
+	 * @throws JsonSchemaDefinitionError
+	 *             if the meta schema of the JSON schema version cannot be loaded
+	 * @throws JsonSchemaDataValidationError
+	 *             if the JSON schema definition is invalid for the JSON schema version
 	 */
 	public static JsonNode validateJsonSchemaSimple(final InputStream jsonSchemaDataInputStream, final Charset encoding) throws IOException, JsonSchemaDefinitionError, JsonSchemaDataValidationError {
 		return validateJsonSchema(jsonSchemaDataInputStream, encoding, JsonSchemaVersion.simple);
 	}
 
 	/**
-	 * Check for a valid JSON schema definition.
+	 * Check for a valid JSON schema definition (JSON schema draft v4).
 	 *
-	 * @param jsonSchemaData
+	 * @param jsonSchemaDataInputStream
+	 *            JSON schema definition to check
 	 * @param encoding
-	 * @return
-	 * @throws Exception
+	 *            encoding of the JSON schema definition
+	 * @return parsed JSON schema definition
+	 * @throws IOException
+	 *             if the data cannot be read
+	 * @throws JsonSchemaDefinitionError
+	 *             if the meta schema of the JSON schema version cannot be loaded
+	 * @throws JsonSchemaDataValidationError
+	 *             if the JSON schema definition is invalid for the JSON schema version
 	 */
 	public static JsonNode validateJsonSchemaV4(final InputStream jsonSchemaDataInputStream, final Charset encoding) throws IOException, JsonSchemaDefinitionError, JsonSchemaDataValidationError {
 		return validateJsonSchema(jsonSchemaDataInputStream, encoding, JsonSchemaVersion.draftV4);
 	}
 
 	/**
-	 * Check for a valid JSON schema definition.
+	 * Check for a valid JSON schema definition (JSON schema draft v6).
 	 *
-	 * @param jsonSchemaData
+	 * @param jsonSchemaDataInputStream
+	 *            JSON schema definition to check
 	 * @param encoding
-	 * @return
-	 * @throws Exception
+	 *            encoding of the JSON schema definition
+	 * @return parsed JSON schema definition
+	 * @throws IOException
+	 *             if the data cannot be read
+	 * @throws JsonSchemaDefinitionError
+	 *             if the meta schema of the JSON schema version cannot be loaded
+	 * @throws JsonSchemaDataValidationError
+	 *             if the JSON schema definition is invalid for the JSON schema version
 	 */
 	public static JsonNode validateJsonSchemaV6(final InputStream jsonSchemaDataInputStream, final Charset encoding) throws IOException, JsonSchemaDefinitionError, JsonSchemaDataValidationError {
 		return validateJsonSchema(jsonSchemaDataInputStream, encoding, JsonSchemaVersion.draftV6);
 	}
 
 	/**
-	 * Check for a valid JSON schema definition.
+	 * Check for a valid JSON schema definition (JSON schema draft v7).
 	 *
-	 * @param jsonSchemaData
+	 * @param jsonSchemaDataInputStream
+	 *            JSON schema definition to check
 	 * @param encoding
-	 * @return
-	 * @throws Exception
+	 *            encoding of the JSON schema definition
+	 * @return parsed JSON schema definition
+	 * @throws IOException
+	 *             if the data cannot be read
+	 * @throws JsonSchemaDefinitionError
+	 *             if the meta schema of the JSON schema version cannot be loaded
+	 * @throws JsonSchemaDataValidationError
+	 *             if the JSON schema definition is invalid for the JSON schema version
 	 */
 	public static JsonNode validateJsonSchemaV7(final InputStream jsonSchemaDataInputStream, final Charset encoding) throws IOException, JsonSchemaDefinitionError, JsonSchemaDataValidationError {
 		return validateJsonSchema(jsonSchemaDataInputStream, encoding, JsonSchemaVersion.draftV7);
 	}
 
 	/**
-	 * Check for a valid JSON schema definition.
+	 * Check for a valid JSON schema definition against the meta schema of the given JSON schema version.
 	 *
-	 * @param jsonSchemaData
+	 * @param jsonSchemaDataInputStream
+	 *            JSON schema definition to check
 	 * @param encoding
-	 * @return
+	 *            encoding of the JSON schema definition
+	 * @param jsonSchemaVersion
+	 *            JSON schema version whose meta schema is used for the check
+	 * @return parsed JSON schema definition
 	 * @throws IOException
+	 *             if the data cannot be read
 	 * @throws JsonSchemaDefinitionError
+	 *             if the meta schema of the JSON schema version cannot be loaded
 	 * @throws JsonSchemaDataValidationError
-	 * @throws Exception
+	 *             if the JSON schema definition is invalid for the JSON schema version
 	 */
 	public static JsonNode validateJsonSchema(final InputStream jsonSchemaDataInputStream, final Charset encoding, final JsonSchemaVersion jsonSchemaVersion) throws JsonSchemaDefinitionError, JsonSchemaDataValidationError, IOException {
 		JsonSchema jsonSchema;

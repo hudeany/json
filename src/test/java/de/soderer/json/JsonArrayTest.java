@@ -142,8 +142,8 @@ class JsonArrayTest {
 		array.add(o1).add(o2).add(o3);
 		array.sortByAttribute("name", true);
 
-		assertEquals("Alice",   ((JsonObject) array.get(0)).getSimpleValue("name"));
-		assertEquals("Bob",     ((JsonObject) array.get(1)).getSimpleValue("name"));
+		assertEquals("Alice", ((JsonObject) array.get(0)).getSimpleValue("name"));
+		assertEquals("Bob", ((JsonObject) array.get(1)).getSimpleValue("name"));
 		assertEquals("Charlie", ((JsonObject) array.get(2)).getSimpleValue("name"));
 	}
 

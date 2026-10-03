@@ -190,8 +190,8 @@ class JsonObjectTest {
 		base.merge(other, JsonObjectMergeStrategy.OVERWRITE);
 
 		assertEquals("original-a", base.getSimpleValue("a"));
-		assertEquals("updated-b",  base.getSimpleValue("b"));
-		assertEquals("new-c",      base.getSimpleValue("c"));
+		assertEquals("updated-b", base.getSimpleValue("b"));
+		assertEquals("new-c", base.getSimpleValue("c"));
 		assertEquals(3, base.size());
 	}
 

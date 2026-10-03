@@ -86,7 +86,7 @@ public class JsonNode {
 					if (jsonArray.size() > lookingForIndex) {
 						nextDataObject = jsonArray.get(lookingForIndex);
 					} else {
-						throw new JsonPathException("JsonNode does noth include path", jsonPath);
+						throw new JsonPathException("JsonNode does not include path", jsonPath);
 					}
 				} else {
 					throw new JsonPathException("JsonNode does not include path", jsonPath);
@@ -98,7 +98,7 @@ public class JsonNode {
 					if (jsonObject.containsKey(lookingForPropertyKey)) {
 						nextDataObject = jsonObject.get(lookingForPropertyKey);
 					} else {
-						throw new JsonPathException("JsonNode does noth include path", jsonPath);
+						throw new JsonPathException("JsonNode does not include path", jsonPath);
 					}
 				} else {
 					throw new JsonPathException("JsonNode does not include path", jsonPath);
@@ -116,23 +116,44 @@ public class JsonNode {
 
 	/**
 	 * Like {@link #getDataByJsonPath(JsonPath)}, but also supports paths containing a
-	 * {@link JsonPathWildcardElement} ("*"/"[*]") or a {@link JsonPathFilterElement}
-	 * ("[?(@.property==value)]"), either of which can turn a single candidate into several -
+	 * {@link JsonPathWildcardElement} ({@code *} / {@code [*]}) or a {@link JsonPathFilterElement}
+	 * ({@code [?(@.property==value)]}), either of which can turn a single candidate into several,
 	 * so this returns a list instead of a single node.
 	 *
+	 * <p>
 	 * A path with neither a wildcard nor a filter behaves exactly like
 	 * {@link #getDataByJsonPath(JsonPath)}, except that the single match is wrapped in a
-	 * one-element list instead of being thrown - the same missing-property/missing-index errors
-	 * are thrown in that case. Once a wildcard or filter has been evaluated ("fanned out"),
-	 * every following property/array/wildcard step is applied leniently: a candidate that does
-	 * not have the required property/index is silently dropped instead of aborting the whole
-	 * query, since "give me X.field for every X that has one" is the expected behaviour once
-	 * several candidates are in play. A filter behaves slightly differently depending on this
-	 * same fanned-out state: before the first fan-out, "container[?(...)]" descends into the
-	 * container's children and keeps the matching ones (matching plain JSONPath's combined
-	 * "select children, then filter" syntax, e.g. "$.items[?(@.price<10)]"); once already
-	 * fanned out, a filter is tested directly against each already-selected candidate instead
-	 * of descending further (e.g. "$.*[?(@.version=='1.0')]" tests every value produced by "*").
+	 * one-element list instead of being returned directly. The same missing-property/missing-index
+	 * errors are thrown in that case.
+	 * </p>
+	 *
+	 * <p>
+	 * Once a wildcard or filter has been evaluated ("fanned out"), every following
+	 * property/array/wildcard step is applied leniently: a candidate that does not have the
+	 * required property/index is silently dropped instead of aborting the whole query, since
+	 * "give me X.field for every X that has one" is the expected behaviour once several
+	 * candidates are in play.
+	 * </p>
+	 *
+	 * <p>
+	 * A filter behaves slightly differently depending on this fanned-out state:
+	 * </p>
+	 * <ul>
+	 * <li>Before the first fan-out, {@code container[?(...)]} descends into the container's
+	 * children and keeps the matching ones (matching plain JSONPath's combined
+	 * "select children, then filter" syntax, e.g. {@code $.items[?(@.price<10)]}).</li>
+	 * <li>Once already fanned out, a filter is tested directly against each already-selected
+	 * candidate instead of descending further (e.g. {@code $.*[?(@.version=='1.0')]} tests every
+	 * value produced by {@code *}).</li>
+	 * </ul>
+	 *
+	 * @param jsonPath
+	 *            path to evaluate, may contain wildcards and filters
+	 * @return all matching nodes, empty if nothing matches after a wildcard or filter
+	 * @throws JsonPathException
+	 *             if a required property/index is missing before the first wildcard or filter,
+	 *             the path does not start at a root node as required, or a wildcard/filter is
+	 *             applied to a simple value
 	 */
 	public List<JsonNode> getDataListByJsonPath(final JsonPath jsonPath) throws JsonPathException {
 		List<JsonNode> currentNodes = new ArrayList<>();
@@ -217,8 +238,14 @@ public class JsonNode {
 	/**
 	 * A candidate matches a filter if it is a {@link JsonObject}, has the filter's property,
 	 * and that property's simple value compares as specified against the filter's literal.
-	 * Anything else (not an object, or missing the property) simply does not match - this is
+	 * Anything else (not an object, or missing the property) simply does not match. This is
 	 * a filter, not an error condition.
+	 *
+	 * @param candidate
+	 *            node to test
+	 * @param filterElement
+	 *            filter with property name, operator and literal value
+	 * @return true if the candidate matches the filter
 	 */
 	private static boolean matchesFilter(final JsonNode candidate, final JsonPathFilterElement filterElement) {
 		if (!(candidate instanceof JsonObject)) {

@@ -1196,4 +1196,10 @@ public class JsonTest {
 			Assertions.fail(e.getMessage());
 		}
 	}
+
+	@Test
+	public void testFormatStringOutputEscapesControlCharacters() {
+		// Quote, backslash, short escapes and a control character without short escape
+		Assertions.assertEquals("a\\\"b\\\\c\\nd\\u0001e", JsonWriter.formatStringOutput("a\"b\\c\nd\u0001e"));
+	}
 }

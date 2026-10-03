@@ -45,11 +45,11 @@ public class YamlExampleTest {
 			Assertions.assertTrue(document.getRoot() instanceof YamlMapping);
 			final YamlMapping yamlMapping = (YamlMapping) document.getRoot();
 			Assertions.assertEquals(3, yamlMapping.size());
-            assertEquals(YamlScalarType.STRING, ((YamlScalar) yamlMapping.get("abc")).getType());
+			assertEquals(YamlScalarType.STRING, ((YamlScalar) yamlMapping.get("abc")).getType());
 			Assertions.assertEquals("YamlScalar: 1", yamlMapping.get("abc").getClass().getSimpleName() + ": " + yamlMapping.get("abc"));
-            assertEquals(YamlScalarType.NUMBER, ((YamlScalar) yamlMapping.get("def")).getType());
+			assertEquals(YamlScalarType.NUMBER, ((YamlScalar) yamlMapping.get("def")).getType());
 			Assertions.assertEquals("YamlScalar: 2", yamlMapping.get("def").getClass().getSimpleName() + ": " + yamlMapping.get("def"));
-            assertEquals(YamlScalarType.NUMBER, ((YamlScalar) yamlMapping.get("ghi")).getType());
+			assertEquals(YamlScalarType.NUMBER, ((YamlScalar) yamlMapping.get("ghi")).getType());
 			Assertions.assertEquals("YamlScalar: 3.0", yamlMapping.get("ghi").getClass().getSimpleName() + ": " + yamlMapping.get("ghi"));
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -84,11 +84,11 @@ public class YamlExampleTest {
 			Assertions.assertTrue(document.getRoot() instanceof YamlSequence);
 			final YamlSequence yamlSequence = (YamlSequence) document.getRoot();
 			Assertions.assertEquals(3, yamlSequence.size());
-            assertEquals(YamlScalarType.STRING, ((YamlScalar) yamlSequence.get(0)).getType());
+			assertEquals(YamlScalarType.STRING, ((YamlScalar) yamlSequence.get(0)).getType());
 			Assertions.assertEquals("YamlScalar: 1", yamlSequence.get(0).getClass().getSimpleName() + ": " + yamlSequence.get(0));
-            assertEquals(YamlScalarType.NUMBER, ((YamlScalar) yamlSequence.get(1)).getType());
+			assertEquals(YamlScalarType.NUMBER, ((YamlScalar) yamlSequence.get(1)).getType());
 			Assertions.assertEquals("YamlScalar: 2", yamlSequence.get(1).getClass().getSimpleName() + ": " + yamlSequence.get(1));
-            assertEquals(YamlScalarType.NUMBER, ((YamlScalar) yamlSequence.get(2)).getType());
+			assertEquals(YamlScalarType.NUMBER, ((YamlScalar) yamlSequence.get(2)).getType());
 			Assertions.assertEquals("YamlScalar: 3.0", yamlSequence.get(2).getClass().getSimpleName() + ": " + yamlSequence.get(2));
 		} catch (final Exception e) {
 			e.printStackTrace();

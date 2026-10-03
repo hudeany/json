@@ -13,10 +13,11 @@ public class NumberUtilities {
 	public static DecimalFormat NUMBER_WITH_MIN_7_DIGITS = new DecimalFormat("0000000");
 
 	/**
-	 * Check for a single digit
+	 * Check for String of digits
 	 *
-	 * @param value
-	 * @return
+	 * @param digitString
+	 *            string to check
+	 * @return true if all characters are digits (also true for an empty string)
 	 */
 	public static boolean isDigit(final String digitString) {
 		for (final char character : digitString.toCharArray()) {
@@ -28,10 +29,22 @@ public class NumberUtilities {
 	}
 
 	/**
+	 * Check for a single digit
+	 *
+	 * @param characterToCheck
+	 *            character to check
+	 * @return true for the characters '0' to '9'
+	 */
+	public static boolean isDigit(final char characterToCheck) {
+		return characterToCheck >= '0' && characterToCheck <= '9';
+	}
+
+	/**
 	 * Check for a integer value without decimals
 	 *
 	 * @param value
-	 * @return
+	 *            string to check
+	 * @return true if the string can be parsed as int
 	 */
 	public static boolean isInteger(final String value) {
 		try {
@@ -43,10 +56,27 @@ public class NumberUtilities {
 	}
 
 	/**
+	 * Check for a long integer value without decimals
+	 *
+	 * @param value
+	 *            string to check
+	 * @return true if the string can be parsed as long
+	 */
+	public static boolean isBigInteger(final String value) {
+		try {
+			Long.parseLong(value);
+			return true;
+		} catch (@SuppressWarnings("unused") final NumberFormatException e) {
+			return false;
+		}
+	}
+
+	/**
 	 * Check for a double value with optional decimals after a dot(.) and exponent
 	 *
 	 * @param value
-	 * @return
+	 *            string to check
+	 * @return true if the string can be parsed as double
 	 */
 	public static boolean isDouble(final String value) {
 		try {
@@ -61,80 +91,88 @@ public class NumberUtilities {
 	 * Compare Number objects
 	 *
 	 * @param a
+	 *            first number
 	 * @param b
-	 * @return
-	 * 	 1 if a > b
-	 * 	 0 if a = b
-	 * 	-1 if a < b
+	 *            second number
+	 * @return 1 if a &gt; b, 0 if a = b, -1 if a &lt; b
 	 */
-	public static int compare(final Number a, final Number b){
+	public static int compare(final Number a, final Number b) {
 		return new BigDecimal(a.toString()).compareTo(new BigDecimal(b.toString()));
 	}
 
+	/**
+	 * Number in english notation without grouping: optional sign, digits with optional decimals after a dot, optional exponent.
+	 */
+	private static final Pattern NUMBER_PATTERN = Pattern.compile("[+-]?([0-9]+(\\.[0-9]*)?|\\.[0-9]+)([eE][+-]?[0-9]+)?");
+
+	/**
+	 * Check for a number in english notation without grouping separators, like {@code -12.5E-3}.
+	 *
+	 * @param numberString
+	 *            string to check
+	 * @return true if the string is a number, false for null
+	 */
 	public static boolean isNumber(final String numberString) {
-		return Pattern.matches("[+|-]?([0-9]+(\\.[0-9]*)?|\\.[0-9]+)([e|E][+|-]?[0-9]*)?", numberString);
+		return numberString != null && NUMBER_PATTERN.matcher(numberString).matches();
 	}
 
 	/**
-	 * Parse a number of unknown type in english notation like "1,234,567.90E-12".
-	 * Resulting type may be Integer, Long, Float, Double, BigDecimal. Byte and Short are returned as Integer.
-	 * The resulting type is the smallest type able to contain the given number without loss of accuracy.
+	 * Number in english notation with optional sign, optional comma grouping of the integer part,
+	 * optional decimals after a dot and optional exponent. At least one digit is required before the exponent.
+	 */
+	private static final Pattern NUMBER_WITH_OPTIONAL_GROUPING_PATTERN = Pattern.compile("[+-]?(?=\\.?\\d)(\\d{1,3}(,\\d{3})+|\\d+)?(\\.\\d*)?([eE][+-]?\\d+)?");
+
+	private static final BigDecimal INTEGER_MIN = BigDecimal.valueOf(Integer.MIN_VALUE);
+	private static final BigDecimal INTEGER_MAX = BigDecimal.valueOf(Integer.MAX_VALUE);
+	private static final BigDecimal LONG_MIN = BigDecimal.valueOf(Long.MIN_VALUE);
+	private static final BigDecimal LONG_MAX = BigDecimal.valueOf(Long.MAX_VALUE);
+
+	/**
+	 * Parse a number of unknown type in english notation like {@code 1,234,567.90E-12}.
+	 * Comma grouping of the integer part is optional, but if used it must be in groups of three digits.
+	 *
+	 * <p>The resulting type is the smallest type able to contain the given number without loss of accuracy:</p>
+	 * <ul>
+	 * <li>Numbers without decimal point and exponent become Integer, Long or BigDecimal.
+	 * Byte and Short values are returned as Integer.</li>
+	 * <li>Numbers with decimal point or exponent become Float or Double, if the value is exactly
+	 * representable by their decimal representation, otherwise BigDecimal.</li>
+	 * </ul>
 	 *
 	 * @param numberString
-	 * @return
+	 *            number to parse
+	 * @return parsed number
 	 * @throws NumberFormatException
+	 *             if the string is not a number
 	 */
 	public static Number parseNumber(final String numberString) throws NumberFormatException {
-		if (!isNumber(numberString)) {
+		if (numberString == null || !NUMBER_WITH_OPTIONAL_GROUPING_PATTERN.matcher(numberString).matches()) {
 			throw new NumberFormatException("Not a number: '" + numberString + "'");
-		} else if (numberString.contains("e") || numberString.contains("E")) {
-			final String exponentString = numberString.substring(numberString.toLowerCase().indexOf("e") + 1);
-			int exponent;
-			if (exponentString.length() == 0) {
-				exponent = 0;
+		}
+
+		final String plainNumberString = numberString.replace(",", "");
+		final BigDecimal value = new BigDecimal(plainNumberString);
+
+		final boolean integerNotation = plainNumberString.indexOf('.') < 0 && plainNumberString.indexOf('e') < 0 && plainNumberString.indexOf('E') < 0;
+		if (integerNotation) {
+			if (value.compareTo(INTEGER_MIN) >= 0 && value.compareTo(INTEGER_MAX) <= 0) {
+				return Integer.valueOf(value.intValue());
+			} else if (value.compareTo(LONG_MIN) >= 0 && value.compareTo(LONG_MAX) <= 0) {
+				return Long.valueOf(value.longValue());
 			} else {
-				exponent = Integer.parseInt(exponentString);
-			}
-			if (Float.MIN_EXPONENT < exponent && exponent < Float.MAX_EXPONENT) {
-				return Float.valueOf(numberString);
-			} else {
-				return Double.valueOf(numberString);
-			}
-		} else if (numberString.contains(".")) {
-			if (numberString.length() < 10) {
-				return Float.valueOf(numberString);
-			} else {
-				final BigDecimal value = new BigDecimal(numberString);
-				final int numberOfDecimalPoints = numberString.substring(numberString.indexOf(".") + 1).replace(",", "").length();
-				final boolean isFloat = numberOfDecimalPoints <= 7 && new BigDecimal(Float.MIN_VALUE).compareTo(value) == -1 && value.compareTo(new BigDecimal(Float.MAX_VALUE)) == -1;
-				if (isFloat) {
-					return Float.valueOf(numberString);
-				} else {
-					final boolean isDouble = new BigDecimal(Double.MIN_VALUE).compareTo(value) == -1 && value.compareTo(new BigDecimal(Double.MAX_VALUE)) == -1;
-					if (isDouble) {
-						return Double.valueOf(numberString);
-					} else {
-						return value;
-					}
-				}
+				return value;
 			}
 		} else {
-			if (numberString.length() < 10) {
-				return Integer.valueOf(numberString);
-			} else {
-				final BigDecimal value = new BigDecimal(numberString);
-				final boolean isInteger = new BigDecimal(Integer.MIN_VALUE).compareTo(value) == -1 && value.compareTo(new BigDecimal(Integer.MAX_VALUE)) == -1;
-				if (isInteger) {
-					return Integer.valueOf(numberString);
-				} else {
-					final boolean isLong = new BigDecimal(Long.MIN_VALUE).compareTo(value) == -1 && value.compareTo(new BigDecimal(Long.MAX_VALUE)) == -1;
-					if (isLong) {
-						return Long.valueOf(numberString);
-					} else {
-						return value;
-					}
-				}
+			// Float or Double only if converting back yields exactly the same decimal value
+			final float floatValue = value.floatValue();
+			if (Float.isFinite(floatValue) && new BigDecimal(Float.toString(floatValue)).compareTo(value) == 0) {
+				return Float.valueOf(floatValue);
 			}
+			final double doubleValue = value.doubleValue();
+			if (Double.isFinite(doubleValue) && new BigDecimal(Double.toString(doubleValue)).compareTo(value) == 0) {
+				return Double.valueOf(doubleValue);
+			}
+			return value;
 		}
 	}
 

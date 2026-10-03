@@ -190,7 +190,12 @@ public class JsonReader extends BasicReader {
 
 	/**
 	 * Read JSON data node by node.
-	 * Use "readNextToken" first to init read by node steps
+	 * Use {@link #readNextToken()} or {@link #readUpToJsonPath(String)} first to init read by node steps.
+	 *
+	 * @return next JSON node (object, array, simple value or property key),
+	 *         or null at the end of the data or of the current object/array
+	 * @throws Exception
+	 *             if the reader was not initialized or the JSON data is invalid
 	 */
 	public JsonNode readNextJsonNode() throws Exception {
 		if (!readWasInitialized()) {
@@ -333,8 +338,10 @@ public class JsonReader extends BasicReader {
 	 * This method should only be used to read small Json items
 	 *
 	 * @param data
-	 * @return
+	 *            JSON data as string
+	 * @return parsed JSON item
 	 * @throws Exception
+	 *             if the JSON data is invalid
 	 */
 	public static JsonNode readJsonItemString(final String data) throws Exception {
 		try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8))) {
@@ -396,31 +403,39 @@ public class JsonReader extends BasicReader {
 	}
 
 	/**
+	 * Get the JsonPath of the current read position.
 	 *
-	 * JsonPath syntax:<br />
-	 *	$ : root<br />
-	 *	. : child separator<br />
-	 *	[n] : array operator<br />
-	 *<br />
-	 * JsonPath example:<br />
-	 * 	"$.list.customer[0].name"<br />
+	 * JsonPath syntax:
+	 * <pre>
+	 * $         : root
+	 * .         : child separator
+	 * [n]       : array operator
+	 * </pre>
+	 *
+	 * JsonPath example: {@code $.list.customer[0].name}
+	 *
+	 * @return JsonPath of the current read position
 	 */
 	public JsonPath getCurrentJsonPath() {
 		return currentJsonPath;
 	}
 
 	/**
-	 * JsonPath syntax:<br />
-	 *	$ : root<br />
-	 *	. or / : child separator<br />
-	 *	[n] : array operator<br />
-	 *<br />
-	 * JsonPath example:<br />
-	 * 	"$.list.customer[0].name"<br />
+	 * Read up to the given JsonPath, so the next read starts at the item of this path.
 	 *
-	 * @param jsonReader
-	 * @param jsonPath
+	 * JsonPath syntax:
+	 * <pre>
+	 * $         : root
+	 * . or /    : child separator
+	 * [n]       : array operator
+	 * </pre>
+	 *
+	 * JsonPath example: {@code $.list.customer[0].name}
+	 *
+	 * @param jsonPathString
+	 *            JsonPath to read up to
 	 * @throws Exception
+	 *             if the JsonPath is invalid or not part of the JSON data
 	 */
 	public void readUpToJsonPath(final String jsonPathString) throws Exception {
 		final JsonPath readJsonPath = new JsonPath(jsonPathString);
