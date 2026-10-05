@@ -9,9 +9,22 @@ import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
 
 /**
- * The schema is a single boolean value that results in a match or not, no matter what the JSON data node is like
+ * Validator for a boolean schema (since JSON schema draft 6): true accepts any JSON data node,
+ * false rejects any JSON data node.
  */
 public class BooleanValidator extends BaseJsonSchemaValidator {
+	/**
+	 * Creates a new boolean schema validator.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the boolean schema within the JSON schema
+	 * @param validatorData
+	 *            the boolean schema value
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is not a boolean
+	 */
 	public BooleanValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 

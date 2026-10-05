@@ -1,5 +1,8 @@
 package de.soderer.yaml.data;
 
+/**
+ * Chomping of the trailing linebreaks of a block scalar (the "-" or "+" indicator).
+ */
 public enum YamlMultilineScalarChompingType {
 	/**
 	 * ">" or "|"<br />
@@ -19,16 +22,20 @@ public enum YamlMultilineScalarChompingType {
 	 */
 	KEEP;
 
-	public static YamlMultilineScalarChompingType getYamlMultilineScalarChompingType(String multilineTypeSign) throws Exception {
-		if (multilineTypeSign != null && (multilineTypeSign.startsWith("|") || multilineTypeSign.startsWith(">"))) {
-			multilineTypeSign = multilineTypeSign.substring(1);
-		} else {
-			throw new Exception("Invalid multiline scalar type: '" + multilineTypeSign + "'");
-		}
-
-		if (multilineTypeSign.startsWith("-")) {
+	/**
+	 * Returns the chomping type of a block scalar header like "|-" or "&gt;+2".
+	 *
+	 * @param multilineTypeSign
+	 *            the block scalar header
+	 * @return the chomping type, CLIP if no chomping indicator is given
+	 * @throws Exception
+	 *             if the header is invalid
+	 */
+	public static YamlMultilineScalarChompingType getYamlMultilineScalarChompingType(final String multilineTypeSign) throws Exception {
+		final String indicators = YamlMultilineScalarType.getHeaderIndicators(multilineTypeSign);
+		if (indicators.contains("-")) {
 			return YamlMultilineScalarChompingType.STRIP;
-		} else if (multilineTypeSign.startsWith("+")) {
+		} else if (indicators.contains("+")) {
 			return YamlMultilineScalarChompingType.KEEP;
 		} else {
 			return YamlMultilineScalarChompingType.CLIP;

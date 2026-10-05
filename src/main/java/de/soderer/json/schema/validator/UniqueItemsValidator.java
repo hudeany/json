@@ -11,11 +11,26 @@ import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
 
 /**
- * JSON schema validator to check all items of a JSON array to be unique by utilization of "equal" method
+ * Validator for the "uniqueItems" keyword: if true, all items of the JSON data array must be
+ * different, compared by their equals method. Data that is not an array is ignored, except in
+ * simple mode.
  */
 public class UniqueItemsValidator extends BaseJsonSchemaValidator {
+	/** Whether the items must be unique. */
 	private final boolean checkValue;
 
+	/**
+	 * Creates a new "uniqueItems" validator.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, a boolean or the string "true" or "false"
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is not a boolean
+	 */
 	public UniqueItemsValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 

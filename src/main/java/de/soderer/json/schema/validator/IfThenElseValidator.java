@@ -28,10 +28,35 @@ import de.soderer.json.schema.JsonSchemaPath;
  * messages and incorrectly/permanently mark a nested data node as "root".
  */
 public class IfThenElseValidator extends BaseJsonSchemaValidator {
+	/** Validators of the "if" schema. */
 	private final List<BaseJsonSchemaValidator> ifSubValidators;
+
+	/** Validators of the "then" schema, or null if there is no "then" part. */
 	private List<BaseJsonSchemaValidator> thenSubValidators = null;
+
+	/** Validators of the "else" schema, or null if there is no "else" part. */
 	private List<BaseJsonSchemaValidator> elseSubValidators = null;
 
+	/**
+	 * Creates a new "if"/"then"/"else" validator.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema, must be in draft 7
+	 *            mode
+	 * @param jsonSchemaPath
+	 *            the path of the schema object containing the keywords
+	 * @param ifJsonObject
+	 *            the value of "if", a schema object or a boolean
+	 * @param thenObject
+	 *            the value of "then", a schema object or a boolean, or null if not defined
+	 * @param elseObject
+	 *            the value of "else", a schema object or a boolean, or null if not defined
+	 * @throws JsonSchemaDefinitionError
+	 *             if not in draft 7 mode, a value is neither object nor boolean, or a schema is
+	 *             invalid
+	 * @throws DuplicateKeyException
+	 *             if a schema contains duplicate keys
+	 */
 	public IfThenElseValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode ifJsonObject, final JsonNode thenObject, final JsonNode elseObject) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, ifJsonObject);
 
@@ -39,6 +64,8 @@ public class IfThenElseValidator extends BaseJsonSchemaValidator {
 			throw new JsonSchemaDefinitionError("Support for 'if' comes with draft version v7. Please configure used JSON schema version accordingly.", jsonSchemaPath);
 		} else if (ifJsonObject == null) {
 			throw new JsonSchemaDefinitionError("'if' value is 'null'", jsonSchemaPath);
+		} else if (!ifJsonObject.isBoolean() && !ifJsonObject.isJsonObject()) {
+			throw new JsonSchemaDefinitionError("'if' branch is not 'boolean' or 'object'", jsonSchemaPath);
 		} else if (thenObject != null && !thenObject.isBoolean() && !thenObject.isJsonObject()) {
 			throw new JsonSchemaDefinitionError("'then' branch is not 'boolean' or 'object'", jsonSchemaPath);
 		} else if (elseObject != null && !elseObject.isBoolean() && !elseObject.isJsonObject()) {
@@ -56,6 +83,21 @@ public class IfThenElseValidator extends BaseJsonSchemaValidator {
 		}
 	}
 
+	/**
+	 * Creates the validators of one branch.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param branchSchemaPath
+	 *            the path of the branch within the JSON schema
+	 * @param branchObject
+	 *            the value of the branch, a schema object or a boolean
+	 * @return the validators of the branch
+	 * @throws JsonSchemaDefinitionError
+	 *             if the schema is invalid
+	 * @throws DuplicateKeyException
+	 *             if the schema contains duplicate keys
+	 */
 	private static List<BaseJsonSchemaValidator> createBranchValidators(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath branchSchemaPath, final JsonNode branchObject) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		if (branchObject.isBoolean()) {
 			final List<BaseJsonSchemaValidator> subValidators = new ArrayList<>();

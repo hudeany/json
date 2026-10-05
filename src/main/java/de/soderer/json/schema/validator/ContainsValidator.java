@@ -15,11 +15,30 @@ import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
 
 /**
- * The contains value is a schema, that needs to validate against one or more items in the JSON data array
+ * Validator for the "contains" keyword (since JSON schema draft 6): its value is a schema, which
+ * must validate at least one item of the JSON data array. Data that is not an array is ignored,
+ * except in simple mode.
  */
 public class ContainsValidator extends ExtendedBaseJsonSchemaValidator {
-	final List<BaseJsonSchemaValidator> subValidators;
+	/** Validators of the schema at least one array item must match. */
+	private final List<BaseJsonSchemaValidator> subValidators;
 
+	/**
+	 * Creates a new "contains" validator.
+	 *
+	 * @param parentValidatorData
+	 *            the parent schema containing this keyword
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, a schema object or a boolean
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is neither object nor boolean, or the schema is invalid
+	 * @throws DuplicateKeyException
+	 *             if the schema contains duplicate keys
+	 */
 	public ContainsValidator(final JsonObject parentValidatorData, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		super(parentValidatorData, jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
@@ -33,7 +52,7 @@ public class ContainsValidator extends ExtendedBaseJsonSchemaValidator {
 				throw new JsonSchemaDefinitionError("Contains data JSON schema is invalid: " + e.getMessage(), jsonSchemaPath, e);
 			}
 		} else {
-			throw new JsonSchemaDefinitionError("Contains data is not an 'object'", jsonSchemaPath);
+			throw new JsonSchemaDefinitionError("Contains data is neither 'object' nor 'boolean'", jsonSchemaPath);
 		}
 	}
 
@@ -44,16 +63,19 @@ public class ContainsValidator extends ExtendedBaseJsonSchemaValidator {
 				throw new JsonSchemaDataValidationError("Expected data type 'array' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {
+			int itemIndex = 0;
 			for (final JsonNode itemObject : ((JsonArray) jsonNode).items()) {
+				final JsonPath itemJsonPath = new JsonPath(jsonPath).addArrayIndex(itemIndex);
 				JsonNode newJsonNode;
 				try {
 					newJsonNode = itemObject.withRootNode(false);
 				} catch (final Exception e) {
-					throw new JsonSchemaDataValidationError("Invalid data type '" + itemObject.getClass().getSimpleName() + "'", jsonPath, e);
+					throw new JsonSchemaDataValidationError("Invalid data type '" + itemObject.getClass().getSimpleName() + "'", itemJsonPath, e);
 				}
-				if (validateSubSchema(subValidators, newJsonNode, jsonPath)) {
+				if (validateSubSchema(subValidators, newJsonNode, itemJsonPath)) {
 					return;
 				}
+				itemIndex++;
 			}
 
 			throw new JsonSchemaDataValidationError("Array does not contain expected item", jsonPath);

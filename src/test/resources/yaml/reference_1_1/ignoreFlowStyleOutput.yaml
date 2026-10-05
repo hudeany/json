@@ -81,13 +81,13 @@
   : "Boolean true"
   ? n: null
   : "Boolean false"
-  R0lG...BADS= : >-
+  "R0lG...BADS=\n": >-
     Base 64 binary value.
 "Escape codes":
   "Numeric":
     "\u0012": "8-bit"
     "ሴ": "16-bit"
-    "‰": "32-bit"
+    "􂀰": "32-bit"
   "Protective":
     "\\": '\'
     "\"": '"'
@@ -101,7 +101,7 @@
     "\n": "LF"
     "\r": "CR"
     "\t": "TAB"
-    "\u2B7F": "VTAB"
+    "\u000B": "VTAB"
   "Additional":
     "\u001B": "ESC"
     "\u00A0": "NBSP"

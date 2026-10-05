@@ -70,7 +70,8 @@ public class PropertyNamesValidatorTest {
 			Assertions.fail("Missing expected exception");
 		} catch (final JsonSchemaDataValidationError e) {
 			// Expected exception
-			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$"));
+			// The error path points to the property with the invalid name
+			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$").addPropertyKey("abcd"));
 		} catch (final Exception e) {
 			e.printStackTrace();
 			Assertions.fail(e.getMessage());

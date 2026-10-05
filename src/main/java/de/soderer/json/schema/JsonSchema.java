@@ -75,39 +75,123 @@ public class JsonSchema {
 	 * Example: "https://json-schema.org/schema#"
 	 */
 	private String schemaVersionUrl = null;
+
+	/** Value of "$comment". */
 	private String comment = null;
+
+	/** Value of "id" (up to draft 4) or "$id" (since draft 6). */
 	private String id = null;
+
+	/** Value of "title". */
 	private String title;
+
+	/** Value of "description". */
 	private String description;
+
+	/** Resolver for references and settings of this schema. */
 	private JsonSchemaDependencyResolver jsonSchemaDependencyResolver;
+
+	/** Validators of the top level keywords of this schema. */
 	private List<BaseJsonSchemaValidator> validators;
 
+	/**
+	 * Reads a JSON schema with default configuration. The schema may be written in JSON5 syntax.
+	 *
+	 * @param jsonSchemaInputStream
+	 *            the stream to read the schema from
+	 * @param dependencies
+	 *            additional JSON schemas referenced by this schema via "$ref"
+	 * @throws Exception
+	 *             if the schema cannot be read or is invalid
+	 */
 	public JsonSchema(final InputStream jsonSchemaInputStream, final JsonSchemaDependency... dependencies) throws Exception {
 		this(jsonSchemaInputStream, new JsonSchemaConfiguration(), dependencies);
 	}
 
+	/**
+	 * Creates a boolean JSON schema with default configuration: true accepts any data, false rejects
+	 * any data.
+	 *
+	 * @param jsonSchemaDefinitionObject
+	 *            the boolean schema value
+	 * @param dependencies
+	 *            additional JSON schemas referenced by this schema via "$ref"
+	 * @throws DuplicateKeyException
+	 *             never thrown for boolean schemas, declared by the delegate constructor
+	 * @throws Exception
+	 *             if the value is null
+	 */
 	public JsonSchema(final Boolean jsonSchemaDefinitionObject, final JsonSchemaDependency... dependencies) throws DuplicateKeyException, Exception {
 		this(jsonSchemaDefinitionObject == null ? (JsonObject) null : (jsonSchemaDefinitionObject ? new JsonObject() : new JsonObject().add("not", new JsonObject())), new JsonSchemaConfiguration(), dependencies);
 	}
 
+	/**
+	 * Creates a boolean JSON schema: true accepts any data, false rejects any data.
+	 *
+	 * @param jsonSchemaDefinitionObject
+	 *            the boolean schema value
+	 * @param jsonSchemaConfiguration
+	 *            the configuration (JSON schema version, encoding etc.)
+	 * @param dependencies
+	 *            additional JSON schemas referenced by this schema via "$ref"
+	 * @throws DuplicateKeyException
+	 *             never thrown for boolean schemas, declared by the delegate constructor
+	 * @throws Exception
+	 *             if the value is null
+	 */
 	public JsonSchema(final Boolean jsonSchemaDefinitionObject, final JsonSchemaConfiguration jsonSchemaConfiguration, final JsonSchemaDependency... dependencies) throws DuplicateKeyException, Exception {
 		this(jsonSchemaDefinitionObject == null ? (JsonObject) null : (jsonSchemaDefinitionObject ? new JsonObject() : new JsonObject().add("not", new JsonObject())), jsonSchemaConfiguration, dependencies);
 	}
 
+	/**
+	 * Creates a boolean JSON schema using an existing dependency resolver: true accepts any data,
+	 * false rejects any data.
+	 *
+	 * @param jsonSchemaDefinitionObject
+	 *            the boolean schema value
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is null
+	 * @throws DuplicateKeyException
+	 *             never thrown for boolean schemas, declared by the delegate constructor
+	 */
 	public JsonSchema(final Boolean jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		this(jsonSchemaDefinitionObject == null ? (JsonObject) null : (jsonSchemaDefinitionObject ? new JsonObject() : new JsonObject().add("not", new JsonObject())), jsonSchemaDependencyResolver);
 	}
 
+	/**
+	 * Creates a JSON schema from an already parsed schema object with default configuration.
+	 *
+	 * @param jsonSchemaDefinitionObject
+	 *            the schema object
+	 * @param dependencies
+	 *            additional JSON schemas referenced by this schema via "$ref"
+	 * @throws Exception
+	 *             if the schema is null or invalid
+	 */
 	public JsonSchema(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependency... dependencies) throws Exception {
 		this(jsonSchemaDefinitionObject, new JsonSchemaConfiguration(), dependencies);
 	}
 
+	/**
+	 * Reads a JSON schema. The schema may be written in JSON5 syntax and may be a boolean schema.
+	 *
+	 * @param jsonSchemaInputStream
+	 *            the stream to read the schema from
+	 * @param jsonSchemaConfiguration
+	 *            the configuration (JSON schema version, encoding etc.)
+	 * @param dependencies
+	 *            additional JSON schemas referenced by this schema via "$ref"
+	 * @throws JsonSchemaDefinitionError
+	 *             if the schema cannot be read or is invalid
+	 */
 	public JsonSchema(final InputStream jsonSchemaInputStream, final JsonSchemaConfiguration jsonSchemaConfiguration, final JsonSchemaDependency... dependencies) throws JsonSchemaDefinitionError {
 		JsonNode jsonNode;
 		try (JsonReader jsonReader = new Json5Reader(jsonSchemaInputStream, jsonSchemaConfiguration.getEncoding())) {
 			jsonNode = jsonReader.read();
 		} catch (final Exception e) {
-			throw new JsonSchemaDefinitionError("Cannot read JSON-Schema: " + e.getMessage(), null);
+			throw new JsonSchemaDefinitionError("Cannot read JSON-Schema: " + e.getMessage(), null, e);
 		}
 
 		if (jsonNode == null) {
@@ -134,6 +218,18 @@ public class JsonSchema {
 		}
 	}
 
+	/**
+	 * Creates a JSON schema from an already parsed schema object.
+	 *
+	 * @param jsonSchemaDefinitionObject
+	 *            the schema object
+	 * @param jsonSchemaConfiguration
+	 *            the configuration (JSON schema version, encoding etc.)
+	 * @param dependencies
+	 *            additional JSON schemas referenced by this schema via "$ref"
+	 * @throws Exception
+	 *             if the schema is null or invalid
+	 */
 	public JsonSchema(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaConfiguration jsonSchemaConfiguration, final JsonSchemaDependency... dependencies) throws Exception {
 		if (jsonSchemaDefinitionObject == null) {
 			throw new JsonSchemaDefinitionError("Contains null data", null);
@@ -145,6 +241,19 @@ public class JsonSchema {
 		}
 	}
 
+	/**
+	 * Creates a JSON schema from an already parsed schema object using an existing dependency
+	 * resolver, e.g. for a referenced sub schema.
+	 *
+	 * @param jsonSchemaDefinitionObject
+	 *            the schema object
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings
+	 * @throws JsonSchemaDefinitionError
+	 *             if the schema is null or invalid
+	 * @throws DuplicateKeyException
+	 *             if the schema contains duplicate keys
+	 */
 	public JsonSchema(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		if (jsonSchemaDefinitionObject == null) {
 			throw new JsonSchemaDefinitionError("Contains null data", null);
@@ -154,6 +263,19 @@ public class JsonSchema {
 		}
 	}
 
+	/**
+	 * Reads the descriptive top level keywords ("id", "$id", "$schema", "$comment", "title",
+	 * "description") and creates the dependency resolver.
+	 *
+	 * @param jsonSchemaDefinitionObject
+	 *            the schema object
+	 * @param jsonSchemaConfiguration
+	 *            the configuration, its JSON schema version is set from "$schema" if not defined yet
+	 * @param dependencies
+	 *            additional JSON schemas referenced by this schema via "$ref"
+	 * @throws Exception
+	 *             if a keyword has an invalid value or is defined twice
+	 */
 	private void readSchemaData(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaConfiguration jsonSchemaConfiguration, final JsonSchemaDependency... dependencies) throws Exception {
 		if (jsonSchemaDefinitionObject == null) {
 			throw new JsonSchemaDefinitionError("Contains null data", null);
@@ -237,32 +359,68 @@ public class JsonSchema {
 		jsonSchemaDependencyResolver = new JsonSchemaDependencyResolver(jsonSchemaDefinitionObject, dependencies);
 	}
 
+	/**
+	 * Returns the "id" (up to draft 4) or "$id" (since draft 6) of this schema.
+	 *
+	 * @return the value, or null if not defined
+	 */
 	public String getId() {
 		return id;
 	}
 
+	/**
+	 * Returns the "$schema" URL describing the JSON schema version this schema was written for.
+	 *
+	 * @return the value, or null if not defined
+	 */
 	public String getSchemaVersionUrl() {
 		return schemaVersionUrl;
 	}
 
+	/**
+	 * Returns the "$comment" of this schema.
+	 *
+	 * @return the value, or null if not defined
+	 */
 	public String getComment() {
 		return comment;
 	}
 
+	/**
+	 * Returns the "title" of this schema.
+	 *
+	 * @return the value, or null if not defined
+	 */
 	public String getTitle() {
 		return title;
 	}
 
+	/**
+	 * Returns the "description" of this schema.
+	 *
+	 * @return the value, or null if not defined
+	 */
 	public String getDescription() {
 		return description;
 	}
 
+	/**
+	 * Reads JSON data (JSON5 syntax allowed) and validates it against this schema.
+	 *
+	 * @param jsonDataInputStream
+	 *            the stream to read the JSON data from
+	 * @param encoding
+	 *            the encoding of the JSON data
+	 * @return the JSON data read
+	 * @throws JsonSchemaDataValidationError
+	 *             if the data cannot be read or is not valid against this schema
+	 */
 	public JsonNode validate(final InputStream jsonDataInputStream, final Charset encoding) throws JsonSchemaDataValidationError {
 		JsonNode jsonDataNode;
 		try (JsonReader jsonReader = new Json5Reader(jsonDataInputStream, encoding)) {
 			jsonDataNode = jsonReader.read();
 		} catch (final Exception e) {
-			throw new JsonSchemaDataValidationError("Cannot read JSON data: " + e.getMessage(), new JsonPath());
+			throw new JsonSchemaDataValidationError("Cannot read JSON data: " + e.getMessage(), new JsonPath(), e);
 		}
 
 		for (final BaseJsonSchemaValidator validator : validators) {
@@ -271,12 +429,21 @@ public class JsonSchema {
 		return jsonDataNode;
 	}
 
+	/**
+	 * Reads JSON data (JSON5 syntax allowed) in UTF-8 encoding and validates it against this schema.
+	 *
+	 * @param jsonDataInputStream
+	 *            the stream to read the JSON data from
+	 * @return the JSON data read
+	 * @throws JsonSchemaDataValidationError
+	 *             if the data cannot be read or is not valid against this schema
+	 */
 	public JsonNode validate(final InputStream jsonDataInputStream) throws JsonSchemaDataValidationError {
 		JsonNode jsonDataNode;
 		try (JsonReader jsonReader = new Json5Reader(jsonDataInputStream)) {
 			jsonDataNode = jsonReader.read();
 		} catch (final Exception e) {
-			throw new JsonSchemaDataValidationError("Cannot read JSON data: " + e.getMessage(), new JsonPath());
+			throw new JsonSchemaDataValidationError("Cannot read JSON data: " + e.getMessage(), new JsonPath(), e);
 		}
 
 		for (final BaseJsonSchemaValidator validator : validators) {
@@ -285,6 +452,14 @@ public class JsonSchema {
 		return jsonDataNode;
 	}
 
+	/**
+	 * Validates already parsed JSON data against this schema. The data node is marked as root node.
+	 *
+	 * @param jsonData
+	 *            the JSON data
+	 * @throws JsonSchemaDataValidationError
+	 *             if the data is not valid against this schema
+	 */
 	public void validate(final JsonNode jsonData) throws JsonSchemaDataValidationError {
 		JsonNode jsonDataNode;
 		try {
@@ -298,6 +473,22 @@ public class JsonSchema {
 		}
 	}
 
+	/**
+	 * Creates the validators for all keywords of a schema object. Descriptive keywords like "title"
+	 * are only checked; unknown keywords are ignored, except in simple mode.
+	 *
+	 * @param jsonSchemaDefinitionObject
+	 *            the schema object
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings
+	 * @param currentJsonSchemaPath
+	 *            the path of the schema object within the JSON schema
+	 * @return the validators
+	 * @throws JsonSchemaDefinitionError
+	 *             if a keyword has an invalid value
+	 * @throws DuplicateKeyException
+	 *             if a sub schema contains duplicate keys
+	 */
 	public static List<BaseJsonSchemaValidator> createValidators(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath currentJsonSchemaPath) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		final List<BaseJsonSchemaValidator> validators = new ArrayList<>();
 
@@ -431,6 +622,9 @@ public class JsonSchema {
 					break;
 
 				case "$ref":
+					if (entry.getValue() == null || !entry.getValue().isString()) {
+						throw new JsonSchemaDefinitionError("Invalid data type for key '$ref'. String expected", currentJsonSchemaPath);
+					}
 					validators.add(new ReferenceValidator(
 							jsonSchemaDependencyResolver,
 							new JsonSchemaPath(parseJsonSchemaReference(jsonSchemaDependencyResolver, ((JsonValueString) entry.getValue()).getValue(), currentJsonSchemaPath).toString()),
@@ -518,6 +712,19 @@ public class JsonSchema {
 		return validators;
 	}
 
+	/**
+	 * Parses a "$ref" value into an internal or external reference.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver to find the schema containing a reference without "#", may be null
+	 * @param referenceValue
+	 *            the "$ref" value
+	 * @param jsonSchemaPath
+	 *            the path of the "$ref" keyword, used in error messages
+	 * @return the reference path element
+	 * @throws JsonSchemaDefinitionError
+	 *             if the reference cannot be resolved
+	 */
 	private static JsonSchemaPathElement parseJsonSchemaReference(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final String referenceValue, final JsonSchemaPath jsonSchemaPath) throws JsonSchemaDefinitionError {
 		if (referenceValue.startsWith("#")) {
 			return new JsonSchemaPathInternalReference(referenceValue);

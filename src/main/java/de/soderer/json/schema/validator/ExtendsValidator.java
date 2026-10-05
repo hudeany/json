@@ -24,8 +24,21 @@ import de.soderer.json.schema.JsonSchemaPath;
  * data node's root flag in place and discards the real JSON data path).
  */
 public class ExtendsValidator extends BaseJsonSchemaValidator {
+	/** Validators of each extended schema. */
 	private final List<List<BaseJsonSchemaValidator>> extendedSchemaValidators = new ArrayList<>();
 
+	/**
+	 * Creates a new "extends" validator.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, a schema object or an array of schema objects
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is neither object nor array of objects, or a schema is invalid
+	 */
 	public ExtendsValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
@@ -36,11 +49,11 @@ public class ExtendsValidator extends BaseJsonSchemaValidator {
 				int index = 0;
 				for (final JsonNode subSchemaObject : ((JsonArray) validatorData).items()) {
 					if (subSchemaObject == null) {
-						throw new JsonSchemaDefinitionError("Extended JSON schema value is 'null'", jsonSchemaPath);
+						throw new JsonSchemaDefinitionError("Extended JSON schema value is 'null'", new JsonSchemaPath(jsonSchemaPath).addArrayIndex(index));
 					} else if (subSchemaObject.isJsonObject()) {
 						extendedSchemaValidators.add(JsonSchema.createValidators((JsonObject) subSchemaObject, jsonSchemaDependencyResolver, new JsonSchemaPath(jsonSchemaPath).addArrayIndex(index)));
 					} else {
-						throw new JsonSchemaDefinitionError("Extended JSON schema value is not 'JsonObject'", jsonSchemaPath);
+						throw new JsonSchemaDefinitionError("Extended JSON schema value is not 'JsonObject'", new JsonSchemaPath(jsonSchemaPath).addArrayIndex(index));
 					}
 					index++;
 				}
@@ -52,7 +65,7 @@ public class ExtendsValidator extends BaseJsonSchemaValidator {
 		} catch (final JsonSchemaDefinitionError e) {
 			throw e;
 		} catch (final Exception e) {
-			throw new JsonSchemaDefinitionError("Error '" + e.getClass().getSimpleName() + "' while resolving JSON schema reference '" + validatorData + "': " + e.getMessage(), jsonSchemaPath);
+			throw new JsonSchemaDefinitionError("Error '" + e.getClass().getSimpleName() + "' while creating extended JSON schema '" + validatorData + "': " + e.getMessage(), jsonSchemaPath, e);
 		}
 	}
 

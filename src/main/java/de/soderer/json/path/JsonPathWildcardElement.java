@@ -8,11 +8,21 @@ package de.soderer.json.path;
  * result) rejects any path containing a wildcard.
  */
 public class JsonPathWildcardElement implements JsonPathElement {
+	/**
+	 * Creates a wildcard element.
+	 */
+	public JsonPathWildcardElement() {
+		// No state
+	}
+
 	@Override
 	public String toString() {
 		return "*";
 	}
 
+	/**
+	 * All wildcard elements are equal.
+	 */
 	@Override
 	public boolean equals(final Object otherObject) {
 		return otherObject instanceof JsonPathWildcardElement;

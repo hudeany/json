@@ -19,12 +19,32 @@ import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
 
 /**
- * JSON subschema that matches a simple data value to a type definition
+ * Validator for the draft 3 "disallow" keyword, the opposite of "type": the JSON data node must not
+ * be of any of the given types. The value is a type name ("string", "integer", "any" etc.) or an
+ * array of type names and schemas; the data must not match any of the schemas either.
  */
 public class DisallowValidator extends BaseJsonSchemaValidator {
+	/** Names of the disallowed types. */
 	private final List<String> typeStrings = new ArrayList<>();
+
+	/** Validators of the disallowed schemas. */
 	private final List<List<BaseJsonSchemaValidator>> typeValidators = new ArrayList<>();
 
+	/**
+	 * Creates a new "disallow" validator.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, a type name or an array of type names and schemas
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is neither string nor array, contains an unknown type name or an
+	 *             invalid schema
+	 * @throws DuplicateKeyException
+	 *             if a schema contains duplicate keys
+	 */
 	public DisallowValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
@@ -42,6 +62,7 @@ public class DisallowValidator extends BaseJsonSchemaValidator {
 			}
 			typeStrings.add(((JsonValueString) validatorData).getValue());
 		} else if (validatorData.isJsonArray()) {
+			int index = 0;
 			for (final JsonNode typeData : ((JsonArray) validatorData).items()) {
 				if (typeData == null) {
 					throw new JsonSchemaDefinitionError("Type data array contains a 'null' item", jsonSchemaPath);
@@ -49,14 +70,15 @@ public class DisallowValidator extends BaseJsonSchemaValidator {
 					try {
 						JsonDataType.getFromString(((JsonValueString) typeData).getValue());
 					} catch (final Exception e) {
-						throw new JsonSchemaDefinitionError("Invalid JSON data type '" + validatorData + "'", jsonSchemaPath, e);
+						throw new JsonSchemaDefinitionError("Invalid JSON data type '" + typeData + "'", jsonSchemaPath, e);
 					}
 					typeStrings.add(((JsonValueString) typeData).getValue());
 				} else if (typeData.isJsonObject()) {
-					typeValidators.add(JsonSchema.createValidators((JsonObject) typeData, jsonSchemaDependencyResolver, jsonSchemaPath));
+					typeValidators.add(JsonSchema.createValidators((JsonObject) typeData, jsonSchemaDependencyResolver, new JsonSchemaPath(jsonSchemaPath).addArrayIndex(index)));
 				} else {
 					throw new JsonSchemaDefinitionError("Type data array contains an item that is no 'string' and no 'object'", jsonSchemaPath);
 				}
+				index++;
 			}
 		} else {
 			throw new JsonSchemaDefinitionError("Invalid JSON data type definition item '" + validatorData + "'", jsonSchemaPath);
@@ -88,6 +110,16 @@ public class DisallowValidator extends BaseJsonSchemaValidator {
 		}
 	}
 
+	/**
+	 * Checks whether a JSON data node is of the given type. Integer values are also numbers; since
+	 * draft 6 numbers with zero fraction (like 1.0) are also integers.
+	 *
+	 * @param jsonNode
+	 *            the JSON data node
+	 * @param jsonDataType
+	 *            the type to check
+	 * @return true, if the data node is of the given type
+	 */
 	private boolean checkJsonDataType(final JsonNode jsonNode, final JsonDataType jsonDataType) {
 		if (jsonNode.getJsonDataType() == jsonDataType) {
 			return true;
@@ -99,16 +131,9 @@ public class DisallowValidator extends BaseJsonSchemaValidator {
 			if (jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV3Mode() || jsonSchemaDependencyResolver.isDraftV4Mode()) {
 				return false;
 			} else {
-				String stringRepresentation = ((JsonValueNumber) jsonNode).getValue().toString();
-				if (stringRepresentation.contains("E")) {
-					final BigDecimal bigDecimal = new BigDecimal(stringRepresentation);
-					return bigDecimal.stripTrailingZeros().scale() <= 0;
-				} else {
-					while (stringRepresentation.contains(".0")) {
-						stringRepresentation = stringRepresentation.replace(".0", ".");
-					}
-					return !stringRepresentation.contains(".") || stringRepresentation.indexOf(".") == stringRepresentation.length() - 1;
-				}
+				// BigDecimal handles plain and exponential notation, e.g. "1.0", "1.50" or "1.0E5"
+				final BigDecimal bigDecimal = new BigDecimal(((JsonValueNumber) jsonNode).getValue().toString());
+				return bigDecimal.stripTrailingZeros().scale() <= 0;
 			}
 		} else {
 			return false;

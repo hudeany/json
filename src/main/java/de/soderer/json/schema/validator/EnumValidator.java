@@ -16,9 +16,23 @@ import de.soderer.json.utilities.NumberUtilities;
 import de.soderer.json.utilities.Utilities;
 
 /**
- * A list of values that are allowed
+ * Validator for the "enum" keyword: its value is a non-empty array of allowed values, one of which
+ * the JSON data node must equal. Integer and number values are compared numerically, so 1 equals
+ * 1.0. The array may contain null.
  */
 public class EnumValidator extends BaseJsonSchemaValidator {
+	/**
+	 * Creates a new "enum" validator.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, an array of allowed values
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is not a non-empty array
+	 */
 	public EnumValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
@@ -34,11 +48,12 @@ public class EnumValidator extends BaseJsonSchemaValidator {
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		for (final JsonNode enumObject : ((JsonArray) validatorData).items()) {
-			if (enumObject == null && jsonNode.isNull()) {
+			// An allowed null value may be given as Java null or as JSON null value
+			if ((enumObject == null || enumObject.isNull()) && jsonNode.isNull()) {
 				return;
 			} else if (enumObject != null && jsonNode != null) {
 				if (enumObject.isBoolean()) {
-					if ((jsonNode.isBoolean() && enumObject.isBoolean() && ((JsonValueBoolean) jsonNode).getValue() == ((JsonValueBoolean) enumObject).getValue())) {
+					if (jsonNode.isBoolean() && (boolean) ((JsonValueBoolean) jsonNode).getValue() == (boolean) ((JsonValueBoolean) enumObject).getValue()) {
 						return;
 					}
 				} else if (enumObject.isString()) {
@@ -75,6 +90,17 @@ public class EnumValidator extends BaseJsonSchemaValidator {
 		throw new JsonSchemaDataValidationError("Enumeration expected one of '" + Utilities.join(((JsonArray) validatorData).items(), "', '") + "' but was '" + getJsonNodeDisplayString(jsonNode, jsonPath) + "'", jsonPath);
 	}
 
+	/**
+	 * Returns a short display text of a JSON data node for error messages.
+	 *
+	 * @param jsonNode
+	 *            the JSON data node
+	 * @param jsonPath
+	 *            the path of the JSON data node, used in error messages
+	 * @return the display text
+	 * @throws JsonSchemaDataValidationError
+	 *             if the data type is unknown
+	 */
 	private static String getJsonNodeDisplayString(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		switch(jsonNode.getJsonDataType()) {
 			case OBJECT:
@@ -92,7 +118,7 @@ public class EnumValidator extends BaseJsonSchemaValidator {
 			case BOOLEAN:
 				return ((JsonValueBoolean) jsonNode).getValue().toString();
 			default:
-				throw new JsonSchemaDataValidationError("Unkown JsonDataType: '" + jsonNode.getJsonDataType().name() + "'", jsonPath);
+				throw new JsonSchemaDataValidationError("Unknown JsonDataType: '" + jsonNode.getJsonDataType().name() + "'", jsonPath);
 
 		}
 	}

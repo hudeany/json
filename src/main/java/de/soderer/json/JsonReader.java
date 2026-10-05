@@ -18,33 +18,100 @@ import de.soderer.json.path.JsonPathPropertyElement;
 import de.soderer.json.utilities.BasicReader;
 import de.soderer.json.utilities.NumberUtilities;
 
+/**
+ * Reader for standard JSON data (RFC 8259) from an input stream.
+ * <p>
+ * The data can be read completely by {@link #read()}, or token by token by
+ * {@link #readNextToken()} and node by node by {@link #readNextJsonNode()}, e.g. to process
+ * large arrays item by item after positioning with {@link #readUpToJsonPath(String)}.
+ * </p>
+ */
 public class JsonReader extends BasicReader {
+	/**
+	 * Simple value or property key read by the last token, otherwise null.
+	 */
 	protected JsonNode currentObject = null;
 
+	/**
+	 * Stack of the currently open objects, arrays and property keys.
+	 */
 	protected Stack<JsonToken> openJsonItems = new Stack<>();
+	/**
+	 * JSON path of the current read position.
+	 */
 	protected JsonPath currentJsonPath = new JsonPath();
 
+	/**
+	 * Tokens of JSON data.
+	 */
 	public enum JsonToken {
+		/**
+		 * Opening brace of an object.
+		 */
 		JsonObject_Open,
+		/**
+		 * Property key of an object, see {@link JsonReader#getCurrentObject()}.
+		 */
 		JsonObject_PropertyKey,
+		/**
+		 * Closing brace of an object.
+		 */
 		JsonObject_Close,
+		/**
+		 * Opening bracket of an array.
+		 */
 		JsonArray_Open,
+		/**
+		 * Closing bracket of an array.
+		 */
 		JsonArray_Close,
+		/**
+		 * Simple value, see {@link JsonReader#getCurrentObject()}.
+		 */
 		JsonSimpleValue
 	}
 
+	/**
+	 * Creates a new JSON reader using UTF-8 encoding.
+	 *
+	 * @param inputStream
+	 *            the stream to read from
+	 * @throws Exception
+	 *             if the input stream is null
+	 */
 	public JsonReader(final InputStream inputStream) throws Exception {
 		super(inputStream, null);
 	}
 
+	/**
+	 * Creates a new JSON reader.
+	 *
+	 * @param inputStream
+	 *            the stream to read from
+	 * @param encodingCharset
+	 *            the encoding of the data, or null for UTF-8
+	 * @throws Exception
+	 *             if the input stream is null
+	 */
 	public JsonReader(final InputStream inputStream, final Charset encodingCharset) throws Exception {
 		super(inputStream, encodingCharset);
 	}
 
+	/**
+	 * Returns the simple value or property key read by the last token.
+	 *
+	 * @return the value or property key, or null if the last token was no simple value or property
+	 *         key
+	 */
 	public JsonNode getCurrentObject() {
 		return currentObject;
 	}
 
+	/**
+	 * Returns the innermost open item (object, array or property key).
+	 *
+	 * @return the innermost open item, or null if no item is open
+	 */
 	public JsonToken getCurrentToken() {
 		if (openJsonItems.empty()) {
 			return null;
@@ -53,10 +120,26 @@ public class JsonReader extends BasicReader {
 		}
 	}
 
+	/**
+	 * Reads the next token and updates the current JSON path.
+	 *
+	 * @return the token read, or null at the end of the data
+	 * @throws Exception
+	 *             if the JSON data is invalid
+	 */
 	public JsonToken readNextToken() throws Exception {
 		return readNextTokenInternal(true);
 	}
 
+	/**
+	 * Reads the next token. Subclasses override this for other syntaxes like JSON5.
+	 *
+	 * @param updateJsonPath
+	 *            true to update the current JSON path
+	 * @return the token read, or null at the end of the data
+	 * @throws Exception
+	 *             if the JSON data is invalid
+	 */
 	protected JsonToken readNextTokenInternal(final boolean updateJsonPath) throws Exception {
 		currentObject = null;
 		Character currentChar = readNextNonWhitespace();
@@ -234,8 +317,9 @@ public class JsonReader extends BasicReader {
 	 * Read all available Json data from the input stream at once.
 	 * This can only be done once and as the first action on a JsonReader.
 	 *
-	 * @return JsonObject or JsonArray
+	 * @return the JSON object, array or simple value, marked as root node
 	 * @throws Exception
+	 *             if the reader was already used, or the JSON data is empty or invalid
 	 */
 	public JsonNode read() throws Exception {
 		if (readWasInitialized()) {
@@ -351,6 +435,14 @@ public class JsonReader extends BasicReader {
 		}
 	}
 
+	/**
+	 * Updates the current JSON path for a token read.
+	 *
+	 * @param jsonToken
+	 *            the token read
+	 * @throws Exception
+	 *             if the token is unexpected
+	 */
 	protected void updateJsonPath(final JsonToken jsonToken) throws Exception {
 		if (jsonToken != null) {
 			switch (jsonToken) {
@@ -438,17 +530,17 @@ public class JsonReader extends BasicReader {
 	 *             if the JsonPath is invalid or not part of the JSON data
 	 */
 	public void readUpToJsonPath(final String jsonPathString) throws Exception {
-		final JsonPath readJsonPath = new JsonPath(jsonPathString);
-
-		while (readNextToken() != null && !getCurrentJsonPath().equals(readJsonPath)) {
-			// Do nothing
-		}
-
-		if (!getCurrentJsonPath().equals(readJsonPath)) {
-			throw new JsonPathException("Path '" + jsonPathString + "' is not part of the JSON data", null);
-		}
+		readUpToJsonPath(new JsonPath(jsonPathString));
 	}
 
+	/**
+	 * Read up to the given JsonPath, so the next read starts at the item of this path.
+	 *
+	 * @param jsonPath
+	 *            JsonPath to read up to
+	 * @throws Exception
+	 *             if the JsonPath is not part of the JSON data
+	 */
 	public void readUpToJsonPath(final JsonPath jsonPath) throws Exception {
 		while (readNextToken() != null && !getCurrentJsonPath().equals(jsonPath)) {
 			// Do nothing

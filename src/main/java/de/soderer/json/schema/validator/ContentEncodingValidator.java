@@ -12,9 +12,23 @@ import de.soderer.json.schema.JsonSchemaPath;
 import de.soderer.json.utilities.Utilities;
 
 /**
- * JSON subschema that matches a simple data value to a type definition
+ * Validator for the "contentEncoding" keyword (since JSON schema draft 7): defines the encoding of
+ * string data. Only "base64" is checked, other encodings are accepted without checks. Data that is
+ * not a string is ignored.
  */
 public class ContentEncodingValidator extends BaseJsonSchemaValidator {
+	/**
+	 * Creates a new "contentEncoding" validator.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, the name of the encoding
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is not a non-blank string
+	 */
 	public ContentEncodingValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
@@ -24,34 +38,21 @@ public class ContentEncodingValidator extends BaseJsonSchemaValidator {
 			throw new JsonSchemaDefinitionError("ContentEncoding value is not a string", jsonSchemaPath);
 		} else if (Utilities.isBlank(((JsonValueString) validatorData).getValue())) {
 			throw new JsonSchemaDefinitionError("Invalid ContentEncoding '" + validatorData + "'", jsonSchemaPath);
-		} else {
-			this.validatorData = validatorData;
 		}
 	}
 
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
-		if (jsonNode.isNull()) {
-			// ContentEncoding ignore null values
-		} else if (jsonNode.isInteger() || jsonNode.isNumber()) {
-			// ContentEncoding ignore numeric values
-		} else if (jsonNode.isJsonObject()) {
-			// ContentEncoding ignore JsonObject values
-		} else if (jsonNode.isJsonArray()) {
-			// ContentEncoding ignore JsonArray values
-		} else if (jsonNode.isBoolean()) {
-			// ContentEncoding ignore Boolean values
-		} else if (!jsonNode.isString()) {
-			throw new JsonSchemaDataValidationError("Expected a 'string' value for ContentEncoding but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
-		} else {
-			if ("base64".equalsIgnoreCase(((JsonValueString) validatorData).getValue())) {
-				try {
-					Base64.getDecoder().decode(((JsonValueString) jsonNode).getValue());
-				} catch (final Exception e) {
-					throw new JsonSchemaDataValidationError("Invalid base64 encoded data: " + e.getMessage(), jsonPath);
-				}
-			} else {
-				// Do nothing
+		if (!jsonNode.isString()) {
+			// ContentEncoding only applies to string values
+			return;
+		}
+
+		if ("base64".equalsIgnoreCase(((JsonValueString) validatorData).getValue())) {
+			try {
+				Base64.getDecoder().decode(((JsonValueString) jsonNode).getValue());
+			} catch (final IllegalArgumentException e) {
+				throw new JsonSchemaDataValidationError("Invalid base64 encoded data: " + e.getMessage(), jsonPath, e);
 			}
 		}
 	}

@@ -2,7 +2,13 @@ package de.soderer.json;
 
 import java.util.Objects;
 
+/**
+ * JSON null value. All instances are equal.
+ */
 public class JsonValueNull extends JsonNode {
+	/**
+	 * Creates a JSON null value.
+	 */
 	public JsonValueNull() {
 		super(JsonDataType.NULL);
 	}

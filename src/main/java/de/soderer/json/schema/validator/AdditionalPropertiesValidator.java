@@ -1,8 +1,10 @@
 package de.soderer.json.schema.validator;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import de.soderer.json.JsonNode;
@@ -18,17 +20,45 @@ import de.soderer.json.schema.JsonSchemaPath;
 import de.soderer.json.utilities.Utilities;
 
 /**
+ * Validator for the "additionalProperties" keyword.<br />
+ * <br />
  * Basically the value defines whether or not additional properties are allowed that are not included by the other definitions of properties like "properties" and "patternProperties".
  * Alternatively it is allowed to define a value that consists of a subschema that defines the structure of any additional property that is not included by the other definitions.<br />
  * <br />
  * Security note: see {@link PatternValidator} regarding ReDoS risk from untrusted regex patterns in the schema (applies to "patternProperties" patterns evaluated here).
  */
 public class AdditionalPropertiesValidator extends ExtendedBaseJsonSchemaValidator {
-	private final List<String> parentPropertyItemNames = new ArrayList<>();
+	/** Property names defined by the "properties" keyword of the parent schema. */
+	private final Set<String> parentPropertyItemNames = new HashSet<>();
+
+	/** Property name patterns defined by the "patternProperties" keyword of the parent schema. */
 	private final List<Pattern> parentPropertyItemPatterns = new ArrayList<>();
+
+	/** Whether additional properties are allowed, or null if a sub schema defines them. */
 	private Boolean allowAdditionalPropertyNames = null;
+
+	/** Validators of the sub schema for additional properties, or null for a boolean value. */
 	private List<BaseJsonSchemaValidator> subValidators = null;
 
+	/**
+	 * Creates a new "additionalProperties" validator.
+	 *
+	 * @param parentValidatorData
+	 *            the parent schema containing this keyword, used to read its "properties" and
+	 *            "patternProperties"
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, a boolean or a sub schema
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is neither boolean nor object, or "properties" or
+	 *             "patternProperties" of the parent schema are invalid (values of
+	 *             "patternProperties" may be objects or booleans)
+	 * @throws DuplicateKeyException
+	 *             if the sub schema contains duplicate keys
+	 */
 	public AdditionalPropertiesValidator(final JsonObject parentValidatorData, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		super(parentValidatorData, jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
@@ -59,8 +89,9 @@ public class AdditionalPropertiesValidator extends ExtendedBaseJsonSchemaValidat
 				throw new JsonSchemaDefinitionError("PatternProperties data is not a JsonObject", jsonSchemaPath);
 			} else {
 				for (final Entry<String, JsonNode> entry : ((JsonObject) parentValidatorData.get("patternProperties")).entrySet()) {
-					if (entry.getValue() == null || !(entry.getValue().isJsonObject())) {
-						throw new JsonSchemaDefinitionError("PatternProperties data contains a non-JsonObject", jsonSchemaPath);
+					// Boolean schemas (true, false) are allowed as values since JSON schema draft 6
+					if (entry.getValue() == null || !(entry.getValue().isJsonObject() || entry.getValue().isBoolean())) {
+						throw new JsonSchemaDefinitionError("PatternProperties data contains a value that is neither 'object' nor 'boolean'", jsonSchemaPath);
 					} else {
 						Pattern propertyKeyPattern;
 						try {
@@ -107,14 +138,10 @@ public class AdditionalPropertiesValidator extends ExtendedBaseJsonSchemaValidat
 					}
 				} else {
 					for (final String propertyKey : additionalPropertyNames) {
-						JsonNode newJsonNode;
-						try {
-							newJsonNode = ((JsonObject) jsonNode).get(propertyKey);
-						} catch (final Exception e) {
-							throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonObject) jsonNode).get(propertyKey).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addPropertyKey(propertyKey), e);
-						}
+						final JsonNode propertyJsonNode = ((JsonObject) jsonNode).get(propertyKey);
 						for (final BaseJsonSchemaValidator subValidator : subValidators) {
-							subValidator.validate(newJsonNode, new JsonPath(jsonPath).addPropertyKey(propertyKey));
+							// Separate path object per validator, as validators may modify it
+							subValidator.validate(propertyJsonNode, new JsonPath(jsonPath).addPropertyKey(propertyKey));
 						}
 					}
 				}

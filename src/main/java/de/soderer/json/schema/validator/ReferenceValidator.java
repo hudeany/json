@@ -13,24 +13,35 @@ import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
 
 /**
- * JSON schema validator for external references in files and urls by code key name "$ref"
+ * Validator for the "$ref" keyword: the JSON data node must match the referenced schema, which may
+ * be part of the same schema (e.g. "#/definitions/address") or an external file or URL resolved by
+ * the {@link JsonSchemaDependencyResolver}.<br />
+ * <br />
+ * The referenced schema is resolved lazily on first use and its validators are cached on the
+ * resolver. A reference resolved again for the same JSON data path is reported as cyclic.
  */
 public class ReferenceValidator extends BaseJsonSchemaValidator {
+	/**
+	 * Creates a new "$ref" validator.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, the reference string
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is not a string or there is no dependency resolver
+	 */
 	public ReferenceValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
-		try {
-			if (validatorData == null || validatorData.isNull()) {
-				throw new JsonSchemaDefinitionError("Reference key is 'null'", jsonSchemaPath);
-			} else if (!(validatorData.isString())) {
-				throw new JsonSchemaDefinitionError("Reference key is not a 'string'", jsonSchemaPath);
-			} else if (jsonSchemaDependencyResolver == null) {
-				throw new JsonSchemaDefinitionError("JSON schema reference definitions is empty. Cannot dereference key '" + validatorData + "'", jsonSchemaPath);
-			}
-		} catch (final JsonSchemaDefinitionError e) {
-			throw e;
-		} catch (final Exception e) {
-			throw new JsonSchemaDefinitionError("Error '" + e.getClass().getSimpleName() + "' while resolving JSON schema reference '" + validatorData + "': " + e.getMessage(), jsonSchemaPath);
+		if (validatorData == null || validatorData.isNull()) {
+			throw new JsonSchemaDefinitionError("Reference key is 'null'", jsonSchemaPath);
+		} else if (!(validatorData.isString())) {
+			throw new JsonSchemaDefinitionError("Reference key is not a 'string'", jsonSchemaPath);
+		} else if (jsonSchemaDependencyResolver == null) {
+			throw new JsonSchemaDefinitionError("JSON schema reference definitions is empty. Cannot dereference key '" + validatorData + "'", jsonSchemaPath);
 		}
 	}
 
@@ -58,6 +69,14 @@ public class ReferenceValidator extends BaseJsonSchemaValidator {
 	 * Builds the sub-validators for this reference once and caches them on the shared
 	 * {@link JsonSchemaDependencyResolver}, instead of rebuilding the whole sub-validator tree on every single data
 	 * node that this "$ref" is applied to.
+	 *
+	 * @param referenceKey
+	 *            the reference string
+	 * @param jsonPath
+	 *            the path of the JSON data node, used in error messages
+	 * @return the validators of the referenced schema
+	 * @throws JsonSchemaDataValidationError
+	 *             if the reference cannot be resolved or the referenced schema is invalid
 	 */
 	private List<BaseJsonSchemaValidator> getOrBuildSubValidators(final String referenceKey, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		List<BaseJsonSchemaValidator> subValidators = jsonSchemaDependencyResolver.getCachedReferenceValidators(referenceKey);
@@ -76,7 +95,7 @@ public class ReferenceValidator extends BaseJsonSchemaValidator {
 		} catch (final JsonSchemaDefinitionError e) {
 			throw new JsonSchemaDataValidationError("JsonSchemaDefinitionError while using JSON schema reference: " + e.getMessage(), jsonPath, e);
 		} catch (final Exception e) {
-			throw new JsonSchemaDataValidationError("JsonSchemaDefinitionError while using JSON schema reference: " + e.getMessage(), jsonPath, e);
+			throw new JsonSchemaDataValidationError("Error '" + e.getClass().getSimpleName() + "' while using JSON schema reference: " + e.getMessage(), jsonPath, e);
 		}
 
 		jsonSchemaDependencyResolver.putCachedReferenceValidators(referenceKey, subValidators);

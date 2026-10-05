@@ -2,9 +2,20 @@ package de.soderer.json;
 
 import java.util.Objects;
 
+/**
+ * JSON string value.
+ */
 public class JsonValueString extends JsonNode {
 	private final String value;
 
+	/**
+	 * Creates a JSON string value.
+	 *
+	 * @param value
+	 *            the value, must not be null (use {@link JsonValueNull} instead)
+	 * @throws RuntimeException
+	 *             if the value is null
+	 */
 	public JsonValueString(final String value) {
 		super(JsonDataType.STRING);
 		this.value = value;
@@ -14,6 +25,11 @@ public class JsonValueString extends JsonNode {
 		}
 	}
 
+	/**
+	 * Returns the value.
+	 *
+	 * @return the value, never null
+	 */
 	public String getValue() {
 		return value;
 	}

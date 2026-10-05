@@ -2,93 +2,23 @@ package de.soderer.json.utilities;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.text.DecimalFormat;
 import java.util.regex.Pattern;
 
+/**
+ * Helper methods for parsing and comparing numbers of any type.
+ */
 public class NumberUtilities {
-	public static DecimalFormat NUMBER_WITH_POINTS = new DecimalFormat("###,##0");
-	public static DecimalFormat NUMBER_WITH_MIN_2_DIGITS = new DecimalFormat("00");
-	public static DecimalFormat NUMBER_WITH_MIN_4_DIGITS = new DecimalFormat("0000");
-	public static DecimalFormat NUMBER_WITH_MIN_6_DIGITS = new DecimalFormat("000000");
-	public static DecimalFormat NUMBER_WITH_MIN_7_DIGITS = new DecimalFormat("0000000");
+	/** Hexadecimal number with prefix "0x" or "0X". */
+	private static final Pattern HEX_NUMBER_PATTERN = Pattern.compile("0[xX][0-9A-Fa-f]+");
 
 	/**
-	 * Check for String of digits
-	 *
-	 * @param digitString
-	 *            string to check
-	 * @return true if all characters are digits (also true for an empty string)
+	 * Utility class, not to be instantiated.
 	 */
-	public static boolean isDigit(final String digitString) {
-		for (final char character : digitString.toCharArray()) {
-			if (!Character.isDigit(character)) {
-				return false;
-			}
-		}
-		return true;
+	private NumberUtilities() {
 	}
 
 	/**
-	 * Check for a single digit
-	 *
-	 * @param characterToCheck
-	 *            character to check
-	 * @return true for the characters '0' to '9'
-	 */
-	public static boolean isDigit(final char characterToCheck) {
-		return characterToCheck >= '0' && characterToCheck <= '9';
-	}
-
-	/**
-	 * Check for a integer value without decimals
-	 *
-	 * @param value
-	 *            string to check
-	 * @return true if the string can be parsed as int
-	 */
-	public static boolean isInteger(final String value) {
-		try {
-			Integer.parseInt(value);
-			return true;
-		} catch (@SuppressWarnings("unused") final NumberFormatException e) {
-			return false;
-		}
-	}
-
-	/**
-	 * Check for a long integer value without decimals
-	 *
-	 * @param value
-	 *            string to check
-	 * @return true if the string can be parsed as long
-	 */
-	public static boolean isBigInteger(final String value) {
-		try {
-			Long.parseLong(value);
-			return true;
-		} catch (@SuppressWarnings("unused") final NumberFormatException e) {
-			return false;
-		}
-	}
-
-	/**
-	 * Check for a double value with optional decimals after a dot(.) and exponent
-	 *
-	 * @param value
-	 *            string to check
-	 * @return true if the string can be parsed as double
-	 */
-	public static boolean isDouble(final String value) {
-		try {
-			Double.parseDouble(value);
-			return true;
-		} catch (@SuppressWarnings("unused") final NumberFormatException e) {
-			return false;
-		}
-	}
-
-	/**
-	 * Compare Number objects
+	 * Compares Number objects of any type numerically, e.g. Integer 1 equals Double 1.0
 	 *
 	 * @param a
 	 *            first number
@@ -97,7 +27,23 @@ public class NumberUtilities {
 	 * @return 1 if a &gt; b, 0 if a = b, -1 if a &lt; b
 	 */
 	public static int compare(final Number a, final Number b) {
-		return new BigDecimal(a.toString()).compareTo(new BigDecimal(b.toString()));
+		if (isNonFinite(a) || isNonFinite(b)) {
+			// NaN and infinite values cannot be converted to BigDecimal (JSON5 and YAML allow them)
+			return Double.compare(a.doubleValue(), b.doubleValue());
+		} else {
+			return new BigDecimal(a.toString()).compareTo(new BigDecimal(b.toString()));
+		}
+	}
+
+	/**
+	 * Checks for NaN and infinite floating point values.
+	 *
+	 * @param number
+	 *            the number
+	 * @return true, if the number is a Double or Float with NaN or infinite value
+	 */
+	private static boolean isNonFinite(final Number number) {
+		return (number instanceof Double || number instanceof Float) && !Double.isFinite(number.doubleValue());
 	}
 
 	/**
@@ -176,76 +122,50 @@ public class NumberUtilities {
 		}
 	}
 
+	/**
+	 * Checks whether a string is a hexadecimal number with prefix "0x" or "0X", like "0x1F".
+	 *
+	 * @param numberString
+	 *            the string to check
+	 * @return true, if the string is a hexadecimal number, false for null
+	 */
 	public static boolean isHexNumber(final String numberString) {
-		return Pattern.matches("0(x|X)[0-9A-Fa-f]+", numberString);
+		return numberString != null && HEX_NUMBER_PATTERN.matcher(numberString).matches();
 	}
 
+	/**
+	 * Parses a hexadecimal number with prefix "0x" or "0X". The resulting type is the smallest of
+	 * Integer, Long and BigInteger able to contain the value.
+	 *
+	 * @param hexNumberString
+	 *            the hexadecimal number, like "0x1F"
+	 * @return the parsed number
+	 * @throws NumberFormatException
+	 *             if the string is not a hexadecimal number
+	 */
 	public static Number parseHexNumber(final String hexNumberString) throws NumberFormatException {
 		if (!isHexNumber(hexNumberString)) {
 			throw new NumberFormatException("Not a hex number: '" + hexNumberString + "'");
 		} else {
-			if (hexNumberString.length() < 12) {
-				return Integer.parseInt(hexNumberString.substring(2), 16);
+			final BigInteger value = new BigInteger(hexNumberString.substring(2), 16);
+			// bitLength excludes the sign bit, so values up to Integer.MAX_VALUE have bitLength 31 at most
+			if (value.bitLength() < Integer.SIZE) {
+				return value.intValue();
+			} else if (value.bitLength() < Long.SIZE) {
+				return value.longValue();
 			} else {
-				final BigInteger value = new BigInteger(hexNumberString.substring(2), 16);
-				final boolean isInteger = new BigInteger(Integer.toString(Integer.MIN_VALUE)).compareTo(value) == -1 && value.compareTo(new BigInteger(Integer.toString(Integer.MAX_VALUE))) == -1;
-				if (isInteger) {
-					return Integer.parseInt(hexNumberString.substring(2), 16);
-				} else {
-					final boolean isLong = new BigInteger(Long.toString(Long.MIN_VALUE)).compareTo(value) == -1 && value.compareTo(new BigInteger(Long.toString(Long.MAX_VALUE))) == -1;
-					if (isLong) {
-						return Long.parseLong(hexNumberString.substring(2), 16);
-					} else {
-						return value;
-					}
-				}
+				return value;
 			}
 		}
 	}
 
-	public static String formatNumber(final Number number, final char decimalSeparator, final Character groupingSeparator) {
-		if (number == null) {
-			return null;
-		} else {
-			String numberString = number.toString();
-			if (decimalSeparator != '.') {
-				if (groupingSeparator != null) {
-					numberString = numberString.replace(',', groupingSeparator);
-				} else {
-					numberString = numberString.replace(",", "");
-				}
-				numberString = numberString.replace('.', decimalSeparator);
-			}
-			return numberString;
-		}
-	}
-
-	public static String formatNumber(final Number number, final int minPreSeparatorCharacters, final char decimalSeparator, final Character groupingSeparator) {
-		if (number == null) {
-			return null;
-		} else {
-			String numberString = number.toString();
-			if (decimalSeparator != '.') {
-				if (groupingSeparator != null) {
-					numberString = numberString.replace(',', groupingSeparator);
-				} else {
-					numberString = numberString.replace(",", "");
-				}
-				numberString = numberString.replace('.', decimalSeparator);
-			}
-
-			int preSeparatorCharacters = numberString.indexOf(decimalSeparator);
-			if (preSeparatorCharacters < 0)
-				preSeparatorCharacters = numberString.length();
-
-			if (preSeparatorCharacters < minPreSeparatorCharacters) {
-				numberString = Utilities.repeat(" ", minPreSeparatorCharacters - preSeparatorCharacters) + numberString;
-			}
-
-			return numberString;
-		}
-	}
-
+	/**
+	 * Checks whether a BigDecimal has an integer value, e.g. 2.00 and 2E+3 are integers, 2.5 is not.
+	 *
+	 * @param bigDecimal
+	 *            the value to check
+	 * @return true, if the value is an integer, false for null
+	 */
 	public static boolean isInteger(final BigDecimal bigDecimal) {
 		if (bigDecimal == null) {
 			return false;

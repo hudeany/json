@@ -19,12 +19,37 @@ import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
 
 /**
- * JSON Object that defines properties that must have a subschema as JSON object value which must be matched by the JAON data object
+ * Validator for the "dependencies" keyword: its value is an object mapping property names to
+ * dependencies, which apply only if the JSON data object contains that property.
+ * <ul>
+ * <li>A schema (object or boolean) must validate the whole JSON data object.</li>
+ * <li>An array of property names (or a single name as string in draft 3) lists properties that must
+ * also be present.</li>
+ * </ul>
+ * Data that is not an object is ignored, except in simple mode.
  */
 public class DependenciesValidator extends BaseJsonSchemaValidator {
+	/** Schema validators by the property name they depend on. */
 	private final Map<String, List<BaseJsonSchemaValidator>> validators = new HashMap<>();
+
+	/** Mandatory property names by the property name they depend on. */
 	private final Map<String, List<String>> mandatoryProperties = new HashMap<>();
 
+	/**
+	 * Creates a new "dependencies" validator.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, an object of dependencies
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is not an object, or a dependency is neither object, boolean, array
+	 *             of strings nor string, or a sub schema is invalid
+	 * @throws DuplicateKeyException
+	 *             if a sub schema contains duplicate keys
+	 */
 	public DependenciesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
@@ -38,7 +63,7 @@ public class DependenciesValidator extends BaseJsonSchemaValidator {
 			if (entry.getValue() == null) {
 				throw new JsonSchemaDefinitionError("Dependencies value is 'null'", jsonSchemaPath);
 			} else if (entry.getValue().isJsonObject()) {
-				final List<BaseJsonSchemaValidator> subValidators = JsonSchema.createValidators((JsonObject) entry.getValue(), jsonSchemaDependencyResolver, jsonSchemaPath);
+				final List<BaseJsonSchemaValidator> subValidators = JsonSchema.createValidators((JsonObject) entry.getValue(), jsonSchemaDependencyResolver, new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()));
 				validators.put(entry.getKey(), subValidators);
 			} else if (entry.getValue().isJsonArray()) {
 				final List<String> propertiesList = new ArrayList<>();
@@ -56,10 +81,10 @@ public class DependenciesValidator extends BaseJsonSchemaValidator {
 				mandatoryProperties.put(entry.getKey(), propertiesList);
 			} else if (entry.getValue().isBoolean()) {
 				final List<BaseJsonSchemaValidator> subValidators = new ArrayList<>();
-				subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, entry.getValue()));
+				subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
 				validators.put(entry.getKey(), subValidators);
 			} else {
-				throw new JsonSchemaDefinitionError("Dependencies value for key '" + entry.getKey() + "' is not an 'object' or 'array' or 'string'", jsonSchemaPath);
+				throw new JsonSchemaDefinitionError("Dependencies value for key '" + entry.getKey() + "' is not an 'object', 'boolean', 'array' or 'string'", jsonSchemaPath);
 			}
 		}
 	}

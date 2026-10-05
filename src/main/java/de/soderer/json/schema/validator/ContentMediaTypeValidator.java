@@ -15,9 +15,26 @@ import de.soderer.json.schema.JsonSchemaPath;
 import de.soderer.json.utilities.Utilities;
 
 /**
- * JSON subschema that matches a simple data value to a type definition
+ * Validator for the "contentMediaType" keyword (since JSON schema draft 7): defines the media type
+ * of string data. Only "application/json" is checked, other media types are accepted without
+ * checks. If the parent schema defines "contentEncoding" "base64", the data is decoded before the
+ * check. Data that is not a string is ignored.
  */
 public class ContentMediaTypeValidator extends ExtendedBaseJsonSchemaValidator {
+	/**
+	 * Creates a new "contentMediaType" validator.
+	 *
+	 * @param parentValidatorData
+	 *            the parent schema containing this keyword, used to read its "contentEncoding"
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, the media type
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is not a non-blank string
+	 */
 	public ContentMediaTypeValidator(final JsonObject parentValidatorData, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError {
 		super(parentValidatorData, jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
@@ -27,58 +44,32 @@ public class ContentMediaTypeValidator extends ExtendedBaseJsonSchemaValidator {
 			throw new JsonSchemaDefinitionError("ContentMediaType value is not a string", jsonSchemaPath);
 		} else if (Utilities.isBlank(((JsonValueString) validatorData).getValue())) {
 			throw new JsonSchemaDefinitionError("Invalid ContentMediaType '" + validatorData + "'", jsonSchemaPath);
-		} else {
-			this.validatorData = validatorData;
 		}
 	}
 
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
-		if (jsonNode.isNull()) {
-			// ContentMediaType ignore null values
-		} else if (jsonNode.isInteger() || jsonNode.isNumber()) {
-			// ContentMediaType ignore numeric values
-		} else if (jsonNode.isJsonObject()) {
-			// ContentMediaType ignore JsonObject values
-		} else if (jsonNode.isJsonArray()) {
-			// ContentMediaType ignore JsonArray values
-		} else if (jsonNode.isBoolean()) {
-			// ContentMediaType ignore Boolean values
-		} else if (!jsonNode.isString()) {
-			throw new JsonSchemaDataValidationError("Expected a 'string' value for ContentMediaType but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
-		} else {
-			Object value = jsonNode;
+		if (!jsonNode.isString()) {
+			// ContentMediaType only applies to string values
+			return;
+		}
 
-			if (parentValidatorData.containsKey("contentEncoding")) {
-				if ("base64".equalsIgnoreCase((String) parentValidatorData.getSimpleValue("contentEncoding"))) {
-					try {
-						value = Base64.getDecoder().decode(((JsonValueString) jsonNode).getValue());
-					} catch (final Exception e) {
-						throw new JsonSchemaDataValidationError("Invalid base64 encoded data: " + e.getMessage(), jsonPath);
-					}
-				} else {
-					// Do nothing
+		if ("application/json".equalsIgnoreCase(((JsonValueString) validatorData).getValue())) {
+			String content = ((JsonValueString) jsonNode).getValue();
+
+			final Object contentEncoding = parentValidatorData.containsKey("contentEncoding") ? parentValidatorData.getSimpleValue("contentEncoding") : null;
+			if (contentEncoding instanceof String && "base64".equalsIgnoreCase((String) contentEncoding)) {
+				try {
+					content = new String(Base64.getDecoder().decode(content), StandardCharsets.UTF_8);
+				} catch (final IllegalArgumentException e) {
+					throw new JsonSchemaDataValidationError("Invalid base64 encoded data: " + e.getMessage(), jsonPath, e);
 				}
 			}
 
-			if ("application/json".equalsIgnoreCase(((JsonValueString) validatorData).getValue())) {
-				if (value instanceof String) {
-					try {
-						JsonReader.readJsonItemString((String) value);
-					} catch (final Exception e) {
-						throw new JsonSchemaDataValidationError("Data is not valid JSON data: " + e.getMessage(), jsonPath);
-					}
-				} else if (value instanceof byte[]) {
-					try {
-						JsonReader.readJsonItemString(new String((byte[]) value, StandardCharsets.UTF_8));
-					} catch (final Exception e) {
-						throw new JsonSchemaDataValidationError("Data is not valid JSON data: " + e.getMessage(), jsonPath);
-					}
-				} else {
-					throw new JsonSchemaDataValidationError("Data is not a String", jsonPath);
-				}
-			} else {
-				// Do nothing
+			try {
+				JsonReader.readJsonItemString(content);
+			} catch (final Exception e) {
+				throw new JsonSchemaDataValidationError("Data is not valid JSON data: " + e.getMessage(), jsonPath, e);
 			}
 		}
 	}

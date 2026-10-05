@@ -19,6 +19,19 @@ import de.soderer.json.exception.JsonWriterStateException;
 import de.soderer.json.utilities.DateUtilities;
 import de.soderer.json.utilities.Utilities;
 
+/**
+ * Writer for JSON data to an output stream.
+ * <p>
+ * Complete JSON items can be written by {@link #add(JsonNode)}. Large data can be written step by
+ * step: open objects and arrays, open object properties and add simple values, then close them
+ * again in reverse order. Methods called in a wrong order throw a
+ * {@link JsonWriterStateException}.
+ * </p>
+ * <p>
+ * The output is formatted with line breaks, tab indentation and a blank after property colons by
+ * default; {@link #setUglify(boolean)} switches to compact output.
+ * </p>
+ */
 public class JsonWriter implements Closeable {
 	/** Default output encoding. */
 	public static final Charset DEFAULT_ENCODING = StandardCharsets.UTF_8;
@@ -32,14 +45,32 @@ public class JsonWriter implements Closeable {
 	/** Output writer. */
 	private BufferedWriter outputWriter = null;
 
+	/**
+	 * Number of characters written so far.
+	 */
 	private long writtenCharacters = 0;
 
+	/**
+	 * Stack of the currently open items.
+	 */
 	private final Stack<JsonStackItem> openJsonStackItems = new Stack<>();
 
+	/**
+	 * Line break between items.
+	 */
 	private String linebreak = "\n";
+	/**
+	 * Indentation per nesting level.
+	 */
 	private String indentation = "\t";
+	/**
+	 * Separator after the colon of a property.
+	 */
 	private String separator = " ";
 
+	/**
+	 * Open items while writing.
+	 */
 	private enum JsonStackItem {
 		Array_Empty,
 		Array,
@@ -48,15 +79,35 @@ public class JsonWriter implements Closeable {
 		Object_Value
 	}
 
+	/**
+	 * Creates a new JSON writer using UTF-8 encoding.
+	 *
+	 * @param outputStream
+	 *            the stream to write to
+	 */
 	public JsonWriter(final OutputStream outputStream) {
 		this(outputStream, null);
 	}
 
+	/**
+	 * Creates a new JSON writer.
+	 *
+	 * @param outputStream
+	 *            the stream to write to
+	 * @param encoding
+	 *            the encoding of the output, or null for UTF-8
+	 */
 	public JsonWriter(final OutputStream outputStream, final Charset encoding) {
 		this.outputStream = outputStream;
 		this.encoding = encoding == null ? DEFAULT_ENCODING : encoding;
 	}
 
+	/**
+	 * Sets the indentation per nesting level.
+	 *
+	 * @param indentation
+	 *            the indentation, e.g. a tab or some blanks, null for none
+	 */
 	public void setIndentation(final String indentation) {
 		if (indentation == null) {
 			this.indentation = "";
@@ -65,24 +116,55 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Sets the indentation per nesting level.
+	 *
+	 * @param newIndentation
+	 *            the indentation, null for none
+	 * @return this writer for chaining
+	 */
 	public JsonWriter withIndentation(final String newIndentation) {
 		setIndentation(newIndentation);
 		return this;
 	}
 
+	/**
+	 * Sets a single character as indentation per nesting level.
+	 *
+	 * @param indentationCharacter
+	 *            the indentation character
+	 */
 	public void setIndentation(final char indentationCharacter) {
 		indentation = Character.toString(indentationCharacter);
 	}
 
+	/**
+	 * Sets a single character as indentation per nesting level.
+	 *
+	 * @param newIndentationCharacter
+	 *            the indentation character
+	 * @return this writer for chaining
+	 */
 	public JsonWriter withIndentation(final char newIndentationCharacter) {
 		setIndentation(newIndentationCharacter);
 		return this;
 	}
 
+	/**
+	 * Returns the line break between items.
+	 *
+	 * @return the line break
+	 */
 	public String getLinebreak() {
 		return linebreak;
 	}
 
+	/**
+	 * Sets the line break between items.
+	 *
+	 * @param linebreak
+	 *            the line break, null for none
+	 */
 	public void setLinebreak(final String linebreak) {
 		if (linebreak == null) {
 			this.linebreak = "";
@@ -91,15 +173,33 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Sets the line break between items.
+	 *
+	 * @param newLinebreak
+	 *            the line break, null for none
+	 * @return this writer for chaining
+	 */
 	public JsonWriter withLinebreak(final String newLinebreak) {
 		setLinebreak(newLinebreak);
 		return this;
 	}
 
+	/**
+	 * Returns the separator after the colon of a property.
+	 *
+	 * @return the separator
+	 */
 	public String getSeparator() {
 		return separator;
 	}
 
+	/**
+	 * Sets the separator after the colon of a property.
+	 *
+	 * @param separator
+	 *            the separator, null for none
+	 */
 	public void setSeparator(final String separator) {
 		if (separator == null) {
 			this.separator = "";
@@ -108,15 +208,34 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Sets the separator after the colon of a property.
+	 *
+	 * @param newSeparator
+	 *            the separator, null for none
+	 * @return this writer for chaining
+	 */
 	public JsonWriter withSeparator(final String newSeparator) {
 		setSeparator(newSeparator);
 		return this;
 	}
 
+	/**
+	 * Returns the number of characters written so far.
+	 *
+	 * @return the number of characters written
+	 */
 	public long getWrittenCharacters() {
 		return writtenCharacters;
 	}
 
+	/**
+	 * Switches between compact output without line breaks, indentation and separators, and the
+	 * default formatted output.
+	 *
+	 * @param value
+	 *            true for compact output, false for formatted output
+	 */
 	public void setUglify(final boolean value) {
 		if (value) {
 			linebreak = "";
@@ -129,17 +248,30 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Switches between compact and formatted output, see {@link #setUglify(boolean)}.
+	 *
+	 * @param newValue
+	 *            true for compact output, false for formatted output
+	 * @return this writer for chaining
+	 */
 	public JsonWriter withUglify(final boolean newValue) {
 		setUglify(newValue);
 		return this;
 	}
 
+	/**
+	 * Opens an object, as top level item, array item or property value.
+	 *
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void openJsonObject() throws Exception {
 		if (outputWriter == null) {
 			write("{", true);
 			openJsonStackItems.push(JsonStackItem.Object_Empty);
 		} else {
-			final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+			final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 			if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array && latestOpenJsonItem != JsonStackItem.Object_Value) {
 				openJsonStackItems.push(latestOpenJsonItem);
 				throw new JsonWriterStateException("Not matching open Json item for opening object: " + latestOpenJsonItem);
@@ -163,8 +295,16 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Opens a property in the current object. Its value must be written next.
+	 *
+	 * @param propertyName
+	 *            the property name
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void openJsonObjectProperty(final String propertyName) throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Object_Empty && latestOpenJsonItem != JsonStackItem.Object) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for opening object property: " + latestOpenJsonItem);
@@ -180,8 +320,16 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Writes a simple JSON value (null, boolean, number or string) as value of the open property.
+	 *
+	 * @param propertyValue
+	 *            the value, null writes null
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonObjectPropertyValue(final JsonNode propertyValue) throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
@@ -200,8 +348,14 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Writes null as value of the open property.
+	 *
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonObjectPropertyValueNull() throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
@@ -210,8 +364,16 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Writes a string as value of the open property.
+	 *
+	 * @param propertyValue
+	 *            the value, null writes null
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonObjectPropertyValue(final String propertyValue) throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
@@ -224,8 +386,16 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Writes a date time as ISO 8601 string with time zone as value of the open property.
+	 *
+	 * @param propertyValue
+	 *            the value, null writes null
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonObjectPropertyValue(final Date propertyValue) throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
@@ -238,8 +408,16 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Writes a date as ISO 8601 string as value of the open property.
+	 *
+	 * @param propertyValue
+	 *            the value, null writes null
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonObjectPropertyValue(final LocalDate propertyValue) throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
@@ -252,8 +430,16 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Writes a date time as ISO 8601 string without time zone as value of the open property.
+	 *
+	 * @param propertyValue
+	 *            the value, null writes null
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonObjectPropertyValue(final LocalDateTime propertyValue) throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
@@ -270,8 +456,16 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Writes a date time as ISO 8601 string with time zone as value of the open property.
+	 *
+	 * @param propertyValue
+	 *            the value, null writes null
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonObjectPropertyValue(final ZonedDateTime propertyValue) throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
@@ -288,8 +482,16 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Writes a boolean as value of the open property.
+	 *
+	 * @param propertyValue
+	 *            the value, null writes null
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonObjectPropertyValue(final Boolean propertyValue) throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
@@ -302,8 +504,16 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Writes a number as value of the open property.
+	 *
+	 * @param propertyValue
+	 *            the value, null writes null
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonObjectPropertyValue(final Number propertyValue) throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Object_Value) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding object property value: " + latestOpenJsonItem);
@@ -316,11 +526,17 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Closes the current object.
+	 *
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void closeJsonObject() throws Exception {
 		if (openJsonStackItems.isEmpty()) {
 			throw new JsonWriterStateException("Cannot close JsonObject. No open Object left");
 		}
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Object_Empty && latestOpenJsonItem != JsonStackItem.Object) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for closing object: " + latestOpenJsonItem);
@@ -336,12 +552,18 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Opens an array, as top level item, array item or property value.
+	 *
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void openJsonArray() throws Exception {
 		if (outputWriter == null) {
 			write("[", true);
 			openJsonStackItems.push(JsonStackItem.Array_Empty);
 		} else {
-			final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+			final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 			if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array && latestOpenJsonItem != JsonStackItem.Object_Value) {
 				openJsonStackItems.push(latestOpenJsonItem);
 				throw new JsonWriterStateException("Not matching open Json item for opening array: " + latestOpenJsonItem);
@@ -365,8 +587,16 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Appends a simple JSON value (null, boolean, number or string) to the current array.
+	 *
+	 * @param arrayValue
+	 *            the value, null writes null
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonArrayValue(final JsonNode arrayValue) throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
@@ -393,8 +623,14 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Appends null to the current array.
+	 *
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonArrayValueNull() throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
@@ -411,8 +647,16 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Appends a string to the current array.
+	 *
+	 * @param arrayValue
+	 *            the value, null writes null
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonArrayValue(final String arrayValue) throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
@@ -433,8 +677,16 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Appends a date time as ISO 8601 string with time zone to the current array.
+	 *
+	 * @param arrayValue
+	 *            the value, null writes null
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonArrayValue(final Date arrayValue) throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
@@ -455,8 +707,16 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Appends a date as ISO 8601 string to the current array.
+	 *
+	 * @param arrayValue
+	 *            the value, null writes null
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonArrayValue(final LocalDate arrayValue) throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
@@ -477,8 +737,16 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Appends a date time as ISO 8601 string without time zone to the current array.
+	 *
+	 * @param arrayValue
+	 *            the value, null writes null
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonArrayValue(final LocalDateTime arrayValue) throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
@@ -503,8 +771,16 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Appends a date time as ISO 8601 string with time zone to the current array.
+	 *
+	 * @param arrayValue
+	 *            the value, null writes null
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonArrayValue(final ZonedDateTime arrayValue) throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
@@ -529,8 +805,16 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Appends a boolean to the current array.
+	 *
+	 * @param arrayValue
+	 *            the value, null writes null
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonArrayValue(final Boolean arrayValue) throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
@@ -551,8 +835,16 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Appends a number to the current array.
+	 *
+	 * @param arrayValue
+	 *            the value, null writes null
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void addSimpleJsonArrayValue(final Number arrayValue) throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for adding array value: " + latestOpenJsonItem);
@@ -573,6 +865,15 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Writes a simple value as the only top level item.
+	 *
+	 * @param value
+	 *            the value: null, Boolean, Number, a date or time type, or any other object written as
+	 *            string
+	 * @throws Exception
+	 *             if something was written already or writing fails
+	 */
 	public void addSimpleValue(final Object value) throws Exception {
 		if (writtenCharacters > 0 || openJsonStackItems.size() != 0) {
 			throw new JsonWriterStateException("Not matching empty Json output for adding simple value");
@@ -605,8 +906,14 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Closes the current array.
+	 *
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails
+	 */
 	public void closeJsonArray() throws Exception {
-		final JsonStackItem latestOpenJsonItem = openJsonStackItems.pop();
+		final JsonStackItem latestOpenJsonItem = popLatestOpenJsonItem();
 		if (latestOpenJsonItem != JsonStackItem.Array_Empty && latestOpenJsonItem != JsonStackItem.Array) {
 			openJsonStackItems.push(latestOpenJsonItem);
 			throw new JsonWriterStateException("Not matching open Json item for closing array: " + latestOpenJsonItem);
@@ -622,6 +929,14 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Writes a complete object, as top level item, array item or property value.
+	 *
+	 * @param jsonObject
+	 *            the object
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails, or the object is null
+	 */
 	public void add(final JsonObject jsonObject) throws Exception {
 		if (jsonObject == null) {
 			throw new JsonWriterStateException("Invalid null value added via 'add'. If done by intention use 'addSimpleJsonArrayValue' or 'addSimpleJsonObjectPropertyValue'");
@@ -642,6 +957,14 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Writes a complete array, as top level item, array item or property value.
+	 *
+	 * @param jsonArray
+	 *            the array
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails, or the array is null
+	 */
 	public void add(final JsonArray jsonArray) throws Exception {
 		if (jsonArray == null) {
 			throw new JsonWriterStateException("Invalid null value added via 'add'. If done by intention use 'addSimpleJsonArrayValue' or 'addSimpleJsonObjectPropertyValue'");
@@ -660,6 +983,14 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Writes a complete JSON item. A simple value is only allowed as top level item.
+	 *
+	 * @param jsonNode
+	 *            the item
+	 * @throws Exception
+	 *             if the call does not fit the current write position or writing fails, or the item is null
+	 */
 	public void add(final JsonNode jsonNode) throws Exception {
 		if (jsonNode == null) {
 			throw new JsonWriterStateException("Invalid null value added via 'add'. If done by intention use 'addSimpleJsonArrayValue' or 'addSimpleJsonObjectPropertyValue'");
@@ -682,6 +1013,12 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Closes all open objects and arrays, e.g. to finish incomplete output.
+	 *
+	 * @throws Exception
+	 *             if writing fails
+	 */
 	public void closeAllOpenJsonItems() throws Exception {
 		while (!openJsonStackItems.isEmpty()) {
 			final JsonStackItem openJsonItem = openJsonStackItems.pop();
@@ -718,7 +1055,10 @@ public class JsonWriter implements Closeable {
 	}
 
 	/**
-	 * Close this writer and its underlying stream.
+	 * Closes this writer and its underlying stream.
+	 *
+	 * @throws IOException
+	 *             if objects or arrays are still open; the stream is closed nevertheless
 	 */
 	@Override
 	public void close() throws IOException {
@@ -736,6 +1076,32 @@ public class JsonWriter implements Closeable {
 		}
 	}
 
+	/**
+	 * Removes and returns the innermost open item.
+	 *
+	 * @return the innermost open item
+	 * @throws JsonWriterStateException
+	 *             if no item is open, i.e. the method called does not fit the current write position
+	 */
+	private JsonStackItem popLatestOpenJsonItem() throws JsonWriterStateException {
+		if (openJsonStackItems.isEmpty()) {
+			throw new JsonWriterStateException("No open Json item for this operation");
+		}
+		return openJsonStackItems.pop();
+	}
+
+	/**
+	 * Writes text, optionally indented according to the current nesting depth.
+	 *
+	 * @param text
+	 *            the text to write
+	 * @param indent
+	 *            true to indent the text
+	 * @throws IOException
+	 *             if writing fails
+	 * @throws IllegalStateException
+	 *             if this writer is already closed
+	 */
 	private void write(final String text, final boolean indent) throws IOException {
 		if (outputWriter == null) {
 			if (outputStream == null) {
@@ -855,6 +1221,15 @@ public class JsonWriter implements Closeable {
 		return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
 	}
 
+	/**
+	 * Returns a JSON item as formatted text. This method should only be used for small JSON items.
+	 *
+	 * @param jsonNode
+	 *            JSON item to write
+	 * @return JSON item as string, a string value is quoted and escaped
+	 * @throws Exception
+	 *             if the item cannot be written
+	 */
 	public static String getJsonItemString(final JsonNode jsonNode) throws Exception {
 		return getJsonItemString(jsonNode, "\n", "\t", " ");
 	}

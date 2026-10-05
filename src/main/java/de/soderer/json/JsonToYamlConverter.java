@@ -9,7 +9,25 @@ import de.soderer.yaml.data.YamlScalar;
 import de.soderer.yaml.data.YamlScalarType;
 import de.soderer.yaml.data.YamlSequence;
 
+/**
+ * Converts JSON data to YAML data.
+ */
 public class JsonToYamlConverter {
+	/**
+	 * Utility class, not to be instantiated.
+	 */
+	private JsonToYamlConverter() {
+	}
+
+	/**
+	 * Converts any JSON node to the corresponding YAML node.
+	 *
+	 * @param jsonNode
+	 *            the JSON node, may be null
+	 * @return the YAML node, or null if the JSON node is null
+	 * @throws DuplicateKeyException
+	 *             if a JSON object contains duplicate keys
+	 */
 	public static YamlNode convert(final JsonNode jsonNode) throws DuplicateKeyException {
 		if (jsonNode == null) {
 			return null;
@@ -32,6 +50,15 @@ public class JsonToYamlConverter {
 		}
 	}
 
+	/**
+	 * Converts a JSON object to a YAML mapping.
+	 *
+	 * @param jsonObject
+	 *            the JSON object, may be null
+	 * @return the YAML mapping, or null if the JSON object is null
+	 * @throws DuplicateKeyException
+	 *             if the JSON object contains duplicate keys
+	 */
 	public static YamlMapping convert(final JsonObject jsonObject) throws DuplicateKeyException {
 		if (jsonObject == null) {
 			return null;
@@ -60,6 +87,15 @@ public class JsonToYamlConverter {
 		}
 	}
 
+	/**
+	 * Converts a JSON array to a YAML sequence.
+	 *
+	 * @param jsonArray
+	 *            the JSON array, may be null
+	 * @return the YAML sequence, or null if the JSON array is null
+	 * @throws DuplicateKeyException
+	 *             if a contained JSON object contains duplicate keys
+	 */
 	public static YamlSequence convert(final JsonArray jsonArray) throws DuplicateKeyException {
 		if (jsonArray == null) {
 			return null;

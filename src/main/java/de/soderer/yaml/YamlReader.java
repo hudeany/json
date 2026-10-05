@@ -33,10 +33,20 @@ import de.soderer.yaml.data.directive.YamlVersionDirective;
 import de.soderer.yaml.exception.FoundPathEvent;
 import de.soderer.yaml.exception.YamlParseException;
 
+// TODO: Check alias references after document read
+// TODO: Check cyclic dependencies in aliases
 /**
- * TODO:
- * Check alias references after document read
- * Check cyclic dependencies in aliases
+ * Reader for YAML data from an input stream.
+ * <p>
+ * A document is read completely by {@link #readDocument()}. Large data can be read item by item:
+ * {@link #readUpToPath(String)} positions the reader at a sequence, then
+ * {@link #readNextYamlNode()} returns its items one after another.
+ * </p>
+ * <p>
+ * Comments, anchors, quote styles, block scalar styles and empty lines are kept in the nodes, so
+ * that {@link YamlWriter} can write the data in a similar form again. Aliases are kept as
+ * {@link de.soderer.yaml.data.YamlAlias} nodes. Linebreaks are normalized to LF.
+ * </p>
  */
 public class YamlReader extends BasicReadAheadReader {
 	private final Stack<Integer> indentations = new Stack<>();
@@ -45,14 +55,41 @@ public class YamlReader extends BasicReadAheadReader {
 	private int pendingLeadingEmptyLines = 0;
 	private int pendingTrailingEmptyLinesAfterComments = 0;
 	private Boolean documentContentStarted = null;
+	/**
+	 * Path of the current read position.
+	 */
 	protected JsonPath currentPath = new JsonPath();
+	/**
+	 * Path searched by {@link #readUpToPath(String)}, null if no search is active.
+	 */
 	protected JsonPath searchPath = null;
+	/**
+	 * Indentation of the found search path, -1 if no path was found.
+	 */
 	protected int searchPathWasFoundAtLevel = -1;
 
+	/**
+	 * Creates a new YAML reader using UTF-8 encoding.
+	 *
+	 * @param inputStream
+	 *            the stream to read from
+	 * @throws Exception
+	 *             if the input stream is null
+	 */
 	public YamlReader(final InputStream inputStream) throws Exception {
 		this(inputStream, null);
 	}
 
+	/**
+	 * Creates a new YAML reader.
+	 *
+	 * @param inputStream
+	 *            the stream to read from
+	 * @param encodingCharset
+	 *            the encoding of the data, or null for UTF-8
+	 * @throws Exception
+	 *             if the input stream is null
+	 */
 	public YamlReader(final InputStream inputStream, final Charset encodingCharset) throws Exception {
 		super(inputStream, encodingCharset);
 
@@ -61,6 +98,14 @@ public class YamlReader extends BasicReadAheadReader {
 		indentationsAdd(0);
 	}
 
+	/**
+	 * Reads the next YAML document. Multiple documents separated by "---" are read by repeated
+	 * calls.
+	 *
+	 * @return the document, or null if there is no further document
+	 * @throws Exception
+	 *             if a path search was started before, or the YAML data is invalid
+	 */
 	public YamlDocument readDocument() throws Exception {
 		if (searchPath != null || searchPathWasFoundAtLevel >= 0) {
 			throw new Exception("Search path was already started before by method 'readUpToPath'");
@@ -69,6 +114,15 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 	}
 
+	/**
+	 * Returns the node with an anchor read so far.
+	 *
+	 * @param anchorName
+	 *            the anchor name without "&amp;"
+	 * @return the node
+	 * @throws Exception
+	 *             if no anchor with this name was read
+	 */
 	public YamlNode getYamlNodeByAnchor(final String anchorName) throws Exception {
 		if (!anchorTable.containsKey(anchorName)) {
 			throw new Exception("There is no anchor defined with name '" + anchorName + "'");
@@ -160,6 +214,15 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 	}
 
+	/**
+	 * Reads up to a path, so the following {@link #readNextYamlNode()} calls return the items of the
+	 * sequence at this path.
+	 *
+	 * @param yamlPathString
+	 *            the path in JSON path syntax, e.g. "$.list.customers"
+	 * @throws Exception
+	 *             if the path is not part of the YAML data or the data is invalid
+	 */
 	public void readUpToPath(final String yamlPathString) throws Exception {
 		searchPath = new JsonPath(yamlPathString);
 
@@ -278,6 +341,13 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 	}
 
+	/**
+	 * Reads the next item of the sequence found by {@link #readUpToPath(String)}.
+	 *
+	 * @return the next item, or null if the sequence has no further items
+	 * @throws Exception
+	 *             if the YAML data is invalid
+	 */
 	public YamlNode readNextYamlNode() throws Exception {
 		try {
 			if (isEOF()) {
@@ -293,6 +363,15 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 	}
 
+	/**
+	 * Reads a YAML document from a string.
+	 *
+	 * @param yamlDocumentString
+	 *            the YAML text
+	 * @return the first document, or null for empty data
+	 * @throws Exception
+	 *             if the YAML data is invalid
+	 */
 	public static YamlDocument readDocument(final String yamlDocumentString) throws Exception {
 		try (final YamlReader yamlReader = new YamlReader(new ByteArrayInputStream(yamlDocumentString.getBytes(StandardCharsets.UTF_8)))) {
 			return yamlReader.readDocument();
@@ -654,7 +733,13 @@ public class YamlReader extends BasicReadAheadReader {
 		if (peekCharMatch('-') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
 			readChar();
 
-			indentationsAdd(2);
+			// The item content defines the indentation of its lines, e.g. "-   key: value" has 4 characters
+			final int blanksAfterDash = skipBlanks();
+			if (isEOF() || peekCharMatch('\n') || peekCharMatch('#')) {
+				indentationsAdd(2);
+			} else {
+				indentationsAdd(1 + blanksAfterDash);
+			}
 
 			String pendingAnchor = readUpToNextContent(null);
 
@@ -1131,6 +1216,7 @@ public class YamlReader extends BasicReadAheadReader {
 					pendingAnchor = null;
 				}
 
+				updatePath(YamlToken.YamlSequence_End, null);
 				return sequence;
 			} else if (peekCharMatch(',')) {
 				sequence.add(itemNode);
@@ -1185,6 +1271,7 @@ public class YamlReader extends BasicReadAheadReader {
 						pendingAnchor = null;
 					}
 
+					updatePath(YamlToken.YamlSequence_End, null);
 					return sequence;
 				} else if (peekCharMatch(',')) {
 					readChar();
@@ -1230,6 +1317,11 @@ public class YamlReader extends BasicReadAheadReader {
 				if (peekCharMatch(' ') || peekCharMatch('\t')) {
 					readChar();
 					inlineComment = readInlineComment();
+					final String headerCandidate = nextScalarStringLine.trim();
+					if (scalarString.isEmpty() && (headerCandidate.startsWith("|") || headerCandidate.startsWith(">")) && peekCharMatch('\n')) {
+						// Block scalar header with comment, like "| # comment": its content starts on the next line
+						readChar();
+					}
 				}
 				break;
 			} else if (peekCharMatch('\n')) {
@@ -1326,7 +1418,7 @@ public class YamlReader extends BasicReadAheadReader {
 				scalar.setInlineComment(inlineComment);
 			}
 			return scalar;
-		} else if (scalarString.startsWith("-") || scalarString.startsWith(".") || Character.isDigit(scalarString.charAt(0))) {
+		} else if (scalarString.startsWith("-") || scalarString.startsWith("+") || scalarString.startsWith(".") || Character.isDigit(scalarString.charAt(0))) {
 			YamlScalar scalar;
 			try {
 				scalar = new YamlScalar(scalarString, YamlScalarType.NUMBER);
@@ -1373,6 +1465,10 @@ public class YamlReader extends BasicReadAheadReader {
 			if (peekCharMatch(':') && (peekNextChar(1) == null || peekNextCharNotMatchAny(1, ",{}[] \t\n"))) {
 				readChar();
 				scalarString += ":";
+			} else if (peekCharMatch('#') && scalarString.length() > 0 && !Character.isWhitespace(scalarString.charAt(scalarString.length() - 1))) {
+				// '#' only starts a comment after whitespace, otherwise it is part of the text like "a#b"
+				readChar();
+				scalarString += "#";
 			} else {
 				break;
 			}
@@ -1549,6 +1645,13 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 		}
 
+		if (trailingNonScalarLineIndentation < 0) {
+			// End of data: empty lines collected last are trailing linebreaks of the scalar (kept by "+" chomping)
+			for (int i = 0; i < pendingEmptyLines; i++) {
+				raw.append("\n");
+			}
+		}
+
 		if (trailingNonScalarLineIndentation >= 0) {
 			// Restore the indentation of the trailing, non-scalar line to the shared
 			// indentations stack so the caller continuing to parse the surrounding block
@@ -1596,10 +1699,48 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 	}
 
+	/**
+	 * Folds the lines of a folded block scalar: a linebreak between two lines that are not more
+	 * indented becomes a blank, each following empty line becomes a linebreak. Linebreaks next to
+	 * more indented lines and trailing linebreaks (after chomping) are kept.
+	 */
 	@SuppressWarnings("static-method")
 	private String foldLines(final String text) {
-		final String[] lines = text.split("\\n", -1);
-		return Utilities.join(lines, " ");
+		int contentEnd = text.length();
+		while (contentEnd > 0 && text.charAt(contentEnd - 1) == '\n') {
+			contentEnd--;
+		}
+		final String[] lines = text.substring(0, contentEnd).split("\n", -1);
+		final StringBuilder foldedText = new StringBuilder();
+		int index = 0;
+		while (index < lines.length - 1 && lines[index].isEmpty()) {
+			// Leading empty lines are kept as linebreaks
+			foldedText.append("\n");
+			index++;
+		}
+		foldedText.append(lines[index]);
+		String previousLine = lines[index];
+		index++;
+		while (index < lines.length) {
+			int emptyLines = 0;
+			while (lines[index].isEmpty()) {
+				emptyLines++;
+				index++;
+			}
+			final String nextLine = lines[index];
+			final boolean moreIndented = previousLine.startsWith(" ") || previousLine.startsWith("\t") || nextLine.startsWith(" ") || nextLine.startsWith("\t");
+			if (moreIndented) {
+				foldedText.append("\n".repeat(emptyLines + 1));
+			} else if (emptyLines == 0) {
+				foldedText.append(' ');
+			} else {
+				foldedText.append("\n".repeat(emptyLines));
+			}
+			foldedText.append(nextLine);
+			previousLine = nextLine;
+			index++;
+		}
+		return foldedText.append(text.substring(contentEnd)).toString();
 	}
 
 	private int getNumberOfIndentationChars() {

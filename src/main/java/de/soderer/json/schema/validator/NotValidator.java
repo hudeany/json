@@ -14,11 +14,26 @@ import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
 
 /**
- * Logic inverter for JSON schema tests
+ * Validator for the "not" keyword: the JSON data node must NOT match the given schema.
  */
 public class NotValidator extends BaseJsonSchemaValidator {
+	/** Validators of the schema the data must not match. */
 	private List<BaseJsonSchemaValidator> subValidators = null;
 
+	/**
+	 * Creates a new "not" validator.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, a schema object or a boolean
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is neither object nor boolean, or the schema is invalid
+	 * @throws DuplicateKeyException
+	 *             if a schema contains duplicate keys
+	 */
 	public NotValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
@@ -33,17 +48,13 @@ public class NotValidator extends BaseJsonSchemaValidator {
 				throw new JsonSchemaDefinitionError("Not-validation JsonObject is empty", jsonSchemaPath);
 			}
 		} else {
-			throw new JsonSchemaDefinitionError("Not-validation property does not have an JsonObject value", jsonSchemaPath);
+			throw new JsonSchemaDefinitionError("Not-validation property does not have a JsonObject or boolean value", jsonSchemaPath);
 		}
 	}
 
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
-		boolean didNotApply = false;
-		if (!validateSubSchema(subValidators, jsonNode, jsonPath))  {
-			didNotApply = true;
-		}
-		if (!didNotApply) {
+		if (validateSubSchema(subValidators, jsonNode, jsonPath)) {
 			throw new JsonSchemaDataValidationError("The 'not' property did apply to JsonNode", jsonPath);
 		}
 	}

@@ -33,9 +33,27 @@ import de.soderer.json.utilities.NumberUtilities;
  * diff text format and path syntax.
  */
 public class JsonDiffPatcher {
+	/**
+	 * Utility class, not to be instantiated.
+	 */
+	private JsonDiffPatcher() {
+	}
+
+	/**
+	 * Types of patch lines.
+	 */
 	public enum PatchLineType {
+		/**
+		 * Add a new node ("+" line).
+		 */
 		ADDED,
+		/**
+		 * Remove an existing node ("-" line).
+		 */
 		REMOVED,
+		/**
+		 * Change an existing node ("~" line).
+		 */
 		CHANGED;
 	}
 
@@ -43,20 +61,58 @@ public class JsonDiffPatcher {
 	 * Single parsed patch instruction, prior to being applied.
 	 */
 	public static class PatchEntry {
+		/**
+		 * Path of the node to patch.
+		 */
 		private final String path;
+		/**
+		 * Type of the patch.
+		 */
 		private final PatchLineType type;
+		/**
+		 * Expected current value as text, null if not applicable.
+		 */
 		private final String oldValueText;
+		/**
+		 * New value as text, null if not applicable.
+		 */
 		private final String newValueText;
+		/**
+		 * True, if the current value is not checked before a change.
+		 */
 		private final boolean ignoreOldValue;
 
+		/**
+		 * Creates a new patch entry which checks the current value before a change.
+		 *
+		 * @param path
+		 *            path of the node to patch, e.g. "servers[2].name"
+		 * @param type
+		 *            type of the patch
+		 * @param oldValueText
+		 *            expected current value as text, null if not applicable
+		 * @param newValueText
+		 *            new value as text, null if not applicable
+		 */
 		public PatchEntry(final String path, final PatchLineType type, final String oldValueText, final String newValueText) {
 			this(path, type, oldValueText, newValueText, false);
 		}
 
 		/**
-		 * @param ignoreOldValue if true, the current value at this path is not checked
-		 *        before applying a CHANGED entry (line format '~ path: newValue' without
-		 *        an old value / arrow). Only meaningful for {@link PatchLineType#CHANGED}.
+		 * Creates a new patch entry.
+		 *
+		 * @param path
+		 *            path of the node to patch, e.g. "servers[2].name"
+		 * @param type
+		 *            type of the patch
+		 * @param oldValueText
+		 *            expected current value as text, null if not applicable
+		 * @param newValueText
+		 *            new value as text, null if not applicable
+		 * @param ignoreOldValue
+		 *            if true, the current value at this path is not checked before applying a CHANGED
+		 *            entry (line format '~ path: newValue' without an old value / arrow). Only
+		 *            meaningful for {@link PatchLineType#CHANGED}.
 		 */
 		public PatchEntry(final String path, final PatchLineType type, final String oldValueText, final String newValueText, final boolean ignoreOldValue) {
 			this.path = path;
@@ -66,22 +122,47 @@ public class JsonDiffPatcher {
 			this.ignoreOldValue = ignoreOldValue;
 		}
 
+		/**
+		 * Returns the path of the node to patch.
+		 *
+		 * @return the path
+		 */
 		public String getPath() {
 			return path;
 		}
 
+		/**
+		 * Returns the type of the patch.
+		 *
+		 * @return the type
+		 */
 		public PatchLineType getType() {
 			return type;
 		}
 
+		/**
+		 * Returns the expected current value.
+		 *
+		 * @return the value as text, null if not applicable
+		 */
 		public String getOldValueText() {
 			return oldValueText;
 		}
 
+		/**
+		 * Returns the new value.
+		 *
+		 * @return the value as text, null if not applicable
+		 */
 		public String getNewValueText() {
 			return newValueText;
 		}
 
+		/**
+		 * Returns whether the current value is not checked before a change.
+		 *
+		 * @return true, if the current value is not checked
+		 */
 		public boolean isIgnoreOldValue() {
 			return ignoreOldValue;
 		}
@@ -95,22 +176,40 @@ public class JsonDiffPatcher {
 	public static class PatchConflictException extends Exception {
 		private static final long serialVersionUID = 1L;
 
+		/**
+		 * Creates a new exception.
+		 *
+		 * @param message
+		 *            the detail message
+		 */
 		public PatchConflictException(final String message) {
 			super(message);
 		}
 	}
 
-	private static final Pattern ADDED_LINE_PATTERN = Pattern.compile("^\\+\\s+(.+?):\\s+(.+)$");
-	private static final Pattern REMOVED_LINE_PATTERN = Pattern.compile("^-\\s+(.+?):\\s+(.+)$");
-	private static final Pattern CHANGED_LINE_PATTERN = Pattern.compile("^~\\s+(.+?):\\s+(.+?)\\s+->\\s+(.+)$");
-	private static final Pattern CHANGED_LINE_PATTERN_NO_OLD_VALUE = Pattern.compile("^~\\s+(.+?):\\s+(.+)$");
+	/** Quoted text with backslash escapes. */
+	private static final String QUOTED = "\"(?:[^\"\\\\]|\\\\.)*\"";
+	/** Path of key segments, quoted key segments and index segments. */
+	private static final String PATH = "((?:\\[" + QUOTED + "\\]|\\[\\d+\\]|[^:\\[])+?)";
+	/** Value: null, quoted text, quoted JSON text of a complex node, or unquoted text (hand written diffs). */
+	private static final String VALUE = "(null|(?:json:)?" + QUOTED + "|.+?)";
+	private static final Pattern ADDED_LINE_PATTERN = Pattern.compile("^\\+\\s+" + PATH + ":\\s+" + VALUE + "$");
+	private static final Pattern REMOVED_LINE_PATTERN = Pattern.compile("^-\\s+" + PATH + ":\\s+" + VALUE + "$");
+	private static final Pattern CHANGED_LINE_PATTERN = Pattern.compile("^~\\s+" + PATH + ":\\s+" + VALUE + "\\s+->\\s+" + VALUE + "$");
+	private static final Pattern CHANGED_LINE_PATTERN_NO_OLD_VALUE = Pattern.compile("^~\\s+" + PATH + ":\\s+" + VALUE + "$");
 
 	/**
-	 * Parses a diff text (as produced by JsonComparator#renderAsText) into a
+	 * Parses a diff text (as produced by {@link JsonComparator#renderAsText(List)}) into a
 	 * list of patch entries. Blank lines and the "No differences found"
 	 * placeholder text are ignored. Lines that match none of the known
 	 * patterns cause a PatchConflictException, since silently skipping
 	 * unparsable lines could lead to an incomplete patch.
+	 *
+	 * @param diffText
+	 *            the diff text, may be null
+	 * @return the patch entries, empty for null
+	 * @throws PatchConflictException
+	 *             if a line cannot be parsed
 	 */
 	public static List<PatchEntry> parseDiffText(final String diffText) throws PatchConflictException {
 		final List<PatchEntry> patchEntries = new ArrayList<>();
@@ -165,19 +264,32 @@ public class JsonDiffPatcher {
 	}
 
 	/**
-	 * Strips the surrounding double quotes added by JsonComparator#formatValue,
-	 * or returns null for the literal "null" marker.
+	 * Strips the surrounding double quotes added by JsonComparator#formatValue and resolves the
+	 * escapes, or returns null for the literal "null" marker. Complex values keep a marker, so
+	 * they can be told apart from strings.
+	 *
+	 * @param valueText
+	 *            the value text of a diff line
+	 * @return the value, null for the "null" marker
 	 */
 	private static String unquote(final String valueText) {
 		if ("null".equals(valueText)) {
 			return null;
+		} else if (valueText.startsWith("json:\"") && valueText.endsWith("\"")) {
+			return STRUCTURED_VALUE_MARKER + JsonComparator.unquote(valueText.substring(5));
 		} else if (valueText.length() >= 2 && valueText.startsWith("\"") && valueText.endsWith("\"")) {
-			return valueText.substring(1, valueText.length() - 1);
+			return JsonComparator.unquote(valueText);
 		} else {
 			// Not quoted (should not normally happen with formatValue output), use as-is
 			return valueText;
 		}
 	}
+
+	/**
+	 * Internal marker prefix for complex values given as JSON text. A linebreak cannot be part of
+	 * any other value read from a single diff line, unless it was escaped within quotes.
+	 */
+	private static final String STRUCTURED_VALUE_MARKER = "\u0000json\n";
 
 	/**
 	 * A single path segment, either an object key (by its simple string
@@ -205,7 +317,7 @@ public class JsonDiffPatcher {
 		}
 	}
 
-	private static final Pattern PATH_SEGMENT_PATTERN = Pattern.compile("([^.\\[\\]]+)|\\[(\\d+)\\]");
+	private static final Pattern PATH_SEGMENT_PATTERN = Pattern.compile("\\[(" + QUOTED + ")\\]|([^.\\[\\]]+)|\\[(\\d+)\\]");
 
 	/**
 	 * Splits a path like "servers[2].name" or "rooting.abc" into ordered
@@ -219,9 +331,11 @@ public class JsonDiffPatcher {
 		final Matcher matcher = PATH_SEGMENT_PATTERN.matcher(path);
 		while (matcher.find()) {
 			if (matcher.group(1) != null) {
-				pathSegments.add(PathSegment.forKey(matcher.group(1)));
+				pathSegments.add(PathSegment.forKey(JsonComparator.unquote(matcher.group(1))));
+			} else if (matcher.group(2) != null) {
+				pathSegments.add(PathSegment.forKey(matcher.group(2)));
 			} else {
-				pathSegments.add(PathSegment.forIndex(Integer.parseInt(matcher.group(2))));
+				pathSegments.add(PathSegment.forIndex(Integer.parseInt(matcher.group(3))));
 			}
 		}
 		return pathSegments;
@@ -233,6 +347,10 @@ public class JsonDiffPatcher {
 	 * root replacements the original root instance is reused (its content is
 	 * mutated), so the same reference passed in remains valid after patching.
 	 *
+	 * @param root
+	 *            the JSON tree to patch
+	 * @param patchEntries
+	 *            the patch entries, e.g. from {@link #parseDiffText(String)}
 	 * @throws PatchConflictException if any entry's expected old value does not
 	 *         match the current value, or a structural precondition is violated
 	 * @throws Exception propagated from underlying JsonObject/JsonArray operations
@@ -345,15 +463,22 @@ public class JsonDiffPatcher {
 		}
 	}
 
-	private static void checkScalarValueMatches(final JsonNode currentChild, final String expectedValueText, final PatchEntry patchEntry) throws PatchConflictException {
-		final String currentValueText = scalarToComparableText(currentChild);
+	private static void checkScalarValueMatches(final JsonNode currentChild, final String expectedValueText, final PatchEntry patchEntry) throws Exception {
 		final boolean matches;
-		if (currentValueText == null && expectedValueText == null) {
-			matches = true;
-		} else if (currentValueText == null || expectedValueText == null) {
-			matches = false;
+		final String currentValueText;
+		if (expectedValueText != null && expectedValueText.startsWith(STRUCTURED_VALUE_MARKER)) {
+			// Complex value: compare the parsed nodes
+			currentValueText = currentChild == null ? null : currentChild.toString();
+			matches = createValueFromText(expectedValueText).equals(currentChild);
 		} else {
-			matches = currentValueText.equals(expectedValueText);
+			currentValueText = scalarToComparableText(currentChild);
+			if (currentValueText == null && expectedValueText == null) {
+				matches = true;
+			} else if (currentValueText == null || expectedValueText == null) {
+				matches = false;
+			} else {
+				matches = currentValueText.equals(expectedValueText);
+			}
 		}
 
 		if (!matches) {
@@ -452,9 +577,11 @@ public class JsonDiffPatcher {
 	 * The diff text format does not preserve the original scalar type, so
 	 * this is a best-effort reconstruction.
 	 */
-	private static JsonNode createValueFromText(final String valueText) {
+	private static JsonNode createValueFromText(final String valueText) throws Exception {
 		if (valueText == null) {
 			return new JsonValueNull();
+		} else if (valueText.startsWith(STRUCTURED_VALUE_MARKER)) {
+			return JsonReader.readJsonItemString(valueText.substring(STRUCTURED_VALUE_MARKER.length()));
 		} else if ("true".equalsIgnoreCase(valueText) || "false".equalsIgnoreCase(valueText)) {
 			return new JsonValueBoolean(Boolean.parseBoolean(valueText));
 		} else if (NumberUtilities.isNumber(valueText)) {

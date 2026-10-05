@@ -10,9 +10,28 @@ import java.util.Set;
  * or a new YamlNode tree containing only the differing parts.
  */
 public class YamlComparator {
+	/**
+	 * Creates a new comparator.
+	 */
+	public YamlComparator() {
+		// Stateless, all settings are method parameters
+	}
+
+	/**
+	 * Types of differences.
+	 */
 	public enum DiffType {
+		/**
+		 * Value exists only in the right tree.
+		 */
 		ADDED,
+		/**
+		 * Value exists only in the left tree.
+		 */
 		REMOVED,
+		/**
+		 * Value differs between the trees.
+		 */
 		CHANGED;
 	}
 
@@ -20,11 +39,35 @@ public class YamlComparator {
 	 * Single difference entry, identified by its path within the document.
 	 */
 	public static class DiffEntry {
+		/**
+		 * Path of the difference, e.g. "servers[2].name".
+		 */
 		private final String path;
+		/**
+		 * Type of the difference.
+		 */
 		private final DiffType type;
+		/**
+		 * Value in the left tree, null if added.
+		 */
 		private final Object oldValue;
+		/**
+		 * Value in the right tree, null if removed.
+		 */
 		private final Object newValue;
 
+		/**
+		 * Creates a new difference entry.
+		 *
+		 * @param path
+		 *            path of the difference
+		 * @param type
+		 *            type of the difference
+		 * @param oldValue
+		 *            value in the left tree, a simple Java value or YamlNode
+		 * @param newValue
+		 *            value in the right tree, a simple Java value or YamlNode
+		 */
 		public DiffEntry(final String path, final DiffType type, final Object oldValue, final Object newValue) {
 			this.path = path;
 			this.type = type;
@@ -32,18 +75,38 @@ public class YamlComparator {
 			this.newValue = newValue;
 		}
 
+		/**
+		 * Returns the path of the difference.
+		 *
+		 * @return the path, e.g. "servers[2].name"
+		 */
 		public String getPath() {
 			return path;
 		}
 
+		/**
+		 * Returns the type of the difference.
+		 *
+		 * @return the type
+		 */
 		public DiffType getType() {
 			return type;
 		}
 
+		/**
+		 * Returns the value in the left tree.
+		 *
+		 * @return the simple Java value or YamlNode, null if added or the null value
+		 */
 		public Object getOldValue() {
 			return oldValue;
 		}
 
+		/**
+		 * Returns the value in the right tree.
+		 *
+		 * @return the simple Java value or YamlNode, null if removed or the null value
+		 */
 		public Object getNewValue() {
 			return newValue;
 		}
@@ -52,7 +115,14 @@ public class YamlComparator {
 	/**
 	 * Recursively compares "left" and "right" and returns a flat list of differences.
 	 * The path uses dot notation for mappings and bracket notation for sequence indexes,
-	 * e.g. "servers[2].name".
+	 * e.g. "servers[2].name". Keys containing path syntax characters are quoted, e.g.
+	 * ["a.b"]. Sequences are compared by index.
+	 *
+	 * @param left
+	 *            the left (old) tree, may be null
+	 * @param right
+	 *            the right (new) tree, may be null
+	 * @return the differences, empty if the trees are equal
 	 */
 	public List<DiffEntry> compare(final YamlNode left, final YamlNode right) {
 		final List<DiffEntry> diffEntries = new ArrayList<>();
@@ -73,6 +143,8 @@ public class YamlComparator {
 			compareSequences(path, (YamlSequence) left, (YamlSequence) right, diffEntries);
 		} else if (left instanceof YamlScalar && right instanceof YamlScalar) {
 			compareScalars(path, (YamlScalar) left, (YamlScalar) right, diffEntries);
+		} else if (left.equals(right)) {
+			// Equal aliases
 		} else {
 			// Different node types at the same path (e.g. mapping replaced by scalar)
 			diffEntries.add(new DiffEntry(path, DiffType.CHANGED, toSimpleValue(left), toSimpleValue(right)));
@@ -85,7 +157,7 @@ public class YamlComparator {
 		allKeys.addAll(right.keySet());
 
 		for (final YamlNode key : allKeys) {
-			final String childPath = "root".equals(path) ? keyToPathSegment(key) : path + "." + keyToPathSegment(key);
+			final String childPath = appendKeyToPath(path, keyToText(key));
 			final YamlNode leftChild = left.containsKey(key) ? left.get(key) : null;
 			final YamlNode rightChild = right.containsKey(key) ? right.get(key) : null;
 			compareNodes(childPath, leftChild, rightChild, diffEntries);
@@ -93,11 +165,15 @@ public class YamlComparator {
 	}
 
 	/**
-	 * Renders a YamlNode mapping key as a readable path segment.
+	 * Renders a YamlNode mapping key as text for a path segment.
 	 * Plain scalar keys (the common case) are rendered as their simple value;
 	 * complex (non-scalar) keys fall back to their YAML representation.
+	 *
+	 * @param key
+	 *            the mapping key
+	 * @return the key text
 	 */
-	private static String keyToPathSegment(final YamlNode key) {
+	static String keyToText(final YamlNode key) {
 		if (key instanceof YamlScalar) {
 			final Object scalarValue = ((YamlScalar) key).getValue();
 			return scalarValue == null ? "null" : scalarValue.toString();
@@ -106,10 +182,128 @@ public class YamlComparator {
 		}
 	}
 
+	/**
+	 * Appends a mapping key to a diff path. Keys with path syntax characters are written as
+	 * ["key"], so the path stays unambiguous.
+	 *
+	 * @param path
+	 *            the path so far, "root" for the root node
+	 * @param keyText
+	 *            the key text
+	 * @return the extended path
+	 */
+	static String appendKeyToPath(final String path, final String keyText) {
+		if (keyNeedsQuoting(keyText)) {
+			// Keys with path syntax characters are written as ["key"], so the path stays unambiguous
+			return ("root".equals(path) ? "" : path) + "[" + quote(keyText) + "]";
+		} else {
+			return "root".equals(path) ? keyText : path + "." + keyText;
+		}
+	}
+
+	/**
+	 * Appends a sequence index to a diff path.
+	 *
+	 * @param path
+	 *            the path so far, "root" for the root node
+	 * @param index
+	 *            the sequence index
+	 * @return the extended path
+	 */
+	static String appendIndexToPath(final String path, final int index) {
+		return ("root".equals(path) ? "" : path) + "[" + index + "]";
+	}
+
+	/**
+	 * Checks whether a key must be quoted within a diff path.
+	 *
+	 * @param keyText
+	 *            the key text
+	 * @return true, if the key is empty, has leading or trailing whitespace, or contains control
+	 *         characters or path syntax characters
+	 */
+	private static boolean keyNeedsQuoting(final String keyText) {
+		if (keyText.isEmpty() || Character.isWhitespace(keyText.charAt(0)) || Character.isWhitespace(keyText.charAt(keyText.length() - 1))) {
+			return true;
+		}
+		for (final char keyChar : keyText.toCharArray()) {
+			if (keyChar < ' ' || ".[]\":\\".indexOf(keyChar) >= 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Quotes a text with double quotes and escapes backslash, quote, linebreaks and tabs.
+	 *
+	 * @param text
+	 *            the text
+	 * @return the quoted text
+	 */
+	static String quote(final String text) {
+		final StringBuilder quotedText = new StringBuilder("\"");
+		for (final char nextChar : text.toCharArray()) {
+			switch (nextChar) {
+				case '\\':
+					quotedText.append("\\\\");
+					break;
+				case '"':
+					quotedText.append("\\\"");
+					break;
+				case '\n':
+					quotedText.append("\\n");
+					break;
+				case '\r':
+					quotedText.append("\\r");
+					break;
+				case '\t':
+					quotedText.append("\\t");
+					break;
+				default:
+					quotedText.append(nextChar);
+			}
+		}
+		return quotedText.append("\"").toString();
+	}
+
+	/**
+	 * Removes the quotes of a text quoted by {@link #quote(String)} and resolves the escapes.
+	 *
+	 * @param quotedText
+	 *            the quoted text
+	 * @return the text
+	 */
+	static String unquote(final String quotedText) {
+		final StringBuilder text = new StringBuilder();
+		for (int i = 1; i < quotedText.length() - 1; i++) {
+			final char nextChar = quotedText.charAt(i);
+			if (nextChar == '\\' && i + 1 < quotedText.length() - 1) {
+				final char escapedChar = quotedText.charAt(++i);
+				switch (escapedChar) {
+					case 'n':
+						text.append('\n');
+						break;
+					case 'r':
+						text.append('\r');
+						break;
+					case 't':
+						text.append('\t');
+						break;
+					default:
+						text.append(escapedChar);
+				}
+			} else {
+				text.append(nextChar);
+			}
+		}
+		return text.toString();
+	}
+
 	private void compareSequences(final String path, final YamlSequence left, final YamlSequence right, final List<DiffEntry> diffEntries) {
 		final int maxSize = Math.max(left.size(), right.size());
 		for (int i = 0; i < maxSize; i++) {
-			final String childPath = path + "[" + i + "]";
+			final String childPath = appendIndexToPath(path, i);
 			final YamlNode leftChild = i < left.size() ? left.get(i) : null;
 			final YamlNode rightChild = i < right.size() ? right.get(i) : null;
 			compareNodes(childPath, leftChild, rightChild, diffEntries);
@@ -122,7 +316,8 @@ public class YamlComparator {
 
 		if (leftValue == null && rightValue == null) {
 			// Equal
-		} else if (leftValue == null || rightValue == null || !leftValue.equals(rightValue)) {
+		} else if (leftValue == null || rightValue == null || !YamlScalar.valuesEqual(leftValue, rightValue)) {
+			// Numbers are compared numerically (e.g. Integer 1 and Long 1 are equal)
 			diffEntries.add(new DiffEntry(path, DiffType.CHANGED, leftValue, rightValue));
 		} else {
 			// Equal
@@ -140,9 +335,17 @@ public class YamlComparator {
 	/**
 	 * Renders a flat diff list as a human readable text block,
 	 * one line per difference, e.g.:
-	 *   ~ servers[2].name: "old" -> "new"
+	 * <pre>
+	 *   ~ servers[2].name: "old" -&gt; "new"
 	 *   + servers[3].host: "10.0.0.5"
-	 *   - servers[4]
+	 *   - servers[4]: "oldHost"
+	 * </pre>
+	 * Values are quoted with backslash escapes, complex values are written as quoted YAML text with
+	 * prefix "yaml:". The format can be parsed by {@link YamlDiffPatcher#parseDiffText(String)}.
+	 *
+	 * @param diffEntries
+	 *            the differences
+	 * @return the diff text, or "No differences found"
 	 */
 	public static String renderAsText(final List<DiffEntry> diffEntries) {
 		final StringBuilder resultBuilder = new StringBuilder();
@@ -169,9 +372,11 @@ public class YamlComparator {
 		if (value == null) {
 			return "null";
 		} else if (value instanceof YamlNode) {
-			return value.toString();
+			// Complex values as escaped YAML text on one line, so the diff stays line based and can be patched
+			final String yamlText = value instanceof final YamlAlias alias ? "*" + alias.getTargetAnchorName() : value.toString();
+			return "yaml:" + quote(yamlText);
 		} else {
-			return "\"" + value + "\"";
+			return quote(value.toString());
 		}
 	}
 
@@ -179,11 +384,16 @@ public class YamlComparator {
 	 * Builds a new YamlMapping/YamlSequence/YamlScalar tree from "right" that
 	 * contains only the parts which differ from "left" (added or changed values,
 	 * including the changed value's full subtree). Removed nodes (present in left,
-	 * missing in right) are represented as YamlScalar with value null, prefixed marker
-	 * is left to the caller since YamlNode itself carries no comments.
+	 * missing in right) are represented as YamlScalar with value null, so the caller
+	 * can see that the key existed but vanished. A changed sequence is contained completely.
 	 *
-	 * Returns null if there is no difference at all at this level.
+	 * @param left
+	 *            the left (old) tree, may be null
+	 * @param right
+	 *            the right (new) tree, may be null
+	 * @return the differing parts, or null if there is no difference at all at this level
 	 * @throws Exception
+	 *             if building the result tree fails
 	 */
 	public YamlNode buildDifferenceOnly(final YamlNode left, final YamlNode right) throws Exception {
 		if (left == null && right == null) {
@@ -203,11 +413,14 @@ public class YamlComparator {
 			final Object rightValue = ((YamlScalar) right).getValue();
 			if (leftValue == null && rightValue == null) {
 				return null;
-			} else if (leftValue == null || !leftValue.equals(rightValue)) {
+			} else if (leftValue == null || !YamlScalar.valuesEqual(leftValue, rightValue)) {
 				return right;
 			} else {
 				return null;
 			}
+		} else if (left.equals(right)) {
+			// Equal aliases
+			return null;
 		} else {
 			// Type changed completely, take right as the new value
 			return right;
@@ -273,8 +486,13 @@ public class YamlComparator {
 	 * (equal value) in both "left" and "right". This is the counterpart of
 	 * {@link #buildDifferenceOnly(YamlNode, YamlNode)}.
 	 *
-	 * Returns null if there is nothing in common at this level.
+	 * @param left
+	 *            the left tree, may be null
+	 * @param right
+	 *            the right tree, may be null
+	 * @return the common parts, or null if there is nothing in common at this level
 	 * @throws Exception
+	 *             if building the result tree fails
 	 */
 	public YamlNode buildIntersectionOnly(final YamlNode left, final YamlNode right) throws Exception {
 		if (left == null || right == null) {
@@ -288,11 +506,14 @@ public class YamlComparator {
 			final Object rightValue = ((YamlScalar) right).getValue();
 			if (leftValue == null && rightValue == null) {
 				return new YamlScalar(null);
-			} else if (leftValue != null && leftValue.equals(rightValue)) {
+			} else if (leftValue != null && YamlScalar.valuesEqual(leftValue, rightValue)) {
 				return right;
 			} else {
 				return null;
 			}
+		} else if (left.equals(right)) {
+			// Equal aliases
+			return right;
 		} else {
 			// Different node types at the same path, no common value
 			return null;

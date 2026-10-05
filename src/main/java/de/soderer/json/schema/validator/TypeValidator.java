@@ -19,12 +19,34 @@ import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
 
 /**
- * JSON subschema that matches a simple data value to a type definition
+ * Validator for the "type" keyword: the JSON data node must be of the given type. The value is a type
+ * name ("string", "number", "integer", "boolean", "object", "array", "null", or "any" in draft 3) or
+ * an array of type names; in draft 3 the array may also contain schemas. The data must match at
+ * least one of them. Integers are also numbers; since draft 6 numbers with zero fraction (like 1.0)
+ * are also integers.
  */
 public class TypeValidator extends BaseJsonSchemaValidator {
+	/** Names of the allowed types. */
 	private final List<String> typeStrings = new ArrayList<>();
+
+	/** Validators of the allowed schemas (draft 3). */
 	private final List<List<BaseJsonSchemaValidator>> typeValidators = new ArrayList<>();
 
+	/**
+	 * Creates a new "type" validator.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, a type name or an array of type names and schemas
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is neither string nor array, contains an unknown type name or an
+	 *             invalid schema
+	 * @throws DuplicateKeyException
+	 *             if a schema contains duplicate keys
+	 */
 	public TypeValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
@@ -46,6 +68,7 @@ public class TypeValidator extends BaseJsonSchemaValidator {
 				typeStrings.add(((JsonValueString) validatorData).getValue());
 			}
 		} else if (validatorData.isJsonArray()) {
+			int index = 0;
 			for (final JsonNode typeData : ((JsonArray) validatorData).items()) {
 				if (typeData == null) {
 					throw new JsonSchemaDefinitionError("Type data array contains a 'null' item", jsonSchemaPath);
@@ -53,14 +76,15 @@ public class TypeValidator extends BaseJsonSchemaValidator {
 					try {
 						JsonDataType.getFromString(((JsonValueString) typeData).getValue());
 					} catch (final Exception e) {
-						throw new JsonSchemaDefinitionError("Invalid JSON data type '" + validatorData + "'", jsonSchemaPath, e);
+						throw new JsonSchemaDefinitionError("Invalid JSON data type '" + typeData + "'", jsonSchemaPath, e);
 					}
 					typeStrings.add(((JsonValueString) typeData).getValue());
 				} else if (typeData.isJsonObject()) {
-					typeValidators.add(JsonSchema.createValidators((JsonObject) typeData, jsonSchemaDependencyResolver, jsonSchemaPath));
+					typeValidators.add(JsonSchema.createValidators((JsonObject) typeData, jsonSchemaDependencyResolver, new JsonSchemaPath(jsonSchemaPath).addArrayIndex(index)));
 				} else {
 					throw new JsonSchemaDefinitionError("Type data array contains an item that is no 'string' and no 'object'", jsonSchemaPath);
 				}
+				index++;
 			}
 		} else {
 			throw new JsonSchemaDefinitionError("Invalid JSON data type definition item '" + validatorData + "'", jsonSchemaPath);
@@ -93,6 +117,16 @@ public class TypeValidator extends BaseJsonSchemaValidator {
 		throw new JsonSchemaDataValidationError("Invalid data type '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 	}
 
+	/**
+	 * Checks whether a JSON data node is of the given type. Integer values are also numbers; since
+	 * draft 6 numbers with zero fraction (like 1.0) are also integers.
+	 *
+	 * @param jsonNode
+	 *            the JSON data node
+	 * @param jsonDataType
+	 *            the type to check
+	 * @return true, if the data node is of the given type
+	 */
 	private boolean checkJsonDataType(final JsonNode jsonNode, final JsonDataType jsonDataType) {
 		if (jsonNode.getJsonDataType() == jsonDataType) {
 			return true;
@@ -104,16 +138,14 @@ public class TypeValidator extends BaseJsonSchemaValidator {
 			if (jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV3Mode() || jsonSchemaDependencyResolver.isDraftV4Mode()) {
 				return false;
 			} else {
-				String stringRepresentation = ((JsonValueNumber) jsonNode).getValue().toString();
-				if (stringRepresentation.contains("E")) {
-					final BigDecimal bigDecimal = new BigDecimal(stringRepresentation);
-					return bigDecimal.stripTrailingZeros().scale() <= 0;
-				} else {
-					while (stringRepresentation.contains(".0")) {
-						stringRepresentation = stringRepresentation.replace(".0", ".");
-					}
-					return !stringRepresentation.contains(".") || stringRepresentation.indexOf(".") == stringRepresentation.length() - 1;
+				final Number numberValue = ((JsonValueNumber) jsonNode).getValue();
+				if ((numberValue instanceof Double || numberValue instanceof Float) && !Double.isFinite(numberValue.doubleValue())) {
+					// NaN and infinite values (JSON5) are no integers
+					return false;
 				}
+				// BigDecimal handles plain and exponential notation, e.g. "1.0", "1.50" or "1.0E5"
+				final BigDecimal bigDecimal = new BigDecimal(((JsonValueNumber) jsonNode).getValue().toString());
+				return bigDecimal.stripTrailingZeros().scale() <= 0;
 			}
 		} else {
 			return false;

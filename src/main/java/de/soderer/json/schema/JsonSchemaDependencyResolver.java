@@ -27,8 +27,24 @@ import de.soderer.json.path.JsonPathRoot;
 import de.soderer.json.schema.validator.BaseJsonSchemaValidator;
 import de.soderer.json.utilities.Utilities;
 
+/**
+ * Resolves "$ref" references of a JSON schema and holds the settings used while creating and
+ * applying its validators (JSON schema version, download permission).
+ * <p>
+ * References may point into the schema itself ("#/definitions/x"), into additional schemas given as
+ * {@link JsonSchemaDependency} ("other.json#/definitions/x"), or, if allowed, into schemas
+ * downloaded by http(s) URL. The resolver also caches the validators built per reference and
+ * detects cyclic references.
+ * </p>
+ */
 public class JsonSchemaDependencyResolver {
+	/**
+	 * The main schema document.
+	 */
 	private JsonObject schemaDocumentNode = null;
+	/**
+	 * Additional schema documents by their reference name.
+	 */
 	private final Map<String, JsonObject> additionalSchemaDocumentNodes = new HashMap<>();
 
 	/**
@@ -47,23 +63,53 @@ public class JsonSchemaDependencyResolver {
 	 */
 	private final ThreadLocal<Set<String>> activeReferenceResolutions = ThreadLocal.withInitial(HashSet::new);
 
+	/**
+	 * Returns the cached validators for a reference.
+	 *
+	 * @param referenceKey
+	 *            the "$ref" value
+	 * @return the validators, or null if not cached yet
+	 */
 	public List<BaseJsonSchemaValidator> getCachedReferenceValidators(final String referenceKey) {
 		return referenceValidatorCache.get(referenceKey);
 	}
 
+	/**
+	 * Caches the validators for a reference.
+	 *
+	 * @param referenceKey
+	 *            the "$ref" value
+	 * @param validators
+	 *            the validators of the referenced schema
+	 */
 	public void putCachedReferenceValidators(final String referenceKey, final List<BaseJsonSchemaValidator> validators) {
 		referenceValidatorCache.put(referenceKey, validators);
 	}
 
 	/**
 	 * Marks the given reference as "currently being resolved" for the given data path.<br />
-	 * Returns {@code true} if this exact combination was already active (i.e. a genuine cycle was detected), in
-	 * which case the caller must NOT proceed with resolving/validating it again.
+	 * Returns {@code true} if this exact combination was already active (i.e. a genuine cycle was
+	 * detected), in which case the caller must NOT proceed with resolving/validating it again.
+	 *
+	 * @param referenceKey
+	 *            the "$ref" value
+	 * @param jsonPathString
+	 *            the path of the JSON data node
+	 * @return true, if a cycle was detected
 	 */
 	public boolean enterReferenceResolution(final String referenceKey, final String jsonPathString) {
 		return !activeReferenceResolutions.get().add(referenceKey + " @ " + jsonPathString);
 	}
 
+	/**
+	 * Marks the given reference as resolved for the given data path, counterpart of
+	 * {@link #enterReferenceResolution(String, String)}.
+	 *
+	 * @param referenceKey
+	 *            the "$ref" value
+	 * @param jsonPathString
+	 *            the path of the JSON data node
+	 */
 	public void exitReferenceResolution(final String referenceKey, final String jsonPathString) {
 		final Set<String> active = activeReferenceResolutions.get();
 		active.remove(referenceKey + " @ " + jsonPathString);
@@ -74,13 +120,34 @@ public class JsonSchemaDependencyResolver {
 	}
 
 	/**
-	 * Draft V7 mode is the default mode<br />
+	 * JSON schema version, null means simple mode.
+	 * <p>
+	 * The initial value draft v7 only applies to a resolver used on its own. {@link JsonSchema}
+	 * always sets the version from its configuration or from "$schema", which is null and therefore
+	 * simple mode if neither defines a version.
+	 * </p>
 	 */
 	private JsonSchemaVersion jsonSchemaVersion = JsonSchemaVersion.draftV7;
 
+	/**
+	 * Whether external schemas referenced by URL may be downloaded.
+	 */
 	private boolean downloadReferencedSchemas = false;
+	/**
+	 * Whether a missing external schema is only reported when it is actually used.
+	 */
 	private boolean lazyFailOnMissingExternalSchemas = true;
 
+	/**
+	 * Creates a resolver for a schema.
+	 *
+	 * @param schemaDocumentNode
+	 *            the main schema document
+	 * @param dependencies
+	 *            additional schemas referenced by the main schema
+	 * @throws Exception
+	 *             if the schema is null or a dependency is invalid or added twice
+	 */
 	public JsonSchemaDependencyResolver(final JsonObject schemaDocumentNode, final JsonSchemaDependency... dependencies) throws Exception {
 		if (schemaDocumentNode == null) {
 			throw new JsonSchemaDefinitionError("Invalid data type 'null' for JsonSchemaDependencyResolver", new JsonSchemaPath());
@@ -91,6 +158,19 @@ public class JsonSchemaDependencyResolver {
 		}
 	}
 
+	/**
+	 * Returns the schema object a reference points to. A reference without "#" is looked up in
+	 * "definitions" of the main schema.
+	 *
+	 * @param reference
+	 *            the "$ref" value
+	 * @param jsonSchemaPath
+	 *            the path of the "$ref" keyword, used in error messages
+	 * @return the referenced schema object
+	 * @throws Exception
+	 *             if the reference cannot be resolved, or an external schema is missing and may not be
+	 *             downloaded
+	 */
 	public JsonObject getDependencyByReference(final String reference, final JsonSchemaPath jsonSchemaPath) throws Exception {
 		if (reference != null) {
 			if (!reference.contains("#")) {
@@ -298,6 +378,17 @@ public class JsonSchemaDependencyResolver {
 		}
 	}
 
+	/**
+	 * Returns the name of the schema containing a reference without "#".
+	 *
+	 * @param reference
+	 *            the reference, e.g. a definition name
+	 * @param jsonSchemaPath
+	 *            the path of the "$ref" keyword, used in error messages
+	 * @return "#" for the main schema, or the name of an additional schema
+	 * @throws JsonSchemaDefinitionError
+	 *             if the reference is null or found in no schema
+	 */
 	public String getSchemaContainingReference(final String reference, final JsonSchemaPath jsonSchemaPath) throws JsonSchemaDefinitionError {
 		if (reference != null) {
 			if (!reference.contains("#")) {
@@ -397,6 +488,16 @@ public class JsonSchemaDependencyResolver {
 		}
 	}
 
+	/**
+	 * Adds an additional schema read from a stream (JSON5 syntax allowed).
+	 *
+	 * @param jsonSchemaReferenceName
+	 *            name used to reference the schema
+	 * @param jsonSchemaInputStream
+	 *            the schema data
+	 * @throws JsonSchemaDefinitionError
+	 *             if the name is blank or already used, or the data is no JSON object
+	 */
 	public void addJsonSchemaDefinition(final String jsonSchemaReferenceName, final InputStream jsonSchemaInputStream) throws JsonSchemaDefinitionError {
 		if (Utilities.isBlank(jsonSchemaReferenceName)) {
 			throw new JsonSchemaDefinitionError("Invalid empty JSON schema definition package name", null);
@@ -420,6 +521,16 @@ public class JsonSchemaDependencyResolver {
 		}
 	}
 
+	/**
+	 * Adds an additional schema. Its internal references are redirected to its name in place.
+	 *
+	 * @param jsonSchemaReferenceName
+	 *            name used to reference the schema
+	 * @param jsonSchemaReferenceObject
+	 *            the schema data
+	 * @throws Exception
+	 *             if the name is blank or already used
+	 */
 	public void addJsonSchemaDefinition(final String jsonSchemaReferenceName, final JsonObject jsonSchemaReferenceObject) throws Exception {
 		if (Utilities.isBlank(jsonSchemaReferenceName)) {
 			throw new JsonSchemaDefinitionError("Invalid empty JSON schema definition package name", null);
@@ -431,13 +542,25 @@ public class JsonSchemaDependencyResolver {
 		}
 	}
 
+	/**
+	 * Redirects internal references ("#...") of a schema to its reference name, recursively.
+	 *
+	 * @param jsonObject
+	 *            the schema object to change in place
+	 * @param referenceDefinitionStart
+	 *            the reference prefix to replace, "#"
+	 * @param referenceDefinitionReplacement
+	 *            the new prefix, e.g. "other.json#"
+	 * @throws Exception
+	 *             if a reference cannot be replaced
+	 */
 	private void redirectReferences(final JsonObject jsonObject, final String referenceDefinitionStart, final String referenceDefinitionReplacement) throws Exception {
 		// Iterate over a snapshot of the entries: the loop body calls jsonObject.remove(...)/add(...) on "$ref",
 		// which would otherwise modify the map while entrySet() is being iterated (ConcurrentModificationException).
 		for (final Entry<String, JsonNode> entry : new ArrayList<>(jsonObject.entrySet())) {
 			if ("$ref".equals(entry.getKey()) && entry.getValue() != null && entry.getValue() instanceof JsonValueString && ((JsonValueString) entry.getValue()).getValue().startsWith(referenceDefinitionStart)) {
-				jsonObject.remove("$ref");
-				jsonObject.add("$ref", referenceDefinitionReplacement + ((JsonValueString) entry.getValue()).getValue().substring(referenceDefinitionStart.length()));
+				// Replace keeps the position of the property
+				jsonObject.replace("$ref", referenceDefinitionReplacement + ((JsonValueString) entry.getValue()).getValue().substring(referenceDefinitionStart.length()));
 			} else if (entry.getValue() instanceof JsonObject) {
 				redirectReferences((JsonObject) entry.getValue(), referenceDefinitionStart, referenceDefinitionReplacement);
 			} else if (entry.getValue() instanceof JsonArray) {
@@ -446,6 +569,18 @@ public class JsonSchemaDependencyResolver {
 		}
 	}
 
+	/**
+	 * Redirects internal references of all objects within an array, recursively.
+	 *
+	 * @param jsonArray
+	 *            the array to change in place
+	 * @param referenceDefinitionStart
+	 *            the reference prefix to replace, "#"
+	 * @param referenceDefinitionReplacement
+	 *            the new prefix, e.g. "other.json#"
+	 * @throws Exception
+	 *             if a reference cannot be replaced
+	 */
 	private void redirectReferences(final JsonArray jsonArray, final String referenceDefinitionStart, final String referenceDefinitionReplacement) throws Exception {
 		for (final JsonNode item : jsonArray.items()) {
 			if (item instanceof JsonObject) {
@@ -456,48 +591,113 @@ public class JsonSchemaDependencyResolver {
 		}
 	}
 
+	/**
+	 * Sets the JSON schema version.
+	 *
+	 * @param jsonSchemaVersion
+	 *            the version, null means simple mode
+	 */
 	public void setJsonSchemaVersion(final JsonSchemaVersion jsonSchemaVersion) {
 		this.jsonSchemaVersion = jsonSchemaVersion;
 	}
 
+	/**
+	 * Sets the JSON schema version.
+	 *
+	 * @param newJsonSchemaVersion
+	 *            the version, null means simple mode
+	 * @return this resolver for chaining
+	 */
 	public JsonSchemaDependencyResolver withJsonSchemaVersion(final JsonSchemaVersion newJsonSchemaVersion) {
 		setJsonSchemaVersion(newJsonSchemaVersion);
 		return this;
 	}
 
+	/**
+	 * Checks for simple mode (strict validation, no version specific rules).
+	 *
+	 * @return true, if the version is simple or null
+	 */
 	public boolean isSimpleMode() {
 		return jsonSchemaVersion == null || jsonSchemaVersion == JsonSchemaVersion.simple;
 	}
 
+	/**
+	 * Checks for JSON schema draft v3.
+	 *
+	 * @return true, if the version is draft v3
+	 */
 	public boolean isDraftV3Mode() {
 		return jsonSchemaVersion == JsonSchemaVersion.draftV3;
 	}
 
+	/**
+	 * Checks for JSON schema draft v4.
+	 *
+	 * @return true, if the version is draft v4
+	 */
 	public boolean isDraftV4Mode() {
 		return jsonSchemaVersion == JsonSchemaVersion.draftV4;
 	}
 
+	/**
+	 * Checks for JSON schema draft v6.
+	 *
+	 * @return true, if the version is draft v6
+	 */
 	public boolean isDraftV6Mode() {
 		return jsonSchemaVersion == JsonSchemaVersion.draftV6;
 	}
 
+	/**
+	 * Checks for JSON schema draft v7.
+	 *
+	 * @return true, if the version is draft v7
+	 */
 	public boolean isDraftV7Mode() {
 		return jsonSchemaVersion == JsonSchemaVersion.draftV7;
 	}
 
+	/**
+	 * Sets whether external schemas referenced by http(s) URL may be downloaded.
+	 *
+	 * @param downloadReferencedSchemas
+	 *            true to allow downloads
+	 */
 	public void setDownloadReferencedSchemas(final boolean downloadReferencedSchemas) {
 		this.downloadReferencedSchemas = downloadReferencedSchemas;
 	}
 
+	/**
+	 * Sets whether external schemas referenced by http(s) URL may be downloaded.
+	 *
+	 * @param newDownloadReferencedSchemas
+	 *            true to allow downloads
+	 * @return this resolver for chaining
+	 */
 	public JsonSchemaDependencyResolver withDownloadReferencedSchemas(final boolean newDownloadReferencedSchemas) {
 		setDownloadReferencedSchemas(newDownloadReferencedSchemas);
 		return this;
 	}
 
+	/**
+	 * Sets whether a missing external schema is only reported when it is actually used for
+	 * validation, instead of when the schema is read.
+	 *
+	 * @param lazyFailOnMissingExternalSchemas
+	 *            true to report missing external schemas lazily
+	 */
 	public void setLazyFailOnMissingExternalSchemas(final boolean lazyFailOnMissingExternalSchemas) {
 		this.lazyFailOnMissingExternalSchemas = lazyFailOnMissingExternalSchemas;
 	}
 
+	/**
+	 * Sets whether a missing external schema is only reported when it is actually used.
+	 *
+	 * @param newLazyFailOnMissingExternalSchemas
+	 *            true to report missing external schemas lazily
+	 * @return this resolver for chaining
+	 */
 	public JsonSchemaDependencyResolver withLazyFailOnMissingExternalSchemas(final boolean newLazyFailOnMissingExternalSchemas) {
 		setLazyFailOnMissingExternalSchemas(newLazyFailOnMissingExternalSchemas);
 		return this;

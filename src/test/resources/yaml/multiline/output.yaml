@@ -13,7 +13,11 @@
 
 # This text will have one trailing newline
 "folded chomped": >
-  My first line of folded chomped # with comment like text Starting empty lines here   And two empty lines And a third line, with comma!   And an indented line 
+  My first line of folded chomped # with comment like text Starting empty lines here
+  
+  
+  And two empty lines And a third line, with comma!
+    And an indented line
 
 
 
@@ -35,7 +39,14 @@
 
 # This text will keep all three trailing newlines
 "folded not chomped": >+
-  My first line of folded not chomped # with comment like text Starting empty lines here   And two empty lines And a third line, with comma!   And an indented line    
+  My first line of folded not chomped # with comment like text Starting empty lines here
+  
+  
+  And two empty lines And a third line, with comma!
+    And an indented line
+  
+  
+  
 
 
 
@@ -54,7 +65,11 @@
 
 # This text will have no trailing newline.
 "folded strip chomped": >-
-  My first line of folded strip chomped # with comment like text Starting empty lines here   And two empty lines And a third line, with comma!   And an indented line
+  My first line of folded strip chomped # with comment like text Starting empty lines here
+  
+  
+  And two empty lines And a third line, with comma!
+    And an indented line
 
 
 

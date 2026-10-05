@@ -14,60 +14,143 @@ import de.soderer.json.path.JsonPathPropertyElement;
 import de.soderer.json.path.JsonPathRoot;
 import de.soderer.json.path.JsonPathWildcardElement;
 
+/**
+ * Base class of all JSON data nodes: objects, arrays and simple values.
+ * <p>
+ * A node may be marked as root node of a JSON document, which is required for JSON paths starting
+ * with "$".
+ * </p>
+ */
 public class JsonNode {
+	/**
+	 * The data type of this node.
+	 */
 	protected final JsonDataType jsonDataType;
 
+	/**
+	 * True, if this node is the root of a JSON document.
+	 */
 	private boolean rootNode;
 
+	/**
+	 * Creates a new node.
+	 *
+	 * @param jsonDataType
+	 *            the data type of the node
+	 */
 	protected JsonNode(final JsonDataType jsonDataType) {
 		this.jsonDataType = jsonDataType;
 	}
 
+	/**
+	 * Returns the data type of this node.
+	 *
+	 * @return the data type
+	 */
 	public JsonDataType getJsonDataType() {
 		return jsonDataType;
 	}
 
+	/**
+	 * Returns whether this node is the root of a JSON document.
+	 *
+	 * @return true, if this is a root node
+	 */
 	public boolean isRootNode() {
 		return rootNode;
 	}
 
+	/**
+	 * Sets whether this node is the root of a JSON document.
+	 *
+	 * @param rootNode
+	 *            true, if this is a root node
+	 */
 	public void setRootNode(final boolean rootNode) {
 		this.rootNode = rootNode;
 	}
 
+	/**
+	 * Sets whether this node is the root of a JSON document. Note that this changes this node and
+	 * does not create a copy.
+	 *
+	 * @param newRootNode
+	 *            true, if this is a root node
+	 * @return this node for chaining
+	 */
 	public JsonNode withRootNode(final boolean newRootNode) {
 		setRootNode(newRootNode);
 		return this;
 	}
 
+	/**
+	 * Checks whether this node is the JSON null value.
+	 *
+	 * @return true, if this node is the JSON null value
+	 */
 	public boolean isNull() {
 		return jsonDataType == JsonDataType.NULL;
 	}
 
+	/**
+	 * Checks whether this node is a boolean value.
+	 *
+	 * @return true, if this node is a boolean value
+	 */
 	public boolean isBoolean() {
 		return jsonDataType == JsonDataType.BOOLEAN;
 	}
 
+	/**
+	 * Checks whether this node is a number without fraction.
+	 *
+	 * @return true, if this node is a number without fraction
+	 */
 	public boolean isInteger() {
 		return jsonDataType == JsonDataType.INTEGER;
 	}
 
+	/**
+	 * Checks whether this node is a number with fraction or exponent (not an integer, see {@link #isInteger()}).
+	 *
+	 * @return true, if this node is a number with fraction or exponent
+	 */
 	public boolean isNumber() {
 		return jsonDataType == JsonDataType.NUMBER;
 	}
 
+	/**
+	 * Checks whether this node is a string value.
+	 *
+	 * @return true, if this node is a string value
+	 */
 	public boolean isString() {
 		return jsonDataType == JsonDataType.STRING;
 	}
 
+	/**
+	 * Checks whether this node is a JSON object.
+	 *
+	 * @return true, if this node is a JSON object
+	 */
 	public boolean isJsonObject() {
 		return jsonDataType == JsonDataType.OBJECT;
 	}
 
+	/**
+	 * Checks whether this node is a JSON array.
+	 *
+	 * @return true, if this node is a JSON array
+	 */
 	public boolean isJsonArray() {
 		return jsonDataType == JsonDataType.ARRAY;
 	}
 
+	/**
+	 * Checks whether this node is a simple value: null, boolean, integer, number or string.
+	 *
+	 * @return true, if this node is neither object nor array
+	 */
 	public boolean isSimpleValue() {
 		return jsonDataType == JsonDataType.NULL
 				|| jsonDataType == JsonDataType.BOOLEAN
@@ -76,6 +159,17 @@ public class JsonNode {
 				|| jsonDataType == JsonDataType.STRING;
 	}
 
+	/**
+	 * Returns the node at a JSON path relative to this node. A path starting with "$" requires
+	 * this node to be a root node. Wildcards and filters are not supported, see
+	 * {@link #getDataListByJsonPath(JsonPath)}.
+	 *
+	 * @param jsonPath
+	 *            the path to evaluate
+	 * @return the node at the path
+	 * @throws JsonPathException
+	 *             if the path does not exist or contains unsupported elements
+	 */
 	public JsonNode getDataByJsonPath(final JsonPath jsonPath) throws JsonPathException {
 		JsonNode nextDataObject = this;
 		for (final JsonPathElement pathPart : jsonPath.getPathParts()) {
@@ -259,6 +353,18 @@ public class JsonNode {
 		return compareFilterValues(actualValue, filterElement.getOperator(), filterElement.getLiteralValue());
 	}
 
+	/**
+	 * Compares a property value with a filter literal. Numbers are compared numerically, other
+	 * values only for (in)equality.
+	 *
+	 * @param actualValue
+	 *            the property value
+	 * @param operator
+	 *            the comparison operator
+	 * @param expectedValue
+	 *            the filter literal
+	 * @return true, if the comparison is fulfilled
+	 */
 	private static boolean compareFilterValues(final Object actualValue, final FilterOperator operator, final Object expectedValue) {
 		switch (operator) {
 			case EQUALS:
@@ -293,6 +399,15 @@ public class JsonNode {
 		}
 	}
 
+	/**
+	 * Checks two simple values for equality. Numbers are compared numerically.
+	 *
+	 * @param actualValue
+	 *            the first value
+	 * @param expectedValue
+	 *            the second value
+	 * @return true, if the values are equal
+	 */
 	private static boolean valuesEqual(final Object actualValue, final Object expectedValue) {
 		if (actualValue == null || expectedValue == null) {
 			return actualValue == expectedValue;

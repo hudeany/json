@@ -15,11 +15,28 @@ import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
 
 /**
- * JSON schema validator for property key names of JSON objects
+ * Validator for the "propertyNames" keyword (since draft 6): every property name of the JSON data
+ * object, as a string, must match the given schema. Data that is not an object is ignored, except
+ * in simple mode.
  */
 public class PropertyNamesValidator extends BaseJsonSchemaValidator {
+	/** Validators of the schema all property names must match. */
 	private final List<BaseJsonSchemaValidator> subValidators;
 
+	/**
+	 * Creates a new "propertyNames" validator.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, a schema object or a boolean
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is neither object nor boolean, or the schema is invalid
+	 * @throws DuplicateKeyException
+	 *             if a schema contains duplicate keys
+	 */
 	public PropertyNamesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
@@ -45,7 +62,8 @@ public class PropertyNamesValidator extends BaseJsonSchemaValidator {
 			for (final String propertyName : ((JsonObject) jsonNode).keySet()) {
 				final JsonNode newJsonNode = new JsonValueString(propertyName).withRootNode(false);
 				for (final BaseJsonSchemaValidator subValidator : subValidators) {
-					subValidator.validate(newJsonNode, jsonPath);
+					// The path of the property shows which property name is invalid
+					subValidator.validate(newJsonNode, new JsonPath(jsonPath).addPropertyKey(propertyName));
 				}
 			}
 		}

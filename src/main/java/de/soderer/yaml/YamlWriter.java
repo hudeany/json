@@ -8,15 +8,18 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import de.soderer.json.utilities.NumberUtilities;
 import de.soderer.json.utilities.Utilities;
 import de.soderer.yaml.data.YamlAlias;
 import de.soderer.yaml.data.YamlDocument;
 import de.soderer.yaml.data.YamlMapping;
+import de.soderer.yaml.data.YamlMultilineScalarChompingType;
+import de.soderer.yaml.data.YamlMultilineScalarType;
 import de.soderer.yaml.data.YamlNode;
 import de.soderer.yaml.data.YamlScalar;
 import de.soderer.yaml.data.YamlScalarType;
@@ -24,6 +27,15 @@ import de.soderer.yaml.data.YamlSequence;
 import de.soderer.yaml.data.YamlStringQuoteType;
 import de.soderer.yaml.data.directive.YamlDirective;
 
+/**
+ * Writer for YAML data to an output stream.
+ * <p>
+ * The output is formatted by a {@link YamlFormat}. Comments, anchors, quote styles, block scalar
+ * styles and empty lines kept in the nodes are written again. Strings are quoted where needed,
+ * e.g. if they would be read as number or boolean otherwise. Multiple documents are separated by
+ * document markers.
+ * </p>
+ */
 public class YamlWriter implements Closeable {
 	/** Default output encoding. */
 	public static final Charset DEFAULT_ENCODING = StandardCharsets.UTF_8;
@@ -40,22 +52,62 @@ public class YamlWriter implements Closeable {
 	private boolean firstDocument = true;
 	private boolean documentEndWasWritten = false;
 
+	/**
+	 * Creates a new YAML writer using UTF-8 encoding and default format.
+	 *
+	 * @param outputStream
+	 *            the stream to write to
+	 * @throws IllegalStateException
+	 *             if the output stream is null
+	 */
 	public YamlWriter(final OutputStream outputStream) {
 		this(outputStream, DEFAULT_ENCODING, new YamlFormat());
 	}
 
+	/**
+	 * Creates a new YAML writer using default format.
+	 *
+	 * @param outputStream
+	 *            the stream to write to
+	 * @param encoding
+	 *            the encoding of the output, or null for UTF-8
+	 * @throws IllegalStateException
+	 *             if the output stream is null
+	 */
 	public YamlWriter(final OutputStream outputStream, final Charset encoding) {
 		this(outputStream, encoding, new YamlFormat());
 	}
 
+	/**
+	 * Creates a new YAML writer using UTF-8 encoding.
+	 *
+	 * @param outputStream
+	 *            the stream to write to
+	 * @param yamlFormat
+	 *            the output format
+	 * @throws IllegalStateException
+	 *             if the output stream is null
+	 */
 	public YamlWriter(final OutputStream outputStream, final YamlFormat yamlFormat) {
 		this(outputStream, DEFAULT_ENCODING, yamlFormat);
 	}
 
+	/**
+	 * Creates a new YAML writer.
+	 *
+	 * @param outputStream
+	 *            the stream to write to
+	 * @param encoding
+	 *            the encoding of the output, or null for UTF-8
+	 * @param yamlFormat
+	 *            the output format, null for default format
+	 * @throws IllegalStateException
+	 *             if the output stream is null
+	 */
 	public YamlWriter(final OutputStream outputStream, final Charset encoding, final YamlFormat yamlFormat) {
 		this.outputStream = outputStream;
 		this.encoding = encoding == null ? DEFAULT_ENCODING : encoding;
-		this.yamlFormat = yamlFormat;
+		this.yamlFormat = yamlFormat == null ? new YamlFormat() : yamlFormat;
 
 		if (outputStream == null) {
 			throw new IllegalStateException("YamlWriter outputStream must not be null");
@@ -63,10 +115,25 @@ public class YamlWriter implements Closeable {
 		outputWriter = new BufferedWriter(new OutputStreamWriter(outputStream, this.encoding));
 	}
 
+	/**
+	 * Returns the encoding of the output.
+	 *
+	 * @return the encoding
+	 */
 	public Charset getEncoding() {
 		return encoding;
 	}
 
+	/**
+	 * Writes a document with its directives and comments. From the second document on, documents
+	 * are separated by "---" and "..." markers.
+	 *
+	 * @param document
+	 *            the document
+	 * @return this writer for chaining
+	 * @throws Exception
+	 *             if the document contains unsupported nodes or writing fails
+	 */
 	public YamlWriter writeDocument(final YamlDocument document) throws Exception {
 		if (!firstDocument && !documentEndWasWritten) {
 			write("..." + yamlFormat.getLinebreakString());
@@ -114,12 +181,18 @@ public class YamlWriter implements Closeable {
 		return this;
 	}
 
+	/**
+	 * Writes multiple documents, see {@link #writeDocument(YamlDocument)}.
+	 *
+	 * @param documentList
+	 *            the documents
+	 * @return this writer for chaining
+	 * @throws Exception
+	 *             if a document contains unsupported nodes or writing fails
+	 */
 	public YamlWriter writeDocumentList(final List<YamlDocument> documentList) throws Exception {
 		for (int i = 0; i < documentList.size(); i++) {
 			final YamlDocument document = documentList.get(i);
-			if (!firstDocument) {
-				write("..." + yamlFormat.getLinebreakString());
-			}
 			writeDocument(document);
 			firstDocument = false;
 		}
@@ -266,47 +339,48 @@ public class YamlWriter implements Closeable {
 			write(" ");
 		}
 
-		switch (scalar.getMultilineType()) {
-			case FOLDED:
-				write(">");
-				break;
-			case LITERAL:
-				write("|");
-				break;
-			default:
-				break;
+		final String valueString = scalar.getValueString();
+		if (!canWriteAsBlockScalar(scalar)) {
+			// Content that a block scalar cannot represent is written as double quoted string
+			write("\"" + YamlUtilities.escapeScalarString(valueString) + "\"");
+			if (Utilities.isNotBlank(scalar.getInlineComment()) && !yamlFormat.isOmitComments()) {
+				write(" #" + scalar.getInlineComment());
+			}
+			write(yamlFormat.getLinebreakString());
+			return this;
 		}
-		switch (scalar.getMultilineChompingType()) {
-			case KEEP:
-				write("+");
-				break;
-			case STRIP:
-				write("-");
-				break;
-			case CLIP:
-			default:
-				break;
+
+		// The chomping indicator is derived from the trailing linebreaks of the text, so the text is kept unchanged
+		int trailingLinebreaks = 0;
+		while (trailingLinebreaks < valueString.length() && valueString.charAt(valueString.length() - 1 - trailingLinebreaks) == '\n') {
+			trailingLinebreaks++;
+		}
+		final String content = valueString.substring(0, valueString.length() - trailingLinebreaks);
+
+		write(scalar.getMultilineType() == YamlMultilineScalarType.FOLDED ? ">" : "|");
+		if (trailingLinebreaks == 0) {
+			write("-");
+		} else if (trailingLinebreaks > 1 || scalar.getMultilineChompingType() == YamlMultilineScalarChompingType.KEEP) {
+			write("+");
 		}
 		if (scalar.getIndentationIndicator() > 0) {
 			write(Integer.toString(scalar.getIndentationIndicator()));
 		}
+		if (Utilities.isNotBlank(scalar.getInlineComment()) && !yamlFormat.isOmitComments()) {
+			write(" #" + scalar.getInlineComment());
+		}
 		write(yamlFormat.getLinebreakString());
 
-		String text;
-		switch (scalar.getMultilineChompingType()) {
-			case KEEP:
-				text = scalar.getValueString();
-				break;
-			case STRIP:
-				text = scalar.getValueString().replaceAll("\\n+$", "");
-				break;
-			case CLIP:
-			default:
-				text = scalar.getValueString().replaceAll("\\n+$", "") + "\n";
-				break;
+		final List<String> lines = scalar.getMultilineType() == YamlMultilineScalarType.FOLDED ? getFoldedLines(content) : new ArrayList<>(Arrays.asList(content.split("\n", -1)));
+		if (content.isEmpty()) {
+			lines.clear();
+		}
+		// Additional trailing linebreaks are kept as empty lines
+		for (int i = 1; i < trailingLinebreaks; i++) {
+			lines.add("");
 		}
 
-		for (final String line : text.lines().collect(Collectors.toList())) {
+		for (final String line : lines) {
 			if (scalar.getIndentationIndicator() > 0) {
 				writeIndent(indentLevel - 1);
 				write(Utilities.repeat(" ", scalar.getIndentationIndicator()));
@@ -316,6 +390,79 @@ public class YamlWriter implements Closeable {
 			write(line + yamlFormat.getLinebreakString());
 		}
 		return this;
+	}
+
+	/**
+	 * Checks whether a multiline scalar can be written as block scalar without changing its text.
+	 * Without explicit indentation indicator the first content line must not start with whitespace,
+	 * because it defines the indentation. Control characters need escaping.
+	 */
+	private static boolean canWriteAsBlockScalar(final YamlScalar scalar) {
+		final String valueString = scalar.getValueString();
+		if (needsEscaping(valueString.replace("\n", ""))) {
+			return false;
+		} else if (scalar.getIndentationIndicator() > 0) {
+			return true;
+		} else {
+			for (final String line : valueString.split("\n")) {
+				if (!line.isEmpty()) {
+					return !line.startsWith(" ") && !line.startsWith("\t");
+				}
+			}
+			return true;
+		}
+	}
+
+	/**
+	 * Returns the lines to write for a folded block scalar, so that folding while reading results
+	 * in the given text again: a linebreak between two lines that are not more indented is folded
+	 * to a blank while reading, so each such linebreak must be written as an additional empty line.
+	 */
+	private static List<String> getFoldedLines(final String content) {
+		final String[] textLines = content.split("\n", -1);
+		final List<String> lines = new ArrayList<>();
+		int index = 0;
+		while (index < textLines.length && textLines[index].isEmpty()) {
+			// Leading linebreaks are kept as they are
+			lines.add("");
+			index++;
+		}
+		if (index < textLines.length) {
+			lines.add(textLines[index]);
+			String previousLine = textLines[index];
+			index++;
+			while (index < textLines.length) {
+				int emptyLines = 0;
+				while (textLines[index].isEmpty()) {
+					emptyLines++;
+					index++;
+				}
+				final String nextLine = textLines[index];
+				final boolean folded = !isMoreIndented(previousLine) && !isMoreIndented(nextLine);
+				final int emptyLinesToWrite = folded ? emptyLines + 1 : emptyLines;
+				for (int i = 0; i < emptyLinesToWrite; i++) {
+					lines.add("");
+				}
+				lines.add(nextLine);
+				previousLine = nextLine;
+				index++;
+			}
+		}
+		return lines;
+	}
+
+	private static boolean isMoreIndented(final String line) {
+		return line.startsWith(" ") || line.startsWith("\t");
+	}
+
+	private static boolean needsEscaping(final String text) {
+		for (int i = 0; i < text.length(); i++) {
+			final char c = text.charAt(i);
+			if ((c < ' ' && c != '\t') || (c >= 0x7F && c <= 0x9F) || c == '\u2028' || c == '\u2029' || c == '\uFEFF' || c == '\uFFFE' || c == '\uFFFF') {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private String escapePlainString(final String text, final YamlStringQuoteType quoteType, final boolean isKey, final boolean isFlow) {
@@ -329,10 +476,22 @@ public class YamlWriter implements Closeable {
 			}
 		}
 
+		final boolean needsEscaping = needsEscaping(text);
+		if (needsEscaping) {
+			needsQuotes = true;
+		}
+
+		if (!needsQuotes) {
+			if (text.startsWith("---") || text.startsWith("...") || text.startsWith(",")) {
+				// Document markers and indicators that cannot start a plain scalar
+				needsQuotes = true;
+			}
+		}
+
 		if (!needsQuotes) {
 			for (int i = 0; i < text.length(); i++) {
 				final char c = text.charAt(i);
-				if ((Character.isWhitespace(c) && c != ' ') || "#*!'\"%@`".indexOf(c) > -1) {
+				if ((Character.isWhitespace(c) && c != ' ') || "#*!'\"%@`".indexOf(c) > -1 || (isFlow && c == ',')) {
 					needsQuotes = true;
 					break;
 				}
@@ -379,7 +538,8 @@ public class YamlWriter implements Closeable {
 		}
 
 		if (!needsQuotes) {
-			if (NumberUtilities.isNumber(text)) {
+			// Texts that would be read as number, e.g. "1_000", "0x1F" or ".inf"
+			if (NumberUtilities.isNumber(text) || ("+-.0123456789".indexOf(text.charAt(0)) >= 0 && YamlScalar.parseYamlNumber(text) != null)) {
 				needsQuotes = true;
 			}
 		}
@@ -387,9 +547,10 @@ public class YamlWriter implements Closeable {
 		if (!needsQuotes) {
 			return text;
 		} else {
-			final boolean useDoubleQuotes = isKey
+			// Single quoted strings cannot contain escapes, so texts with control characters always use double quotes
+			final boolean useDoubleQuotes = needsEscaping || (isKey
 					? (quoteType == null || quoteType == YamlStringQuoteType.DOUBLE)
-					: (quoteType == YamlStringQuoteType.DOUBLE || (quoteType == null && yamlFormat.getStringValueQuoteType() == YamlStringQuoteType.DOUBLE));
+					: (quoteType == YamlStringQuoteType.DOUBLE || (quoteType == null && yamlFormat.getStringValueQuoteType() == YamlStringQuoteType.DOUBLE)));
 
 			if (useDoubleQuotes) {
 				return "\"" + YamlUtilities.escapeScalarString(text) + "\"";
@@ -460,7 +621,8 @@ public class YamlWriter implements Closeable {
 			writePostCommentEmptyLines(key);
 
 			if (key instanceof final YamlScalar scalarKey) {
-				if (scalarKey.getType() == YamlScalarType.STRING) {
+				if (scalarKey.getType() == YamlScalarType.STRING || scalarKey.getType() == YamlScalarType.MULTILINE) {
+					// Multiline keys are written as quoted string with escaped linebreaks
 					if (!isFirstData) {
 						writeIndent(indentLevel);
 						write(escapePlainString(scalarKey.getValueString(), scalarKey.getQuoteType(), true, false));
@@ -841,6 +1003,15 @@ public class YamlWriter implements Closeable {
 		outputStream = null;
 	}
 
+	/**
+	 * Returns a document as YAML text in default format.
+	 *
+	 * @param yamlDocument
+	 *            the data to write
+	 * @return the YAML text
+	 * @throws Exception
+	 *             if the data contains unsupported nodes
+	 */
 	public static String toString(final YamlDocument yamlDocument) throws Exception {
 		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		try (final YamlWriter writer = new YamlWriter(outputStream)) {
@@ -849,6 +1020,15 @@ public class YamlWriter implements Closeable {
 		return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
 	}
 
+	/**
+	 * Returns a mapping as YAML text in default format.
+	 *
+	 * @param yamlMapping
+	 *            the data to write
+	 * @return the YAML text
+	 * @throws Exception
+	 *             if the data contains unsupported nodes
+	 */
 	public static String toString(final YamlMapping yamlMapping) throws Exception {
 		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		try (final YamlWriter writer = new YamlWriter(outputStream)) {
@@ -861,6 +1041,15 @@ public class YamlWriter implements Closeable {
 		return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
 	}
 
+	/**
+	 * Returns a sequence as YAML text in default format.
+	 *
+	 * @param yamlSequence
+	 *            the data to write
+	 * @return the YAML text
+	 * @throws Exception
+	 *             if the data contains unsupported nodes
+	 */
 	public static String toString(final YamlSequence yamlSequence) throws Exception {
 		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		try (final YamlWriter writer = new YamlWriter(outputStream)) {
@@ -907,6 +1096,27 @@ public class YamlWriter implements Closeable {
 		return this;
 	}
 
+	/**
+	 * Writes the blanks after the "-" of a sequence item, so that the item content starts at the
+	 * next indentation level.
+	 */
+	private void writeSequenceItemPadding() throws IOException {
+		write(" ".repeat(yamlFormat.getIndentationSize() - 1));
+	}
+
+	/**
+	 * Writes a block sequence item ("- ...") with its comments.
+	 *
+	 * @param item
+	 *            the item
+	 * @param indentLevel
+	 *            the indentation level of the sequence
+	 * @param isFirstData
+	 *            true, if the current line is already indented (first item after a key or another "-")
+	 * @return this writer for chaining
+	 * @throws Exception
+	 *             if the item contains unsupported nodes or writing fails
+	 */
 	public YamlWriter addSequenceItem(final YamlNode item, final int indentLevel, boolean isFirstData) throws Exception {
 		writeLeadingEmptyLines(item);
 		if (item.getLeadingComments() != null && !item.getLeadingComments().isEmpty() && !yamlFormat.isOmitComments()) {
@@ -940,11 +1150,12 @@ public class YamlWriter implements Closeable {
 				writeIndent(indentLevel + 1);
 				writeScalarInlineInSequence(scalar);
 			} else {
-				write(" ");
+				writeSequenceItemPadding();
 				writeScalarInlineInSequence(scalar);
 			}
 		} else if (item instanceof final YamlAlias alias) {
-			write(" *" + alias.getTargetAnchorName());
+			writeSequenceItemPadding();
+			write("*" + alias.getTargetAnchorName());
 			if (alias.getInlineComment() != null && !yamlFormat.isOmitComments()) {
 				write(" #" + alias.getInlineComment() + yamlFormat.getLinebreakString());
 			} else {
@@ -952,7 +1163,7 @@ public class YamlWriter implements Closeable {
 			}
 		} else if (item instanceof final YamlMapping mapping) {
 			if (!startItemInNewLine) {
-				write(" ");
+				writeSequenceItemPadding();
 				writeNode(mapping, indentLevel + 1, false, false);
 			} else {
 				write(yamlFormat.getLinebreakString());
@@ -962,7 +1173,7 @@ public class YamlWriter implements Closeable {
 		} else if (item instanceof final YamlSequence sequence) {
 			if (!startItemInNewLine
 					&& !mustStartInNewLine(sequence)) {
-				write(" ");
+				writeSequenceItemPadding();
 				writeNode(sequence, indentLevel + 1, false, false);
 			} else {
 				write(yamlFormat.getLinebreakString());
@@ -981,11 +1192,29 @@ public class YamlWriter implements Closeable {
 		return this;
 	}
 
+	/**
+	 * Writes a block sequence item at top level, e.g. to write a large sequence item by item.
+	 *
+	 * @param item
+	 *            the item
+	 * @return this writer for chaining
+	 * @throws Exception
+	 *             if the item contains unsupported nodes or writing fails
+	 */
 	public YamlWriter addSequenceItem(final YamlNode item) throws Exception {
 		addSequenceItem(item, 0, false);
 		return this;
 	}
 
+	/**
+	 * Writes a simple value as block sequence item at top level.
+	 *
+	 * @param item
+	 *            a String, Number or Boolean, or null for the null value
+	 * @return this writer for chaining
+	 * @throws Exception
+	 *             if the value type is not supported or writing fails
+	 */
 	public YamlWriter addSequenceItem(final Object item) throws Exception {
 		if (item == null) {
 			addSequenceItem(new YamlScalar(null));

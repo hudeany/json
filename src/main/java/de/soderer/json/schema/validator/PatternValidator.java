@@ -14,7 +14,10 @@ import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
 
 /**
- * JSON subschema that matches a simple data value to a regex pattern<br />
+ * Validator for the "pattern" keyword: the JSON data string must contain a match of the given regex
+ * pattern (the pattern is not implicitly anchored). In simple mode numbers and booleans are checked
+ * by their text representation, other data types are rejected; otherwise data that is not a
+ * string is ignored.<br />
  * <br />
  * Security note: The regex pattern is taken directly from the JSON schema and compiled/executed via
  * {@link java.util.regex.Pattern}, without any complexity or timeout guard. A schema from an untrusted source could
@@ -22,8 +25,21 @@ import de.soderer.json.schema.JsonSchemaPath;
  * trusted sources, or validate/sanitize patterns before using this library with schemas of unknown origin.
  */
 public class PatternValidator extends BaseJsonSchemaValidator {
+	/** The regex pattern, compiled once from the schema. */
 	private final Pattern pattern;
 
+	/**
+	 * Creates a new "pattern" validator.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, a regex pattern string
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is not a string or not a valid regex pattern
+	 */
 	public PatternValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 

@@ -159,7 +159,6 @@
 		<javadoc destdir="${buildPath}/javadoc" encoding="UTF-8" charset="UTF-8" docencoding="UTF-8" source="17" failonerror="true">
 			<classpath refid="runtime.libs" />
 			<arg value="-quiet" />
-			<arg value="-Xdoclint:none" />
 			<fileset dir="src/main/java" includes="**/*.java" />
 		</javadoc>
 

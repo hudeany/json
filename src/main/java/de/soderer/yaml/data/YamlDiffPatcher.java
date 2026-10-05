@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.soderer.yaml.YamlReader;
+
 /**
  * Parses a diff text in the format produced by {@link YamlComparator#renderAsText}
  * and applies it as a patch onto a YamlNode tree, e.g.:
@@ -20,16 +22,38 @@ import java.util.regex.Pattern;
  *                                   current value (no old value / no '->' present); the path
  *                                   must already exist, but its prior value is not checked
  *
- * Values are rendered as either the literal "null" or a double-quoted string
- * (see YamlComparator#formatValue). Quotes are stripped while parsing. Since
+ * Paths use dot notation for keys and bracket notation for indexes; keys with path syntax
+ * characters are quoted like ["a.b"]. Number and boolean keys are found by their text.
+ *
+ * Values are rendered as either the literal "null", a double-quoted string with backslash
+ * escapes, or yaml:"..." with the YAML text of a complex node (see YamlComparator#formatValue).
+ * Quotes and escapes are resolved while parsing, complex nodes are parsed. Since
  * the diff text does not preserve the original scalar type, patched scalar
  * values are re-interpreted the same way YamlReader interprets unquoted
  * scalars (number, boolean, null, or string), to produce a reasonable type.
  */
 public class YamlDiffPatcher {
+	/**
+	 * Utility class, not to be instantiated.
+	 */
+	private YamlDiffPatcher() {
+	}
+
+	/**
+	 * Types of patch lines.
+	 */
 	public enum PatchLineType {
+		/**
+		 * Add a new node ("+" line).
+		 */
 		ADDED,
+		/**
+		 * Remove an existing node ("-" line).
+		 */
 		REMOVED,
+		/**
+		 * Change an existing node ("~" line).
+		 */
 		CHANGED;
 	}
 
@@ -37,20 +61,58 @@ public class YamlDiffPatcher {
 	 * Single parsed patch instruction, prior to being applied.
 	 */
 	public static class PatchEntry {
+		/**
+		 * Path of the node to patch.
+		 */
 		private final String path;
+		/**
+		 * Type of the patch.
+		 */
 		private final PatchLineType type;
+		/**
+		 * Expected current value as text, null if not applicable.
+		 */
 		private final String oldValueText;
+		/**
+		 * New value as text, null if not applicable.
+		 */
 		private final String newValueText;
+		/**
+		 * True, if the current value is not checked before a change.
+		 */
 		private final boolean ignoreOldValue;
 
+		/**
+		 * Creates a new patch entry which checks the current value before a change.
+		 *
+		 * @param path
+		 *            path of the node to patch, e.g. "servers[2].name"
+		 * @param type
+		 *            type of the patch
+		 * @param oldValueText
+		 *            expected current value as text, null if not applicable
+		 * @param newValueText
+		 *            new value as text, null if not applicable
+		 */
 		public PatchEntry(final String path, final PatchLineType type, final String oldValueText, final String newValueText) {
 			this(path, type, oldValueText, newValueText, false);
 		}
 
 		/**
-		 * @param ignoreOldValue if true, the current value at this path is not checked
-		 *        before applying a CHANGED entry (line format '~ path: newValue' without
-		 *        an old value / arrow). Only meaningful for {@link PatchLineType#CHANGED}.
+		 * Creates a new patch entry.
+		 *
+		 * @param path
+		 *            path of the node to patch, e.g. "servers[2].name"
+		 * @param type
+		 *            type of the patch
+		 * @param oldValueText
+		 *            expected current value as text, null if not applicable
+		 * @param newValueText
+		 *            new value as text, null if not applicable
+		 * @param ignoreOldValue
+		 *            if true, the current value at this path is not checked
+		 *            before applying a CHANGED entry (line format '~ path: newValue' without
+		 *            an old value / arrow). Only meaningful for {@link PatchLineType#CHANGED}.
 		 */
 		public PatchEntry(final String path, final PatchLineType type, final String oldValueText, final String newValueText, final boolean ignoreOldValue) {
 			this.path = path;
@@ -60,22 +122,47 @@ public class YamlDiffPatcher {
 			this.ignoreOldValue = ignoreOldValue;
 		}
 
+		/**
+		 * Returns the path of the node to patch.
+		 *
+		 * @return the path
+		 */
 		public String getPath() {
 			return path;
 		}
 
+		/**
+		 * Returns the type of the patch.
+		 *
+		 * @return the type
+		 */
 		public PatchLineType getType() {
 			return type;
 		}
 
+		/**
+		 * Returns the expected current value.
+		 *
+		 * @return the value as text, null if not applicable
+		 */
 		public String getOldValueText() {
 			return oldValueText;
 		}
 
+		/**
+		 * Returns the new value.
+		 *
+		 * @return the value as text, null if not applicable
+		 */
 		public String getNewValueText() {
 			return newValueText;
 		}
 
+		/**
+		 * Returns whether the current value is not checked before a change.
+		 *
+		 * @return true, if the current value is not checked
+		 */
 		public boolean isIgnoreOldValue() {
 			return ignoreOldValue;
 		}
@@ -89,15 +176,27 @@ public class YamlDiffPatcher {
 	public static class PatchConflictException extends Exception {
 		private static final long serialVersionUID = 1L;
 
+		/**
+		 * Creates a new exception.
+		 *
+		 * @param message
+		 *            the detail message
+		 */
 		public PatchConflictException(final String message) {
 			super(message);
 		}
 	}
 
-	private static final Pattern ADDED_LINE_PATTERN = Pattern.compile("^\\+\\s+(.+?):\\s+(.+)$");
-	private static final Pattern REMOVED_LINE_PATTERN = Pattern.compile("^-\\s+(.+?):\\s+(.+)$");
-	private static final Pattern CHANGED_LINE_PATTERN = Pattern.compile("^~\\s+(.+?):\\s+(.+?)\\s+->\\s+(.+)$");
-	private static final Pattern CHANGED_LINE_PATTERN_NO_OLD_VALUE = Pattern.compile("^~\\s+(.+?):\\s+(.+)$");
+	/** Quoted text with backslash escapes. */
+	private static final String QUOTED = "\"(?:[^\"\\\\]|\\\\.)*\"";
+	/** Path of key segments, quoted key segments and index segments. */
+	private static final String PATH = "((?:\\[" + QUOTED + "\\]|\\[\\d+\\]|[^:\\[])+?)";
+	/** Value: null, quoted text, quoted YAML text of a complex node, or unquoted text (hand written diffs). */
+	private static final String VALUE = "(null|(?:yaml:)?" + QUOTED + "|.+?)";
+	private static final Pattern ADDED_LINE_PATTERN = Pattern.compile("^\\+\\s+" + PATH + ":\\s+" + VALUE + "$");
+	private static final Pattern REMOVED_LINE_PATTERN = Pattern.compile("^-\\s+" + PATH + ":\\s+" + VALUE + "$");
+	private static final Pattern CHANGED_LINE_PATTERN = Pattern.compile("^~\\s+" + PATH + ":\\s+" + VALUE + "\\s+->\\s+" + VALUE + "$");
+	private static final Pattern CHANGED_LINE_PATTERN_NO_OLD_VALUE = Pattern.compile("^~\\s+" + PATH + ":\\s+" + VALUE + "$");
 
 	/**
 	 * Parses a diff text (as produced by YamlComparator#renderAsText) into a
@@ -105,6 +204,12 @@ public class YamlDiffPatcher {
 	 * placeholder text are ignored. Lines that match none of the known
 	 * patterns cause a PatchConflictException, since silently skipping
 	 * unparsable lines could lead to an incomplete patch.
+	 *
+	 * @param diffText
+	 *            the diff text, may be null
+	 * @return the patch entries, empty for null
+	 * @throws PatchConflictException
+	 *             if a line cannot be parsed
 	 */
 	public static List<PatchEntry> parseDiffText(final String diffText) throws PatchConflictException {
 		final List<PatchEntry> patchEntries = new ArrayList<>();
@@ -159,19 +264,28 @@ public class YamlDiffPatcher {
 	}
 
 	/**
-	 * Strips the surrounding double quotes added by YamlComparator#formatValue,
-	 * or returns null for the literal "null" marker.
+	 * Strips the surrounding double quotes added by YamlComparator#formatValue and resolves the
+	 * escapes, or returns null for the literal "null" marker. Complex values keep a marker, so
+	 * they can be told apart from strings.
 	 */
 	private static String unquote(final String valueText) {
 		if ("null".equals(valueText)) {
 			return null;
+		} else if (valueText.startsWith("yaml:\"") && valueText.endsWith("\"")) {
+			return STRUCTURED_VALUE_MARKER + YamlComparator.unquote(valueText.substring(5));
 		} else if (valueText.length() >= 2 && valueText.startsWith("\"") && valueText.endsWith("\"")) {
-			return valueText.substring(1, valueText.length() - 1);
+			return YamlComparator.unquote(valueText);
 		} else {
 			// Not quoted (should not normally happen with formatValue output), use as-is
 			return valueText;
 		}
 	}
+
+	/**
+	 * Internal marker prefix for complex values given as YAML text. A linebreak cannot be part of
+	 * any other value read from a single diff line, unless it was escaped within quotes.
+	 */
+	private static final String STRUCTURED_VALUE_MARKER = "\u0000yaml\n";
 
 	/**
 	 * A single path segment, either a mapping key (by its simple string
@@ -199,7 +313,7 @@ public class YamlDiffPatcher {
 		}
 	}
 
-	private static final Pattern PATH_SEGMENT_PATTERN = Pattern.compile("([^.\\[\\]]+)|\\[(\\d+)\\]");
+	private static final Pattern PATH_SEGMENT_PATTERN = Pattern.compile("\\[(" + QUOTED + ")\\]|([^.\\[\\]]+)|\\[(\\d+)\\]");
 
 	/**
 	 * Splits a path like "servers[2].name" or "rooting.abc" into ordered
@@ -213,9 +327,11 @@ public class YamlDiffPatcher {
 		final Matcher matcher = PATH_SEGMENT_PATTERN.matcher(path);
 		while (matcher.find()) {
 			if (matcher.group(1) != null) {
-				pathSegments.add(PathSegment.forKey(matcher.group(1)));
+				pathSegments.add(PathSegment.forKey(YamlComparator.unquote(matcher.group(1))));
+			} else if (matcher.group(2) != null) {
+				pathSegments.add(PathSegment.forKey(matcher.group(2)));
 			} else {
-				pathSegments.add(PathSegment.forIndex(Integer.parseInt(matcher.group(2))));
+				pathSegments.add(PathSegment.forIndex(Integer.parseInt(matcher.group(3))));
 			}
 		}
 		return pathSegments;
@@ -227,6 +343,10 @@ public class YamlDiffPatcher {
 	 * root replacements the original root instance is reused (its content is
 	 * mutated), so the same reference passed in remains valid after patching.
 	 *
+	 * @param root
+	 *            the YAML tree to patch
+	 * @param patchEntries
+	 *            the patch entries, e.g. from {@link #parseDiffText(String)}
 	 * @throws PatchConflictException if any entry's expected old value does not
 	 *         match the current value, or a structural precondition is violated
 	 * @throws Exception propagated from underlying YamlMapping/YamlSequence operations
@@ -266,14 +386,14 @@ public class YamlDiffPatcher {
 			if (lastSegment.index < parentSequence.size()) {
 				throw new PatchConflictException("Cannot add, sequence index already exists at path '" + patchEntry.getPath() + "'");
 			} else {
-				parentSequence.add(createScalarFromText(patchEntry.getNewValueText()));
+				parentSequence.add(createNodeFromText(patchEntry.getNewValueText()));
 			}
 		} else {
 			final YamlMapping parentMapping = asMapping(navigationResult.parent, patchEntry);
-			if (parentMapping.containsKey(lastSegment.key)) {
+			if (findKey(parentMapping, lastSegment.key) != null) {
 				throw new PatchConflictException("Cannot add, key already exists at path '" + patchEntry.getPath() + "'");
 			} else {
-				parentMapping.add(lastSegment.key, createScalarFromText(patchEntry.getNewValueText()));
+				parentMapping.add(lastSegment.key, createNodeFromText(patchEntry.getNewValueText()));
 			}
 		}
 	}
@@ -293,12 +413,13 @@ public class YamlDiffPatcher {
 			}
 		} else {
 			final YamlMapping parentMapping = asMapping(navigationResult.parent, patchEntry);
-			if (!parentMapping.containsKey(lastSegment.key)) {
+			final YamlNode existingKey = findKey(parentMapping, lastSegment.key);
+			if (existingKey == null) {
 				throw new PatchConflictException("Cannot remove, key missing at path '" + patchEntry.getPath() + "'");
 			} else {
-				final YamlNode currentChild = parentMapping.get(lastSegment.key);
+				final YamlNode currentChild = parentMapping.get(existingKey);
 				checkScalarValueMatches(currentChild, patchEntry.getOldValueText(), patchEntry);
-				parentMapping.remove(lastSegment.key);
+				parentMapping.remove(existingKey);
 			}
 		}
 	}
@@ -318,35 +439,42 @@ public class YamlDiffPatcher {
 				} else {
 					// Old value is irrelevant for this patch entry, skip the check
 				}
-				parentSequence.set(lastSegment.index, createScalarFromText(patchEntry.getNewValueText()));
+				parentSequence.set(lastSegment.index, createNodeFromText(patchEntry.getNewValueText()));
 			}
 		} else {
 			final YamlMapping parentMapping = asMapping(navigationResult.parent, patchEntry);
-			if (!parentMapping.containsKey(lastSegment.key)) {
+			final YamlNode existingKey = findKey(parentMapping, lastSegment.key);
+			if (existingKey == null) {
 				throw new PatchConflictException("Cannot change, key missing at path '" + patchEntry.getPath() + "'");
 			} else {
-				final YamlNode currentChild = parentMapping.get(lastSegment.key);
+				final YamlNode currentChild = parentMapping.get(existingKey);
 				if (!patchEntry.isIgnoreOldValue()) {
 					checkScalarValueMatches(currentChild, patchEntry.getOldValueText(), patchEntry);
 				} else {
 					// Old value is irrelevant for this patch entry, skip the check
 				}
-				parentMapping.replace(lastSegment.key, createScalarFromText(patchEntry.getNewValueText()));
+				parentMapping.replace(existingKey, createNodeFromText(patchEntry.getNewValueText()));
 			}
 		}
 	}
 
-	private static void checkScalarValueMatches(final YamlNode currentChild, final String expectedValueText, final PatchEntry patchEntry) throws PatchConflictException {
-		final String currentValueText = scalarToComparableText(currentChild);
+	private static void checkScalarValueMatches(final YamlNode currentChild, final String expectedValueText, final PatchEntry patchEntry) throws Exception {
 		final boolean matches;
-		if (currentValueText == null && expectedValueText == null) {
-			matches = true;
-		} else if (currentValueText == null || expectedValueText == null) {
-			matches = false;
+		final String currentValueText;
+		if (expectedValueText != null && expectedValueText.startsWith(STRUCTURED_VALUE_MARKER)) {
+			// Complex value: compare the parsed nodes
+			currentValueText = currentChild == null ? null : currentChild.toString();
+			matches = createNodeFromText(expectedValueText).equals(currentChild);
 		} else {
-			matches = currentValueText.equals(expectedValueText);
+			currentValueText = scalarToComparableText(currentChild);
+			if (currentValueText == null && expectedValueText == null) {
+				matches = true;
+			} else if (currentValueText == null || expectedValueText == null) {
+				matches = false;
+			} else {
+				matches = currentValueText.equals(expectedValueText);
+			}
 		}
-
 		if (!matches) {
 			throw new PatchConflictException("Conflict at path '" + patchEntry.getPath() + "': expected old value '"
 					+ expectedValueText + "' but found '" + currentValueText + "'");
@@ -364,6 +492,19 @@ public class YamlDiffPatcher {
 		} else {
 			throw new PatchConflictException("Expected a scalar value but found a complex node");
 		}
+	}
+
+	/**
+	 * Finds the key of a mapping by its text as used in diff paths, see
+	 * {@link YamlComparator#keyToText(YamlNode)}. This also finds number and boolean keys.
+	 */
+	private static YamlNode findKey(final YamlMapping mapping, final String keyText) {
+		for (final YamlNode key : mapping.keySet()) {
+			if (YamlComparator.keyToText(key).equals(keyText)) {
+				return key;
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -399,7 +540,8 @@ public class YamlDiffPatcher {
 				}
 			} else {
 				final YamlMapping currentMapping = asMapping(current, patchEntry);
-				if (!currentMapping.containsKey(segment.key)) {
+				final YamlNode existingKey = findKey(currentMapping, segment.key);
+				if (existingKey == null) {
 					if (createMissing) {
 						final YamlMapping newChildMapping = new YamlMapping();
 						currentMapping.add(segment.key, newChildMapping);
@@ -408,7 +550,7 @@ public class YamlDiffPatcher {
 						throw new PatchConflictException("Path segment '" + segment.key + "' missing at path '" + patchEntry.getPath() + "'");
 					}
 				} else {
-					current = currentMapping.get(segment.key);
+					current = currentMapping.get(existingKey);
 				}
 			}
 		}
@@ -436,19 +578,20 @@ public class YamlDiffPatcher {
 	 * Re-interprets a plain text value the same way YamlReader interprets an
 	 * unquoted scalar: boolean, number, null, or string (in that priority).
 	 * The diff text format does not preserve the original scalar type, so
-	 * this is a best-effort reconstruction.
+	 * this is a best-effort reconstruction. Complex values given as YAML text
+	 * are parsed.
 	 */
-	private static YamlScalar createScalarFromText(final String valueText) {
+	private static YamlNode createNodeFromText(final String valueText) throws Exception {
 		if (valueText == null) {
 			return new YamlScalar(null);
+		} else if (valueText.startsWith(STRUCTURED_VALUE_MARKER)) {
+			final YamlDocument document = YamlReader.readDocument(valueText.substring(STRUCTURED_VALUE_MARKER.length()));
+			return document == null || document.getRoot() == null ? new YamlScalar(null) : document.getRoot();
 		} else if ("true".equals(valueText) || "false".equals(valueText)) {
 			return new YamlScalar(valueText, YamlScalarType.BOOLEAN);
 		} else {
-			try {
-				return new YamlScalar(valueText, YamlScalarType.NUMBER);
-			} catch (@SuppressWarnings("unused") final NumberFormatException e) {
-				return new YamlScalar(valueText, YamlScalarType.STRING);
-			}
+			// Not numeric texts become a string scalar
+			return new YamlScalar(valueText, YamlScalarType.NUMBER);
 		}
 	}
 }

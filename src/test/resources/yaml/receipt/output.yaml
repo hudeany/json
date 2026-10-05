@@ -29,5 +29,5 @@ bill-to: &id001
 ship-to: *id001
 
 specialDelivery: >
-  Follow the instructions as given earlier. 
+  Follow the instructions as given earlier.
 ...

@@ -60,11 +60,11 @@
   : "Boolean true"
   ? {n: null}
   : "Boolean false"
-  R0lG...BADS= : >-
+  "R0lG...BADS=\n": >-
     Base 64 binary value.
 "Escape codes":
-  "Numeric": {"\u0012": "8-bit", "ሴ": "16-bit", "‰": "32-bit"}
+  "Numeric": {"\u0012": "8-bit", "ሴ": "16-bit", "􂀰": "32-bit"}
   "Protective": {"\\": '\', "\"": '"', " ": ' ', "\t": "TAB"}
-  "C": {"\u0000": "NUL", "\u0007": "BEL", "\b": "BS", "\f": "FF", "\n": "LF", "\r": "CR", "\t": "TAB", "\u2B7F": "VTAB"}
+  "C": {"\u0000": "NUL", "\u0007": "BEL", "\b": "BS", "\f": "FF", "\n": "LF", "\r": "CR", "\t": "TAB", "\u000B": "VTAB"}
   "Additional": {"\u001B": "ESC", "\u00A0": "NBSP", "\u0085": "NEL", "\u2028": "LS", "\u2029": "PS"}
 ...

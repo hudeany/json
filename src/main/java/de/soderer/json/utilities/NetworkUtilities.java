@@ -1,31 +1,13 @@
 package de.soderer.json.utilities;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.net.Socket;
-import java.net.SocketException;
 import java.net.URI;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.security.KeyStore;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
-
+/**
+ * Validation helper methods for network related data formats like email addresses, host names, IP
+ * addresses and URIs.
+ */
 public class NetworkUtilities {
 	private static final String SPECIAL_CHARS_REGEXP = "\\p{Cntrl}\\(\\)<>@,;:'\\\\\\\"\\.\\[\\]";
 	private static final String VALID_CHARS_REGEXP = "[^\\s" + SPECIAL_CHARS_REGEXP + "]";
@@ -72,158 +54,47 @@ public class NetworkUtilities {
 
 	private static final Pattern DOMAIN_NAME_PATTERN = Pattern.compile(DOMAIN_NAME_REGEX);
 
-	public static boolean testConnection(final String hostname, final int port) throws Exception {
-		try (Socket socket = new Socket()) {
-			final InetSocketAddress endPoint = new InetSocketAddress(hostname, port);
-			final int timeout = 2000; // 2 seconds
-			if (endPoint.isUnresolved()) {
-				throw new Exception("Cannot resolve hostname '" + hostname + "'");
-			} else {
-				try {
-					socket.connect(endPoint, timeout);
-					return true;
-				} catch (final IOException ioe) {
-					throw new Exception("Cannot connect to host '" + hostname + "' on port " + port + ": " + ioe.getClass().getSimpleName() + ": " + ioe.getMessage());
-				}
-			}
-		}
-	}
-
-	public static boolean ping(final String ipOrHostname) {
-		try {
-			if (ipOrHostname.toLowerCase().trim().startsWith("http://")) {
-				final URL url = URI.create("http://" + getHostnameFromRequestString(ipOrHostname)).toURL();
-				final HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
-				httpURLConnection.setConnectTimeout(2000);
-				httpURLConnection.setReadTimeout(2000);
-				httpURLConnection.setAllowUserInteraction(false);
-				httpURLConnection.connect();
-				return true;
-			} else if (ipOrHostname.toLowerCase().trim().startsWith("https://")) {
-				final URL url = URI.create("https://" + getHostnameFromRequestString(ipOrHostname)).toURL();
-				final HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
-				httpURLConnection.setConnectTimeout(2000);
-				httpURLConnection.setReadTimeout(2000);
-				httpURLConnection.setAllowUserInteraction(false);
-				httpURLConnection.connect();
-				return true;
-			} else {
-				return InetAddress.getByName(getHostnameFromRequestString(ipOrHostname)).isReachable(5000);
-			}
-		} catch (@SuppressWarnings("unused") final Exception e) {
-			return false;
-		}
-	}
-
-	public static byte[] getMacAddressBytes(final String macAddress) throws IllegalArgumentException {
-		if (Utilities.isEmpty(macAddress)) {
-			throw new IllegalArgumentException("Invalid MAC address");
-		}
-
-		final String[] hexParts = macAddress.split("(\\:|\\-| )");
-		if (hexParts.length != 6) {
-			throw new IllegalArgumentException("Invalid MAC address");
-		}
-
-		try {
-			final byte[] bytes = new byte[6];
-			for (int i = 0; i < 6; i++) {
-				bytes[i] = (byte) Integer.parseInt(hexParts[i], 16);
-			}
-			return bytes;
-		} catch (final NumberFormatException e) {
-			throw new IllegalArgumentException("Invalid hex digit in MAC address", e);
-		}
-	}
-
-	public static boolean wakeOnLanPing(final String macAddress) {
-		try {
-			final byte[] macBytes = getMacAddressBytes(macAddress);
-			final byte[] bytes = new byte[6 + 16 * macBytes.length];
-			Arrays.fill(bytes, 0, 6, (byte) 0xFF);
-			for (int i = 6; i < bytes.length; i += macBytes.length) {
-				System.arraycopy(macBytes, 0, bytes, i, macBytes.length);
-			}
-
-			try (DatagramSocket socket = new DatagramSocket()) {
-				socket.send(new DatagramPacket(bytes, bytes.length, InetAddress.getByName("255.255.255.255"), 9));
-			}
-
-			return true;
-		} catch (@SuppressWarnings("unused") final Exception e) {
-			return false;
-		}
-	}
-
-	public static boolean checkForNetworkConnection() {
-		try {
-			for (final NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
-				if (networkInterface.isUp() && !networkInterface.isLoopback()) {
-					return true;
-				}
-			}
-			return false;
-		} catch (final SocketException e) {
-			e.printStackTrace();
-			return false;
-		}
-	}
-
-	public static String getHostnameFromRequestString(String requestString) {
-		if (requestString == null || !requestString.contains("/")) {
-			return requestString;
-		} else {
-			if (requestString.toLowerCase().startsWith("http")) {
-				requestString = requestString.substring(requestString.indexOf("//") + 2);
-
-				if (!requestString.contains("/")) {
-					return requestString;
-				}
-			}
-
-			return requestString.substring(0, requestString.indexOf("/"));
-		}
+	/**
+	 * Utility class, not to be instantiated.
+	 */
+	private NetworkUtilities() {
 	}
 
 	/**
-	 * Get hostname of this machine
+	 * Checks whether a string is a valid fully qualified domain name with at least two labels, like
+	 * "example.com". Internationalized domain names (like "münchen.de") are converted to their
+	 * ASCII form (punycode) before the check. The top level domain "local" is not accepted.
 	 *
-	 * @return
+	 * @param domain
+	 *            the domain name to check
+	 * @return true, if the domain name is valid
 	 */
-	public static String getHostName() {
-		try {
-			return InetAddress.getLocalHost().getHostName();
-		} catch (@SuppressWarnings("unused") final UnknownHostException e) {
-			return "Unknown hostname";
-		}
-	}
-
 	public static boolean isValidDomain(final String domain) {
-		String asciiDomainName;
+		final String asciiDomainName;
 		try {
 			asciiDomainName = java.net.IDN.toASCII(domain);
 		} catch (@SuppressWarnings("unused") final Exception e) {
-			// invalid domain name like abc@.ch
+			// Invalid domain name like abc@.ch
 			return false;
 		}
 
-		if (asciiDomainName.startsWith("xn--")) {
-			try {
-				asciiDomainName = PunycodeCodec.decode(asciiDomainName);
-				return true;
-			} catch (@SuppressWarnings("unused") final Exception e) {
-				return false;
-			}
-		} else {
-			// Do not allow ".local" top level domain
-			if (asciiDomainName.toLowerCase().endsWith(".local")) {
-				return false;
-			}
-
-			return DOMAIN_NAME_PATTERN.matcher(asciiDomainName).matches();
+		// Do not allow ".local" top level domain
+		if (asciiDomainName.toLowerCase().endsWith(".local")) {
+			return false;
 		}
+
+		// Punycode labels ("xn--...") consist of letters, digits and hyphens, so they are checked by the same pattern
+		return DOMAIN_NAME_PATTERN.matcher(asciiDomainName).matches();
 	}
 
+	/**
+	 * Checks whether a string is a valid email address, consisting of a valid user part and a valid
+	 * domain part (see {@link #isValidDomain(String)}).
+	 *
+	 * @param emailAddress
+	 *            the email address to check
+	 * @return true, if the email address is valid
+	 */
 	public static boolean isValidEmail(final String emailAddress) {
 		final Matcher m = EMAIL_PATTERN.matcher(emailAddress);
 
@@ -245,64 +116,66 @@ public class NetworkUtilities {
 		return true;
 	}
 
+	/**
+	 * Checks whether a string is a valid user part of an email address (the part before "@").
+	 *
+	 * @param user
+	 *            the user part to check
+	 * @return true, if the user part is valid
+	 */
 	public static boolean isValidUser(final String user) {
 		return USER_PATTERN.matcher(user).matches();
 	}
 
+	/**
+	 * Checks whether a string is a valid host name. Currently the same as
+	 * {@link #isValidDomain(String)}, so single label host names like "localhost" are not accepted.
+	 *
+	 * @param value
+	 *            the host name to check
+	 * @return true, if the host name is valid
+	 */
 	public static boolean isValidHostname(final String value) {
 		return isValidDomain(value);
 	}
 
-	public static boolean isValidHostnameOnline(final String value) {
-		try {
-			InetAddress.getByName(value);
-			return true;
-		} catch (@SuppressWarnings("unused") final UnknownHostException e) {
-			return false;
-		}
-	}
-
+	/**
+	 * Checks whether a string is a valid IPv4 address in dotted decimal notation, like
+	 * "192.168.0.1".
+	 *
+	 * @param ipv4
+	 *            the address to check
+	 * @return true, if the address is valid
+	 */
 	public static boolean isValidIpV4(final String ipv4) {
 		return IPV4_PATTERN.matcher(ipv4).matches();
 	}
 
+	/**
+	 * Checks whether a string is a valid IPv6 address, including compressed notation ("::1"),
+	 * link-local addresses with zone index and IPv4 mapped or embedded addresses.
+	 *
+	 * @param ipv6
+	 *            the address to check
+	 * @return true, if the address is valid
+	 */
 	public static boolean isValidIpV6(final String ipv6) {
 		return IPV6_PATTERN.matcher(ipv6).matches();
 	}
 
+	/**
+	 * Checks whether a string is a valid absolute URI with scheme (RFC 3986), like
+	 * "https://example.com/path". Relative references like "path/file" are not accepted.
+	 *
+	 * @param uri
+	 *            the URI to check
+	 * @return true, if the URI is valid and absolute
+	 */
 	public static boolean isValidUri(final String uri) {
 		try {
-			@SuppressWarnings("unused")
-			final URI unused = new URI(uri);
-			return true;
+			return new URI(uri).isAbsolute();
 		} catch (@SuppressWarnings("unused") final Exception e) {
 			return false;
 		}
-	}
-
-	public static InputStream openHttpsDataInputStreamWithPemCertificate(final String urlString, final InputStream pemCertificateInputStream) throws Exception {
-		if (urlString == null || !urlString.toLowerCase().startsWith("https://")) {
-			throw new Exception("Invalid urlString for https connection: " + urlString);
-		}
-
-		final Collection<? extends Certificate> certificates = CertificateFactory.getInstance("X.509").generateCertificates(pemCertificateInputStream);
-		final KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-		keyStore.load(null, null);
-		int aliasId = 1;
-		for (final Certificate certificate : certificates) {
-			keyStore.setCertificateEntry(Integer.toString(aliasId++), certificate);
-		}
-
-		final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-		tmf.init(keyStore);
-		final SSLContext context = SSLContext.getInstance("TLS");
-		context.init(null, tmf.getTrustManagers(), null);
-
-		final URL url = URI.create(urlString).toURL();
-
-		final HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
-		connection.setSSLSocketFactory(context.getSocketFactory());
-		connection.connect();
-		return (InputStream) connection.getContent();
 	}
 }

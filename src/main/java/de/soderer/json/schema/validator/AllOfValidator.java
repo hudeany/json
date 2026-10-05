@@ -15,11 +15,28 @@ import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
 
 /**
- * The allOf value is an array of schemas, that all need to validate against the JSON data node
+ * Validator for the "allOf" keyword: its value is a non-empty array of schemas, all of which must
+ * validate the JSON data node. Boolean schemas (true, false) are allowed as array items.
  */
 public class AllOfValidator extends BaseJsonSchemaValidator {
+	/** Validators of each sub schema of the "allOf" array. */
 	private List<List<BaseJsonSchemaValidator>> subValidatorPackages = null;
 
+	/**
+	 * Creates a new "allOf" validator.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, an array of schemas
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is not a non-empty array of objects or booleans, or a sub schema is
+	 *             invalid
+	 * @throws DuplicateKeyException
+	 *             if a sub schema contains duplicate keys
+	 */
 	public AllOfValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
@@ -29,17 +46,18 @@ public class AllOfValidator extends BaseJsonSchemaValidator {
 			subValidatorPackages = new ArrayList<>();
 			for (int i = 0; i < ((JsonArray) validatorData).size(); i++) {
 				final JsonNode subValidationData = ((JsonArray) validatorData).get(i);
+				final JsonSchemaPath itemSchemaPath = new JsonSchemaPath(jsonSchemaPath).addArrayIndex(i);
 				if (subValidationData.isBoolean()) {
 					final List<BaseJsonSchemaValidator> subValidators = new ArrayList<>();
-					subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, subValidationData));
+					subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, itemSchemaPath, subValidationData));
 					subValidatorPackages.add(subValidators);
 				} else if (subValidationData.isJsonObject()) {
-					subValidatorPackages.add(JsonSchema.createValidators((JsonObject) subValidationData, jsonSchemaDependencyResolver, jsonSchemaPath));
+					subValidatorPackages.add(JsonSchema.createValidators((JsonObject) subValidationData, jsonSchemaDependencyResolver, itemSchemaPath));
 				} else {
-					throw new JsonSchemaDefinitionError("AllOf array contains a non-JsonObject", jsonSchemaPath);
+					throw new JsonSchemaDefinitionError("AllOf array contains an item that is neither 'object' nor 'boolean'", itemSchemaPath);
 				}
 			}
-			if (subValidatorPackages == null || subValidatorPackages.size() == 0) {
+			if (subValidatorPackages.isEmpty()) {
 				throw new JsonSchemaDefinitionError("AllOf array is empty", jsonSchemaPath);
 			}
 		} else {
@@ -50,8 +68,10 @@ public class AllOfValidator extends BaseJsonSchemaValidator {
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		for (final List<BaseJsonSchemaValidator> subValidatorPackage : subValidatorPackages) {
-			if (!validateSubSchema(subValidatorPackage, jsonNode, jsonPath)) {
-				throw new JsonSchemaDataValidationError("Some option of 'allOf' property did not apply to JsonNode", jsonPath);
+			final JsonSchemaDataValidationError subSchemaError = getSubSchemaValidationError(subValidatorPackage, jsonNode, jsonPath);
+			if (subSchemaError != null) {
+				// Keep the error of the failing sub schema as cause for diagnosis
+				throw new JsonSchemaDataValidationError("Some option of 'allOf' property did not apply to JsonNode", jsonPath, subSchemaError);
 			}
 		}
 	}

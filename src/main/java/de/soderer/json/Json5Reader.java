@@ -11,6 +11,8 @@ import de.soderer.json.utilities.NumberUtilities;
 import de.soderer.json.utilities.Utilities;
 
 /**
+ * Reader for JSON5 data, a superset of JSON. All standard JSON data is also valid JSON5 data.<br />
+ * <br />
  * Differences to standard JSON:<br />
  * Objects:<br />
  * 	Unquoted Object keys<br />
@@ -31,10 +33,28 @@ import de.soderer.json.utilities.Utilities;
  * 	Block comment (multi-line)<br />
  */
 public class Json5Reader extends JsonReader {
+	/**
+	 * Creates a new JSON5 reader using UTF-8 encoding.
+	 *
+	 * @param inputStream
+	 *            the stream to read from
+	 * @throws Exception
+	 *             if the input stream is null
+	 */
 	public Json5Reader(final InputStream inputStream) throws Exception {
 		this(inputStream, null);
 	}
 
+	/**
+	 * Creates a new JSON5 reader.
+	 *
+	 * @param inputStream
+	 *            the stream to read from
+	 * @param encodingCharset
+	 *            the encoding of the data, or null for UTF-8
+	 * @throws Exception
+	 *             if the input stream is null
+	 */
 	public Json5Reader(final InputStream inputStream, final Charset encodingCharset) throws Exception {
 		super(inputStream, encodingCharset);
 	}
@@ -232,11 +252,13 @@ public class Json5Reader extends JsonReader {
 	}
 
 	/**
-	 * This method should only be used to read small Json items
+	 * Reads a JSON5 item from a string. This method should only be used to read small JSON items.
 	 *
 	 * @param data
-	 * @return
+	 *            the JSON5 data
+	 * @return the JSON item read
 	 * @throws Exception
+	 *             if the data is no valid JSON5
 	 */
 	public static JsonNode readJsonItemString(final String data) throws Exception {
 		try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8))) {

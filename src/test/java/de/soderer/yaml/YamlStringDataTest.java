@@ -210,9 +210,8 @@ public class YamlStringDataTest {
 
 		final YamlScalar valueScalar = readSingleMappingValue(yamlTestString, "description");
 
-		// Folded lines are joined with spaces, but the relative indentation of each line is
-		// preserved as part of its content before folding
-		Assertions.assertEquals("- test:     abc: def   ghi: jkl", valueScalar.getValueString());
+		// More indented lines are not folded: their linebreaks and relative indentation are kept
+		Assertions.assertEquals("- test:\n    abc: def\n  ghi: jkl", valueScalar.getValueString());
 	}
 
 	/**

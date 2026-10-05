@@ -16,27 +16,55 @@ import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
 
 /**
- * Validates the items of a JSON array.
- * A single subschema defines a schema all items must match.
- * An array of subschemas define a schema for every indexed item of the JSON data matching the same index position.
- * Additional optional boolean attribute "additionalItems" defines whether or not there are more items allowed:
- * Additional optional subschema attribute "additionalItems" defines a schema all additional items must match.
+ * Validator for the "items" keyword, validating the items of a JSON data array:
+ * <ul>
+ * <li>A single schema object defines a schema all items must match.</li>
+ * <li>An array of schemas defines a schema for each item at the same index position. The optional
+ * sibling keyword "additionalItems" then defines whether more items are allowed (boolean) or a
+ * schema all further items must match (object).</li>
+ * <li>A boolean value (newer drafts, together with "prefixItems") defines whether items beyond the
+ * "prefixItems" schemas are allowed.</li>
+ * </ul>
+ * Data that is not an array is ignored, except in simple mode.
  */
 public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
+	/** Validators all items must match, or null if not defined. */
 	private List<BaseJsonSchemaValidator> singleValidatorPack = null;
+
+	/** Validators for the items at each index position, or null if not defined. */
 	private List<List<BaseJsonSchemaValidator>> indexedValidatorPacks = null;
+
+	/** Whether items beyond the indexed schemas are allowed, or null if not defined. */
 	private Boolean additionalItemsAllowed = null;
+
+	/** Validators all items beyond the indexed schemas must match, or null if not defined. */
 	private List<BaseJsonSchemaValidator> additionalItemsDefinitions = null;
 
+	/**
+	 * Creates a new "items" validator.
+	 *
+	 * @param parentValidatorData
+	 *            the parent schema containing this keyword, used to read its "additionalItems"
+	 *            and "prefixItems"
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, a schema object, an array of schemas or a boolean
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value or the related keywords "additionalItems" and "prefixItems" are
+	 *             invalid
+	 * @throws DuplicateKeyException
+	 *             if a schema contains duplicate keys
+	 */
 	public ItemsValidator(final JsonObject parentValidatorData, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		super(parentValidatorData, jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
 		if (validatorData == null || validatorData.isNull()) {
 			throw new JsonSchemaDefinitionError("Items data is 'null'", jsonSchemaPath);
 		} else if (validatorData.isJsonObject()) {
-			if (((JsonObject) validatorData).size() == 0) {
-				return;
-			} else {
+			if (((JsonObject) validatorData).size() > 0) {
 				singleValidatorPack = JsonSchema.createValidators((JsonObject) validatorData, jsonSchemaDependencyResolver, jsonSchemaPath);
 
 				if (parentValidatorData.containsKey("additionalItems") && jsonSchemaDependencyResolver.isSimpleMode()) {
@@ -44,23 +72,7 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 				}
 			}
 		} else if (validatorData.isJsonArray()) {
-			final JsonArray validatorDataArray = (JsonArray) validatorData;
-			indexedValidatorPacks = new ArrayList<>();
-			for (int i = 0; i < validatorDataArray.size(); i++) {
-				final JsonNode object = validatorDataArray.get(i);
-				if (object.isJsonObject()) {
-					final JsonObject validatorObject = (JsonObject) object;
-
-					final List<BaseJsonSchemaValidator> validators = JsonSchema.createValidators(validatorObject, jsonSchemaDependencyResolver, jsonSchemaPath);
-					indexedValidatorPacks.add(validators);
-				} else if (object.isBoolean()) {
-					final List<BaseJsonSchemaValidator> validators = new ArrayList<>();
-					validators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, object));
-					indexedValidatorPacks.add(validators);
-				} else {
-					throw new JsonSchemaDefinitionError("Items data item is not an 'object'", jsonSchemaPath);
-				}
-			}
+			indexedValidatorPacks = createIndexedValidatorPacks((JsonArray) validatorData, jsonSchemaPath);
 
 			if (parentValidatorData.containsKey("additionalItems")) {
 				final JsonNode additionalItemsRaw = parentValidatorData.get("additionalItems");
@@ -74,29 +86,52 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 					throw new JsonSchemaDefinitionError("AdditionalItems data is not a 'boolean' or 'object'", jsonSchemaPath);
 				}
 			}
-		} else {
-			// Special boolean value for "items" in draft v7 which replaces "additionalItems".
-			// It comes with "prefixItems" which is still part of the discussion.
+		} else if (validatorData.isBoolean()) {
+			// Special boolean value for "items" in newer drafts which replaces "additionalItems".
+			// It comes with "prefixItems", which define the schemas of the leading items.
 			additionalItemsAllowed = ((JsonValueBoolean) validatorData).getValue();
-			if (parentValidatorData.get("prefixItems") != null) {
-				if (!(parentValidatorData.get("prefixItems").isJsonArray())) {
+			final JsonNode prefixItems = parentValidatorData.get("prefixItems");
+			if (prefixItems != null) {
+				if (!(prefixItems.isJsonArray())) {
 					throw new JsonSchemaDefinitionError("'prefixItems' data is not an 'array'", jsonSchemaPath);
 				} else {
-					final JsonArray validatorDataArray = (JsonArray) parentValidatorData.get("prefixItems");
-					indexedValidatorPacks = new ArrayList<>();
-					for (int i = 0; i < validatorDataArray.size(); i++) {
-						final JsonNode object = validatorDataArray.get(i);
-						if (!(object.isJsonObject())) {
-							throw new JsonSchemaDefinitionError("Items data item is not an 'object'", jsonSchemaPath);
-						}
-						final JsonObject validatorObject = (JsonObject) object;
-
-						final List<BaseJsonSchemaValidator> validators = JsonSchema.createValidators(validatorObject, jsonSchemaDependencyResolver, jsonSchemaPath);
-						indexedValidatorPacks.add(validators);
-					}
+					indexedValidatorPacks = createIndexedValidatorPacks((JsonArray) prefixItems, jsonSchemaPath);
 				}
 			}
+		} else {
+			throw new JsonSchemaDefinitionError("Items data is not an 'object', 'array' or 'boolean'", jsonSchemaPath);
 		}
+	}
+
+	/**
+	 * Creates the validators for each index position of an array of schemas.
+	 *
+	 * @param schemaArray
+	 *            the array of schema objects or booleans
+	 * @param arraySchemaPath
+	 *            the path of the array within the JSON schema
+	 * @return the validators for each index position
+	 * @throws JsonSchemaDefinitionError
+	 *             if an item is neither object nor boolean, or a schema is invalid
+	 * @throws DuplicateKeyException
+	 *             if a schema contains duplicate keys
+	 */
+	private List<List<BaseJsonSchemaValidator>> createIndexedValidatorPacks(final JsonArray schemaArray, final JsonSchemaPath arraySchemaPath) throws JsonSchemaDefinitionError, DuplicateKeyException {
+		final List<List<BaseJsonSchemaValidator>> validatorPacks = new ArrayList<>();
+		for (int i = 0; i < schemaArray.size(); i++) {
+			final JsonNode itemSchema = schemaArray.get(i);
+			final JsonSchemaPath itemSchemaPath = new JsonSchemaPath(arraySchemaPath).addArrayIndex(i);
+			if (itemSchema.isJsonObject()) {
+				validatorPacks.add(JsonSchema.createValidators((JsonObject) itemSchema, jsonSchemaDependencyResolver, itemSchemaPath));
+			} else if (itemSchema.isBoolean()) {
+				final List<BaseJsonSchemaValidator> validators = new ArrayList<>();
+				validators.add(new BooleanValidator(jsonSchemaDependencyResolver, itemSchemaPath, itemSchema));
+				validatorPacks.add(validators);
+			} else {
+				throw new JsonSchemaDefinitionError("Items data item is neither 'object' nor 'boolean'", itemSchemaPath);
+			}
+		}
+		return validatorPacks;
 	}
 
 	@Override
@@ -105,72 +140,57 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 			if (jsonSchemaDependencyResolver.isSimpleMode()) {
 				throw new JsonSchemaDataValidationError("Expected data type 'array' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
-		} else {
-			if (singleValidatorPack != null) {
-				for (int i = 0; i < ((JsonArray) jsonNode).size(); i++) {
-					JsonNode jsonNodeToCheck;
-					try {
-						jsonNodeToCheck = ((JsonArray) jsonNode).get(i).withRootNode(false);
-					} catch (final Exception e) {
-						throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonArray) jsonNode).get(i).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(i), e);
-					}
-					for (final BaseJsonSchemaValidator validator : singleValidatorPack) {
-						validator.validate(jsonNodeToCheck, new JsonPath(jsonPath).addArrayIndex(i));
-					}
-				}
-			} else if (indexedValidatorPacks != null) {
-				for (int i = 0; i < indexedValidatorPacks.size() && i < ((JsonArray) jsonNode).size(); i++) {
-					JsonNode jsonNodeToCheck;
-					try {
-						jsonNodeToCheck = ((JsonArray) jsonNode).get(i).withRootNode(false);
-					} catch (final Exception e) {
-						throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonArray) jsonNode).get(i).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(i), e);
-					}
-					for (final BaseJsonSchemaValidator validator : indexedValidatorPacks.get(i)) {
-						validator.validate(jsonNodeToCheck, new JsonPath(jsonPath).addArrayIndex(i));
-					}
-				}
+			return;
+		}
 
-				if (additionalItemsAllowed != null) {
-					if (!additionalItemsAllowed) {
-						if (((JsonArray) jsonNode).size() > indexedValidatorPacks.size()) {
-							throw new JsonSchemaDataValidationError("Maximum amount of array items is " + indexedValidatorPacks.size() + " but was " + ((JsonArray) jsonNode).size(), jsonPath);
-						}
-					}
-				} else if (additionalItemsDefinitions != null) {
-					for (int i = indexedValidatorPacks.size(); i < ((JsonArray) jsonNode).size(); i++) {
-						JsonNode newJsonNode;
-						try {
-							newJsonNode = ((JsonArray) jsonNode).get(i).withRootNode(false);
-						} catch (final Exception e) {
-							throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonArray) jsonNode).get(i).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(i), e);
-						}
-						for (final BaseJsonSchemaValidator subValidator : additionalItemsDefinitions) {
-							subValidator.validate(newJsonNode, new JsonPath(jsonPath).addArrayIndex(i));
-						}
-					}
+		final JsonArray jsonArray = (JsonArray) jsonNode;
+		if (singleValidatorPack != null) {
+			for (int i = 0; i < jsonArray.size(); i++) {
+				validateItem(jsonArray, i, singleValidatorPack, jsonPath);
+			}
+		} else {
+			// Without indexed schemas all items are additional items
+			final int indexedItemsCount = indexedValidatorPacks == null ? 0 : indexedValidatorPacks.size();
+			for (int i = 0; i < indexedItemsCount && i < jsonArray.size(); i++) {
+				validateItem(jsonArray, i, indexedValidatorPacks.get(i), jsonPath);
+			}
+
+			if (additionalItemsAllowed != null) {
+				if (!additionalItemsAllowed && jsonArray.size() > indexedItemsCount) {
+					throw new JsonSchemaDataValidationError("Maximum amount of array items is " + indexedItemsCount + " but was " + jsonArray.size(), jsonPath);
 				}
-			} else {
-				if (additionalItemsAllowed != null) {
-					if (!additionalItemsAllowed && ((JsonArray) jsonNode).size() > 0) {
-						throw new JsonSchemaDataValidationError("Maximum amount of array items is 0 but was " + ((JsonArray) jsonNode).size(), jsonPath);
-					}
-				} else if (additionalItemsDefinitions != null) {
-					// indexedValidatorPacks is null in this branch (no "items" array / "prefixItems" defined),
-					// so all array entries starting at index 0 are "additional" items.
-					for (int i = 0; i < ((JsonArray) jsonNode).size(); i++) {
-						JsonNode newJsonNode;
-						try {
-							newJsonNode = ((JsonArray) jsonNode).get(i).withRootNode(false);
-						} catch (final Exception e) {
-							throw new JsonSchemaDataValidationError("Invalid data type '" + ((JsonArray) jsonNode).get(i).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(i), e);
-						}
-						for (final BaseJsonSchemaValidator subValidator : additionalItemsDefinitions) {
-							subValidator.validate(newJsonNode, new JsonPath(jsonPath).addArrayIndex(i));
-						}
-					}
+			} else if (additionalItemsDefinitions != null) {
+				for (int i = indexedItemsCount; i < jsonArray.size(); i++) {
+					validateItem(jsonArray, i, additionalItemsDefinitions, jsonPath);
 				}
 			}
+		}
+	}
+
+	/**
+	 * Validates one item of a JSON data array.
+	 *
+	 * @param jsonArray
+	 *            the JSON data array
+	 * @param index
+	 *            the index of the item
+	 * @param validators
+	 *            the validators the item must match
+	 * @param jsonPath
+	 *            the path of the JSON data array, used in error messages
+	 * @throws JsonSchemaDataValidationError
+	 *             if the item is not valid
+	 */
+	private static void validateItem(final JsonArray jsonArray, final int index, final List<BaseJsonSchemaValidator> validators, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
+		final JsonNode jsonNodeToCheck;
+		try {
+			jsonNodeToCheck = jsonArray.get(index).withRootNode(false);
+		} catch (final Exception e) {
+			throw new JsonSchemaDataValidationError("Invalid data type '" + jsonArray.get(index).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(index), e);
+		}
+		for (final BaseJsonSchemaValidator validator : validators) {
+			// Separate path object per validator, as validators may modify it
+			validator.validate(jsonNodeToCheck, new JsonPath(jsonPath).addArrayIndex(index));
 		}
 	}
 }

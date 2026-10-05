@@ -43,7 +43,9 @@ data1: |
       "Please don't sit on the floor"
   So he carefully sat on the ceiling
 data2: >
-  Wrapped text will be folded into a single paragraph  Blank lines denote paragraph breaks 
+  Wrapped text will be folded into a single paragraph
+  
+  Blank lines denote paragraph breaks
 ...
 ---
 # indentation by tabs is not recommended

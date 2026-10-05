@@ -17,10 +17,37 @@ import de.soderer.json.schema.JsonSchemaDefinitionError;
 import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
 
+/**
+ * Validator for the "properties" keyword: its value is an object mapping property names to schemas.
+ * Each property of the JSON data object that is listed there must match its schema. Properties not
+ * listed are not checked here (see {@link AdditionalPropertiesValidator}).<br />
+ * <br />
+ * In draft 3 a property schema may contain the boolean "required", which makes the property
+ * mandatory.
+ */
 public class PropertiesValidator extends BaseJsonSchemaValidator {
+	/** Mandatory property names defined by draft 3 "required": true, or null if none. */
 	private List<String> requiredKeysV3 = null;
-	private final Map <String, List<BaseJsonSchemaValidator>> propertiesDefinitions = new HashMap<>();
 
+	/** Validators by property name. */
+	private final Map<String, List<BaseJsonSchemaValidator>> propertiesDefinitions = new HashMap<>();
+
+	/**
+	 * Creates a new "properties" validator.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, an object with property names as keys and schemas as
+	 *            values
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is not an object or a property schema is neither object nor
+	 *             boolean
+	 * @throws DuplicateKeyException
+	 *             if a schema contains duplicate keys
+	 */
 	public PropertiesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
@@ -29,11 +56,13 @@ public class PropertiesValidator extends BaseJsonSchemaValidator {
 		}
 
 		for (final Entry<String, JsonNode> entry : ((JsonObject) validatorData).entrySet()) {
-			if ("default".equals(entry.getKey())) {
-				// Ignore default value, as it is only a descriptive annotation
+			if (entry.getValue() == null) {
+				throw new JsonSchemaDefinitionError("Properties data is 'null'", new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()));
+			} else if ("default".equals(entry.getKey()) && !entry.getValue().isBoolean() && !entry.getValue().isJsonObject()) {
+				// Tolerate a misplaced "default" annotation value. A property named "default" with a schema is validated normally.
 			} else if (entry.getValue().isBoolean()) {
 				final List<BaseJsonSchemaValidator> subValidators = new ArrayList<>();
-				subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, entry.getValue()));
+				subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
 				propertiesDefinitions.put(entry.getKey(), subValidators);
 			} else if (!(entry.getValue().isJsonObject())) {
 				throw new JsonSchemaDefinitionError("Properties data is not a JsonObject", new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()));

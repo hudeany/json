@@ -23,8 +23,25 @@ import de.soderer.json.schema.JsonSchemaPath;
  * Security note: see {@link PatternValidator} regarding ReDoS risk from untrusted regex patterns in the schema.
  */
 public class PatternPropertiesValidator extends BaseJsonSchemaValidator {
-	private final Map <Pattern, List<BaseJsonSchemaValidator>> propertiesDefinitionsByPattern = new HashMap<>();
+	/** Validators by the property name pattern they apply to. */
+	private final Map<Pattern, List<BaseJsonSchemaValidator>> propertiesDefinitionsByPattern = new HashMap<>();
 
+	/**
+	 * Creates a new "patternProperties" validator.
+	 *
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings of the JSON schema
+	 * @param jsonSchemaPath
+	 *            the path of the keyword within the JSON schema
+	 * @param validatorData
+	 *            the value of the keyword, an object with regex patterns as keys and schemas as
+	 *            values
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is not an object, a pattern is invalid, or a value is neither
+	 *             object nor boolean
+	 * @throws DuplicateKeyException
+	 *             if a schema contains duplicate keys
+	 */
 	public PatternPropertiesValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode validatorData) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, validatorData);
 
@@ -35,32 +52,28 @@ public class PatternPropertiesValidator extends BaseJsonSchemaValidator {
 		}
 
 		for (final Entry<String, JsonNode> entry : ((JsonObject) validatorData).entrySet()) {
+			final JsonSchemaPath entrySchemaPath = new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey());
 			if (entry.getValue() == null) {
-				throw new JsonSchemaDefinitionError("PatternProperties data is null", new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()));
-			} else if (entry.getValue().isBoolean()) {
-				Pattern propertyKeyPattern;
-				try {
-					propertyKeyPattern = Pattern.compile(entry.getKey());
-				} catch (final Exception e) {
-					throw new JsonSchemaDefinitionError("PatternProperties data contains invalid RegEx pattern: " + entry.getKey(), new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()), e);
-				}
-
-				final List<BaseJsonSchemaValidator> subValidators = new ArrayList<>();
-				subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, jsonSchemaPath, entry.getValue()));
-				propertiesDefinitionsByPattern.put(propertyKeyPattern, subValidators);
-			} else if (entry.getValue().isJsonObject()) {
-				Pattern propertyKeyPattern;
-				try {
-					propertyKeyPattern = Pattern.compile(entry.getKey());
-				} catch (final Exception e) {
-					throw new JsonSchemaDefinitionError("PatternProperties data contains invalid RegEx pattern: " + entry.getKey(), new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()), e);
-				}
-
-				final List<BaseJsonSchemaValidator> subValidators = JsonSchema.createValidators((JsonObject) entry.getValue(), jsonSchemaDependencyResolver, new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()));
-				propertiesDefinitionsByPattern.put(propertyKeyPattern, subValidators);
-			} else {
-				throw new JsonSchemaDefinitionError("PatternProperties data is not a JsonObject", new JsonSchemaPath(jsonSchemaPath).addPropertyKey(entry.getKey()));
+				throw new JsonSchemaDefinitionError("PatternProperties data is null", entrySchemaPath);
+			} else if (!entry.getValue().isBoolean() && !entry.getValue().isJsonObject()) {
+				throw new JsonSchemaDefinitionError("PatternProperties data is neither 'object' nor 'boolean'", entrySchemaPath);
 			}
+
+			final Pattern propertyKeyPattern;
+			try {
+				propertyKeyPattern = Pattern.compile(entry.getKey());
+			} catch (final Exception e) {
+				throw new JsonSchemaDefinitionError("PatternProperties data contains invalid RegEx pattern: " + entry.getKey(), entrySchemaPath, e);
+			}
+
+			final List<BaseJsonSchemaValidator> subValidators;
+			if (entry.getValue().isBoolean()) {
+				subValidators = new ArrayList<>();
+				subValidators.add(new BooleanValidator(jsonSchemaDependencyResolver, entrySchemaPath, entry.getValue()));
+			} else {
+				subValidators = JsonSchema.createValidators((JsonObject) entry.getValue(), jsonSchemaDependencyResolver, entrySchemaPath);
+			}
+			propertiesDefinitionsByPattern.put(propertyKeyPattern, subValidators);
 		}
 	}
 

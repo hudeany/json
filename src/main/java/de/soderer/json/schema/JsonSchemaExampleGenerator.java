@@ -35,6 +35,14 @@ import de.soderer.json.JsonValueString;
 public class JsonSchemaExampleGenerator {
 	private final JsonSchemaDependencyResolver dependencyResolver;
 
+	/**
+	 * Creates a new example generator.
+	 *
+	 * @param dependencyResolver
+	 *            the resolver for "$ref" references of the schema
+	 * @throws IllegalArgumentException
+	 *             if the resolver is null
+	 */
 	public JsonSchemaExampleGenerator(final JsonSchemaDependencyResolver dependencyResolver) {
 		if (dependencyResolver == null) {
 			throw new IllegalArgumentException("Invalid null value for JsonSchemaDependencyResolver");
@@ -49,6 +57,8 @@ public class JsonSchemaExampleGenerator {
 	 * nested sub-schema of it)
 	 * @return a {@link JsonNode} (typically a {@link JsonObject} or {@link JsonArray}) representing a placeholder
 	 * example, or {@code null} if {@code schema} itself was {@code null}
+	 * @throws Exception
+	 *             if a "$ref" reference cannot be resolved
 	 */
 	public JsonNode generateExample(final JsonObject schema) throws Exception {
 		return generateExample(schema, new HashSet<>());

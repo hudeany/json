@@ -26,32 +26,59 @@ import de.soderer.json.utilities.ClassUtilities;
 import de.soderer.json.utilities.DateUtilities;
 import de.soderer.json.utilities.Utilities;
 
+/**
+ * Serializes Java objects to JSON data by reflection and deserializes them again.
+ * <p>
+ * Fields of the object and its super classes are serialized by name; nested objects, arrays,
+ * collections and maps are supported, cyclic references are rejected.
+ * </p>
+ * <p>
+ * Security note: deserialization with type information ({@link #deserialize(JsonObject)})
+ * instantiates the classes named in the JSON data via their constructor without parameters and
+ * sets their fields. Only deserialize JSON data from trusted sources, as with Java serialization.
+ * </p>
+ */
 public class JsonSerializer {
 	/**
-	 * Serialize an object in json data<br />
+	 * Utility class, not to be instantiated.
+	 */
+	private JsonSerializer() {
+	}
+
+	/**
+	 * Serializes an object to JSON data<br />
 	 * - Serializes null values<br />
 	 * - Excludes static fields<br />
 	 * - Excludes transient fields<br />
-	 * - Does not show object type infos<br />
+	 * - Does not add object type infos<br />
 	 *
 	 * @param dataObject
-	 * @return
+	 *            the object to serialize
+	 * @return the JSON data
 	 * @throws Exception
+	 *             if the object contains cyclic references or a field cannot be read
 	 */
 	public static JsonNode serialize(final Object dataObject) throws Exception {
 		return serializeInternal(dataObject, false, false, false, false, new ArrayList<>());
 	}
 
 	/**
-	 * Serialize an object in json data
+	 * Serializes an object to JSON data.
 	 *
 	 * @param dataObject
-	 * @param excludeNull Do not serialize null values
-	 * @param includeStatic Serialize fields with a "static" modifier
-	 * @param includeTransient Serialize fields with a "transient" modifier
-	 * @param addObjectTypeInfo Add object type info
-	 * @return
+	 *            the object to serialize
+	 * @param excludeNull
+	 *            true to skip fields with null value
+	 * @param includeStatic
+	 *            true to serialize fields with a "static" modifier
+	 * @param includeTransient
+	 *            true to serialize fields with a "transient" modifier
+	 * @param addObjectTypeInfo
+	 *            true to add the class names ("class" and "value" properties), which is required for
+	 *            {@link #deserialize(JsonObject)}
+	 * @return the JSON data
 	 * @throws Exception
+	 *             if the object contains cyclic references or a field cannot be read
 	 */
 	public static JsonNode serialize(final Object dataObject, final boolean excludeNull, final boolean includeStatic, final boolean includeTransient, final boolean addObjectTypeInfo) throws Exception {
 		return serializeInternal(dataObject, excludeNull, includeStatic, includeTransient, addObjectTypeInfo, new ArrayList<>());
@@ -351,6 +378,15 @@ public class JsonSerializer {
 		}
 	}
 
+	/**
+	 * Deserializes JSON data with object type info, see {@link #deserialize(JsonObject)}.
+	 *
+	 * @param jsonData
+	 *            the JSON data, must be a JSON object
+	 * @return the deserialized object
+	 * @throws Exception
+	 *             if the data is no JSON object or cannot be deserialized
+	 */
 	public static Object deserialize(final JsonNode jsonData) throws Exception {
 		if (jsonData == null) {
 			throw new Exception("JSON data is null");
@@ -361,6 +397,19 @@ public class JsonSerializer {
 		}
 	}
 
+	/**
+	 * Deserializes JSON data written by {@link #serialize(Object, boolean, boolean, boolean, boolean)}
+	 * with object type info: an object with the properties "class" (class name) and "value".
+	 * <p>
+	 * Security note: the class named in the data is instantiated, so only use this for trusted data.
+	 * </p>
+	 *
+	 * @param jsonObject
+	 *            the JSON data with object type info
+	 * @return the deserialized object, null for null values
+	 * @throws Exception
+	 *             if the type info is missing or invalid, or the object cannot be created
+	 */
 	public static Object deserialize(final JsonObject jsonObject) throws Exception {
 		try {
 			if (jsonObject == null) {
@@ -378,7 +427,7 @@ public class JsonSerializer {
 				}
 
 				final JsonNode value = jsonObject.get("value");
-				final Class<?> clazz = Class.forName((String) jsonObject.getSimpleValue("class"));
+				final Class<?> clazz = Class.forName((String) jsonObject.getSimpleValue("class"), false, JsonSerializer.class.getClassLoader());
 				if (value == null || value.isNull()) {
 					return null;
 				} else if (clazz == Boolean.TYPE || clazz == Boolean.class) {
@@ -400,7 +449,8 @@ public class JsonSerializer {
 						return ((Number) jsonObject.getSimpleValue("value")).doubleValue();
 					}
 				} else if (clazz == BigDecimal.class) {
-					return jsonObject.getSimpleValue("value");
+					// The JSON value may have been read as Integer, Long or Double
+					return new BigDecimal(jsonObject.getSimpleValue("value").toString());
 				} else if (clazz == Character.TYPE || clazz == Character.class) {
 					if (jsonObject.getSimpleValue("value") instanceof Character) {
 						return jsonObject.getSimpleValue("value");
@@ -609,6 +659,17 @@ public class JsonSerializer {
 		}
 	}
 
+	/**
+	 * Deserializes JSON data or a simple value into an object of the given class.
+	 *
+	 * @param classType
+	 *            the class of the result
+	 * @param objectData
+	 *            a JSON node or a simple value, which is returned unchanged
+	 * @return the deserialized object, null for null data
+	 * @throws Exception
+	 *             if the data does not fit the class
+	 */
 	public static Object deserialize(final Class<?> classType, final Object objectData) throws Exception {
 		if (objectData == null) {
 			return null;
@@ -623,6 +684,18 @@ public class JsonSerializer {
 		}
 	}
 
+	/**
+	 * Deserializes JSON data into an object of the given class, without type info in the data.
+	 * Simple JSON values are converted to the requested primitive, wrapper, String or enum type.
+	 *
+	 * @param classType
+	 *            the class of the result
+	 * @param jsonData
+	 *            the JSON data
+	 * @return the deserialized object, null for JSON null
+	 * @throws Exception
+	 *             if the data is null or does not fit the class
+	 */
 	public static Object deserialize(final Class<?> classType, final JsonNode jsonData) throws Exception {
 		if (jsonData == null) {
 			throw new Exception("JSON data is null");
@@ -691,6 +764,19 @@ public class JsonSerializer {
 		}
 	}
 
+	/**
+	 * Deserializes a JSON object into a new instance of the given class, which needs a constructor
+	 * without parameters. Properties are assigned to the fields with the same name, also of super
+	 * classes.
+	 *
+	 * @param classType
+	 *            the class of the result
+	 * @param jsonObject
+	 *            the JSON object
+	 * @return the deserialized object, null if the JSON object is null
+	 * @throws Exception
+	 *             if the class cannot be instantiated or a property does not fit its field
+	 */
 	public static Object deserialize(final Class<?> classType, final JsonObject jsonObject) throws Exception {
 		try {
 			if (classType == null) {

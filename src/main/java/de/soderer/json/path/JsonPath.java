@@ -11,6 +11,16 @@ import de.soderer.json.path.JsonPathFilterElement.FilterOperator;
 import de.soderer.json.schema.JsonSchemaDefinitionError;
 import de.soderer.json.utilities.BasicReader;
 
+/**
+ * Path to a position within JSON data, like "$.store.customer[5].name".
+ * <p>
+ * A path consists of a root ("$" or "#"), property keys, array indexes and optionally wildcards
+ * and filter expressions. It can be formatted in dot notation ({@link #getDotFormattedPath()}),
+ * bracket notation ({@link #getBracketFormattedPath()}) or reference notation
+ * ({@link #getReferenceFormattedPath()}). The add methods modify this path and return it for
+ * chaining, so copy a shared path with {@link #JsonPath(JsonPath)} before extending it.
+ * </p>
+ */
 public class JsonPath {
 	/**
 	 * Matches a filter expression's bracket content, e.g. "[?(@.version=='26.1.72')]":
@@ -20,8 +30,14 @@ public class JsonPath {
 	 */
 	private static final Pattern FILTER_PATTERN = Pattern.compile("^\\[\\?\\(\\s*@\\.([A-Za-z_][A-Za-z0-9_]*)\\s*(==|!=|<=|>=|<|>)\\s*(.+?)\\s*\\)\\]$");
 
+	/**
+	 * The path elements, the root element first.
+	 */
 	private Stack<JsonPathElement> jsonPathElements = new Stack<>();
 
+	/**
+	 * Creates a new path pointing to the root ("$").
+	 */
 	public JsonPath() {
 		jsonPathElements.push(new JsonPathRoot("$"));
 	}
@@ -59,11 +75,23 @@ public class JsonPath {
 		}
 	}
 
+	/**
+	 * Creates a copy of a path. Extending the copy does not change the original.
+	 *
+	 * @param jsonPath
+	 *            the path to copy
+	 */
 	public JsonPath(final JsonPath jsonPath) {
 		jsonPathElements = new Stack<>();
 		jsonPathElements.addAll(jsonPath.getPathParts());
 	}
 
+	/**
+	 * Returns this path in dot notation, e.g. "$.store.customer[5].name". Dots within property
+	 * keys are escaped by a backslash.
+	 *
+	 * @return the formatted path
+	 */
 	public String getDotFormattedPath() {
 		final StringBuilder returnValue = new StringBuilder();
 		for (final JsonPathElement jsonPathElement : jsonPathElements) {
@@ -82,6 +110,12 @@ public class JsonPath {
 		return returnValue.toString();
 	}
 
+	/**
+	 * Returns this path in bracket notation, e.g. "$['store']['customer'][5]['name']". Single
+	 * quotes within property keys are escaped by a backslash.
+	 *
+	 * @return the formatted path
+	 */
 	public String getBracketFormattedPath() {
 		final StringBuilder returnValue = new StringBuilder();
 		for (final JsonPathElement jsonPathElement : jsonPathElements) {
@@ -100,7 +134,13 @@ public class JsonPath {
 		return returnValue.toString();
 	}
 
-	public String getReferenceFormattedPath() throws Exception {
+	/**
+	 * Returns this path in reference notation, e.g. "$/store/customer[5]/name". Slashes within
+	 * property keys are escaped by a backslash.
+	 *
+	 * @return the formatted path
+	 */
+	public String getReferenceFormattedPath() {
 		final StringBuilder returnValue = new StringBuilder();
 		for (final JsonPathElement jsonPathElement : jsonPathElements) {
 			if (jsonPathElement instanceof JsonPathRoot) {
@@ -118,45 +158,103 @@ public class JsonPath {
 		return returnValue.toString();
 	}
 
+	/**
+	 * Appends a path element.
+	 *
+	 * @param jsonPathElement
+	 *            the element to append, must be no root element
+	 * @return this path for chaining
+	 * @throws IllegalArgumentException
+	 *             if the element is null or a root element
+	 */
 	public JsonPath add(final JsonPathElement jsonPathElement) {
 		if (jsonPathElement == null) {
-			throw new RuntimeException("Invalid null value for JsonPathElement");
+			throw new IllegalArgumentException("Invalid null value for JsonPathElement");
 		} else if (jsonPathElement instanceof JsonPathRoot) {
-			throw new RuntimeException("Cannot add JsonPathRoot as element");
+			throw new IllegalArgumentException("Cannot add JsonPathRoot as element");
 		} else {
 			jsonPathElements.push(jsonPathElement);
 			return this;
 		}
 	}
 
+	/**
+	 * Removes the last path element.
+	 *
+	 * @return this path for chaining
+	 * @throws java.util.EmptyStackException
+	 *             if the path is empty
+	 */
 	public JsonPath removeLastElement() {
 		jsonPathElements.pop();
 		return this;
 	}
 
+	/**
+	 * Appends an array index.
+	 *
+	 * @param arrayIndex
+	 *            the array index, 0 based
+	 * @return this path for chaining
+	 */
 	public JsonPath addArrayIndex(final int arrayIndex) {
 		jsonPathElements.push(new JsonPathArrayElement(arrayIndex));
 		return this;
 	}
 
+	/**
+	 * Appends a property key.
+	 *
+	 * @param propertyKey
+	 *            the property key
+	 * @return this path for chaining
+	 */
 	public JsonPath addPropertyKey(final String propertyKey) {
 		jsonPathElements.push(new JsonPathPropertyElement(propertyKey));
 		return this;
 	}
 
+	/**
+	 * Appends a wildcard matching every property value or array item.
+	 *
+	 * @return this path for chaining
+	 */
 	public JsonPath addWildcard() {
 		jsonPathElements.push(new JsonPathWildcardElement());
 		return this;
 	}
 
+	/**
+	 * Appends a filter expression like "[?(@.price &lt; 10)]".
+	 *
+	 * @param propertyName
+	 *            the property checked on each candidate
+	 * @param operator
+	 *            the comparison operator
+	 * @param literalValue
+	 *            the value to compare with: String, Long, Double, Boolean or null
+	 * @return this path for chaining
+	 */
 	public JsonPath addFilter(final String propertyName, final FilterOperator operator, final Object literalValue) {
 		jsonPathElements.push(new JsonPathFilterElement(propertyName, operator, literalValue));
 		return this;
 	}
 
-	private class JsonPathReader extends BasicReader {
-		Stack<JsonPathElement> readJsonPathElements;
+	/**
+	 * Parser for path strings.
+	 */
+	private static class JsonPathReader extends BasicReader {
+		/** The path elements read. */
+		private final Stack<JsonPathElement> readJsonPathElements;
 
+		/**
+		 * Parses a path string.
+		 *
+		 * @param jsonPathString
+		 *            the path string
+		 * @throws Exception
+		 *             if the path string is invalid
+		 */
 		public JsonPathReader(final String jsonPathString) throws Exception {
 			super(new ByteArrayInputStream(jsonPathString.getBytes(StandardCharsets.UTF_8)));
 
@@ -200,13 +298,26 @@ public class JsonPath {
 			}
 		}
 
+		/**
+		 * Returns the path elements read.
+		 *
+		 * @return the path elements, the root element first
+		 */
 		public Stack<JsonPathElement> getReadJsonPathElements() {
 			return readJsonPathElements;
 		}
 	}
 
+	/**
+	 * Parses a single path part, resolving JSON pointer escapes ("~1" for "/", "~0" for "~").
+	 *
+	 * @param value
+	 *            the path part, e.g. "name", "['name']", "[2]", "*" or a filter expression
+	 * @return the path element
+	 */
 	private static JsonPathElement parseJsonPathElement(final String value) {
-		final String valueRaw = value.replace("~0", "~").replace("~1", "/").replace("%25", "%");
+		// RFC 6901: "~1" must be resolved before "~0", otherwise "~01" would wrongly become "/"
+		final String valueRaw = value.replace("~1", "/").replace("~0", "~").replace("%25", "%");
 		if ("*".equals(valueRaw) || "[*]".equals(valueRaw)) {
 			return new JsonPathWildcardElement();
 		} else if (valueRaw.startsWith("[?") && valueRaw.endsWith(")]")) {
@@ -220,6 +331,15 @@ public class JsonPath {
 		}
 	}
 
+	/**
+	 * Parses a filter expression like "[?(@.version=='1.0')]".
+	 *
+	 * @param bracketContent
+	 *            the filter expression including brackets
+	 * @return the filter element
+	 * @throws RuntimeException
+	 *             if the expression is invalid
+	 */
 	private static JsonPathFilterElement parseFilterElement(final String bracketContent) {
 		final Matcher matcher = FILTER_PATTERN.matcher(bracketContent);
 		if (!matcher.matches()) {
@@ -267,14 +387,32 @@ public class JsonPath {
 		}
 	}
 
+	/**
+	 * Returns the elements of this path. The returned stack is the internal one, so changes affect
+	 * this path.
+	 *
+	 * @return the path elements, the root element first
+	 */
 	public Stack<JsonPathElement> getPathParts() {
 		return jsonPathElements;
 	}
 
+	/**
+	 * Returns the last element of this path.
+	 *
+	 * @return the last element, the root element for an empty path
+	 */
 	public JsonPathElement getLastPathPart() {
 		return jsonPathElements.peek();
 	}
 
+	/**
+	 * Checks whether the last element of this path has the given text representation.
+	 *
+	 * @param trailingPart
+	 *            the text, e.g. a property key
+	 * @return true, if the last element matches
+	 */
 	public boolean endsWith(final String trailingPart) {
 		return jsonPathElements != null && jsonPathElements.size() > 0 && jsonPathElements.get(jsonPathElements.size() - 1).toString().equals(trailingPart);
 	}
@@ -284,6 +422,9 @@ public class JsonPath {
 		return getDotFormattedPath();
 	}
 
+	/**
+	 * Two paths are equal, if their dot formatted representations are equal.
+	 */
 	@Override
 	public boolean equals(final Object otherObject) {
 		if (otherObject == null) {
