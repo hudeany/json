@@ -313,16 +313,16 @@ YAML data can also be validated against a JSON Schema, e.g. with `YamlUtilities.
 
 ## Diff and patch
 
-`JsonComparator` and `YamlComparator` list the differences between two data trees. The text form can be stored or reviewed and applied as a patch later. Before changing a value, the patch checks the old value and throws a `PatchConflictException` if it differs.
+`JsonComparator` and `YamlComparator` list the differences between two data trees. Paths use dot notation for keys and brackets for array indexes, e.g. `servers[2].name`. The text form can be stored or reviewed and applied as a patch later. Before changing a value, the patch checks the old value and throws a `PatchConflictException` if it differs.
 
 ```java
-final JsonNode before = JsonReader.readJsonItemString("{\"name\": \"Alice\", \"roles\": [\"dev\"], \"age\": 41}");
-final JsonNode after = JsonReader.readJsonItemString("{\"name\": \"Alice\", \"roles\": [\"dev\", \"admin\"], \"age\": 42}");
+final JsonNode before = JsonReader.readJsonItemString("{\"name\": \"Alice\", \"age\": 41}");
+final JsonNode after = JsonReader.readJsonItemString("{\"name\": \"Alice\", \"age\": 42, \"email\": \"alice@example.com\"}");
 
 final String diffText = JsonComparator.renderAsText(new JsonComparator().compare(before, after));
 System.out.print(diffText);
-// + roles[1]: "admin"
 // ~ age: "41" -> "42"
+// + email: "alice@example.com"
 
 JsonDiffPatcher.applyPatch(before, JsonDiffPatcher.parseDiffText(diffText));
 System.out.println(before.equals(after)); // true
