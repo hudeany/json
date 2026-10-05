@@ -1,16 +1,42 @@
-# Java JsonReader, JsonWriter, YamlReader, YamlWriter and JsonSchema
+# JSON & YAML for Java
 
 [![Maven Central](https://img.shields.io/maven-central/v/de.soderer/json)](https://central.sonatype.com/artifact/de.soderer/json)
 
-Read and write JSON and YAML data from and to files or streams.  
-Validation by JsonSchema (see http://json-schema.org for specifications).  
-Sequential read of JsonArray and YamlSequence items (like SAX parser for XML data).  
+A lightweight Java library to read, write, validate and compare **JSON**, **JSON5** and **YAML** data, without any external dependencies.
 
-## Usage
+## Features
+
+- **JSON and JSON5**: read and write documents, or stream them token by token
+- **YAML**: read and write documents while keeping comments, anchors, quote styles and empty lines
+- **Sequential reading**: process huge arrays and sequences item by item, like a SAX parser for XML
+- **JSON Schema validation**: drafts v4, v6 and v7 (see [json-schema.org](https://json-schema.org)), also applicable to YAML data
+- **JSON path**: navigate data with paths like `$.address.city`
+- **Conversion** between JSON and YAML, with resolution of YAML aliases and merge keys (`<<`)
+- **Diff and patch**: compare two data trees, render the differences as text and apply them as a patch
+
+## Contents
+
+- [Installation](#installation)
+- [JSON](#json)
+  - [Read and navigate](#read-and-navigate)
+  - [Build and write](#build-and-write)
+  - [Streaming write](#streaming-write)
+  - [Sequential read of large arrays](#sequential-read-of-large-arrays)
+  - [JSON5](#json5)
+  - [JSON Schema validation](#json-schema-validation)
+- [YAML](#yaml)
+  - [Read YAML](#read-yaml)
+  - [Write YAML](#write-yaml)
+  - [Sequential read of large sequences](#sequential-read-of-large-sequences)
+- [Convert between YAML and JSON](#convert-between-yaml-and-json)
+- [Diff and patch](#diff-and-patch)
+- [More examples](#more-examples)
+
+## Installation
 
 The library is available on Maven Central. Replace `VERSION` with the version shown in the badge above.
 
-Maven:
+**Maven**
 
 ```xml
 <dependency>
@@ -20,232 +46,293 @@ Maven:
 </dependency>
 ```
 
-Gradle:
+**Gradle**
 
 ```groovy
 implementation "de.soderer:json:VERSION"
 ```
 
-Without a build tool, the jar can be downloaded from the [GitHub releases](https://github.com/hudeany/json/releases).
+**Without a build tool**, download the jar from the [GitHub releases](https://github.com/hudeany/json/releases).
 
-## JsonObject with JsonWriter and JsonReader example
+## JSON
+
+The JSON classes are in the package `de.soderer.json`, JSON path in `de.soderer.json.path` and JSON Schema in `de.soderer.json.schema`.
+
+### Read and navigate
+
+```java
+final String json = "{\"name\": \"Alice\", \"age\": 42, \"tags\": [\"admin\", \"dev\"], \"address\": {\"city\": \"Munich\"}}";
+final JsonObject person = (JsonObject) JsonReader.readJsonItemString(json);
+
+System.out.println(person.getSimpleValue("name"));    // Alice
+System.out.println(person.getSimpleValue("age"));     // 42
+System.out.println(((JsonArray) person.get("tags")).size()); // 2
+
+// Navigate by JSON path ("$" refers to the root node)
+final JsonNode city = person.withRootNode(true).getDataByJsonPath(new JsonPath("$.address.city"));
+System.out.println(((JsonValueString) city).getValue()); // Munich
 ```
-JsonWriter writer = null;
-ByteArrayOutputStream output = null;
-JsonReader reader = null;
-try {
-	output = new ByteArrayOutputStream();
-	writer = new JsonWriter(output, StandardCharsets.UTF_8);
-	writer.openJsonObject();
-	writer.openJsonObjectProperty("abc");
-	writer.addSimpleJsonObjectPropertyValue("1");
-	writer.openJsonObjectProperty("def");
-	writer.addSimpleJsonObjectPropertyValue(2);
-	writer.openJsonObjectProperty("ghi");
-	writer.addSimpleJsonObjectPropertyValue(3.00);
-	writer.closeJsonObject();
-	writer.close();
-	output.close();
 
-	final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+To read from a file or stream, use `new JsonReader(inputStream).read()`.
 
-	reader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
-	final JsonNode nodevalue = reader.read();
-	System.out.println(nodevalue.getJsonDataType() == JsonDataType.OBJECT);
-	// true
-	final JsonObject jsonObject = (JsonObject) nodevalue;
-	for (final Map.Entry<String, Object> jsonObjectProperty : jsonObject) {
-		System.out.println(jsonObjectProperty.getKey() + ": " + jsonObjectProperty.getValue().getClass().getSimpleName() + ": " + jsonObjectProperty.getValue());
-		// abc: String: 1
-		// def: Integer: 2
-		// ghi: Float: 3.0
-	}
-} catch (final Exception e) {
-	e.printStackTrace();
-} finally {
-	Utilities.closeQuietly(output);
-	Utilities.closeQuietly(writer);
-	Utilities.closeQuietly(reader);
+### Build and write
+
+```java
+final JsonObject person = new JsonObject()
+	.add("name", "Alice")
+	.add("age", 42)
+	.add("tags", new JsonArray().add("admin").add("dev"));
+
+// Formatted output with tab indentation
+System.out.println(person);
+
+// Compact output into any OutputStream
+final ByteArrayOutputStream output = new ByteArrayOutputStream();
+try (JsonWriter writer = new JsonWriter(output).withUglify(true)) {
+	writer.add(person);
 }
+System.out.println(output.toString(StandardCharsets.UTF_8));
+// {"name":"Alice","age":42,"tags":["admin","dev"]}
 ```
 
-## JsonArray with JsonWriter and JsonReader example
-```
-JsonWriter writer = null;
-ByteArrayOutputStream output = null;
-JsonReader reader = null;
-try {
-	output = new ByteArrayOutputStream();
-	writer = new JsonWriter(output, StandardCharsets.UTF_8);
+### Streaming write
+
+Large data can be written step by step without building the whole tree in memory. Methods called in a wrong order throw a `JsonWriterStateException`.
+
+```java
+try (JsonWriter writer = new JsonWriter(outputStream)) {
 	writer.openJsonArray();
-	writer.addSimpleJsonArrayValue("1");
-	writer.addSimpleJsonArrayValue(2);
-	writer.addSimpleJsonArrayValue(3.00);
+	for (int i = 1; i <= 2; i++) {
+		writer.openJsonObject();
+		writer.openJsonObjectProperty("id");
+		writer.addSimpleJsonObjectPropertyValue(i);
+		writer.openJsonObjectProperty("name");
+		writer.addSimpleJsonObjectPropertyValue("Item " + i);
+		writer.closeJsonObject();
+	}
 	writer.closeJsonArray();
-	writer.close();
-	output.close();
-
-	final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
-
-	reader = new JsonReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)));
-	final JsonNode nodevalue = reader.read();
-	System.out.println(nodevalue.getJsonDataType() == JsonDataType.ARRAY);
-	// true
-	final JsonArray jsonArray = (JsonArray) nodevalue;
-	for (final Object jsonArrayItem : jsonArray) {
-		System.out.println(jsonArrayItem.getClass().getSimpleName() + ": " + jsonArrayItem);
-		// String: 1
-		// Integer: 2
-		// Float: 3.0
-	}
-} catch (final Exception e) {
-	e.printStackTrace();
-} finally {
-	Utilities.closeQuietly(output);
-	Utilities.closeQuietly(writer);
-	Utilities.closeQuietly(reader);
 }
 ```
 
-## Sequential read of JSON data objects
+Output:
+
+```json
+[
+	{
+		"id": 1,
+		"name": "Item 1"
+	},
+	{
+		"id": 2,
+		"name": "Item 2"
+	}
+]
 ```
-JsonReader jsonReader = null;
+
+### Sequential read of large arrays
+
+Only one item at a time is held in memory, so arrays of any size can be processed.
+
+```java
+final String data = "{\"customers\": [{\"name\": \"Alice\"}, {\"name\": \"Bob\"}]}";
+try (JsonReader reader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)))) {
+	reader.readUpToJsonPath("$.customers");
+	reader.readNextToken(); // consume the opening "["
+
+	JsonNode customer;
+	while ((customer = reader.readNextJsonNode()) != null) {
+		System.out.println(((JsonObject) customer).getSimpleValue("name"));
+	}
+}
+// Alice
+// Bob
+```
+
+### JSON5
+
+`Json5Reader` additionally accepts the [JSON5](https://json5.org) syntax: comments, unquoted keys, single quotes, hexadecimal numbers, trailing commas and more.
+
+```java
+final String json5 = """
+		{
+		  // comments are allowed
+		  unquoted: 'single quotes',
+		  hex: 0x1F,
+		  trailingComma: [1, 2,],
+		}""";
+final JsonObject object = (JsonObject) Json5Reader.readJsonItemString(json5);
+System.out.println(object.getSimpleValue("unquoted") + ", " + object.getSimpleValue("hex"));
+// single quotes, 31
+```
+
+### JSON Schema validation
+
+```java
+final String schema = """
+		{
+		  "type": "object",
+		  "required": ["name"],
+		  "properties": {
+		    "name": {"type": "string"},
+		    "age": {"type": "integer", "minimum": 0}
+		  }
+		}""";
+final JsonSchema jsonSchema = new JsonSchema(new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8)));
+
+// Valid data: returns the data read
+jsonSchema.validate(new ByteArrayInputStream("{\"name\": \"Alice\", \"age\": 42}".getBytes(StandardCharsets.UTF_8)));
+
+// Invalid data: the exception names the rule and the position
 try {
-	final String data = ""
-			+ "{"
-			+ "	\"level1\":"
-			+ "		["
-			+ "			{"
-			+ "				\"property1\": \"value11\","
-			+ "				\"property2\": \"value12\","
-			+ "				\"property3\": \"value13\""
-			+ "			},"
-			+ "			{"
-			+ "				\"property1\": \"value21\","
-			+ "				\"property2\": \"value22\","
-			+ "				\"property3\": \"value23\""
-			+ "			}"
-			+ "		]"
-			+ "}";
-	jsonReader = new JsonReader(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)));
-	jsonReader.readUpToJsonPath("$.level1");
-	jsonReader.readNextToken();
-
-	JsonNode nextJsonNode;
-	int count = 0;
-	while ((nextJsonNode = jsonReader.readNextJsonNode()) != null) {
-		count++;
-		final String property1 = (String) ((JsonObject) nextJsonNode).getSimpleValue("property1");
-		final String property2 = (String) ((JsonObject) nextJsonNode).getSimpleValue("property2");
-		final String property3 = (String) ((JsonObject) nextJsonNode).getSimpleValue("property3");
-		Assertions.assertEquals(("value" + count + "1"), (property1));
-		Assertions.assertEquals(("value" + count + "2"), (property2));
-		Assertions.assertEquals(("value" + count + "3"), (property3));
-	}
-} catch (final Exception e) {
-	e.printStackTrace();
-	Assertions.fail(e.getMessage());
-} finally {
-	Utilities.closeQuietly(jsonReader);
+	jsonSchema.validate(new ByteArrayInputStream("{\"name\": \"Bob\", \"age\": -1}".getBytes(StandardCharsets.UTF_8)));
+} catch (final JsonSchemaDataValidationError e) {
+	System.out.println(e.getMessage());
+	// Invalid JSON data: Minimum number is '0' but value was '-1' at JSON path: $.age
 }
 ```
 
-## YamlMapping with YamlWriter and YamlReader example
+The schema version is taken from `$schema`. Without `$schema`, a strict simple mode is used, in which unknown keywords are errors. To choose a version explicitly, pass a configuration:
+
+```java
+new JsonSchema(schemaInputStream, new JsonSchemaConfiguration().withJsonSchemaVersion(JsonSchemaVersion.draftV7));
 ```
-try {
-	final YamlMapping outputMapping = new YamlMapping()
-		.put("abc", "1")
-		.put("def", 2)
-		.put("ghi", 3.00);
 
-	final ByteArrayOutputStream output = new ByteArrayOutputStream();
-	try (YamlWriter writer = new YamlWriter(output, StandardCharsets.UTF_8)) {
-		writer.writeDocument(new YamlDocument(outputMapping));
-	}
+## YAML
 
-	final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+The YAML classes are in the packages `de.soderer.yaml` and `de.soderer.yaml.data`.
 
-	try (YamlReader reader = new YamlReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)))) {
-		final YamlDocument document = reader.readDocument();
-		System.out.println(document.getRoot() instanceof YamlMapping);
-		// true
-		final YamlMapping yamlMapping = (YamlMapping) document.getRoot();
-		for (final Map.Entry<String, Object> yamlMappingEntry : yamlMapping) {
-			System.out.println(yamlMappingEntry.getKey() + ": " + yamlMappingEntry.getValue().getClass().getSimpleName() + ": " + yamlMappingEntry.getValue());
-			// abc: String: 1
-			// def: Integer: 2
-			// ghi: Float: 3.0
-		}
-	}
-} catch (final Exception e) {
-	e.printStackTrace();
+### Read YAML
+
+Comments are kept when reading, so a document can be changed and written back without losing them.
+
+```java
+final String yaml = """
+		# Server configuration
+		server:
+		  host: example.com
+		  port: 8080
+		  tls: true
+		users:
+		  - alice
+		  - bob
+		""";
+final YamlDocument document = YamlReader.readDocument(yaml);
+final YamlMapping root = (YamlMapping) document.getRoot();
+
+final YamlMapping server = (YamlMapping) root.get("server");
+System.out.println(server.getSimpleValue("host") + ":" + server.getSimpleValue("port")); // example.com:8080
+System.out.println(((YamlSequence) root.get("users")).simpleItems());                  // [alice, bob]
+
+// Writing the document again keeps the comment
+System.out.print(document);
+```
+
+To read from a file or stream, use `new YamlReader(inputStream).readDocument()`. Documents separated by `---` are returned one by one by repeated calls.
+
+### Write YAML
+
+```java
+final YamlMapping config = new YamlMapping()
+	.add("name", "demo")
+	.add("version", 1.5)
+	.add("enabled", true)
+	.add("ports", new YamlSequence().add(80).add(443))
+	.add("limits", new YamlMapping(true).add("cpu", 2).add("memory", "512M")); // flow style
+
+try (YamlWriter writer = new YamlWriter(outputStream)) {
+	writer.writeDocument(new YamlDocument(config));
 }
 ```
 
-## YamlSequence with YamlWriter and YamlReader example
+Output:
+
+```yaml
+name: demo
+version: 1.5
+enabled: true
+ports:
+  - 80
+  - 443
+limits: {cpu: 2, memory: 512M}
 ```
-try {
-	final YamlSequence outputSequence = new YamlSequence()
-		.add("1")
-		.add(2)
-		.add(3.00);
 
-	final ByteArrayOutputStream output = new ByteArrayOutputStream();
-	try (YamlWriter writer = new YamlWriter(output, StandardCharsets.UTF_8)) {
-		writer.writeDocument(new YamlDocument(outputSequence));
+Strings are quoted automatically where needed, e.g. `"true"`, `"0x1F"` or `"a: b"`. The output can be customized by a `YamlFormat`, for example:
+
+```java
+new YamlFormat()
+	.withIndentationSize(4)
+	.withStringValueQuoteType(YamlStringQuoteType.SINGLE)
+	.withOmitComments(true);
+```
+
+### Sequential read of large sequences
+
+```java
+final String yaml = """
+		level1:
+		  items:
+		    - name: first
+		    - name: second
+		""";
+try (YamlReader reader = new YamlReader(new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)))) {
+	reader.readUpToPath("$.level1.items");
+
+	YamlNode item;
+	while ((item = reader.readNextYamlNode()) != null) {
+		System.out.println(((YamlMapping) item).getSimpleValue("name"));
 	}
-
-	final String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
-
-	try (YamlReader reader = new YamlReader(new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8)))) {
-		final YamlDocument document = reader.readDocument();
-		System.out.println(document.getRoot() instanceof YamlSequence);
-		// true
-		final YamlSequence yamlSequence = (YamlSequence) document.getRoot();
-		for (final Object yamlSequenceItem : yamlSequence) {
-			System.out.println(yamlSequenceItem.getClass().getSimpleName() + ": " + yamlSequenceItem);
-			// String: 1
-			// Integer: 2
-			// Float: 3.0
-		}
-	}
-} catch (final Exception e) {
-	e.printStackTrace();
 }
+// first
+// second
 ```
 
-## Sequential read of YAML data objects
-```
-final String testData = ""
-	+ "level1:\n"
-	+ "  items:\n"
-	+ "    - property1: \"property 01\"\n"
-	+ "      property2: \"property 02\"\n"
-	+ "      property3: \"property 03\"\n"
-	+ "    - property1: \"property 11\"\n"
-	+ "      property2: \"property 12\"\n"
-	+ "      property3: \"property 13\"\n";
+## Convert between YAML and JSON
 
-try (InputStream testDataStream = new ByteArrayInputStream(testData.getBytes(StandardCharsets.UTF_8))) {
-	try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
-		yamlReader.readUpToPath("$.level1.items");
-		YamlNode nextYamlNode;
-		int count = 0;
-		while ((nextYamlNode = yamlReader.readNextYamlNode()) != null) {
-			final String property1 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property1")).getValue();
-			final String property2 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property2")).getValue();
-			final String property3 = (String) ((YamlScalar) ((YamlMapping) nextYamlNode).get("property3")).getValue();
-			Assertions.assertTrue(("property " + count + "1").equals(property1));
-			Assertions.assertTrue(("property " + count + "2").equals(property2));
-			Assertions.assertTrue(("property " + count + "3").equals(property3));
-			count++;
-		}
-	}
-} catch (final Exception e) {
-	e.printStackTrace();
-}
+`YamlToJsonConverter` resolves aliases and merge keys (`<<`), so YAML configurations with shared defaults convert as expected:
+
+```java
+final String yaml = """
+		defaults: &defaults
+		  timeout: 30
+		  retries: 3
+		production:
+		  <<: *defaults
+		  retries: 5
+		""";
+final JsonObject json = (JsonObject) YamlToJsonConverter.convert(YamlReader.readDocument(yaml));
+System.out.println(json.get("production"));
+// {
+// 	"timeout": 30,
+// 	"retries": 5
+// }
 ```
 
-For other simple examples see test class "de.soderer.json.JsonTest" and class "de.soderer.yaml.YamlTest":
+The other direction works with `JsonToYamlConverter.convert(jsonNode)`.
 
-https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/json/JsonTest.java
+YAML data can also be validated against a JSON Schema, e.g. with `YamlUtilities.validateJsonSchemaOnYamlDataV7(yamlInputStream, schemaInputStream)`.
+
+## Diff and patch
+
+`JsonComparator` and `YamlComparator` list the differences between two data trees. The text form can be stored or reviewed and applied as a patch later. Before changing a value, the patch checks the old value and throws a `PatchConflictException` if it differs.
+
+```java
+final JsonNode before = JsonReader.readJsonItemString("{\"name\": \"Alice\", \"roles\": [\"dev\"], \"age\": 41}");
+final JsonNode after = JsonReader.readJsonItemString("{\"name\": \"Alice\", \"roles\": [\"dev\", \"admin\"], \"age\": 42}");
+
+final String diffText = JsonComparator.renderAsText(new JsonComparator().compare(before, after));
+System.out.print(diffText);
+// + roles[1]: "admin"
+// ~ age: "41" -> "42"
+
+JsonDiffPatcher.applyPatch(before, JsonDiffPatcher.parseDiffText(diffText));
+System.out.println(before.equals(after)); // true
+```
+
+`YamlComparator` and `YamlDiffPatcher` work the same way for YAML.
+
+## More examples
+
+The unit tests show many more use cases:
+
+- [JsonTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/json/JsonTest.java)
+- [YamlTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/yaml/YamlTest.java)
