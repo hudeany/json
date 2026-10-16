@@ -7,12 +7,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 /**
  * Character based base reader for text formats like CSV, JSON or YAML.
  * <p>
  * Reads characters from an {@link InputStream} using a configurable encoding and skips a leading
- * UTF-8 BOM. It keeps track of the number of characters, lines and bytes read, of the character
+ * byte order mark (BOM) of a UTF encoding. It keeps track of the number of characters, lines and bytes read, of the character
  * position within the current line and of the indentation level of the current line.
  * </p>
  * <p>
@@ -365,9 +366,10 @@ public class BasicReader implements Closeable {
 		int nextCharInt = readRawCharacter();
 		if (!bomChecked && nextCharInt != EOF) {
 			bomChecked = true;
-			if (nextCharInt == BOM_UTF_8_CHAR && StandardCharsets.UTF_8.equals(encoding)) {
+			// The BOM character U+FEFF also remains with UTF-16LE/BE and UTF-32 decoders, only "UTF-16" removes it itself
+			if (nextCharInt == BOM_UTF_8_CHAR && encoding.name().toUpperCase(Locale.ROOT).startsWith("UTF-")) {
 				nextCharInt = readRawCharacter();
-			} else if (nextCharInt == BOM_UTF_8_CHAR_ISO_8859 && encoding.name().toUpperCase().startsWith("ISO-8859-")) {
+			} else if (nextCharInt == BOM_UTF_8_CHAR_ISO_8859 && encoding.name().toUpperCase(Locale.ROOT).startsWith("ISO-8859-")) {
 				throw new IOException("Data encoding \"" + encoding + "\" is invalid: UTF-8 BOM detected");
 			}
 		}

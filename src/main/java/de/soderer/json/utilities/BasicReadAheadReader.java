@@ -9,12 +9,13 @@ import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Locale;
 
 /**
  * Character based base reader with a read ahead buffer for text formats.
  * <p>
  * Reads characters from an {@link InputStream} using a configurable encoding and skips a leading
- * UTF-8 BOM. The next characters can be inspected without consuming them via the peek methods, up
+ * byte order mark (BOM) of a UTF encoding. The next characters can be inspected without consuming them via the peek methods, up
  * to the configured number of read ahead characters. The current line and column are tracked for
  * error messages; CR, LF and CRLF each count as one line break.
  * </p>
@@ -200,7 +201,7 @@ public class BasicReadAheadReader implements Closeable {
 	}
 
 	/**
-	 * Initially fills the read ahead buffer and skips a UTF-8 BOM at data start.
+	 * Initially fills the read ahead buffer and skips a BOM of a UTF encoding at data start.
 	 *
 	 * @throws IOException
 	 *             if reading fails or a UTF-8 BOM is detected while reading with an ISO-8859
@@ -209,12 +210,13 @@ public class BasicReadAheadReader implements Closeable {
 	private void initializeBuffers() throws IOException {
 		int currentCharInt = inputReader.read();
 		if (currentCharInt != -1) {
-			if (currentCharInt == BOM_UTF_8_CHAR && StandardCharsets.UTF_8.equals(encoding)) {
+			// The BOM character U+FEFF also remains with UTF-16LE/BE and UTF-32 decoders, only "UTF-16" removes it itself
+			if (currentCharInt == BOM_UTF_8_CHAR && encoding.name().toUpperCase(Locale.ROOT).startsWith("UTF-")) {
 				currentCharInt = inputReader.read();
 				if (currentCharInt != -1) {
 					nextChars[0] = (char) currentCharInt;
 				}
-			} else if (currentCharInt == BOM_UTF_8_CHAR_ISO_8859 && encoding.name().toUpperCase().startsWith("ISO-8859-")) {
+			} else if (currentCharInt == BOM_UTF_8_CHAR_ISO_8859 && encoding.name().toUpperCase(Locale.ROOT).startsWith("ISO-8859-")) {
 				throw new IOException("Data encoding \"" + encoding + "\" is invalid: UTF-8 BOM detected");
 			} else {
 				nextChars[0] = (char) currentCharInt;
@@ -232,8 +234,13 @@ public class BasicReadAheadReader implements Closeable {
 	 * @return the next character, or null if the end of data has been reached
 	 * @throws IOException
 	 *             if reading further characters into the read ahead buffer fails
+	 * @throws IllegalStateException
+	 *             if this reader is already closed
 	 */
 	protected Character readChar() throws IOException {
+		if (inputReader == null) {
+			throw new IllegalStateException("Reader is already closed");
+		}
 		final Character returnChar = nextChars[0];
 		readNextChars(0);
 
