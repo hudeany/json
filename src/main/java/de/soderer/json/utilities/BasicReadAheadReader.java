@@ -5,7 +5,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.PushbackReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -15,21 +15,23 @@ import java.util.Locale;
  * Character based base reader with a read ahead buffer for text formats.
  * <p>
  * Reads characters from an {@link InputStream} using a configurable encoding and skips a leading
- * byte order mark (BOM) of a UTF encoding. The next characters can be inspected without consuming them via the peek methods, up
- * to the configured number of read ahead characters. The current line and column are tracked for
- * error messages; CR, LF and CRLF each count as one line break.
+ * byte order mark (BOM) of a UTF encoding. The next characters can be inspected without consuming
+ * them via the peek methods, up to the configured number of read ahead characters. The current
+ * line and column are tracked for error messages; CR, LF and CRLF each count as one line break.
  * </p>
  * <p>
- * Optionally line breaks are normalized to LF (see {@link #setNormalizeLinebreaks(boolean)}). The
- * normalization applies to the characters in the read ahead buffer, so switching it off does not
- * restore line breaks already normalized in the buffer.
+ * Optionally line breaks are normalized to LF (see {@link #setNormalizeLinebreaks(boolean)}).
+ * While normalization is switched on, CR, LF and CRLF are all delivered as a single LF, and a CR in
+ * the characters given to the matching methods also matches this LF. Switching normalization off
+ * restores the original line breaks of the characters in the read ahead buffer, so the data
+ * delivered afterwards is not affected by an earlier normalization.
  * </p>
  */
 public class BasicReadAheadReader implements Closeable {
-	/** UTF-8 BOM (Byte Order Mark) character for readers. */
+	/** BOM (Byte Order Mark) character U+FEFF, as decoded by readers for any UTF encoding. */
 	public static final char BOM_UTF_8_CHAR = (char) 65279;
 
-	/** UTF-8 BOM (Byte Order Mark) first character for wrong encoding ISO-8859. */
+	/** First character of a UTF-8 BOM (bytes EF BB BF) misread with a single byte Latin encoding like ISO-8859-1. */
 	public static final char BOM_UTF_8_CHAR_ISO_8859 = (char) 239;
 
 	/** Default input encoding. */
@@ -38,23 +40,41 @@ public class BasicReadAheadReader implements Closeable {
 	/** Default number of read ahead characters. */
 	private static final int DEFAULT_READ_AHEAD_CHARACTERS = 3;
 
+	/** Marker: buffer entry is unchanged input data. */
+	private static final byte ORIGINAL_UNCHANGED = 0;
+
+	/** Marker: buffer entry is an LF that was a CR in the input data. */
+	private static final byte ORIGINAL_CR = 1;
+
+	/** Marker: buffer entry is an LF that was a CRLF in the input data. */
+	private static final byte ORIGINAL_CRLF = 2;
+
 	/** Input encoding. */
 	private final Charset encoding;
 
 	/** Normalize linebreaks (\r\n, \n, \r) to unix style (\n) */
 	private boolean normalizeLinebreaks = false;
 
-	/** Input reader, null after this reader was closed. */
-	private Reader inputReader;
+	/**
+	 * Input reader, null after this reader was closed. The pushback buffer takes back characters when
+	 * normalized line breaks are restored to their original form.
+	 */
+	private PushbackReader inputReader;
 
-	/** Number of characters read so far. */
+	/** Number of characters delivered so far. */
 	private long charactersRead = 0;
 
 	/** Stream wrapper counting the bytes read from the input stream. */
 	private CountingInputStream countingInputStream;
 
+	/** Number of read ahead characters accessible via the peek methods. */
+	private final int readAheadCharacters;
+
 	/** Read ahead buffer, index 0 is the next character to be read, null marks the end of data. */
 	private final Character[] nextChars;
+
+	/** Original line break of each read ahead buffer entry, see ORIGINAL_* markers. */
+	private final byte[] originalLinebreaks;
 
 	/** Column of the next character, 1 based. */
 	private long currentColumn = 1;
@@ -107,7 +127,7 @@ public class BasicReadAheadReader implements Closeable {
 	}
 
 	/**
-	 * Creates a new reader.
+	 * Creates a new reader. If reading the first characters fails, the input stream is closed.
 	 *
 	 * @param inputStream
 	 *            the stream to read from, must not be null
@@ -122,20 +142,28 @@ public class BasicReadAheadReader implements Closeable {
 	public BasicReadAheadReader(final InputStream inputStream, final Charset encodingCharset, final int numberOfReadAheadCharacters) throws Exception {
 		if (numberOfReadAheadCharacters < 1) {
 			throw new Exception("Invalid size of read ahead buffer. Minimum 1 was: " + numberOfReadAheadCharacters);
+		} else if (inputStream == null) {
+			throw new Exception("Invalid empty inputStream");
 		}
 
-		if (inputStream == null) {
-			throw new Exception("Invalid empty inputStream");
-		} else {
-			countingInputStream = new CountingInputStream(inputStream);
-			encoding = encodingCharset == null ? DEFAULT_ENCODING : encodingCharset;
-			inputReader = new BufferedReader(new InputStreamReader(countingInputStream, encoding));
-		}
+		readAheadCharacters = numberOfReadAheadCharacters;
 
 		// At least 2 characters are needed internally to detect CRLF and doubled quote characters
 		nextChars = new Character[Math.max(2, numberOfReadAheadCharacters)];
+		originalLinebreaks = new byte[nextChars.length];
 
-		initializeBuffers();
+		encoding = encodingCharset == null ? DEFAULT_ENCODING : encodingCharset;
+		countingInputStream = new CountingInputStream(inputStream);
+		// Restoring line breaks pushes back at most one LF per buffer entry, the BOM check pushes back 2 characters
+		inputReader = new PushbackReader(new BufferedReader(new InputStreamReader(countingInputStream, encoding)), nextChars.length);
+
+		try {
+			initializeBuffers();
+		} catch (final IOException e) {
+			// The caller gets no reference to close this reader, so release the resources here
+			releaseResources();
+			throw e;
+		}
 	}
 
 	/**
@@ -148,8 +176,9 @@ public class BasicReadAheadReader implements Closeable {
 	}
 
 	/**
-	 * Sets whether line breaks (CRLF, LF, CR) are normalized to unix style (LF). Switching it on also
-	 * normalizes the characters already in the read ahead buffer.
+	 * Sets whether line breaks (CRLF, LF, CR) are normalized to unix style (LF). Switching it on
+	 * normalizes the characters already in the read ahead buffer, switching it off restores their
+	 * original line breaks.
 	 *
 	 * @param normalizeLinebreaks
 	 *            true to normalize line breaks
@@ -158,7 +187,11 @@ public class BasicReadAheadReader implements Closeable {
 	 */
 	protected void setNormalizeLinebreaks(final boolean normalizeLinebreaks) throws IOException {
 		this.normalizeLinebreaks = normalizeLinebreaks;
-		normalizeLinebreaks();
+		if (normalizeLinebreaks) {
+			normalizeLinebreaks();
+		} else {
+			restoreLinebreaks();
+		}
 	}
 
 	/**
@@ -168,17 +201,62 @@ public class BasicReadAheadReader implements Closeable {
 	 *             if reading further characters into the read ahead buffer fails
 	 */
 	private void normalizeLinebreaks() throws IOException {
-		if (normalizeLinebreaks) {
+		if (normalizeLinebreaks && inputReader != null) {
 			// A CR at the last buffer position is normalized later, when its successor is known
 			for (int i = 0; i < nextChars.length - 1; i++) {
 				if (nextChars[i] != null && nextChars[i] == '\r') {
 					nextChars[i] = '\n';
 					if (nextChars[i + 1] != null && nextChars[i + 1] == '\n') {
+						originalLinebreaks[i] = ORIGINAL_CRLF;
 						// Remove the LF of a CRLF
 						readNextChars(i + 1);
+					} else {
+						originalLinebreaks[i] = ORIGINAL_CR;
 					}
 				}
 			}
+		}
+	}
+
+	/**
+	 * Restores the original line breaks of normalized entries in the read ahead buffer. Characters
+	 * not fitting into the buffer anymore are pushed back into the input reader.
+	 *
+	 * @throws IOException
+	 *             if pushing back characters fails
+	 */
+	private void restoreLinebreaks() throws IOException {
+		boolean anyNormalized = false;
+		for (final byte originalLinebreak : originalLinebreaks) {
+			if (originalLinebreak != ORIGINAL_UNCHANGED) {
+				anyNormalized = true;
+				break;
+			}
+		}
+		if (!anyNormalized || inputReader == null) {
+			return;
+		}
+
+		final StringBuilder originalData = new StringBuilder(nextChars.length * 2);
+		for (int i = 0; i < nextChars.length && nextChars[i] != null; i++) {
+			if (originalLinebreaks[i] == ORIGINAL_CR) {
+				originalData.append('\r');
+			} else if (originalLinebreaks[i] == ORIGINAL_CRLF) {
+				originalData.append("\r\n");
+			} else {
+				originalData.append(nextChars[i].charValue());
+			}
+		}
+
+		Arrays.fill(nextChars, null);
+		Arrays.fill(originalLinebreaks, ORIGINAL_UNCHANGED);
+		final int bufferedCount = Math.min(originalData.length(), nextChars.length);
+		for (int i = 0; i < bufferedCount; i++) {
+			nextChars[i] = originalData.charAt(i);
+		}
+		if (originalData.length() > bufferedCount) {
+			// Characters pushed back are read again before any further data of the input stream
+			inputReader.unread(originalData.substring(bufferedCount).toCharArray());
 		}
 	}
 
@@ -204,7 +282,7 @@ public class BasicReadAheadReader implements Closeable {
 	 * Initially fills the read ahead buffer and skips a BOM of a UTF encoding at data start.
 	 *
 	 * @throws IOException
-	 *             if reading fails or a UTF-8 BOM is detected while reading with an ISO-8859
+	 *             if reading fails or a UTF-8 BOM is detected while reading with a single byte Latin
 	 *             encoding
 	 */
 	private void initializeBuffers() throws IOException {
@@ -216,8 +294,21 @@ public class BasicReadAheadReader implements Closeable {
 				if (currentCharInt != -1) {
 					nextChars[0] = (char) currentCharInt;
 				}
-			} else if (currentCharInt == BOM_UTF_8_CHAR_ISO_8859 && encoding.name().toUpperCase(Locale.ROOT).startsWith("ISO-8859-")) {
-				throw new IOException("Data encoding \"" + encoding + "\" is invalid: UTF-8 BOM detected");
+			} else if (currentCharInt == BOM_UTF_8_CHAR_ISO_8859 && isSingleByteLatinEncoding(encoding)) {
+				// Only the complete sequence EF BB BF is a misread UTF-8 BOM, a single 'ï' is valid text
+				final int secondCharInt = inputReader.read();
+				final int thirdCharInt = inputReader.read();
+				if (secondCharInt == 0xBB && thirdCharInt == 0xBF) {
+					throw new IOException("Data encoding \"" + encoding + "\" is invalid: UTF-8 BOM detected");
+				}
+				// Push back in reverse order, so the characters are read again in their original order
+				if (thirdCharInt != -1) {
+					inputReader.unread(thirdCharInt);
+				}
+				if (secondCharInt != -1) {
+					inputReader.unread(secondCharInt);
+				}
+				nextChars[0] = (char) currentCharInt;
 			} else {
 				nextChars[0] = (char) currentCharInt;
 			}
@@ -226,6 +317,19 @@ public class BasicReadAheadReader implements Closeable {
 		for (int i = 1; i < nextChars.length; i++) {
 			readNextChars(1);
 		}
+	}
+
+	/**
+	 * Checks whether the encoding is a single byte Latin encoding, which shows a UTF-8 BOM as the
+	 * characters "ï»¿".
+	 *
+	 * @param charset
+	 *            the encoding to check
+	 * @return true, if the encoding is ISO-8859-* or windows-1252
+	 */
+	private static boolean isSingleByteLatinEncoding(final Charset charset) {
+		final String name = charset.name().toUpperCase(Locale.ROOT);
+		return name.startsWith("ISO-8859-") || "WINDOWS-1252".equals(name);
 	}
 
 	/**
@@ -242,10 +346,12 @@ public class BasicReadAheadReader implements Closeable {
 			throw new IllegalStateException("Reader is already closed");
 		}
 		final Character returnChar = nextChars[0];
+		// A normalized LF is a complete line break of its own, even if a raw CR was read before
+		final boolean isNormalizedLinebreak = originalLinebreaks[0] != ORIGINAL_UNCHANGED;
 		readNextChars(0);
 
 		if (returnChar != null) {
-			if (returnChar == '\n' && lastReadChar != null && lastReadChar == '\r') {
+			if (returnChar == '\n' && !isNormalizedLinebreak && lastReadChar != null && lastReadChar == '\r') {
 				// LF of a CRLF, the line break was already counted with the CR
 			} else if (returnChar == '\r' || returnChar == '\n') {
 				currentColumn = 1;
@@ -272,6 +378,7 @@ public class BasicReadAheadReader implements Closeable {
 	private void readNextChars(final int startIndex) throws IOException {
 		for (int i = startIndex; i < nextChars.length - 1; i++) {
 			nextChars[i] = nextChars[i + 1];
+			originalLinebreaks[i] = originalLinebreaks[i + 1];
 		}
 
 		final int newNextCharInt = inputReader.read();
@@ -280,8 +387,104 @@ public class BasicReadAheadReader implements Closeable {
 		} else {
 			nextChars[nextChars.length - 1] = (char) newNextCharInt;
 		}
+		originalLinebreaks[nextChars.length - 1] = ORIGINAL_UNCHANGED;
 
 		normalizeLinebreaks();
+	}
+
+	/**
+	 * Returns a buffer entry as it will be delivered. A CR at the last buffer position is not yet
+	 * normalized, because its successor is unknown, but it will be delivered as LF.
+	 *
+	 * @param index
+	 *            the buffer index
+	 * @return the character, or null at the end of data
+	 */
+	private Character getBufferChar(final int index) {
+		final Character character = nextChars[index];
+		if (normalizeLinebreaks && character != null && character == '\r') {
+			return '\n';
+		} else {
+			return character;
+		}
+	}
+
+	/**
+	 * Checks whether a character matches a given character. While line breaks are normalized, a
+	 * given CR also matches the normalized LF.
+	 *
+	 * @param character
+	 *            the character as delivered, may be null
+	 * @param otherChar
+	 *            the character to compare with
+	 * @return true, if the characters match
+	 */
+	private boolean charMatches(final Character character, final char otherChar) {
+		if (character == null) {
+			return false;
+		} else if (character == otherChar) {
+			return true;
+		} else {
+			return normalizeLinebreaks && otherChar == '\r' && character == '\n';
+		}
+	}
+
+	/**
+	 * Checks whether a character matches any of the given characters.
+	 *
+	 * @param character
+	 *            the character as delivered, may be null
+	 * @param charSequence
+	 *            the characters to compare with, may be null
+	 * @return true, if any of the given characters matches
+	 */
+	private boolean charMatchesAny(final Character character, final CharSequence charSequence) {
+		if (character == null || charSequence == null) {
+			return false;
+		} else {
+			for (int i = 0; i < charSequence.length(); i++) {
+				if (charMatches(character, charSequence.charAt(i))) {
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+
+	/**
+	 * Checks whether a character matches any of the given characters.
+	 *
+	 * @param character
+	 *            the character as delivered, may be null
+	 * @param characterArray
+	 *            the characters to compare with, may be null
+	 * @return true, if any of the given characters matches
+	 */
+	private boolean charMatchesAny(final Character character, final char[] characterArray) {
+		if (character == null || characterArray == null) {
+			return false;
+		} else {
+			for (final char otherChar : characterArray) {
+				if (charMatches(character, otherChar)) {
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+
+	/**
+	 * Checks an index of a character ahead against the configured number of read ahead characters.
+	 *
+	 * @param indexOfNextChar
+	 *            the index to check
+	 * @throws IllegalArgumentException
+	 *             if the index is negative or not less than the number of read ahead characters
+	 */
+	private void checkReadAheadIndex(final int indexOfNextChar) {
+		if (indexOfNextChar < 0 || indexOfNextChar >= readAheadCharacters) {
+			throw new IllegalArgumentException("Invalid read ahead index " + indexOfNextChar + ", allowed range is 0 to " + (readAheadCharacters - 1));
+		}
 	}
 
 	/**
@@ -290,22 +493,19 @@ public class BasicReadAheadReader implements Closeable {
 	 * @return the next character, or null at the end of data
 	 */
 	protected Character peekChar() {
-		return nextChars[0];
+		return getBufferChar(0);
 	}
 
 	/**
-	 * Checks whether the next character is the given character.
+	 * Checks whether the next character is the given character. If line breaks are normalized, CR
+	 * also matches LF.
 	 *
 	 * @param otherChar
 	 *            the character to compare with
 	 * @return true, if the next character equals the given character
 	 */
 	protected boolean peekCharMatch(final char otherChar) {
-		if (nextChars[0] == null) {
-			return false;
-		} else {
-			return nextChars[0] == otherChar;
-		}
+		return charMatches(getBufferChar(0), otherChar);
 	}
 
 	/**
@@ -321,18 +521,15 @@ public class BasicReadAheadReader implements Closeable {
 	}
 
 	/**
-	 * Checks whether the next character is one of the given characters.
+	 * Checks whether the next character is one of the given characters. If line breaks are
+	 * normalized, CR also matches LF.
 	 *
 	 * @param charSequence
 	 *            the characters to compare with
 	 * @return true, if the next character is contained in the given characters
 	 */
 	protected boolean peekCharMatchAny(final String charSequence) {
-		if (nextChars[0] == null || charSequence == null) {
-			return false;
-		} else {
-			return charSequence.indexOf(nextChars[0]) >= 0;
-		}
+		return charMatchesAny(getBufferChar(0), charSequence);
 	}
 
 	/**
@@ -348,46 +545,51 @@ public class BasicReadAheadReader implements Closeable {
 	}
 
 	/**
-	 * Returns a character ahead without consuming it.
+	 * Returns a character ahead without consuming it. If line breaks are normalized, a line break is
+	 * returned as LF.
 	 *
 	 * @param indexOfNextChar
 	 *            the index of the character ahead, 0 for the next character, less than the number
 	 *            of read ahead characters
 	 * @return the character, or null if the end of data is reached before
+	 * @throws IllegalArgumentException
+	 *             if the index is out of the read ahead range
 	 */
 	protected Character peekNextChar(final int indexOfNextChar) {
-		return nextChars[indexOfNextChar];
+		checkReadAheadIndex(indexOfNextChar);
+		return getBufferChar(indexOfNextChar);
 	}
 
 	/**
-	 * Checks whether a character ahead is the given character. If line breaks are normalized, LF
-	 * also matches CR.
+	 * Checks whether a character ahead is the given character. If line breaks are normalized, CR
+	 * also matches LF.
 	 *
 	 * @param indexOfNextChar
-	 *            the index of the character ahead, 0 for the next character
+	 *            the index of the character ahead, 0 for the next character, less than the number
+	 *            of read ahead characters
 	 * @param otherChar
 	 *            the character to compare with
 	 * @return true, if the character ahead equals the given character
+	 * @throws IllegalArgumentException
+	 *             if the index is out of the read ahead range
 	 */
 	protected boolean peekNextCharMatch(final int indexOfNextChar, final char otherChar) {
-		if (nextChars[indexOfNextChar] == null) {
-			return false;
-		} else if (otherChar == '\n') {
-			return nextChars[indexOfNextChar] == '\n' || (normalizeLinebreaks && nextChars[indexOfNextChar] == '\r');
-		} else {
-			return nextChars[indexOfNextChar] == otherChar;
-		}
+		checkReadAheadIndex(indexOfNextChar);
+		return charMatches(getBufferChar(indexOfNextChar), otherChar);
 	}
 
 	/**
 	 * Checks whether a character ahead is not the given character.
 	 *
 	 * @param indexOfNextChar
-	 *            the index of the character ahead, 0 for the next character
+	 *            the index of the character ahead, 0 for the next character, less than the number
+	 *            of read ahead characters
 	 * @param otherChar
 	 *            the character to compare with
 	 * @return true, if the character ahead differs from the given character or the end of data is
 	 *         reached before
+	 * @throws IllegalArgumentException
+	 *             if the index is out of the read ahead range
 	 */
 	protected boolean peekNextCharNotMatch(final int indexOfNextChar, final char otherChar) {
 		return !peekNextCharMatch(indexOfNextChar, otherChar);
@@ -395,33 +597,34 @@ public class BasicReadAheadReader implements Closeable {
 
 	/**
 	 * Checks whether a character ahead is one of the given characters. If line breaks are
-	 * normalized, LF also matches CR.
+	 * normalized, CR also matches LF.
 	 *
 	 * @param indexOfNextChar
-	 *            the index of the character ahead, 0 for the next character
+	 *            the index of the character ahead, 0 for the next character, less than the number
+	 *            of read ahead characters
 	 * @param charSequence
 	 *            the characters to compare with
 	 * @return true, if the character ahead is contained in the given characters
+	 * @throws IllegalArgumentException
+	 *             if the index is out of the read ahead range
 	 */
 	protected boolean peekNextCharMatchAny(final int indexOfNextChar, final String charSequence) {
-		if (nextChars[indexOfNextChar] == null || charSequence == null) {
-			return false;
-		} else if (normalizeLinebreaks) {
-			return charSequence.replace("\n",  "\n\r").indexOf(nextChars[indexOfNextChar]) >= 0;
-		} else {
-			return charSequence.indexOf(nextChars[indexOfNextChar]) >= 0;
-		}
+		checkReadAheadIndex(indexOfNextChar);
+		return charMatchesAny(getBufferChar(indexOfNextChar), charSequence);
 	}
 
 	/**
 	 * Checks whether a character ahead is none of the given characters.
 	 *
 	 * @param indexOfNextChar
-	 *            the index of the character ahead, 0 for the next character
+	 *            the index of the character ahead, 0 for the next character, less than the number
+	 *            of read ahead characters
 	 * @param charSequence
 	 *            the characters to compare with
 	 * @return true, if the character ahead is not contained in the given characters or the end of
 	 *         data is reached before
+	 * @throws IllegalArgumentException
+	 *             if the index is out of the read ahead range
 	 */
 	protected boolean peekNextCharNotMatchAny(final int indexOfNextChar, final String charSequence) {
 		return !peekNextCharMatchAny(indexOfNextChar, charSequence);
@@ -487,7 +690,7 @@ public class BasicReadAheadReader implements Closeable {
 			}
 			if (isNotEOF()) {
 				final char lineBreak = readChar();
-				if (lineBreak == '\r' && peekCharMatch('\n')) {
+				if (lineBreak == '\r' && nextChars[0] != null && nextChars[0] == '\n') {
 					readChar();
 				}
 			}
@@ -496,7 +699,8 @@ public class BasicReadAheadReader implements Closeable {
 	}
 
 	/**
-	 * Reads text up to the next occurrence of one of the given limit characters.
+	 * Reads text up to the next occurrence of one of the given limit characters. If line breaks are
+	 * normalized, a CR as limit character also matches the normalized LF.
 	 * <p>
 	 * Escape sequences introduced by the escape character are resolved: the escape character itself,
 	 * double and single quote, slash, a (bell), b, e (escape), f, n, r, t, v (vertical tab), escaped
@@ -514,7 +718,8 @@ public class BasicReadAheadReader implements Closeable {
 	 * @return the text read, or the text up to the end of data if no limit character was found
 	 * @throws Exception
 	 *             if the limit characters are not distinct, the escape character is one of the
-	 *             limit characters, an invalid escape sequence is found, or reading fails
+	 *             limit characters, an invalid or incomplete escape sequence is found, or reading
+	 *             fails
 	 */
 	protected String readUpToNext(final boolean includeEndChar, final Character escapeCharacter, final char... endChars) throws Exception {
 		if (anyCharsAreEqual(endChars)) {
@@ -526,11 +731,14 @@ public class BasicReadAheadReader implements Closeable {
 		final StringBuilder returnValue = new StringBuilder();
 		while (isNotEOF()) {
 			if (escapeCharacter != null && escapeCharacter.equals(peekChar())) {
+				final long escapeLine = getCurrentLine();
+				final long escapeColumn = getCurrentColumn();
 				readChar();
-				if (isNotEOF()) {
-					appendUnescapedCharacter(returnValue, escapeCharacter);
+				if (isEOF()) {
+					throw new Exception("Incomplete escape sequence at end of data at character index " + escapeColumn + " in line " + escapeLine);
 				}
-			} else if (contains(endChars, peekChar())) {
+				appendUnescapedCharacter(returnValue, escapeCharacter);
+			} else if (charMatchesAny(peekChar(), endChars)) {
 				if (includeEndChar) {
 					returnValue.append(readChar());
 				}
@@ -564,16 +772,17 @@ public class BasicReadAheadReader implements Closeable {
 			readChar();
 			returnValue.append((char) readHexDigits(2));
 		} else if (escapedChar == 'u') {
-			// Java encoded character
+			// Java encoded UTF-16 code unit, single surrogates are allowed to build surrogate pairs like 😀
 			readChar();
 			returnValue.append((char) readHexDigits(4));
 		} else if (escapedChar == 'U') {
-			// Unicode encoded character, may be outside the basic multilingual plane
+			// Unicode code point, may be outside the basic multilingual plane
 			readChar();
+			final long lineBefore = getCurrentLine();
 			final long columnBefore = getCurrentColumn();
 			final int codePoint = readHexDigits(8);
-			if (!Character.isValidCodePoint(codePoint)) {
-				throw new Exception("Invalid unicode sequence at character index " + columnBefore + " in line " + getCurrentLine() + " ('" + Integer.toHexString(codePoint) + "')");
+			if (!Character.isValidCodePoint(codePoint) || (codePoint >= Character.MIN_SURROGATE && codePoint <= Character.MAX_SURROGATE)) {
+				throw new Exception("Invalid unicode sequence at character index " + columnBefore + " in line " + lineBefore + " ('" + Integer.toHexString(codePoint) + "')");
 			}
 			returnValue.appendCodePoint(codePoint);
 		} else {
@@ -619,7 +828,7 @@ public class BasicReadAheadReader implements Closeable {
 				return ' ';
 			case '_':
 				// NBSP/non-breaking space
-				return '\u00A0';
+				return ' ';
 			case '0':
 				return '\0';
 			case 'N':
@@ -627,10 +836,10 @@ public class BasicReadAheadReader implements Closeable {
 				return '\u0085';
 			case 'L':
 				// Unicode LINE SEPARATOR (LS or LSEP)
-				return '\u2028';
+				return ' ';
 			case 'P':
 				// Unicode PARAGRAPH SEPARATOR (PS or PSEP)
-				return '\u2029';
+				return ' ';
 			default:
 				return null;
 		}
@@ -646,6 +855,9 @@ public class BasicReadAheadReader implements Closeable {
 	 *             if the data ends before or a character is no ASCII hexadecimal digit
 	 */
 	private int readHexDigits(final int digitCount) throws Exception {
+		// Position of the first digit, the column of later characters is reset by line breaks
+		final long startLine = getCurrentLine();
+		final long startColumn = getCurrentColumn();
 		final StringBuilder hexCode = new StringBuilder();
 		int value = 0;
 		for (int i = 0; i < digitCount && isNotEOF(); i++) {
@@ -653,12 +865,12 @@ public class BasicReadAheadReader implements Closeable {
 			hexCode.append(hexDigit);
 			final int digitValue = hexDigitValue(hexDigit);
 			if (digitValue == -1) {
-				throw new Exception("Invalid unicode sequence at character index " + (getCurrentColumn() - hexCode.length()) + " in line " + getCurrentLine() + " ('" + hexCode + "')");
+				throw new Exception("Invalid unicode sequence at character index " + startColumn + " in line " + startLine + " ('" + hexCode + "')");
 			}
 			value = (value << 4) | digitValue;
 		}
 		if (hexCode.length() != digitCount) {
-			throw new Exception("Invalid unicode sequence at character index " + (getCurrentColumn() - hexCode.length()) + " in line " + getCurrentLine() + " ('" + hexCode + "')");
+			throw new Exception("Invalid unicode sequence at character index " + startColumn + " in line " + startLine + " ('" + hexCode + "')");
 		}
 		return value;
 	}
@@ -685,7 +897,8 @@ public class BasicReadAheadReader implements Closeable {
 
 	/**
 	 * Reads a quoted text. The next character is the opening quote character, which is also used
-	 * as closing quote character. Line breaks are not normalized within the quoted text.
+	 * as closing quote character. Line breaks within the quoted text are delivered as in the input
+	 * data, regardless of the normalization setting.
 	 *
 	 * @param escapeCharacter
 	 *            the escape character, or null if no escaping is used. If it equals the quote
@@ -704,52 +917,90 @@ public class BasicReadAheadReader implements Closeable {
 		}
 
 		final boolean previousSettingNormalizeLinebreaks = normalizeLinebreaks;
+		final String returnValue;
 		try {
-			normalizeLinebreaks = false;
-			final char quoteChar = readChar();
-			if (escapeCharacter != null && escapeCharacter == quoteChar) {
-				final StringBuilder returnValue = new StringBuilder();
-				while (isNotEOF()) {
-					if (peekCharNotMatch(quoteChar)) {
-						returnValue.append(readChar());
-					} else if (peekNextCharMatch(1, quoteChar)) {
-						// Doubled quote character represents a single one
-						returnValue.append(readChar());
-						readChar();
-					} else {
-						// Closing quote character
-						readChar();
-						return returnValue.toString();
-					}
-				}
-				throw new Exception("Missing closing quote character for quoted string beginning at line " + lineStart + " column " + columnStart);
-			} else {
-				final String returnValue = readUpToNext(false, escapeCharacter, quoteChar);
-				if (isEOF()) {
-					throw new Exception("Missing closing quote character for quoted string beginning at line " + lineStart + " column " + columnStart);
-				}
-				// Closing quote character
-				readChar();
-				return returnValue;
+			// Restores the original line breaks already normalized in the read ahead buffer
+			setNormalizeLinebreaks(false);
+			returnValue = readQuotedTextContent(escapeCharacter, lineStart, columnStart);
+		} catch (final Exception e) {
+			// Restore the setting without masking the original exception
+			normalizeLinebreaks = previousSettingNormalizeLinebreaks;
+			try {
+				normalizeLinebreaks();
+			} catch (final IOException suppressed) {
+				e.addSuppressed(suppressed);
 			}
-		} finally {
-			setNormalizeLinebreaks(previousSettingNormalizeLinebreaks);
+			throw e;
+		}
+		setNormalizeLinebreaks(previousSettingNormalizeLinebreaks);
+		return returnValue;
+	}
+
+	/**
+	 * Reads the opening quote character, the quoted text and the closing quote character.
+	 *
+	 * @param escapeCharacter
+	 *            the escape character, or null if no escaping is used
+	 * @param lineStart
+	 *            the line of the opening quote, for error messages
+	 * @param columnStart
+	 *            the column of the opening quote, for error messages
+	 * @return the unquoted text with resolved escape sequences
+	 * @throws Exception
+	 *             if the data ends before the closing quote, an invalid escape sequence is found,
+	 *             or reading fails
+	 */
+	private String readQuotedTextContent(final Character escapeCharacter, final long lineStart, final long columnStart) throws Exception {
+		final char quoteChar = readChar();
+		if (escapeCharacter != null && escapeCharacter == quoteChar) {
+			final StringBuilder returnValue = new StringBuilder();
+			while (isNotEOF()) {
+				if (!charMatches(getBufferChar(0), quoteChar)) {
+					returnValue.append(readChar());
+				} else if (charMatches(getBufferChar(1), quoteChar)) {
+					// Doubled quote character represents a single one
+					returnValue.append(readChar());
+					readChar();
+				} else {
+					// Closing quote character
+					readChar();
+					return returnValue.toString();
+				}
+			}
+			throw new Exception("Missing closing quote character for quoted string beginning at line " + lineStart + " column " + columnStart);
+		} else {
+			final String returnValue = readUpToNext(false, escapeCharacter, quoteChar);
+			if (isEOF()) {
+				throw new Exception("Missing closing quote character for quoted string beginning at line " + lineStart + " column " + columnStart);
+			}
+			// Closing quote character
+			readChar();
+			return returnValue;
 		}
 	}
 
 	/**
-	 * Closes this reader and its underlying stream.
+	 * Closes this reader and its underlying stream. The position information (line, column,
+	 * characters read) remains available, e.g. for error messages.
 	 */
 	@Override
 	public void close() {
+		releaseResources();
+	}
+
+	/**
+	 * Closes the readers and the underlying stream and clears the read ahead buffer. Not
+	 * overridable, so it can safely be called from the constructor.
+	 */
+	private void releaseResources() {
 		closeQuietly(inputReader);
 		inputReader = null;
 		closeQuietly(countingInputStream);
 		countingInputStream = null;
 
 		Arrays.fill(nextChars, null);
-		currentColumn = 1;
-		currentLine = 1;
+		Arrays.fill(originalLinebreaks, ORIGINAL_UNCHANGED);
+		lastReadChar = null;
 	}
 
 	/**
@@ -845,9 +1096,10 @@ public class BasicReadAheadReader implements Closeable {
 	}
 
 	/**
-	 * Returns the number of characters read so far.
+	 * Returns the number of characters delivered so far. A line break normalized from CRLF counts as
+	 * one character, a skipped BOM is not counted.
 	 *
-	 * @return the number of characters read
+	 * @return the number of characters delivered
 	 */
 	public long getCharactersRead() {
 		return charactersRead;
@@ -865,3 +1117,4 @@ public class BasicReadAheadReader implements Closeable {
 		return readChar();
 	}
 }
+
