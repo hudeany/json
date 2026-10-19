@@ -10,20 +10,24 @@ import java.nio.charset.Charset;
  * Helper methods for streams.
  */
 public class IoUtilities {
+	/** Value returned by read operations at the end of data. */
+	public static final int EOF = -1;
+
 	/**
-	 * Utility class, not to be instantiated.
+	 * Utility class
 	 */
 	private IoUtilities() {
+		// Utility class
 	}
 
 	/**
-	 * Reads a stream completely into a string. The stream is not closed.
+	 * Reads all remaining data of a stream and decodes it as text.
 	 *
 	 * @param inputStream
 	 *            the stream to read, may be null
 	 * @param encoding
-	 *            the encoding of the stream data
-	 * @return the stream content, or null if the stream is null
+	 *            the encoding of the data
+	 * @return the decoded text, or null if the stream is null (like {@link #toByteArray(InputStream)})
 	 * @throws IOException
 	 *             if reading fails
 	 */
@@ -33,11 +37,11 @@ public class IoUtilities {
 	}
 
 	/**
-	 * Reads a stream completely into a byte array. The stream is not closed.
+	 * Reads all remaining data of a stream.
 	 *
 	 * @param inputStream
 	 *            the stream to read, may be null
-	 * @return the stream content, or null if the stream is null
+	 * @return the data read, or null if the stream is null
 	 * @throws IOException
 	 *             if reading fails
 	 */
@@ -53,8 +57,7 @@ public class IoUtilities {
 	}
 
 	/**
-	 * Copies all remaining data of a stream to another stream and flushes the output stream. No
-	 * stream is closed.
+	 * Copies all remaining data of a stream to another stream and flushes the output stream.
 	 *
 	 * @param inputStream
 	 *            the stream to read from
@@ -68,7 +71,7 @@ public class IoUtilities {
 		final byte[] buffer = new byte[4096];
 		int lengthRead;
 		long bytesCopied = 0;
-		while ((lengthRead = inputStream.read(buffer)) > -1) {
+		while ((lengthRead = inputStream.read(buffer)) != EOF) {
 			outputStream.write(buffer, 0, lengthRead);
 			bytesCopied += lengthRead;
 		}
