@@ -34,6 +34,12 @@
 	<property name="buildPath" value="build" />
 	<echo message="buildPath: ${buildPath}" />
 
+	<!-- Code coverage report (JaCoCo), kept after the build -->
+	<property name="coveragePath" value="${buildPath}/coverage" />
+	<!-- Only used if not already set in the project specific part -->
+	<property name="coverageMinimumLineRatio" value="0" />
+	<property name="coverageMinimumBranchRatio" value="0" />
+
 	<!-- Runtime libraries; an empty or missing "lib/" directory is fine -->
 	<path id="runtime.libs">
 		<fileset dir="lib" erroronmissingdir="false">
@@ -64,6 +70,16 @@
 		<get src="https://repo1.maven.org/maven2/org/junit/platform/junit-platform-commons/${junit.version}/junit-platform-commons-${junit.version}.jar" dest="lib_test/" />
 		<get src="https://repo1.maven.org/maven2/org/opentest4j/opentest4j/${opentest4j.version}/opentest4j-${opentest4j.version}.jar" dest="lib_test/" />
 		<get src="https://repo1.maven.org/maven2/org/apiguardian/apiguardian-api/${apiguardian.version}/apiguardian-api-${apiguardian.version}.jar" dest="lib_test/" />
+
+		<!-- JaCoCo Ant tasks including the agent. Separate directory, so it is not part of the test classpath -->
+		<property name="jacoco.version" value="0.8.15" />
+		<mkdir dir="lib_coverage/" />
+		<delete includeEmptyDirs="true">
+			<fileset dir="lib_coverage/">
+				<include name="*" />
+			</fileset>
+		</delete>
+		<get src="https://repo1.maven.org/maven2/org/jacoco/org.jacoco.ant/${jacoco.version}/org.jacoco.ant-${jacoco.version}-nodeps.jar" dest="lib_coverage/jacocoant.jar" />
 	</target>
 
 	<target name="build_jar" depends="cleanup_before, create_jar, test, create_javadoc, cleanup_after" />
@@ -82,6 +98,8 @@
 
 		<delete dir="${buildPath}/testbin" />
 		<mkdir dir="${buildPath}/testbin" />
+
+		<delete dir="${coveragePath}" />
 	</target>
 
 	<target name="create_jar" depends="cleanup_before, download_dependencies">
@@ -114,7 +132,7 @@
 		</jar>
 	</target>
 
-	<target name="test" depends="create_jar, download_test_dependencies">
+	<target name="test" depends="create_jar, download_test_dependencies" xmlns:jacoco="antlib:org.jacoco.ant">
 		<path id="test.classpath">
 			<fileset dir="lib_test">
 				<include name="*.jar" />
@@ -133,16 +151,53 @@
 			<fileset dir="src/test/resources" erroronmissingdir="false" />
 		</copy>
 
+		<taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml">
+			<classpath path="lib_coverage/jacocoant.jar" />
+		</taskdef>
+
+		<!-- Sets the -javaagent argument for the forked test JVM, which records the coverage data -->
+		<jacoco:agent property="jacocoAgentArgument" destfile="${buildPath}/jacoco.exec" append="false" />
+
 		<junitlauncher printSummary="true" failureProperty="test.failed">
 			<classpath refid="test.classpath" />
 			<testclasses outputdir="${buildPath}">
 				<fileset dir="${buildPath}/testbin">
 					<include name="**/*.class" />
 				</fileset>
+				<!-- The coverage agent needs a JVM of its own -->
+				<fork dir="${basedir}">
+					<jvmarg value="${jacocoAgentArgument}" />
+				</fork>
 				<!-- Writes a report per test class to TEST-*.txt, including details of failed tests -->
 				<listener type="legacy-brief" sendSysOut="false" sendSysErr="false" />
 			</testclasses>
 		</junitlauncher>
+
+		<!-- Created also when tests failed, minimum coverage is checked after the test result -->
+		<jacoco:report>
+			<executiondata>
+				<file file="${buildPath}/jacoco.exec" />
+			</executiondata>
+			<structure name="${artifactId}">
+				<!-- Library classes only, the test classes are not measured -->
+				<classfiles>
+					<fileset dir="${buildPath}/bin" includes="**/*.class" />
+				</classfiles>
+				<sourcefiles encoding="UTF-8">
+					<fileset dir="src/main/java" />
+				</sourcefiles>
+			</structure>
+			<html destdir="${coveragePath}" />
+			<xml destfile="${coveragePath}/jacoco.xml" />
+			<csv destfile="${coveragePath}/jacoco.csv" />
+			<check failonviolation="false" violationsproperty="coverage.violations">
+				<rule element="BUNDLE">
+					<limit counter="LINE" value="COVEREDRATIO" minimum="${coverageMinimumLineRatio}" />
+					<limit counter="BRANCH" value="COVEREDRATIO" minimum="${coverageMinimumBranchRatio}" />
+				</rule>
+			</check>
+		</jacoco:report>
+		<echo message="Coverage report: ${coveragePath}/index.html" />
 
 		<!-- Show which tests failed and why before stopping the build (only reports with failures or errors) -->
 		<concat if:set="test.failed" xmlns:if="ant:if">
@@ -154,6 +209,7 @@
 			</fileset>
 		</concat>
 		<fail if="test.failed" message="Tests failed!" />
+		<fail if="coverage.violations" message="Code coverage below minimum: ${coverage.violations}" />
 	</target>
 
 	<target name="create_javadoc" depends="create_jar">
@@ -186,6 +242,7 @@
 		<delete includeEmptyDirs="true">
 			<fileset dir="${buildPath}">
 				<include name="TEST-*" />
+				<include name="jacoco.exec" />
 			</fileset>
 		</delete>
 	</target>
