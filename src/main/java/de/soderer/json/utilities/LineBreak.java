@@ -6,7 +6,7 @@ package de.soderer.json.utilities;
  * Same content as de.soderer.utilities.LineBreak in the separate library, so both libraries behave identically without depending on each other.
  * </p>
  */
-public enum Linebreak {
+public enum LineBreak {
 	/**
 	 * No linebreak or not known
 	 */
@@ -41,7 +41,7 @@ public enum Linebreak {
 	 * @param representationString
 	 *            the linebreak characters, or null for Unknown and Mixed
 	 */
-	Linebreak(final String representationString) {
+	LineBreak(final String representationString) {
 		this.representationString = representationString;
 	}
 
@@ -65,17 +65,19 @@ public enum Linebreak {
 	}
 
 	/**
-	 * Returns the linebreak type with the given name, ignoring case and surrounding whitespace.
+	 * Returns the linebreak type with the given name, ignoring case and surrounding whitespace. Only
+	 * the concrete linebreak types Windows, Unix and Mac can be selected by name, because Unknown and
+	 * Mixed have no linebreak characters to use.
 	 *
 	 * @param lineBreakTypeName
-	 *            the name, e.g. "Windows", "unix" or "MAC", may be null
+	 *            the name "Windows", "Unix" or "Mac" in any case, may be null
 	 * @return the matching linebreak type, or {@link #Unknown} for null or any other name
 	 */
-	public static Linebreak getLineBreakTypeByName(final String lineBreakTypeName) {
+	public static LineBreak getLineBreakTypeByName(final String lineBreakTypeName) {
 		if (lineBreakTypeName != null) {
 			final String trimmedName = lineBreakTypeName.trim();
-			for (final Linebreak lineBreakType : values()) {
-				if (lineBreakType.name().equalsIgnoreCase(trimmedName)) {
+			for (final LineBreak lineBreakType : values()) {
+				if (lineBreakType.representationString != null && lineBreakType.name().equalsIgnoreCase(trimmedName)) {
 					return lineBreakType;
 				}
 			}
@@ -90,9 +92,9 @@ public enum Linebreak {
 	 *            the linebreak characters, e.g. "\r\n", may be null
 	 * @return the matching linebreak type, or {@link #Unknown} for null or any other characters
 	 */
-	public static Linebreak getLineBreakTypeByString(final String representationString) {
+	public static LineBreak getLineBreakTypeByString(final String representationString) {
 		if (representationString != null) {
-			for (final Linebreak lineBreakType : values()) {
+			for (final LineBreak lineBreakType : values()) {
 				// Unknown and Mixed have no representation string and never match
 				if (representationString.equals(lineBreakType.representationString)) {
 					return lineBreakType;

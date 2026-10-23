@@ -1,6 +1,6 @@
 package de.soderer.yaml;
 
-import de.soderer.json.utilities.Linebreak;
+import de.soderer.json.utilities.LineBreak;
 import de.soderer.yaml.data.YamlStringQuoteType;
 
 /**
@@ -14,7 +14,7 @@ public class YamlFormat {
 	/**
 	 * Default linebreak.
 	 */
-	private static final Linebreak DEFAULT_LINEBREAK = Linebreak.Unix;
+	private static final LineBreak DEFAULT_LINEBREAK = LineBreak.Unix;
 	/**
 	 * Default quote style for string values that need quotes.
 	 */
@@ -24,7 +24,7 @@ public class YamlFormat {
 	/**
 	 * Linebreak to write.
 	 */
-	private Linebreak linebreak;
+	private LineBreak linebreak;
 
 	/**
 	 * Number of blanks per indentation level.
@@ -114,7 +114,7 @@ public class YamlFormat {
 	 *
 	 * @return the linebreak
 	 */
-	public Linebreak getLinebreak() {
+	public LineBreak getLinebreak() {
 		return linebreak;
 	}
 
@@ -135,7 +135,7 @@ public class YamlFormat {
 	 * @throws IllegalArgumentException
 	 *             if the linebreak is null
 	 */
-	public void setLinebreak(final Linebreak linebreak) {
+	public void setLinebreak(final LineBreak linebreak) {
 		if (linebreak == null) {
 			throw new IllegalArgumentException("Linebreak must not be null");
 		}
@@ -151,7 +151,7 @@ public class YamlFormat {
 	 * @throws IllegalArgumentException
 	 *             if the linebreak is null
 	 */
-	public YamlFormat withLinebreak(final Linebreak newLinebreak) {
+	public YamlFormat withLinebreak(final LineBreak newLinebreak) {
 		setLinebreak(newLinebreak);
 		return this;
 	}

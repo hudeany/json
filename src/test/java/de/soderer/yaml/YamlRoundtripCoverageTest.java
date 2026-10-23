@@ -31,7 +31,7 @@ import de.soderer.json.JsonValueNumber;
 import de.soderer.json.JsonValueString;
 import de.soderer.json.schema.JsonSchemaDataValidationError;
 import de.soderer.json.schema.JsonSchemaVersion;
-import de.soderer.json.utilities.Linebreak;
+import de.soderer.json.utilities.LineBreak;
 import de.soderer.yaml.data.YamlDocument;
 import de.soderer.yaml.data.YamlMapping;
 import de.soderer.yaml.data.YamlNode;
@@ -97,7 +97,7 @@ class YamlRoundtripCoverageTest {
 				.withOmitEmptyLines(true)
 				.withUseNoExtraIndentationForYamlSequencesInYamlMappingProperties(true)
 				.withUseNoNewLineForEmptyYamlObjectInYamlMappingProperties(true));
-		assertRoundtrip(yaml, new YamlFormat().withIgnoreFlowStyleSettings(true).withLinebreak(Linebreak.Windows));
+		assertRoundtrip(yaml, new YamlFormat().withIgnoreFlowStyleSettings(true).withLinebreak(LineBreak.Windows));
 		assertRoundtrip(yaml, new YamlFormat().withAlwaysQuoteStringKeys(true).withAlwaysQuoteStringValues(true).withStringValueQuoteType(YamlStringQuoteType.SINGLE));
 		assertRoundtrip(yaml, new YamlFormat().withAlwaysQuoteAllStrings().withStringValueQuoteType(YamlStringQuoteType.DOUBLE));
 	}
@@ -106,8 +106,8 @@ class YamlRoundtripCoverageTest {
 	void yamlFormat_settings() {
 		final YamlFormat format = new YamlFormat();
 		assertThrows(IllegalArgumentException.class, () -> format.setLinebreak(null));
-		assertEquals(Linebreak.Unix, format.getLinebreak());
-		format.setLinebreak(Linebreak.Mac);
+		assertEquals(LineBreak.Unix, format.getLinebreak());
+		format.setLinebreak(LineBreak.Mac);
 		assertEquals("\r", format.getLinebreakString());
 		format.setStringValueQuoteType(null);
 		format.setAlwaysQuoteStringKeys(true);

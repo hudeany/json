@@ -258,20 +258,20 @@ class UtilitiesCoverageTest {
 
 	@Test
 	void linebreak() {
-		assertEquals(Linebreak.Unknown, Linebreak.getLineBreakTypeByName(null));
-		assertEquals(Linebreak.Windows, Linebreak.getLineBreakTypeByName("windows"));
-		assertEquals(Linebreak.Unix, Linebreak.getLineBreakTypeByName(" UNIX "));
-		assertEquals(Linebreak.Mixed, Linebreak.getLineBreakTypeByName("mixed"));
-		assertEquals(Linebreak.Unknown, Linebreak.getLineBreakTypeByName("other"));
-		assertEquals("\r\n", Linebreak.Windows.toString());
-		assertEquals("\r\n", Linebreak.Windows.getRepresentationString());
-		assertEquals("\r", Linebreak.Mac.toString());
-		assertNull(Linebreak.Mixed.toString());
-		assertEquals(Linebreak.Unix, Linebreak.getLineBreakTypeByString("\n"));
-		assertEquals(Linebreak.Mac, Linebreak.getLineBreakTypeByString("\r"));
-		assertEquals(Linebreak.Windows, Linebreak.getLineBreakTypeByString("\r\n"));
-		assertEquals(Linebreak.Unknown, Linebreak.getLineBreakTypeByString("x"));
-		assertEquals(Linebreak.Unknown, Linebreak.getLineBreakTypeByString(null));
+		assertEquals(LineBreak.Unknown, LineBreak.getLineBreakTypeByName(null));
+		assertEquals(LineBreak.Windows, LineBreak.getLineBreakTypeByName("windows"));
+		assertEquals(LineBreak.Unix, LineBreak.getLineBreakTypeByName(" UNIX "));
+		assertEquals(LineBreak.Unknown, LineBreak.getLineBreakTypeByName("mixed"));
+		assertEquals(LineBreak.Unknown, LineBreak.getLineBreakTypeByName("other"));
+		assertEquals("\r\n", LineBreak.Windows.toString());
+		assertEquals("\r\n", LineBreak.Windows.getRepresentationString());
+		assertEquals("\r", LineBreak.Mac.toString());
+		assertNull(LineBreak.Mixed.toString());
+		assertEquals(LineBreak.Unix, LineBreak.getLineBreakTypeByString("\n"));
+		assertEquals(LineBreak.Mac, LineBreak.getLineBreakTypeByString("\r"));
+		assertEquals(LineBreak.Windows, LineBreak.getLineBreakTypeByString("\r\n"));
+		assertEquals(LineBreak.Unknown, LineBreak.getLineBreakTypeByString("x"));
+		assertEquals(LineBreak.Unknown, LineBreak.getLineBreakTypeByString(null));
 	}
 
 	@Test

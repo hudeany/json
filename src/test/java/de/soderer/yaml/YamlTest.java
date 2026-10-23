@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonToYamlConverter;
 import de.soderer.json.utilities.IoUtilities;
-import de.soderer.json.utilities.Linebreak;
+import de.soderer.json.utilities.LineBreak;
 import de.soderer.yaml.data.YamlAlias;
 import de.soderer.yaml.data.YamlDocument;
 import de.soderer.yaml.data.YamlMapping;
@@ -278,7 +278,7 @@ public class YamlTest {
 		final YamlNode yamlNode = JsonToYamlConverter.convert(jsonNode);
 
 		final ByteArrayOutputStream testOutputStream = new ByteArrayOutputStream();
-		try (final YamlWriter writer = new YamlWriter(testOutputStream, new YamlFormat().withLinebreak(Linebreak.Windows))) {
+		try (final YamlWriter writer = new YamlWriter(testOutputStream, new YamlFormat().withLinebreak(LineBreak.Windows))) {
 			writer.writeDocument(new YamlDocument(yamlNode));
 		}
 
