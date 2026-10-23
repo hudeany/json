@@ -26,31 +26,6 @@ public class TextUtilities {
 	}
 
 	/**
-	 * Trims a string to a maximum number of characters. If it is cut, the middle part is replaced by
-	 * a cutoff sign, so the start and the end of the text remain visible.
-	 *
-	 * @param inputString
-	 *            the text, may be null
-	 * @param maxLength
-	 *            the maximum length of the result, including the cutoff sign
-	 * @param cutoffSign
-	 *            the sign marking the cut, e.g. " ..."
-	 * @return the text, cut if longer than the maximum length, or null if the text was null
-	 */
-	public static String trimStringToMaximumLength(final String inputString, final int maxLength, final String cutoffSign) {
-		if (inputString == null || inputString.length() <= maxLength) {
-			return inputString;
-		} else if (cutoffSign == null || cutoffSign.length() >= maxLength) {
-			// No space left for text parts around the cutoff sign
-			return inputString.substring(0, Math.max(0, maxLength));
-		} else {
-			final int takeFirstLength = (maxLength - cutoffSign.length()) / 2;
-			final int takeLastLength = maxLength - cutoffSign.length() - takeFirstLength;
-			return inputString.substring(0, takeFirstLength) + cutoffSign + inputString.substring(inputString.length() - takeLastLength);
-		}
-	}
-
-	/**
 	 * Checks whether a string is valid Base64 data (standard alphabet, correct padding, no line
 	 * breaks).
 	 *

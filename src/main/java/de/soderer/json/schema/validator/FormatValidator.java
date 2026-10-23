@@ -17,6 +17,7 @@ import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
 import de.soderer.json.utilities.DateUtilities;
 import de.soderer.json.utilities.NetworkUtilities;
+import de.soderer.json.utilities.StringUtilities;
 import de.soderer.json.utilities.TextUtilities;
 
 /**
@@ -155,7 +156,7 @@ public class FormatValidator extends BaseJsonSchemaValidator {
 				break;
 			case "base64":
 				if (!TextUtilities.isValidBase64(value)) {
-					throw new JsonSchemaDataValidationError("Invalid data for format '" + validatorDataString + "' was '" + TextUtilities.trimStringToMaximumLength(value, 20, " ...") + "'", jsonPath);
+					throw new JsonSchemaDataValidationError("Invalid data for format '" + validatorDataString + "' was '" + StringUtilities.trimStringToMaximumLength(value, 20, " ...") + "'", jsonPath);
 				}
 				break;
 			case "color":
