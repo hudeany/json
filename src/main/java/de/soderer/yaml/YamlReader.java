@@ -2,6 +2,8 @@ package de.soderer.yaml;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -452,19 +454,34 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 	}
 
-	private Boolean readNextIndentation() throws Exception {
-		int nextIndentationSize = 0;
-		while (isNotEOF()) {
-			if (peekCharMatch(' ') || peekCharMatch('\t')) {
-				readChar();
-				nextIndentationSize++;
-			} else if (peekCharMatch('\n')) {
-				return null;
-			} else {
-				break;
-			}
+	/**
+	 * Reads the leading blanks of the current line without changing the {@link #indentations} stack.
+	 *
+	 * @return the number of leading spaces and tabs read
+	 */
+	private int readIndentationOfCurrentLine() throws Exception {
+		int indentationSize = 0;
+		while (peekCharMatch(' ') || peekCharMatch('\t')) {
+			readChar();
+			indentationSize++;
 		}
+		return indentationSize;
+	}
 
+	/**
+	 * Updates the {@link #indentations} stack for a line with the given indentation.
+	 *
+	 * @param indentationOfLine
+	 *            the number of leading spaces and tabs of the line
+	 * @return
+	 * 	null: same unchanged level of indentation<br />
+	 * 	true: new added level of indentation<br />
+	 * 	false: one or more levels if indentation reduced<br />
+	 * @throws YamlParseException
+	 *             if the indentation does not match any known level
+	 */
+	private Boolean applyIndentationLevel(final int indentationOfLine) throws YamlParseException {
+		int nextIndentationSize = indentationOfLine;
 		for (final int indentationSize : indentations) {
 			nextIndentationSize -= indentationSize;
 		}
@@ -559,14 +576,65 @@ public class YamlReader extends BasicReadAheadReader {
 	}
 
 	private YamlNode parseYamlNode() throws Exception {
-		String datatype = null;
+		return parseYamlNode(null, false);
+	}
+
+	/**
+	 * Reads a node, optionally preceded by a tag like "!!str".
+	 *
+	 * @param parentIndentation
+	 *            the indentation of the parent (mapping key or sequence dash), or null if unknown. A tag
+	 *            at the end of a line is only applied to content on the following lines indented deeper
+	 *            than the parent, otherwise it tags an empty value.
+	 * @param allowSequenceAtParentIndentation
+	 *            true if a block sequence at the parent indentation is the content, as for mapping values
+	 */
+	private YamlNode parseYamlNode(final Integer parentIndentation, final boolean allowSequenceAtParentIndentation) throws Exception {
 		if (peekCharMatch('!') && peekNextCharMatch(1, '!')) {
 			readChar();
 			readChar();
-			datatype = readUpToNext(false, null, ' ', '\t', '\n');
-			readUpToNextContent(null);
-		}
+			final String datatype = readUpToNext(false, null, ' ', '\t', '\n');
+			skipBlanks();
+			final boolean tagLineEnded = isEOF() || peekCharMatch('\n') || peekCharMatch('#');
+			// An anchor may also follow the tag, like "!!str &anchor value"
+			final String anchorAfterTag = readUpToNextContent(null);
 
+			final YamlNode typedNode;
+			if (tagLineEnded && parentIndentation != null && isEmptyTaggedValue(parentIndentation, allowSequenceAtParentIndentation)) {
+				// Tag without value, like "key: !!null" followed by the next key
+				typedNode = applyDatatype(datatype, new YamlScalar("", YamlScalarType.NULL_VALUE));
+			} else {
+				typedNode = applyDatatype(datatype, parseYamlNodeWithoutTag());
+			}
+
+			if (anchorAfterTag != null) {
+				typedNode.setAnchorName(anchorAfterTag);
+				anchorTable.put(anchorAfterTag, typedNode);
+			}
+			return typedNode;
+		} else {
+			return parseYamlNodeWithoutTag();
+		}
+	}
+
+	/**
+	 * Checks whether the content following a tag at the end of a line belongs to a sibling or parent node.
+	 */
+	private boolean isEmptyTaggedValue(final int parentIndentation, final boolean allowSequenceAtParentIndentation) throws Exception {
+		if (isEOF()) {
+			return true;
+		}
+		final int contentIndentation = (int) getCurrentColumn() - 1;
+		if (contentIndentation > parentIndentation) {
+			return false;
+		} else if (allowSequenceAtParentIndentation && contentIndentation == parentIndentation && peekCharMatch('-') && peekNextCharMatchAny(1, " \t\n")) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+
+	private YamlNode parseYamlNodeWithoutTag() throws Exception {
 		if (peekCharMatch('-') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
 			final YamlNode sequence = parseBlockSequence();
 			return sequence;
@@ -620,35 +688,58 @@ public class YamlReader extends BasicReadAheadReader {
 				return flowSequence;
 			}
 		} else {
-			final YamlNode mappingOrScalar = parseBlockMappingOrScalar(null);
-			if (datatype == null) {
-				return mappingOrScalar;
-			} else {
-				return applyDatatypeToScalar(datatype, mappingOrScalar);
-			}
+			return parseBlockMappingOrScalar(null);
 		}
 	}
 
-	private static YamlNode applyDatatypeToScalar(final String datatype, final YamlNode yamlNode) throws Exception {
+	/**
+	 * Applies a YAML core schema tag like "!!str" to a node: scalars are converted to the tagged type,
+	 * collections are checked to match the tag.
+	 *
+	 * @param datatype
+	 *            the tag name without "!!"
+	 * @param yamlNode
+	 *            the node read
+	 * @return the node of the tagged type
+	 * @throws Exception
+	 *             if the tag is unknown or the node does not fit the tag
+	 */
+	private static YamlNode applyDatatype(final String datatype, final YamlNode yamlNode) throws Exception {
 		if ("str".equals(datatype)) {
-			if (yamlNode instanceof final YamlScalar scalar) {
-				if (scalar.getType() != YamlScalarType.STRING) {
-					return new YamlScalar(scalar.getValueString(), YamlScalarType.STRING).withInlineComment(scalar.getInlineComment());
-				} else {
-					return yamlNode;
-				}
+			final YamlScalar scalar = requireScalar(datatype, yamlNode);
+			if (scalar.getType() != YamlScalarType.STRING && scalar.getType() != YamlScalarType.MULTILINE) {
+				return copyNodeMetadata(scalar, new YamlScalar(scalar.getValueString(), YamlScalarType.STRING));
 			} else {
-				throw new Exception("Invalid data '" + yamlNode.getClass().getSimpleName() + "' for YAML datatype: '" + datatype + "'");
+				return yamlNode;
 			}
-		} else if ("float".equals(datatype)) {
-			if (yamlNode instanceof final YamlScalar scalar) {
-				if (scalar.getType() != YamlScalarType.NUMBER) {
-					return new YamlScalar(scalar.getValueString(), YamlScalarType.NUMBER).withInlineComment(scalar.getInlineComment());
-				} else {
-					return yamlNode;
-				}
+		} else if ("float".equals(datatype) || "int".equals(datatype)) {
+			final YamlScalar scalar = requireScalar(datatype, yamlNode);
+			final YamlScalar numberScalar = scalar.getType() == YamlScalarType.NUMBER ? scalar : new YamlScalar(scalar.getValueString(), YamlScalarType.NUMBER);
+			// The NUMBER constructor falls back to a string scalar for texts that are no number
+			if (numberScalar.getType() != YamlScalarType.NUMBER) {
+				throw new Exception("Invalid value '" + scalar.getValueString() + "' for YAML datatype: '" + datatype + "'");
+			} else if ("int".equals(datatype) && !isIntegerNumber(numberScalar)) {
+				throw new Exception("Invalid value '" + scalar.getValueString() + "' for YAML datatype: '" + datatype + "'");
+			}
+			return numberScalar == scalar ? scalar : copyNodeMetadata(scalar, numberScalar);
+		} else if ("bool".equals(datatype)) {
+			final YamlScalar scalar = requireScalar(datatype, yamlNode);
+			if (scalar.getType() == YamlScalarType.BOOLEAN) {
+				return scalar;
+			}
+			try {
+				return copyNodeMetadata(scalar, new YamlScalar(scalar.getValueString(), YamlScalarType.BOOLEAN));
+			} catch (final RuntimeException e) {
+				throw new Exception("Invalid value '" + scalar.getValueString() + "' for YAML datatype: '" + datatype + "'", e);
+			}
+		} else if ("null".equals(datatype)) {
+			final YamlScalar scalar = requireScalar(datatype, yamlNode);
+			if (scalar.getType() == YamlScalarType.NULL_VALUE) {
+				return scalar;
+			} else if ("".equals(scalar.getValueString()) || "null".equalsIgnoreCase(scalar.getValueString()) || "~".equals(scalar.getValueString())) {
+				return copyNodeMetadata(scalar, new YamlScalar(scalar.getValueString(), YamlScalarType.NULL_VALUE));
 			} else {
-				throw new Exception("Invalid data '" + yamlNode.getClass().getSimpleName() + "' for YAML datatype: '" + datatype + "'");
+				throw new Exception("Invalid value '" + scalar.getValueString() + "' for YAML datatype: '" + datatype + "'");
 			}
 		} else if ("binary".equals(datatype)) {
 			// TODO
@@ -668,6 +759,51 @@ public class YamlReader extends BasicReadAheadReader {
 		} else {
 			throw new Exception("Unknown YAML datatype: '" + datatype + "'");
 		}
+	}
+
+	/**
+	 * Checks whether a number scalar holds an integer written without fraction or exponent. Very large
+	 * integers are read as BigDecimal.
+	 */
+	private static boolean isIntegerNumber(final YamlScalar numberScalar) {
+		final Object value = numberScalar.getValue();
+		if (value instanceof Integer || value instanceof Long || value instanceof BigInteger) {
+			return true;
+		} else if (value instanceof BigDecimal) {
+			final String valueString = numberScalar.getValueString();
+			return valueString.indexOf('.') < 0 && valueString.indexOf('e') < 0 && valueString.indexOf('E') < 0;
+		} else {
+			return false;
+		}
+	}
+
+	private static YamlScalar requireScalar(final String datatype, final YamlNode yamlNode) throws Exception {
+		if (yamlNode instanceof final YamlScalar scalar) {
+			return scalar;
+		} else {
+			throw new Exception("Invalid data '" + yamlNode.getClass().getSimpleName() + "' for YAML datatype: '" + datatype + "'");
+		}
+	}
+
+	/**
+	 * Copies comments and empty line counts of a node to its replacement.
+	 *
+	 * @param source
+	 *            the node read
+	 * @param target
+	 *            the replacing node
+	 * @return the replacing node
+	 */
+	private static YamlScalar copyNodeMetadata(final YamlNode source, final YamlScalar target) {
+		target.setInlineComment(source.getInlineComment());
+		if (source.getLeadingComments() != null) {
+			for (final String leadingComment : source.getLeadingComments()) {
+				target.addLeadingComment(leadingComment);
+			}
+		}
+		target.setLeadingEmptyLinesCount(source.getLeadingEmptyLinesCount());
+		target.setPostCommentEmptyLinesCount(source.getPostCommentEmptyLinesCount());
+		return target;
 	}
 
 	private YamlNode parseAlias() throws Exception {
@@ -731,19 +867,30 @@ public class YamlReader extends BasicReadAheadReader {
 		final PendingLeadingState pendingLeadingState = takePendingLeadingState();
 
 		if (peekCharMatch('-') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
+			final int dashIndentation = (int) getCurrentColumn() - 1;
 			readChar();
 
 			// The item content defines the indentation of its lines, e.g. "-   key: value" has 4 characters
 			final int blanksAfterDash = skipBlanks();
-			if (isEOF() || peekCharMatch('\n') || peekCharMatch('#')) {
+			final boolean noContentInItemLine = isEOF() || peekCharMatch('\n') || peekCharMatch('#');
+			if (noContentInItemLine) {
 				indentationsAdd(2);
+
+				// The item content may follow on the next lines, but only if they are indented deeper than the dash
+				final Boolean indentationChange = skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+				if (isEOF() || Boolean.FALSE.equals(indentationChange)) {
+					// Empty item like "-" followed by the next item or a less indented line: the value is null
+					final YamlScalar nullItemNode = new YamlScalar(null);
+					applyPendingLeadingState(pendingLeadingState, nullItemNode);
+					return nullItemNode;
+				}
 			} else {
 				indentationsAdd(1 + blanksAfterDash);
 			}
 
 			String pendingAnchor = readUpToNextContent(null);
 
-			final YamlNode nextItemNode = parseYamlNode();
+			final YamlNode nextItemNode = parseYamlNode(dashIndentation, false);
 
 			if (pendingAnchor != null) {
 				nextItemNode.setAnchorName(pendingAnchor);
@@ -843,7 +990,7 @@ public class YamlReader extends BasicReadAheadReader {
 			YamlNode valueNode;
 			if (getCurrentColumn() - 1 > mappingIndentation
 					|| (peekCharMatch('-') && peekNextCharMatchAny(1, " \t\n"))) {
-				valueNode = parseYamlNode();
+				valueNode = parseYamlNode(mappingIndentation, true);
 			} else {
 				// Empty mapping property value
 				valueNode = new YamlScalar("", YamlScalarType.NULL_VALUE);
@@ -921,7 +1068,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 					if (getCurrentColumn() - 1 > mappingIndentation
 							|| (peekCharMatch('-') && peekNextCharMatchAny(1, " \t\n"))) {
-						valueNode = parseYamlNode();
+						valueNode = parseYamlNode(mappingIndentation, true);
 					} else {
 						// Empty mapping property value
 						valueNode = new YamlScalar("", YamlScalarType.NULL_VALUE);
@@ -972,12 +1119,8 @@ public class YamlReader extends BasicReadAheadReader {
 		final YamlMapping mapping = new YamlMapping(true);
 		updatePath(YamlToken.YamlMapping_Start, null);
 
+		// An anchor directly after '{' belongs to the first key, an anchor of the mapping itself precedes the '{'
 		String pendingAnchor = readUpToNextContent(mapping);
-		if (pendingAnchor != null) {
-			mapping.setAnchorName(pendingAnchor);
-			anchorTable.put(pendingAnchor, mapping);
-			pendingAnchor = null;
-		}
 
 		applyAndClearPendingLeadingState(mapping);
 
@@ -987,19 +1130,19 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 
 		while (isNotEOF()) {
-			pendingAnchor = readUpToNextContent(null);
+			final String keyAnchor = readUpToNextContent(null);
+			if (keyAnchor != null) {
+				if (pendingAnchor != null) {
+					throw new YamlParseException("Assignment of multiple anchors single YAML node: '" + pendingAnchor + "'", getCurrentLine(), getCurrentColumn());
+				}
+				pendingAnchor = keyAnchor;
+			}
 
-			YamlNode keyNode;
-			if (peekCharMatch('\"')) {
-				keyNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.DOUBLE);
-			} else if (peekCharMatch('\'')) {
-				keyNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.SINGLE);
-			} else if (peekCharMatch('{')) {
-				keyNode = parseFlowMapping();
-			} else if (peekCharMatch('[')) {
-				keyNode = parseFlowSequence();
-			} else {
-				keyNode = readFlowScalarString();
+			final YamlNode keyNode = parseFlowNode();
+			if (pendingAnchor != null) {
+				keyNode.setAnchorName(pendingAnchor);
+				anchorTable.put(pendingAnchor, keyNode);
+				pendingAnchor = null;
 			}
 
 			applyAndClearPendingLeadingState(keyNode);
@@ -1030,12 +1173,8 @@ public class YamlReader extends BasicReadAheadReader {
 			} else if (peekCharMatch(',')) {
 				readChar();
 
+				// An anchor after ',' belongs to the next key
 				pendingAnchor = readUpToNextContent(keyNode);
-				if (pendingAnchor != null) {
-					keyNode.setAnchorName(pendingAnchor);
-					anchorTable.put(pendingAnchor, keyNode);
-					pendingAnchor = null;
-				}
 
 				mapping.add(keyNode, new YamlScalar(null));
 			} else if (peekCharMatch(':') && peekNextCharMatchAny(1, ", \t\n")) {
@@ -1043,45 +1182,35 @@ public class YamlReader extends BasicReadAheadReader {
 
 				indentationsAdd(1);
 
-				pendingAnchor = readUpToNextContent(keyNode);
-				if (pendingAnchor != null) {
-					keyNode.setAnchorName(pendingAnchor);
-					anchorTable.put(pendingAnchor, keyNode);
-					pendingAnchor = null;
-				}
+				// An anchor after ':' belongs to the value, like in "{key: &anchor value}"
+				final String valueAnchor = readUpToNextContent(keyNode);
 
 				if (peekCharMatch(',')) {
 					readChar();
 
+					final YamlScalar valueNode = new YamlScalar(null);
+					if (valueAnchor != null) {
+						valueNode.setAnchorName(valueAnchor);
+						anchorTable.put(valueAnchor, valueNode);
+					}
+
+					// An anchor after ',' belongs to the next key
 					pendingAnchor = readUpToNextContent(keyNode);
 
 					updatePath(YamlToken.YamlMapping_PropertyKey, keyNode);
-
-					final YamlScalar valueNode = new YamlScalar(null);
-
-					if (pendingAnchor != null) {
-						valueNode.setAnchorName(pendingAnchor);
-						anchorTable.put(pendingAnchor, valueNode);
-						pendingAnchor = null;
-					}
 
 					mapping.add(keyNode, valueNode);
 					continue;
 				} else {
 					pendingAnchor = readUpToNextContent(keyNode);
-
-					YamlNode valueNode;
-					if (peekCharMatch('\"')) {
-						valueNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.DOUBLE);
-					} else if (peekCharMatch('\'')) {
-						valueNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.SINGLE);
-					} else if (peekCharMatch('{')) {
-						valueNode = parseFlowMapping();
-					} else if (peekCharMatch('[')) {
-						valueNode = parseFlowSequence();
-					} else {
-						valueNode = readFlowScalarString();
+					if (valueAnchor != null) {
+						if (pendingAnchor != null) {
+							throw new YamlParseException("Assignment of multiple anchors single YAML node: '" + valueAnchor + "'", getCurrentLine(), getCurrentColumn());
+						}
+						pendingAnchor = valueAnchor;
 					}
+
+					final YamlNode valueNode = parseFlowNode();
 
 					if (pendingAnchor != null) {
 						valueNode.setAnchorName(pendingAnchor);
@@ -1104,8 +1233,9 @@ public class YamlReader extends BasicReadAheadReader {
 						mapIsClosed = peekCharMatch('}');
 						readChar();
 
+						// An anchor after ',' belongs to the next key
 						pendingAnchor = readUpToNextContent(valueNode);
-						if (pendingAnchor != null) {
+						if (pendingAnchor != null && mapIsClosed) {
 							valueNode.setAnchorName(pendingAnchor);
 							anchorTable.put(pendingAnchor, valueNode);
 							pendingAnchor = null;
@@ -1147,12 +1277,8 @@ public class YamlReader extends BasicReadAheadReader {
 		final YamlSequence sequence = new YamlSequence(true);
 		updatePath(YamlToken.YamlSequence_Start, null);
 
+		// An anchor directly after '[' belongs to the first item, an anchor of the sequence itself precedes the '['
 		String pendingAnchor = readUpToNextContent(sequence);
-		if (pendingAnchor != null) {
-			sequence.setAnchorName(pendingAnchor);
-			anchorTable.put(pendingAnchor, sequence);
-			pendingAnchor = null;
-		}
 
 		applyAndClearPendingLeadingState(sequence);
 
@@ -1162,36 +1288,30 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 
 		while (isNotEOF()) {
-			pendingAnchor = readUpToNextContent(sequence);
-			if (pendingAnchor != null) {
-				sequence.setAnchorName(pendingAnchor);
-				anchorTable.put(pendingAnchor, sequence);
-				pendingAnchor = null;
+			final String itemAnchor = readUpToNextContent(sequence);
+			if (itemAnchor != null) {
+				if (pendingAnchor != null) {
+					throw new YamlParseException("Assignment of multiple anchors single YAML node: '" + pendingAnchor + "'", getCurrentLine(), getCurrentColumn());
+				}
+				pendingAnchor = itemAnchor;
 			}
 
-			YamlNode itemNode;
-			if (peekCharMatch('\"')) {
-				itemNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.DOUBLE);
-			} else if (peekCharMatch('\'')) {
-				itemNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.SINGLE);
-			} else if (peekCharMatch('{')) {
-				itemNode = parseFlowMapping();
-			} else if (peekCharMatch('[')) {
-				itemNode = parseFlowSequence();
-			} else if (peekCharMatch(']')) {
+			final YamlNode itemNode;
+			if (peekCharMatch(']')) {
 				readChar();
 
-				pendingAnchor = readUpToNextContent(sequence);
-				if (pendingAnchor != null) {
-					sequence.setAnchorName(pendingAnchor);
-					anchorTable.put(pendingAnchor, sequence);
-					pendingAnchor = null;
-				}
+				readUpToNextContent(sequence);
 
 				updatePath(YamlToken.YamlSequence_End, null);
 				return sequence;
 			} else {
-				itemNode = readFlowScalarString();
+				itemNode = parseFlowNode();
+			}
+
+			if (pendingAnchor != null) {
+				itemNode.setAnchorName(pendingAnchor);
+				anchorTable.put(pendingAnchor, itemNode);
+				pendingAnchor = null;
 			}
 
 			applyAndClearPendingLeadingState(itemNode);
@@ -1222,12 +1342,8 @@ public class YamlReader extends BasicReadAheadReader {
 				sequence.add(itemNode);
 				readChar();
 
+				// An anchor after ',' belongs to the next item
 				pendingAnchor = readUpToNextContent(itemNode);
-				if (pendingAnchor != null) {
-					itemNode.setAnchorName(pendingAnchor);
-					anchorTable.put(pendingAnchor, itemNode);
-					pendingAnchor = null;
-				}
 			} else if (peekCharMatch(':')) {
 				readChar();
 
@@ -1235,17 +1351,11 @@ public class YamlReader extends BasicReadAheadReader {
 
 				final YamlMapping mapping = new YamlMapping();
 
-				YamlNode valueNode;
-				if (peekCharMatch('\"')) {
-					valueNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.DOUBLE);
-				} else if (peekCharMatch('\'')) {
-					valueNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.SINGLE);
-				} else if (peekCharMatch('{')) {
-					valueNode = parseFlowMapping();
-				} else if (peekCharMatch('[')) {
-					valueNode = parseFlowSequence();
-				} else {
-					valueNode = readFlowScalarString();
+				final String valueAnchor = readUpToNextContent(null);
+				final YamlNode valueNode = parseFlowNode();
+				if (valueAnchor != null) {
+					valueNode.setAnchorName(valueAnchor);
+					anchorTable.put(valueAnchor, valueNode);
 				}
 
 				applyAndClearPendingLeadingState(valueNode);
@@ -1276,12 +1386,8 @@ public class YamlReader extends BasicReadAheadReader {
 				} else if (peekCharMatch(',')) {
 					readChar();
 
+					// An anchor after ',' belongs to the next item
 					pendingAnchor = readUpToNextContent(valueNode);
-					if (pendingAnchor != null) {
-						valueNode.setAnchorName(pendingAnchor);
-						anchorTable.put(pendingAnchor, valueNode);
-						pendingAnchor = null;
-					}
 				}
 			} else {
 				throw new YamlParseException("Invalid flow YAML sequence syntax found", getCurrentLine(), getCurrentColumn());
@@ -1308,8 +1414,12 @@ public class YamlReader extends BasicReadAheadReader {
 		final int scalarStartIndentations = (int) getCurrentColumn() - 1;
 		String nextScalarStringLine = "";
 		String inlineComment = null;
+		boolean continuationLineRead = false;
 		while (isNotEOF()) {
 			if (peekCharMatch(':') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
+				if (continuationLineRead) {
+					throw new YamlParseException("Mapping values are not allowed within a multi-line plain scalar", getCurrentLine(), getCurrentColumn());
+				}
 				// Mapping separator ': ' ends Scalar
 				break;
 			} else if ((peekCharMatch(' ') || peekCharMatch('\t') || peekCharMatch('\n')) && peekNextCharMatch(1, '#')) {
@@ -1339,10 +1449,21 @@ public class YamlReader extends BasicReadAheadReader {
 				} else {
 					scalarString += "\n";
 				}
-				readNextIndentation();
-				if (peekCharNotMatch('\n') && getNumberOfIndentationChars() < scalarStartIndentations) {
+				final int nextLineIndentation = readIndentationOfCurrentLine();
+				if (isEOF()) {
+					applyIndentationLevel(nextLineIndentation);
 					break;
+				} else if (peekCharMatch('\n')) {
+					// Empty line, part of the scalar if further content follows
 				} else if (peekCharMatch('#')) {
+					// A comment line ends the scalar, its indentation is irrelevant for the block structure
+					break;
+				} else if (nextLineIndentation > mappingIndentation || nextLineIndentation >= scalarStartIndentations) {
+					// Continuation line of a multi-line plain scalar: indented deeper than its parent
+					// (e.g. the mapping key) or at least as deep as the scalar itself (e.g. a sequence item)
+					continuationLineRead = true;
+				} else {
+					applyIndentationLevel(nextLineIndentation);
 					break;
 				}
 			} else {
@@ -1454,6 +1575,63 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 			return scalar;
 		}
+	}
+
+	/**
+	 * Reads a key, value or item within a flow mapping or flow sequence: a quoted or plain scalar, a
+	 * nested flow collection or an alias, optionally preceded by a tag like "!!str".
+	 *
+	 * @return the node read
+	 * @throws Exception
+	 *             if the data is invalid or the node does not fit its tag
+	 */
+	private YamlNode parseFlowNode() throws Exception {
+		String datatype = null;
+		if (peekCharMatch('!') && peekNextCharMatch(1, '!')) {
+			readChar();
+			readChar();
+			datatype = readUpToNext(false, null, ' ', '\t', '\n', ',', ']', '}');
+			skipBlanks();
+		}
+
+		final YamlNode node;
+		if (peekCharMatch('\"')) {
+			node = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.DOUBLE);
+		} else if (peekCharMatch('\'')) {
+			node = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.SINGLE);
+		} else if (peekCharMatch('{')) {
+			node = parseFlowMapping();
+		} else if (peekCharMatch('[')) {
+			node = parseFlowSequence();
+		} else if (peekCharMatch('*')) {
+			node = readFlowAlias();
+		} else {
+			node = readFlowScalarString();
+		}
+
+		if (datatype == null) {
+			return node;
+		} else {
+			return applyDatatype(datatype, node);
+		}
+	}
+
+	/**
+	 * Reads an alias like "*anchor" within a flow collection. The alias name ends at whitespace or a
+	 * flow indicator character.
+	 *
+	 * @return the alias
+	 * @throws Exception
+	 *             if reading fails
+	 */
+	private YamlNode readFlowAlias() throws Exception {
+		readChar();
+		final String anchorName = readUpToNext(false, null, ' ', '\t', '\n', ',', '[', ']', '{', '}');
+		if (anchorName.isEmpty()) {
+			throw new YamlParseException("Missing alias name", getCurrentLine(), getCurrentColumn());
+		}
+		skipBlanks();
+		return new YamlAlias(anchorName);
 	}
 
 	private YamlNode readFlowScalarString() throws Exception {

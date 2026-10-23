@@ -724,26 +724,29 @@ public class JsonSerializer {
 				throw new Exception("JSON data is not an Integer value: '" + jsonData.getClass().getSimpleName() + "'");
 			}
 		} else if (classType == Long.TYPE || classType == Long.class) {
+			// longValue() instead of intValue(), which would cut values beyond the int range
 			if (jsonData.isInteger()) {
-				return ((JsonValueInteger) jsonData).getValue().intValue();
+				return ((JsonValueInteger) jsonData).getValue().longValue();
 			} else if (jsonData.isNumber()) {
-				return ((JsonValueNumber) jsonData).getValue().intValue();
+				return ((JsonValueNumber) jsonData).getValue().longValue();
 			} else {
 				throw new Exception("JSON data is not an Integer value: '" + jsonData.getClass().getSimpleName() + "'");
 			}
 		} else if (classType == Double.TYPE || classType == Double.class) {
+			// Always a Double, so the result fits the requested type, e.g. as item of a List<Double>
 			if (jsonData.isInteger()) {
-				return ((JsonValueInteger) jsonData).getValue();
+				return ((JsonValueInteger) jsonData).getValue().doubleValue();
 			} else if (jsonData.isNumber()) {
-				return ((JsonValueNumber) jsonData).getValue();
+				return toDouble(((JsonValueNumber) jsonData).getValue());
 			} else {
 				throw new Exception("JSON data is not an Number value: '" + jsonData.getClass().getSimpleName() + "'");
 			}
 		} else if (classType == BigDecimal.class) {
+			// Always a BigDecimal, the JSON value may have been read as Integer, Long, Float or Double
 			if (jsonData.isInteger()) {
-				return ((JsonValueInteger) jsonData).getValue();
+				return new BigDecimal(((JsonValueInteger) jsonData).getValue().toString());
 			} else if (jsonData.isNumber()) {
-				return ((JsonValueNumber) jsonData).getValue();
+				return new BigDecimal(((JsonValueNumber) jsonData).getValue().toString());
 			} else {
 				throw new Exception("JSON data is not an Number value: '" + jsonData.getClass().getSimpleName() + "'");
 			}
@@ -820,7 +823,8 @@ public class JsonSerializer {
 								field.set(object, ((Number) jsonObject.getSimpleValue(entry.getKey())).doubleValue());
 							}
 						} else if (clazz == BigDecimal.class) {
-							field.set(object, jsonObject.getSimpleValue(entry.getKey()));
+							// The JSON value may have been read as Integer, Long, Float or Double
+							field.set(object, new BigDecimal(jsonObject.getSimpleValue(entry.getKey()).toString()));
 						} else if (clazz == Character.TYPE || clazz == Character.class) {
 							field.set(object, ((String) jsonObject.getSimpleValue(entry.getKey())).charAt(0));
 						} else if (clazz == String.class) {
@@ -908,25 +912,25 @@ public class JsonSerializer {
 							} else if (clazz.getComponentType() == Float.TYPE) {
 								final float[] arrayValue = new float[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = (float) jsonArray.getSimpleItem(i);
+									arrayValue[i] = ((Number) jsonArray.getSimpleItem(i)).floatValue();
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Float.class) {
 								final Float[] arrayValue = new Float[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = (float) jsonArray.getSimpleItem(i);
+									arrayValue[i] = ((Number) jsonArray.getSimpleItem(i)).floatValue();
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Double.TYPE) {
 								final double[] arrayValue = new double[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = (double) jsonArray.getSimpleItem(i);
+									arrayValue[i] = toDouble((Number) jsonArray.getSimpleItem(i));
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Double.class) {
 								final Double[] arrayValue = new Double[jsonArray.size()];
 								for (int i = 0; i < arrayValue.length; i++) {
-									arrayValue[i] = (double) jsonArray.getSimpleItem(i);
+									arrayValue[i] = toDouble((Number) jsonArray.getSimpleItem(i));
 								}
 								field.set(object, arrayValue);
 							} else if (clazz.getComponentType() == Character.TYPE) {
@@ -1049,6 +1053,22 @@ public class JsonSerializer {
 			}
 		} catch (final Exception e) {
 			throw e;
+		}
+	}
+
+	/**
+	 * Converts a number to double. A Float is converted via its decimal representation, so e.g. 0.1f becomes
+	 * 0.1 and not 0.10000000149011612.
+	 *
+	 * @param number
+	 *            the number
+	 * @return the double value
+	 */
+	private static double toDouble(final Number number) {
+		if (number instanceof Float) {
+			return Double.parseDouble(number.toString());
+		} else {
+			return number.doubleValue();
 		}
 	}
 }

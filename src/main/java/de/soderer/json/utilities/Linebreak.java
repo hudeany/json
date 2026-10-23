@@ -1,11 +1,14 @@
 package de.soderer.json.utilities;
 
 /**
- * Enum to represent a linebreak type of an text
+ * Linebreak type of a text.
+ * <p>
+ * Same content as de.soderer.utilities.LineBreak in the separate library, so both libraries behave identically without depending on each other.
+ * </p>
  */
 public enum Linebreak {
 	/**
-	 * No linebreak
+	 * No linebreak or not known
 	 */
 	Unknown(null),
 
@@ -29,13 +32,32 @@ public enum Linebreak {
 	 */
 	Windows("\r\n");
 
-	/** The line break characters, or null for Unknown and Mixed. */
+	/** The linebreak characters, or null for Unknown and Mixed. */
 	private final String representationString;
 
 	/**
-	 * Returns the line break characters.
+	 * Creates a linebreak type.
 	 *
-	 * @return the line break characters, or null for Unknown and Mixed
+	 * @param representationString
+	 *            the linebreak characters, or null for Unknown and Mixed
+	 */
+	Linebreak(final String representationString) {
+		this.representationString = representationString;
+	}
+
+	/**
+	 * Returns the linebreak characters.
+	 *
+	 * @return the linebreak characters, or null for Unknown and Mixed
+	 */
+	public String getRepresentationString() {
+		return representationString;
+	}
+
+	/**
+	 * Returns the linebreak characters, see {@link #getRepresentationString()}.
+	 *
+	 * @return the linebreak characters, or null for Unknown and Mixed
 	 */
 	@Override
 	public String toString() {
@@ -43,51 +65,40 @@ public enum Linebreak {
 	}
 
 	/**
-	 * Creates a line break type.
-	 *
-	 * @param representationString
-	 *            the line break characters
-	 */
-	Linebreak(final String representationString) {
-		this.representationString = representationString;
-	}
-
-	/**
-	 * Returns the line break type with the given name, ignoring case.
+	 * Returns the linebreak type with the given name, ignoring case and surrounding whitespace.
 	 *
 	 * @param lineBreakTypeName
-	 *            the name, e.g. "unix" or "Windows"
-	 * @return the line break type, Unix if the name is null
-	 * @throws IllegalArgumentException
-	 *             if the name is unknown
+	 *            the name, e.g. "Windows", "unix" or "MAC", may be null
+	 * @return the matching linebreak type, or {@link #Unknown} for null or any other name
 	 */
 	public static Linebreak getLineBreakTypeByName(final String lineBreakTypeName) {
-		if (lineBreakTypeName == null) {
-			return Unix;
-		}
-		for (final Linebreak linebreakType : Linebreak.values()) {
-			if (linebreakType.name().equalsIgnoreCase(lineBreakTypeName)) {
-				return linebreakType;
+		if (lineBreakTypeName != null) {
+			final String trimmedName = lineBreakTypeName.trim();
+			for (final Linebreak lineBreakType : values()) {
+				if (lineBreakType.name().equalsIgnoreCase(trimmedName)) {
+					return lineBreakType;
+				}
 			}
 		}
-		throw new IllegalArgumentException("Unknown lineBreakType name: " + lineBreakTypeName);
+		return Unknown;
 	}
 
 	/**
-	 * Returns the line break type for the given line break characters.
+	 * Returns the linebreak type for the given linebreak characters.
 	 *
 	 * @param representationString
-	 *            the line break characters, e.g. "\r\n"
-	 * @return the line break type
-	 * @throws IllegalArgumentException
-	 *             if the characters are no known line break
+	 *            the linebreak characters, e.g. "\r\n", may be null
+	 * @return the matching linebreak type, or {@link #Unknown} for null or any other characters
 	 */
 	public static Linebreak getLineBreakTypeByString(final String representationString) {
-		for (final Linebreak linebreakType : Linebreak.values()) {
-			if (linebreakType.toString().equals(representationString)) {
-				return linebreakType;
+		if (representationString != null) {
+			for (final Linebreak lineBreakType : values()) {
+				// Unknown and Mixed have no representation string and never match
+				if (representationString.equals(lineBreakType.representationString)) {
+					return lineBreakType;
+				}
 			}
 		}
-		throw new IllegalArgumentException("Unknown lineBreakType string");
+		return Unknown;
 	}
 }

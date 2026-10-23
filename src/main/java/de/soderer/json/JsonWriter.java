@@ -1021,20 +1021,21 @@ public class JsonWriter implements Closeable {
 	 */
 	public void closeAllOpenJsonItems() throws Exception {
 		while (!openJsonStackItems.isEmpty()) {
-			final JsonStackItem openJsonItem = openJsonStackItems.pop();
-			switch(openJsonItem) {
+			switch (openJsonStackItems.peek()) {
 				case Array:
-					write(linebreak, false);
-					write("]", true);
-					break;
 				case Array_Empty:
-					write("]", false);
+					// closeJsonArray() removes the item itself and also the Object_Value of an enclosing property
+					closeJsonArray();
 					break;
 				case Object:
 				case Object_Empty:
+					// closeJsonObject() removes the item itself and also the Object_Value of an enclosing property
 					closeJsonObject();
 					break;
 				case Object_Value:
+					// Property without value, write null to keep the output valid JSON
+					openJsonStackItems.pop();
+					write(separator + "null", false);
 					break;
 				default:
 					throw new JsonWriterStateException("Invalid open json item");

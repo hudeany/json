@@ -55,11 +55,7 @@ public class DisallowValidator extends BaseJsonSchemaValidator {
 		}
 
 		if (validatorData.isString()) {
-			try {
-				JsonDataType.getFromString(((JsonValueString) validatorData).getValue());
-			} catch (final Exception e) {
-				throw new JsonSchemaDefinitionError("Invalid JSON data type '" + validatorData + "'", jsonSchemaPath, e);
-			}
+			checkTypeString(((JsonValueString) validatorData).getValue(), jsonSchemaPath);
 			typeStrings.add(((JsonValueString) validatorData).getValue());
 		} else if (validatorData.isJsonArray()) {
 			int index = 0;
@@ -67,11 +63,7 @@ public class DisallowValidator extends BaseJsonSchemaValidator {
 				if (typeData == null) {
 					throw new JsonSchemaDefinitionError("Type data array contains a 'null' item", jsonSchemaPath);
 				} else if (typeData.isString()) {
-					try {
-						JsonDataType.getFromString(((JsonValueString) typeData).getValue());
-					} catch (final Exception e) {
-						throw new JsonSchemaDefinitionError("Invalid JSON data type '" + typeData + "'", jsonSchemaPath, e);
-					}
+					checkTypeString(((JsonValueString) typeData).getValue(), jsonSchemaPath);
 					typeStrings.add(((JsonValueString) typeData).getValue());
 				} else if (typeData.isJsonObject()) {
 					typeValidators.add(JsonSchema.createValidators((JsonObject) typeData, jsonSchemaDependencyResolver, new JsonSchemaPath(jsonSchemaPath).addArrayIndex(index)));
@@ -120,6 +112,26 @@ public class DisallowValidator extends BaseJsonSchemaValidator {
 	 *            the type to check
 	 * @return true, if the data node is of the given type
 	 */
+	/**
+	 * Checks a disallowed type name. Besides the JSON data types, draft v3 allows "any" to disallow all values.
+	 *
+	 * @param typeString
+	 *            the type name
+	 * @param jsonSchemaPath
+	 *            the path of the "disallow" keyword, used in error messages
+	 * @throws JsonSchemaDefinitionError
+	 *             if the type name is unknown
+	 */
+	private static void checkTypeString(final String typeString, final JsonSchemaPath jsonSchemaPath) throws JsonSchemaDefinitionError {
+		if (!"any".equals(typeString)) {
+			try {
+				JsonDataType.getFromString(typeString);
+			} catch (final Exception e) {
+				throw new JsonSchemaDefinitionError("Invalid JSON data type '" + typeString + "'", jsonSchemaPath, e);
+			}
+		}
+	}
+
 	private boolean checkJsonDataType(final JsonNode jsonNode, final JsonDataType jsonDataType) {
 		if (jsonNode.getJsonDataType() == jsonDataType) {
 			return true;

@@ -797,7 +797,9 @@ public class YamlWriter implements Closeable {
 		String pendingValueInlineComment = null;
 
 		boolean first = true;
+		int entryIndex = -1;
 		for (final Entry<YamlNode, YamlNode> entry : yamlMapping.entrySet()) {
+			entryIndex++;
 			if (!first) {
 				if (isSingleLineFlow) {
 					write(", ");
@@ -823,9 +825,13 @@ public class YamlWriter implements Closeable {
 				writeIndent(indentLevel + 1);
 			}
 
+			// An anchor precedes its node, so "&anchor key: value" anchors the key
+			if (key.getAnchorName() != null) {
+				write("&" + key.getAnchorName() + " ");
+			}
+
 			if (key instanceof final YamlScalar scalarKey
 					&& scalarKey.getType() == YamlScalarType.STRING
-					&& scalarKey.getAnchorName() == null
 					&& (key.getLeadingComments() == null || key.getLeadingComments().isEmpty())) {
 				writeScalarInlineInFlow(scalarKey, true);
 			} else {
@@ -834,12 +840,6 @@ public class YamlWriter implements Closeable {
 
 			write(":");
 
-			if (key.getAnchorName() != null) {
-				write(" &" + key.getAnchorName());
-				if (key.getInlineComment() == null) {
-					write(" ");
-				}
-			}
 			if (key.getInlineComment() != null && !yamlFormat.isOmitComments()) {
 				write(" #" + key.getInlineComment() + yamlFormat.getLinebreakString());
 			}
@@ -861,17 +861,20 @@ public class YamlWriter implements Closeable {
 				}
 			}
 
+			// An anchor precedes its node, so "key: &anchor value" anchors the value
+			if (value.getAnchorName() != null) {
+				write("&" + value.getAnchorName() + " ");
+			}
+
 			if (value instanceof final YamlScalar scalarVal
 					&& scalarVal.getType() != YamlScalarType.MULTILINE
-					&& scalarVal.getAnchorName() == null
 					&& (scalarVal.getLeadingComments() == null || scalarVal.getLeadingComments().isEmpty())) {
 				writeScalarInlineInFlow(scalarVal, false);
 			} else if (value instanceof final YamlAlias alias) {
-				write(" *" + alias.getTargetAnchorName());
-				if (alias.getInlineComment() != null && !yamlFormat.isOmitComments()) {
-					write(" #" + alias.getInlineComment() + yamlFormat.getLinebreakString());
-				} else {
-					write(yamlFormat.getLinebreakString());
+				// The inline comment of the alias is written after the following ',' like for other values, or here for the last value
+				write("*" + alias.getTargetAnchorName());
+				if (entryIndex == yamlMapping.size() - 1 && alias.getInlineComment() != null && !yamlFormat.isOmitComments()) {
+					write(" #" + alias.getInlineComment());
 				}
 			} else {
 				writeNode(value, 0, true, false);
@@ -909,7 +912,9 @@ public class YamlWriter implements Closeable {
 		String pendingItemInlineComment = null;
 
 		boolean first = true;
+		int itemIndex = -1;
 		for (final YamlNode item : yamlSequence.items()) {
+			itemIndex++;
 			if (!first) {
 				if (isSingleLineFlow) {
 					write(", ");
@@ -933,17 +938,20 @@ public class YamlWriter implements Closeable {
 				writeIndent(indentLevel + 1);
 			}
 
+			// An anchor precedes its node, so "[&anchor item]" anchors the item
+			if (item.getAnchorName() != null) {
+				write("&" + item.getAnchorName() + " ");
+			}
+
 			if (item instanceof final YamlScalar scalar
 					&& scalar.getType() != YamlScalarType.MULTILINE
-					&& scalar.getAnchorName() == null
 					&& (scalar.getLeadingComments() == null || scalar.getLeadingComments().isEmpty())) {
 				writeScalarInlineInFlow(scalar, false);
 			} else if (item instanceof final YamlAlias alias) {
-				write(" *" + alias.getTargetAnchorName());
-				if (alias.getInlineComment() != null && !yamlFormat.isOmitComments()) {
-					write(" #" + alias.getInlineComment() + yamlFormat.getLinebreakString());
-				} else {
-					write(yamlFormat.getLinebreakString());
+				// The inline comment of the alias is written after the following ',' like for other items, or here for the last item
+				write("*" + alias.getTargetAnchorName());
+				if (itemIndex == yamlSequence.size() - 1 && alias.getInlineComment() != null && !yamlFormat.isOmitComments()) {
+					write(" #" + alias.getInlineComment());
 				}
 			} else {
 				writeNode(item, indentLevel + 1, true, false);

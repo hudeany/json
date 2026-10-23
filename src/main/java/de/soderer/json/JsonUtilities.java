@@ -14,6 +14,7 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
+import de.soderer.json.path.JsonPath;
 import de.soderer.json.schema.JsonSchema;
 import de.soderer.json.schema.JsonSchemaConfiguration;
 import de.soderer.json.schema.JsonSchemaDataValidationError;
@@ -365,7 +366,8 @@ public class JsonUtilities {
 	}
 
 	/**
-	 * Check for a valid JSON schema definition (simple JSON schema).
+	 * Check for a valid JSON schema definition (simple JSON schema). There is no meta schema for
+	 * simple JSON schemas, so the definition is checked by creating a JSON schema in simple mode.
 	 *
 	 * @param jsonSchemaDataInputStream
 	 *            JSON schema definition to check
@@ -448,7 +450,8 @@ public class JsonUtilities {
 	 * @param encoding
 	 *            encoding of the JSON schema definition
 	 * @param jsonSchemaVersion
-	 *            JSON schema version whose meta schema is used for the check
+	 *            JSON schema version whose meta schema is used for the check; for simple mode (or
+	 *            null) the definition is checked by creating a JSON schema in simple mode
 	 * @return parsed JSON schema definition
 	 * @throws IOException
 	 *             if the data cannot be read
@@ -458,11 +461,48 @@ public class JsonUtilities {
 	 *             if the JSON schema definition is invalid for the JSON schema version
 	 */
 	public static JsonNode validateJsonSchema(final InputStream jsonSchemaDataInputStream, final Charset encoding, final JsonSchemaVersion jsonSchemaVersion) throws JsonSchemaDefinitionError, JsonSchemaDataValidationError, IOException {
+		if (jsonSchemaVersion == null || jsonSchemaVersion.getLocalFile() == null) {
+			return validateJsonSchemaWithoutMetaSchema(jsonSchemaDataInputStream, encoding);
+		}
+
 		JsonSchema jsonSchema;
 		try (InputStream jsonSchemaInputStream = JsonSchema.class.getClassLoader().getResourceAsStream(jsonSchemaVersion.getLocalFile());) {
 			jsonSchema = new JsonSchema(jsonSchemaInputStream, new JsonSchemaConfiguration().withEncoding(encoding));
 		}
 		return jsonSchema.validate(jsonSchemaDataInputStream, encoding);
+	}
+
+	/**
+	 * Checks a simple JSON schema definition, for which no meta schema exists, by creating a JSON
+	 * schema in simple mode from it. This checks all keywords and their values.
+	 *
+	 * @param jsonSchemaDataInputStream
+	 *            JSON schema definition to check
+	 * @param encoding
+	 *            encoding of the JSON schema definition, or null for UTF-8
+	 * @return parsed JSON schema definition
+	 * @throws JsonSchemaDataValidationError
+	 *             if the data cannot be read or is no valid simple JSON schema definition
+	 */
+	private static JsonNode validateJsonSchemaWithoutMetaSchema(final InputStream jsonSchemaDataInputStream, final Charset encoding) throws JsonSchemaDataValidationError {
+		final JsonNode jsonSchemaNode;
+		try (JsonReader jsonReader = new Json5Reader(jsonSchemaDataInputStream, encoding)) {
+			jsonSchemaNode = jsonReader.read();
+		} catch (final Exception e) {
+			throw new JsonSchemaDataValidationError("Cannot read JSON schema definition: " + e.getMessage(), new JsonPath(), e);
+		}
+
+		if (jsonSchemaNode == null || !(jsonSchemaNode.isJsonObject() || jsonSchemaNode.isBoolean())) {
+			throw new JsonSchemaDataValidationError("JSON schema definition must be an object or a boolean", new JsonPath());
+		} else if (jsonSchemaNode.isJsonObject()) {
+			try {
+				@SuppressWarnings("unused")
+				final JsonSchema schema = new JsonSchema((JsonObject) jsonSchemaNode, new JsonSchemaConfiguration().withEncoding(encoding).withJsonSchemaVersion(JsonSchemaVersion.simple));
+			} catch (final Exception e) {
+				throw new JsonSchemaDataValidationError("Invalid JSON schema definition: " + e.getMessage(), new JsonPath(), e);
+			}
+		}
+		return jsonSchemaNode;
 	}
 
 	/**

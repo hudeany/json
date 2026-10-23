@@ -7,8 +7,10 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.time.temporal.ChronoField;
 import java.util.Date;
 
 /**
@@ -25,14 +27,41 @@ public class DateUtilities {
 	/** DateTime format for ISO 8601 without time zone, e.g. "2024-12-31T23:59:59". */
 	public static final String ISO_8601_DATETIME_FORMAT_NO_TIMEZONE = "yyyy-MM-dd'T'HH:mm:ss";
 
-	/** DateTime format for ISO 8601 with optional fraction of second, without time zone. */
-	public static final String ISO_8601_DATETIME_WITH_NANOS_FORMAT_NO_TIMEZONE = "yyyy-MM-dd'T'HH:mm:ss[.n]";
+	/**
+	 * DateTime format for ISO 8601 with nanoseconds, without time zone, e.g. "2024-12-31T23:59:59.005000000".
+	 * The fraction always has 9 digits, because the pattern letter "n" (nano of second) is not zero padded and
+	 * would write 5 milliseconds as ".5000000", which means 0.5 seconds in ISO 8601.
+	 */
+	public static final String ISO_8601_DATETIME_WITH_NANOS_FORMAT_NO_TIMEZONE = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS";
 
 	/** DateTime format for ISO 8601 with time zone, e.g. "2024-12-31T23:59:59+01". */
 	public static final String ISO_8601_DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssX";
 
-	/** DateTime format for ISO 8601 with optional fraction of second and time zone. */
-	public static final String ISO_8601_DATETIME_WITH_NANOS_FORMAT = "yyyy-MM-dd'T'HH:mm:ss[.n]X";
+	/**
+	 * DateTime format for ISO 8601 with nanoseconds and time zone, e.g. "2024-12-31T23:59:59.005000000+01". The
+	 * fraction always has 9 digits, see {@link #ISO_8601_DATETIME_WITH_NANOS_FORMAT_NO_TIMEZONE}.
+	 */
+	public static final String ISO_8601_DATETIME_WITH_NANOS_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSX";
+
+	/**
+	 * Parser for ISO 8601 date times with a fraction of second of 1 to 9 digits, without time zone. The fraction is
+	 * read as decimal fraction, so ".5" means 500 milliseconds.
+	 */
+	private static final DateTimeFormatter ISO_8601_DATETIME_WITH_FRACTION_PARSER_NO_TIMEZONE = new DateTimeFormatterBuilder()
+			.appendPattern("uuuu-MM-dd'T'HH:mm:ss")
+			.appendFraction(ChronoField.NANO_OF_SECOND, 1, 9, true)
+			.toFormatter()
+			.withResolverStyle(ResolverStyle.STRICT);
+
+	/**
+	 * Parser for ISO 8601 date times with a fraction of second of 1 to 9 digits and a time zone offset like "+01:00".
+	 */
+	private static final DateTimeFormatter ISO_8601_DATETIME_WITH_FRACTION_PARSER = new DateTimeFormatterBuilder()
+			.appendPattern("uuuu-MM-dd'T'HH:mm:ss")
+			.appendFraction(ChronoField.NANO_OF_SECOND, 1, 9, true)
+			.appendPattern("XXXXX")
+			.toFormatter()
+			.withResolverStyle(ResolverStyle.STRICT);
 
 	/** Time format for ISO 8601 without time zone, e.g. "23:59:59". */
 	public static final String ISO_8601_TIME_FORMAT_NO_TIMEZONE = "HH:mm:ss";
@@ -124,12 +153,10 @@ public class DateUtilities {
 			if (dateValueString.contains(".")) {
 				if (hasTimezone) {
 					// Date with time and partial seconds
-					final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss[.n]XXXXX").withResolverStyle(ResolverStyle.STRICT);
-					return ZonedDateTime.parse(dateValueString, dateTimeFormatter);
+					return ZonedDateTime.parse(dateValueString, ISO_8601_DATETIME_WITH_FRACTION_PARSER);
 				} else {
 					// Date with time and milliseconds
-					final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss[.n]").withResolverStyle(ResolverStyle.STRICT);
-					return LocalDateTime.parse(dateValueString, dateTimeFormatter).atZone(defaultZoneId);
+					return LocalDateTime.parse(dateValueString, ISO_8601_DATETIME_WITH_FRACTION_PARSER_NO_TIMEZONE).atZone(defaultZoneId);
 				}
 			} else {
 				// Date with time
