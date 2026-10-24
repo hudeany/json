@@ -37,8 +37,8 @@
 	<!-- Code coverage report (JaCoCo), kept after the build -->
 	<property name="coveragePath" value="${buildPath}/coverage" />
 	<!-- Only used if not already set in the project specific part -->
-	<property name="coverageMinimumLineRatio" value="0" />
-	<property name="coverageMinimumBranchRatio" value="0" />
+	<property name="coverageMinimumLineRatio" value="0.80" />
+	<property name="coverageMinimumBranchRatio" value="0.80" />
 
 	<!-- Runtime libraries; an empty or missing "lib/" directory is fine -->
 	<path id="runtime.libs">
