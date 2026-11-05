@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests of the URI helpers in {@link JsonSchemaUriUtilities}.
  */
+@SuppressWarnings("static-method")
 public class JsonSchemaUriUtilitiesTest {
 	@Test
 	void resolve() {

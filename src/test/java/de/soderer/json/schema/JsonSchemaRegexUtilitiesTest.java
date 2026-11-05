@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests of the ECMA-262 to Java regex translation in {@link JsonSchemaRegexUtilities}.
  */
+@SuppressWarnings("static-method")
 public class JsonSchemaRegexUtilitiesTest {
 	private static boolean matches(final String ecmaScriptRegex, final String value) {
 		return JsonSchemaRegexUtilities.compile(ecmaScriptRegex).matcher(value).find();

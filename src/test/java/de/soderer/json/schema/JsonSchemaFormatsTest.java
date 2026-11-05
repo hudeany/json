@@ -17,6 +17,7 @@ import de.soderer.json.JsonReader;
 /**
  * Tests of the format checks in {@link JsonSchemaFormats} and their use by the "format" keyword.
  */
+@SuppressWarnings("static-method")
 public class JsonSchemaFormatsTest {
 	private static void assertAllValid(final Predicate<String> check, final String... values) {
 		for (final String value : values) {

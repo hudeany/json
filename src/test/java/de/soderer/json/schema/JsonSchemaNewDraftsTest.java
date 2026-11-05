@@ -24,6 +24,7 @@ import de.soderer.json.JsonUtilities;
  * Tests of the JSON schema drafts 2019-09 and 2020-12, of the URI based reference resolution and
  * of the compatibility with the former reference lookup rules.
  */
+@SuppressWarnings("static-method")
 public class JsonSchemaNewDraftsTest {
 	private static JsonNode json(final String text) throws Exception {
 		try (JsonReader reader = new JsonReader(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)))) {

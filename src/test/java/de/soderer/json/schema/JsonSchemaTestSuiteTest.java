@@ -27,6 +27,7 @@ import de.soderer.json.schema.JsonSchemaTestSuite.TestResult;
  * format assertion enabled) must pass too, except the known issues listed in
  * {@link #KNOWN_OPTIONAL_ISSUES}, which are reported as aborted (skipped) instead of failed.
  */
+@SuppressWarnings("static-method")
 @DisplayName("Official JSON-Schema-Test-Suite")
 public class JsonSchemaTestSuiteTest {
 	/**
