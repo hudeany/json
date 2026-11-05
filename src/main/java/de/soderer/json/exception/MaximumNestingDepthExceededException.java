@@ -10,6 +10,9 @@ package de.soderer.json.exception;
 public class MaximumNestingDepthExceededException extends JsonDataException {
 	private static final long serialVersionUID = 4021734459380614732L;
 
+	/**
+	 * The configured maximum nesting depth that was exceeded.
+	 */
 	private final int maximumNestingDepth;
 
 	/**

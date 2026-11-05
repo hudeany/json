@@ -649,8 +649,8 @@ public class YamlWriter implements Closeable {
 				writeIndent(indentLevel);
 			}
 
-			if (key.getAnchorName() != null) {
-				write(" &" + key.getAnchorName());
+			if (hasNodeProperties(key)) {
+				write(" " + getNodeProperties(key));
 				if (key.getInlineComment() == null) {
 					write(" ");
 				}
@@ -659,8 +659,8 @@ public class YamlWriter implements Closeable {
 			write(":");
 
 			boolean startValueInNewLine = false;
-			if (value.getAnchorName() != null) {
-				write(" &" + value.getAnchorName());
+			if (hasNodeProperties(value)) {
+				write(" " + getNodeProperties(value));
 			}
 			if (key.getInlineComment() != null && !yamlFormat.isOmitComments()) {
 				write(" #" + key.getInlineComment());
@@ -738,7 +738,7 @@ public class YamlWriter implements Closeable {
 				} else {
 					final int sequenceIndentLevel = yamlFormat.isUseNoExtraIndentationForYamlSequencesInYamlMappingProperties() ? indentLevel : indentLevel + 1;
 					if (!startValueInNewLine
-							&& sequence.getAnchorName() == null
+							&& !hasNodeProperties(sequence)
 							&& (sequence.getLeadingComments() == null || sequence.getLeadingComments().isEmpty())) {
 						if (!sequence.isFlowStyle() || yamlFormat.isIgnoreFlowStyleSettings()) {
 							if (key instanceof YamlScalar) {
@@ -826,8 +826,8 @@ public class YamlWriter implements Closeable {
 			}
 
 			// An anchor precedes its node, so "&anchor key: value" anchors the key
-			if (key.getAnchorName() != null) {
-				write("&" + key.getAnchorName() + " ");
+			if (hasNodeProperties(key)) {
+				write(getNodeProperties(key) + " ");
 			}
 
 			if (key instanceof final YamlScalar scalarKey
@@ -862,8 +862,8 @@ public class YamlWriter implements Closeable {
 			}
 
 			// An anchor precedes its node, so "key: &anchor value" anchors the value
-			if (value.getAnchorName() != null) {
-				write("&" + value.getAnchorName() + " ");
+			if (hasNodeProperties(value)) {
+				write(getNodeProperties(value) + " ");
 			}
 
 			if (value instanceof final YamlScalar scalarVal
@@ -939,8 +939,8 @@ public class YamlWriter implements Closeable {
 			}
 
 			// An anchor precedes its node, so "[&anchor item]" anchors the item
-			if (item.getAnchorName() != null) {
-				write("&" + item.getAnchorName() + " ");
+			if (hasNodeProperties(item)) {
+				write(getNodeProperties(item) + " ");
 			}
 
 			if (item instanceof final YamlScalar scalar
@@ -991,8 +991,40 @@ public class YamlWriter implements Closeable {
 		return this;
 	}
 
+	/**
+	 * Checks whether a node has properties (anchor or tag) to be written before its content.
+	 *
+	 * @param node
+	 *            the node
+	 * @return true if the node has an anchor or a tag
+	 */
+	private static boolean hasNodeProperties(final YamlNode node) {
+		return node.getAnchorName() != null || node.getTag() != null;
+	}
+
+	/**
+	 * Returns the properties (anchor and tag) of a node as written before its content.
+	 *
+	 * @param node
+	 *            the node
+	 * @return the properties like "&amp;anchor !tag", empty if there are none
+	 */
+	private static String getNodeProperties(final YamlNode node) {
+		final StringBuilder properties = new StringBuilder();
+		if (node.getAnchorName() != null) {
+			properties.append("&").append(node.getAnchorName());
+		}
+		if (node.getTag() != null) {
+			if (properties.length() > 0) {
+				properties.append(" ");
+			}
+			properties.append(node.getTag());
+		}
+		return properties.toString();
+	}
+
 	private static boolean mustStartInNewLine(final YamlSequence sequence) {
-		if (sequence.getAnchorName() != null
+		if (hasNodeProperties(sequence)
 				|| (sequence.getLeadingComments() != null && !sequence.getLeadingComments().isEmpty())) {
 			return true;
 		} else {
@@ -1145,9 +1177,10 @@ public class YamlWriter implements Closeable {
 		write("-");
 
 		boolean startItemInNewLine = false;
-		if (item.getAnchorName() != null) {
-			write(" &" + item.getAnchorName());
-			startItemInNewLine = true;
+		if (hasNodeProperties(item)) {
+			write(" " + getNodeProperties(item));
+			// A tagged scalar stays on the line of its tag, like "- !tag value"
+			startItemInNewLine = item.getAnchorName() != null || !(item instanceof YamlScalar);
 		}
 
 		if (item instanceof final YamlScalar scalar) {

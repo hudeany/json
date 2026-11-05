@@ -69,6 +69,11 @@ public class JsonWriter implements Closeable {
 	private String separator = " ";
 
 	/**
+	 * Whether NaN and infinite numbers are written in JSON5 syntax instead of null.
+	 */
+	private boolean nonFiniteNumbersAsJson5 = false;
+
+	/**
 	 * Open items while writing.
 	 */
 	private enum JsonStackItem {
@@ -261,6 +266,64 @@ public class JsonWriter implements Closeable {
 	}
 
 	/**
+	 * Returns whether NaN and infinite numbers are written in JSON5 syntax.
+	 *
+	 * @return true for "NaN", "Infinity" and "-Infinity", false for null
+	 */
+	public boolean isNonFiniteNumbersAsJson5() {
+		return nonFiniteNumbersAsJson5;
+	}
+
+	/**
+	 * Sets how NaN and infinite numbers are written. Standard JSON (RFC 8259) has no representation
+	 * for them, so by default they are written as null, like JavaScript's JSON.stringify does. JSON5
+	 * allows "NaN", "Infinity" and "-Infinity", which is not readable by standard JSON parsers.
+	 *
+	 * @param nonFiniteNumbersAsJson5
+	 *            true to write "NaN", "Infinity" and "-Infinity", false to write null
+	 */
+	public void setNonFiniteNumbersAsJson5(final boolean nonFiniteNumbersAsJson5) {
+		this.nonFiniteNumbersAsJson5 = nonFiniteNumbersAsJson5;
+	}
+
+	/**
+	 * Sets how NaN and infinite numbers are written, see {@link #setNonFiniteNumbersAsJson5(boolean)}.
+	 *
+	 * @param newNonFiniteNumbersAsJson5
+	 *            true to write "NaN", "Infinity" and "-Infinity", false to write null
+	 * @return this writer for chaining
+	 */
+	public JsonWriter withNonFiniteNumbersAsJson5(final boolean newNonFiniteNumbersAsJson5) {
+		setNonFiniteNumbersAsJson5(newNonFiniteNumbersAsJson5);
+		return this;
+	}
+
+	/**
+	 * Formats a number for the JSON output.
+	 *
+	 * @param number
+	 *            the number, not null
+	 * @param nonFiniteAsJson5
+	 *            true to write NaN and infinite numbers in JSON5 syntax, false to write null
+	 * @return the number text
+	 */
+	private static String formatNumber(final Number number, final boolean nonFiniteAsJson5) {
+		if ((number instanceof Double || number instanceof Float) && !Double.isFinite(number.doubleValue())) {
+			if (!nonFiniteAsJson5) {
+				return "null";
+			} else if (Double.isNaN(number.doubleValue())) {
+				return "NaN";
+			} else if (number.doubleValue() > 0) {
+				return "Infinity";
+			} else {
+				return "-Infinity";
+			}
+		} else {
+			return number.toString();
+		}
+	}
+
+	/**
 	 * Opens an object, as top level item, array item or property value.
 	 *
 	 * @throws Exception
@@ -341,7 +404,7 @@ public class JsonWriter implements Closeable {
 			} else if (propertyValue instanceof JsonValueInteger) {
 				write(separator + ((JsonValueInteger) propertyValue).getValue().toString(), false);
 			} else if (propertyValue instanceof JsonValueNumber) {
-				write(separator + ((JsonValueNumber) propertyValue).getValue().toString(), false);
+				write(separator + formatNumber(((JsonValueNumber) propertyValue).getValue(), nonFiniteNumbersAsJson5), false);
 			} else if (propertyValue instanceof JsonValueString) {
 				write(separator + "\"" + formatStringOutput(((JsonValueString) propertyValue).getValue()) + "\"", false);
 			}
@@ -521,7 +584,7 @@ public class JsonWriter implements Closeable {
 			if (propertyValue == null) {
 				write(separator + "null", false);
 			} else {
-				write(separator + propertyValue.toString(), false);
+				write(separator + formatNumber(propertyValue, nonFiniteNumbersAsJson5), false);
 			}
 		}
 	}
@@ -616,7 +679,7 @@ public class JsonWriter implements Closeable {
 			} else if (arrayValue instanceof JsonValueInteger) {
 				write(((JsonValueInteger) arrayValue).getValue().toString(), true);
 			} else if (arrayValue instanceof JsonValueNumber) {
-				write(((JsonValueNumber) arrayValue).getValue().toString(), true);
+				write(formatNumber(((JsonValueNumber) arrayValue).getValue(), nonFiniteNumbersAsJson5), true);
 			} else if (arrayValue instanceof JsonValueString) {
 				write("\"" + formatStringOutput(((JsonValueString) arrayValue).getValue()) + "\"", true);
 			}
@@ -860,7 +923,7 @@ public class JsonWriter implements Closeable {
 			if (arrayValue == null) {
 				write("null", true);
 			} else {
-				write(arrayValue.toString(), true);
+				write(formatNumber(arrayValue, nonFiniteNumbersAsJson5), true);
 			}
 		}
 	}
@@ -898,8 +961,8 @@ public class JsonWriter implements Closeable {
 				} else {
 					write("\"" + DateUtilities.formatDate(DateUtilities.ISO_8601_DATETIME_FORMAT, (ZonedDateTime) value) + "\"", true);
 				}
-			} else if (value instanceof Number) {
-				write(value.toString(), true);
+			} else if (value instanceof final Number numberValue) {
+				write(formatNumber(numberValue, nonFiniteNumbersAsJson5), true);
 			} else {
 				write("\"" + formatStringOutput(value.toString()) + "\"", true);
 			}
@@ -1005,7 +1068,7 @@ public class JsonWriter implements Closeable {
 		} else if (jsonNode instanceof JsonValueInteger) {
 			write(((JsonValueInteger) jsonNode).getValue().toString(), true);
 		} else if (jsonNode instanceof JsonValueNumber) {
-			write(((JsonValueNumber) jsonNode).getValue().toString(), true);
+			write(formatNumber(((JsonValueNumber) jsonNode).getValue(), nonFiniteNumbersAsJson5), true);
 		} else if (jsonNode instanceof JsonValueString) {
 			write("\"" + formatStringOutput(((JsonValueString) jsonNode).getValue()) + "\"", true);
 		} else {
@@ -1262,7 +1325,7 @@ public class JsonWriter implements Closeable {
 			case INTEGER:
 				return ((JsonValueInteger) jsonNode).getValue().toString();
 			case NUMBER:
-				return ((JsonValueNumber) jsonNode).getValue().toString();
+				return formatNumber(((JsonValueNumber) jsonNode).getValue(), false);
 			case BOOLEAN:
 				return ((JsonValueBoolean) jsonNode).getValue().toString();
 			case NULL:

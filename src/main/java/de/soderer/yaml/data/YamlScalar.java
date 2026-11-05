@@ -38,6 +38,52 @@ public class YamlScalar extends YamlNode {
 	 */
 	private static final Pattern LEADING_ZERO_PATTERN = Pattern.compile("0[0-9_]+");
 
+	// Resolution of plain scalars, see YAML 1.1 type repository and YAML 1.2 core schema (10.3.2)
+	/**
+	 * Boolean true of YAML 1.1.
+	 */
+	private static final Pattern YAML11_BOOLEAN_TRUE_PATTERN = Pattern.compile("y|Y|yes|Yes|YES|true|True|TRUE|on|On|ON");
+	/**
+	 * Boolean false of YAML 1.1.
+	 */
+	private static final Pattern YAML11_BOOLEAN_FALSE_PATTERN = Pattern.compile("n|N|no|No|NO|false|False|FALSE|off|Off|OFF");
+	/**
+	 * Boolean true of YAML 1.2.
+	 */
+	private static final Pattern YAML12_BOOLEAN_TRUE_PATTERN = Pattern.compile("true|True|TRUE");
+	/**
+	 * Boolean false of YAML 1.2.
+	 */
+	private static final Pattern YAML12_BOOLEAN_FALSE_PATTERN = Pattern.compile("false|False|FALSE");
+	/**
+	 * Null value of YAML 1.1 and 1.2 (besides the empty value).
+	 */
+	private static final Pattern NULL_PATTERN = Pattern.compile("null|Null|NULL|~");
+	/**
+	 * Decimal integer of YAML 1.2, leading zeros do not mean octal.
+	 */
+	private static final Pattern YAML12_DECIMAL_INTEGER_PATTERN = Pattern.compile("[-+]?[0-9]+");
+	/**
+	 * Octal integer of YAML 1.2 like "0o17", without sign.
+	 */
+	private static final Pattern YAML12_OCTAL_INTEGER_PATTERN = Pattern.compile("0o[0-7]+");
+	/**
+	 * Hexadecimal integer of YAML 1.2 like "0x1F", without sign.
+	 */
+	private static final Pattern YAML12_HEX_INTEGER_PATTERN = Pattern.compile("0x[0-9a-fA-F]+");
+	/**
+	 * Floating point number of YAML 1.2 like "1.5", ".5" or "1e3".
+	 */
+	private static final Pattern YAML12_FLOAT_PATTERN = Pattern.compile("[-+]?(\\.[0-9]+|[0-9]+(\\.[0-9]*)?)([eE][-+]?[0-9]+)?");
+	/**
+	 * Infinity of YAML 1.2 like ".inf" or "-.Inf".
+	 */
+	private static final Pattern YAML12_INFINITY_PATTERN = Pattern.compile("[-+]?\\.(inf|Inf|INF)");
+	/**
+	 * Not a number of YAML 1.2 like ".nan".
+	 */
+	private static final Pattern YAML12_NAN_PATTERN = Pattern.compile("\\.(nan|NaN|NAN)");
+
 	/**
 	 * The value as written.
 	 */
@@ -496,6 +542,81 @@ public class YamlScalar extends YamlNode {
 			}
 		} else {
 			return number.toString();
+		}
+	}
+
+	/**
+	 * Creates a scalar with an already resolved value.
+	 *
+	 * @param valueString
+	 *            the text as written in the YAML data
+	 * @param type
+	 *            the type
+	 * @param value
+	 *            the resolved value
+	 * @param resolved
+	 *            marker parameter to distinguish this constructor
+	 */
+	private YamlScalar(final String valueString, final YamlScalarType type, final Object value, final boolean resolved) {
+		this.valueString = valueString;
+		this.type = type;
+		this.value = value;
+	}
+
+	/**
+	 * Resolves a plain (unquoted, single line) scalar text to a null, boolean, number or string
+	 * scalar by the rules of the given YAML version.
+	 *
+	 * @param plainScalarString
+	 *            the scalar text as written, not empty
+	 * @param yamlVersion
+	 *            the YAML version whose rules apply, null for {@link YamlVersion#V1_2}
+	 * @return the scalar
+	 */
+	public static YamlScalar fromPlainScalarString(final String plainScalarString, final YamlVersion yamlVersion) {
+		if (plainScalarString == null) {
+			throw new IllegalArgumentException("Plain scalar string must not be null");
+		} else if (NULL_PATTERN.matcher(plainScalarString).matches()) {
+			return new YamlScalar(plainScalarString, YamlScalarType.NULL_VALUE);
+		} else if (yamlVersion == YamlVersion.V1_1) {
+			if (YAML11_BOOLEAN_TRUE_PATTERN.matcher(plainScalarString).matches()) {
+				return new YamlScalar(plainScalarString, YamlScalarType.BOOLEAN, Boolean.TRUE, true);
+			} else if (YAML11_BOOLEAN_FALSE_PATTERN.matcher(plainScalarString).matches()) {
+				return new YamlScalar(plainScalarString, YamlScalarType.BOOLEAN, Boolean.FALSE, true);
+			} else if (plainScalarString.length() > 0 && "-+.0123456789".indexOf(plainScalarString.charAt(0)) >= 0) {
+				// Lenient number parsing, falls back to a string for non-numbers
+				return new YamlScalar(plainScalarString, YamlScalarType.NUMBER);
+			} else {
+				return new YamlScalar(plainScalarString, YamlScalarType.STRING);
+			}
+		} else {
+			if (YAML12_BOOLEAN_TRUE_PATTERN.matcher(plainScalarString).matches()) {
+				return new YamlScalar(plainScalarString, YamlScalarType.BOOLEAN, Boolean.TRUE, true);
+			} else if (YAML12_BOOLEAN_FALSE_PATTERN.matcher(plainScalarString).matches()) {
+				return new YamlScalar(plainScalarString, YamlScalarType.BOOLEAN, Boolean.FALSE, true);
+			} else if (YAML12_DECIMAL_INTEGER_PATTERN.matcher(plainScalarString).matches()) {
+				// Leading zeros do not mean octal in YAML 1.2
+				final boolean negative = plainScalarString.startsWith("-");
+				final String digits = plainScalarString.startsWith("-") || plainScalarString.startsWith("+") ? plainScalarString.substring(1) : plainScalarString;
+				return new YamlScalar(plainScalarString, YamlScalarType.NUMBER, parseInteger(digits, 10, negative), true);
+			} else if (YAML12_OCTAL_INTEGER_PATTERN.matcher(plainScalarString).matches()) {
+				return new YamlScalar(plainScalarString, YamlScalarType.NUMBER, parseInteger(plainScalarString.substring(2), 8, false), true);
+			} else if (YAML12_HEX_INTEGER_PATTERN.matcher(plainScalarString).matches()) {
+				return new YamlScalar(plainScalarString, YamlScalarType.NUMBER, parseInteger(plainScalarString.substring(2), 16, false), true);
+			} else if (YAML12_FLOAT_PATTERN.matcher(plainScalarString).matches()) {
+				final Number numberValue = parseYamlNumber(plainScalarString);
+				if (numberValue != null) {
+					return new YamlScalar(plainScalarString, YamlScalarType.NUMBER, numberValue, true);
+				} else {
+					return new YamlScalar(plainScalarString, YamlScalarType.STRING);
+				}
+			} else if (YAML12_INFINITY_PATTERN.matcher(plainScalarString).matches()) {
+				return new YamlScalar(plainScalarString, YamlScalarType.NUMBER, plainScalarString.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY, true);
+			} else if (YAML12_NAN_PATTERN.matcher(plainScalarString).matches()) {
+				return new YamlScalar(plainScalarString, YamlScalarType.NUMBER, Double.NaN, true);
+			} else {
+				return new YamlScalar(plainScalarString, YamlScalarType.STRING);
+			}
 		}
 	}
 

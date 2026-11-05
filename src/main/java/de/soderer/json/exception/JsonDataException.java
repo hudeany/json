@@ -66,11 +66,6 @@ public class JsonDataException extends Exception {
 	}
 
 	/**
-	 * Returns the invalid data.
-	 *
-	 * @return the invalid data
-	 */
-	/**
 	 * Creates a new exception with a specific message for subclasses.
 	 *
 	 * @param message
@@ -93,6 +88,11 @@ public class JsonDataException extends Exception {
 		this.overallCharacterIndex = overallCharacterIndex;
 	}
 
+	/**
+	 * Returns the invalid data.
+	 *
+	 * @return the invalid data
+	 */
 	public String getErroneousData() {
 		return erroneousData;
 	}

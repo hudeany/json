@@ -20,6 +20,7 @@ import de.soderer.yaml.data.YamlMapping;
 import de.soderer.yaml.data.YamlNode;
 import de.soderer.yaml.data.YamlScalar;
 import de.soderer.yaml.data.YamlSequence;
+import de.soderer.yaml.data.YamlVersion;
 
 public class YamlTest {
 	@Test
@@ -29,12 +30,14 @@ public class YamlTest {
 
 	@Test
 	public void testBasicStructureMapping() throws Exception {
-		roundTripSingleDocument("yaml/mapping/input.yaml", "yaml/mapping/output.yaml", true);
+		// Test data written for the plain scalar rules of YAML 1.1
+		roundTripSingleDocument("yaml/mapping/input.yaml", "yaml/mapping/output.yaml", true, YamlVersion.V1_1);
 	}
 
 	@Test
 	public void testBasicStructureSequence() throws Exception {
-		roundTripSingleDocument("yaml/sequence/input.yaml", "yaml/sequence/output.yaml", true);
+		// Test data written for the plain scalar rules of YAML 1.1
+		roundTripSingleDocument("yaml/sequence/input.yaml", "yaml/sequence/output.yaml", true, YamlVersion.V1_1);
 	}
 
 	@Test
@@ -114,7 +117,8 @@ public class YamlTest {
 
 	@Test
 	public void testComplexKeys() throws Exception {
-		roundTripSingleDocument("yaml/complexKeys/input.yaml", "yaml/complexKeys/output.yaml", true);
+		// Test data written for the plain scalar rules of YAML 1.1
+		roundTripSingleDocument("yaml/complexKeys/input.yaml", "yaml/complexKeys/output.yaml", true, YamlVersion.V1_1);
 	}
 
 	@Test
@@ -160,7 +164,9 @@ public class YamlTest {
 
 		final YamlDocument testDocument;
 		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream(inputDataFileNamem)) {
+			// Test data written for the number formats of YAML 1.1
 			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
+				yamlReader.withDefaultYamlVersion(YamlVersion.V1_1);
 				testDocument = yamlReader.readDocument();
 			}
 		}
@@ -199,7 +205,8 @@ public class YamlTest {
 
 	@Test
 	public void testSimpleValues() throws Exception {
-		roundTripSingleDocument("yaml/simpleValues/input.yaml", "yaml/simpleValues/output.yaml", false);
+		// Test data written for the plain scalar rules of YAML 1.1
+		roundTripSingleDocument("yaml/simpleValues/input.yaml", "yaml/simpleValues/output.yaml", false, YamlVersion.V1_1);
 	}
 
 	@Test
@@ -298,6 +305,14 @@ public class YamlTest {
 	}
 
 	private void roundTripSingleDocument(final String inputDataFileName, final String outputDataFileName, final boolean alwaysQuote) throws Exception {
+		roundTripSingleDocument(inputDataFileName, outputDataFileName, alwaysQuote, YamlVersion.V1_2);
+	}
+
+	/**
+	 * Round trip test for a file whose plain scalars are resolved by the rules of the given YAML
+	 * version, if the file itself has no "%YAML" directive.
+	 */
+	private void roundTripSingleDocument(final String inputDataFileName, final String outputDataFileName, final boolean alwaysQuote, final YamlVersion yamlVersion) throws Exception {
 		String resultYamlFileString;
 		try (InputStream resultDataStream = getClass().getClassLoader().getResourceAsStream(outputDataFileName)) {
 			resultYamlFileString = IoUtilities.toString(resultDataStream, StandardCharsets.UTF_8);
@@ -306,6 +321,7 @@ public class YamlTest {
 		final YamlDocument testDocument1;
 		try (InputStream testDataStream = getClass().getClassLoader().getResourceAsStream(inputDataFileName)) {
 			try (final YamlReader yamlReader = new YamlReader(testDataStream)) {
+				yamlReader.withDefaultYamlVersion(yamlVersion);
 				testDocument1 = yamlReader.readDocument();
 			}
 		}
@@ -327,6 +343,7 @@ public class YamlTest {
 
 		final YamlDocument testDocument2;
 		try (final YamlReader yamlReader = new YamlReader(new ByteArrayInputStream(serializedYaml.getBytes(StandardCharsets.UTF_8)))) {
+			yamlReader.withDefaultYamlVersion(yamlVersion);
 			testDocument2 = yamlReader.readDocument();
 		}
 

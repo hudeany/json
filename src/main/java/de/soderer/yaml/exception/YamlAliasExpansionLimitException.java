@@ -10,6 +10,9 @@ package de.soderer.yaml.exception;
 public class YamlAliasExpansionLimitException extends RuntimeException {
 	private static final long serialVersionUID = -2280372614938452071L;
 
+	/**
+	 * The configured maximum number of nodes created by alias expansion.
+	 */
 	private final int maximumAliasExpandedNodes;
 
 	/**

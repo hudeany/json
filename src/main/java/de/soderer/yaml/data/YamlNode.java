@@ -32,6 +32,10 @@ public abstract class YamlNode {
 	 */
 	private String anchorName;
 	/**
+	 * Tag of this node that is not resolved to a datatype, see {@link #getTag()}.
+	 */
+	private String tag = null;
+	/**
 	 * Empty lines before the leading comments.
 	 */
 	private int leadingEmptyLinesCount = 0;
@@ -125,6 +129,43 @@ public abstract class YamlNode {
 	 */
 	public YamlNode withAnchorName(final String newAnchorName) {
 		setAnchorName(newAnchorName);
+		return this;
+	}
+
+	/**
+	 * Returns the tag of this node that is not resolved to a datatype, like a local tag "!custom", a
+	 * verbatim tag "!&lt;tag:example.com,2026:point&gt;" or a named tag "!e!point". Datatype tags
+	 * like "!!str" or "!!int" are applied to the node instead and are not stored.
+	 *
+	 * @return the tag including its leading "!", or null
+	 */
+	public String getTag() {
+		return tag;
+	}
+
+	/**
+	 * Sets the tag of this node, see {@link #getTag()}. The value of the node is not changed by the
+	 * tag.
+	 *
+	 * @param tag
+	 *            the tag including its leading "!", or null
+	 */
+	public void setTag(final String tag) {
+		if (tag != null && (!tag.startsWith("!") || tag.chars().anyMatch(Character::isWhitespace))) {
+			throw new IllegalArgumentException("Invalid YAML tag: '" + tag + "'");
+		}
+		this.tag = tag;
+	}
+
+	/**
+	 * Sets the tag of this node, see {@link #getTag()}.
+	 *
+	 * @param newTag
+	 *            the tag including its leading "!", or null
+	 * @return this node for chaining
+	 */
+	public YamlNode withTag(final String newTag) {
+		setTag(newTag);
 		return this;
 	}
 

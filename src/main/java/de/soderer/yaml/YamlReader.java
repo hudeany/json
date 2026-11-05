@@ -28,6 +28,7 @@ import de.soderer.yaml.data.YamlScalar;
 import de.soderer.yaml.data.YamlScalarType;
 import de.soderer.yaml.data.YamlSequence;
 import de.soderer.yaml.data.YamlStringQuoteType;
+import de.soderer.yaml.data.YamlVersion;
 import de.soderer.yaml.data.YamlToken;
 import de.soderer.yaml.data.directive.YamlDirective;
 import de.soderer.yaml.data.directive.YamlTagDirective;
@@ -72,6 +73,16 @@ public class YamlReader extends BasicReadAheadReader {
 	 * Current nesting depth of mappings and sequences while parsing.
 	 */
 	private int nestingDepth = 0;
+
+	/**
+	 * YAML version for documents without "%YAML" directive.
+	 */
+	private YamlVersion defaultYamlVersion = YamlVersion.V1_2;
+
+	/**
+	 * YAML version of the document currently read.
+	 */
+	private YamlVersion currentYamlVersion = YamlVersion.V1_2;
 
 	/**
 	 * Path of the current read position.
@@ -154,6 +165,44 @@ public class YamlReader extends BasicReadAheadReader {
 	}
 
 	/**
+	 * Returns the YAML version for documents without "%YAML" directive.
+	 *
+	 * @return the default YAML version
+	 */
+	public YamlVersion getDefaultYamlVersion() {
+		return defaultYamlVersion;
+	}
+
+	/**
+	 * Sets the YAML version for documents without "%YAML" directive. It decides how plain scalars are
+	 * resolved, see {@link YamlVersion}. A "%YAML" directive of a document takes precedence. Default
+	 * is {@link YamlVersion#V1_2}.
+	 *
+	 * @param defaultYamlVersion
+	 *            the default YAML version, not null
+	 */
+	public void setDefaultYamlVersion(final YamlVersion defaultYamlVersion) {
+		if (defaultYamlVersion == null) {
+			throw new IllegalArgumentException("Default YAML version must not be null");
+		}
+		this.defaultYamlVersion = defaultYamlVersion;
+		currentYamlVersion = defaultYamlVersion;
+	}
+
+	/**
+	 * Sets the YAML version for documents without "%YAML" directive, see
+	 * {@link #setDefaultYamlVersion(YamlVersion)}.
+	 *
+	 * @param newDefaultYamlVersion
+	 *            the default YAML version, not null
+	 * @return this reader
+	 */
+	public YamlReader withDefaultYamlVersion(final YamlVersion newDefaultYamlVersion) {
+		setDefaultYamlVersion(newDefaultYamlVersion);
+		return this;
+	}
+
+	/**
 	 * Enters the next nesting level of a mapping or sequence. The caller must decrement
 	 * {@link #nestingDepth} in a finally block.
 	 *
@@ -216,6 +265,7 @@ public class YamlReader extends BasicReadAheadReader {
 		try {
 			final YamlDocument document = new YamlDocument();
 			currentPath = new JsonPath();
+			currentYamlVersion = defaultYamlVersion;
 			if (!pendingLeadingComments.isEmpty()) {
 				for (final String commentLine : pendingLeadingComments) {
 					document.addLeadingComment(commentLine);
@@ -229,7 +279,14 @@ public class YamlReader extends BasicReadAheadReader {
 			while (isNotEOF()) {
 				readUpToNextContent(null);
 				if (peekCharMatch('%')) {
-					document.addDirective(readDirective());
+					final YamlDirective<?> directive = readDirective();
+					if (directive instanceof final YamlVersionDirective versionDirective) {
+						final YamlVersion directiveVersion = YamlVersion.fromDirectiveValue(versionDirective.getYamlVersion());
+						if (directiveVersion != null) {
+							currentYamlVersion = directiveVersion;
+						}
+					}
+					document.addDirective(directive);
 					documentContentStarted = false;
 				} else if (peekCharMatch('-')) {
 					if (searchPath != null && getCurrentPath().equals(searchPath)) {
@@ -670,10 +727,8 @@ public class YamlReader extends BasicReadAheadReader {
 	 *            true if a block sequence at the parent indentation is the content, as for mapping values
 	 */
 	private YamlNode parseYamlNode(final Integer parentIndentation, final boolean allowSequenceAtParentIndentation) throws Exception {
-		if (peekCharMatch('!') && peekNextCharMatch(1, '!')) {
-			readChar();
-			readChar();
-			final String datatype = readUpToNext(false, null, ' ', '\t', '\n');
+		if (peekCharMatch('!')) {
+			final String tag = readUpToNext(false, null, ' ', '\t', '\n');
 			skipBlanks();
 			final boolean tagLineEnded = isEOF() || peekCharMatch('\n') || peekCharMatch('#');
 			// An anchor may also follow the tag, like "!!str &anchor value"
@@ -682,9 +737,9 @@ public class YamlReader extends BasicReadAheadReader {
 			final YamlNode typedNode;
 			if (tagLineEnded && parentIndentation != null && isEmptyTaggedValue(parentIndentation, allowSequenceAtParentIndentation)) {
 				// Tag without value, like "key: !!null" followed by the next key
-				typedNode = applyDatatype(datatype, new YamlScalar("", YamlScalarType.NULL_VALUE));
+				typedNode = applyTag(tag, new YamlScalar("", YamlScalarType.NULL_VALUE));
 			} else {
-				typedNode = applyDatatype(datatype, parseYamlNodeWithoutTag());
+				typedNode = applyTag(tag, parseYamlNodeWithoutTag());
 			}
 
 			if (anchorAfterTag != null) {
@@ -838,6 +893,31 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 		} else {
 			throw new Exception("Unknown YAML datatype: '" + datatype + "'");
+		}
+	}
+
+	/**
+	 * Applies a tag to a node. Secondary tags of known datatypes like "!!str" or "!!int" change the
+	 * type of the node, all other tags are stored in the node, see {@link YamlNode#getTag()}.
+	 *
+	 * @param tag
+	 *            the tag as written, starting with "!"
+	 * @param yamlNode
+	 *            the node
+	 * @return the node of the applied type
+	 * @throws Exception
+	 *             if the node does not fit the datatype of the tag
+	 */
+	private static YamlNode applyTag(final String tag, final YamlNode yamlNode) throws Exception {
+		if (tag.startsWith("!!")) {
+			return applyDatatype(tag.substring(2), yamlNode);
+		} else {
+			if (yamlNode instanceof final YamlScalar scalar && "!".equals(tag) && scalar.getType() != YamlScalarType.STRING && scalar.getType() != YamlScalarType.MULTILINE) {
+				// The non-specific tag "!" forces a plain scalar to be a string
+				return copyNodeMetadata(scalar, new YamlScalar(scalar.getValueString(), YamlScalarType.STRING)).withTag(tag);
+			}
+			yamlNode.setTag(tag);
+			return yamlNode;
 		}
 	}
 
@@ -1639,39 +1719,7 @@ public class YamlReader extends BasicReadAheadReader {
 	 */
 	private YamlScalar interpretScalarValue(final String scalarString, final String inlineComment, final boolean removeCallerColumnIndentationBeforeMultiline) throws Exception {
 		if (scalarString.length() == 0) {
-			return new YamlScalar(null);
-		} else if ("true".equalsIgnoreCase(scalarString)
-				|| "y".equalsIgnoreCase(scalarString)
-				|| "yes".equalsIgnoreCase(scalarString)
-				|| "on".equalsIgnoreCase(scalarString)
-				|| "false".equalsIgnoreCase(scalarString)
-				|| "n".equalsIgnoreCase(scalarString)
-				|| "no".equalsIgnoreCase(scalarString)
-				|| "off".equalsIgnoreCase(scalarString)) {
-			final YamlScalar scalar = new YamlScalar(scalarString, YamlScalarType.BOOLEAN);
-			if (inlineComment != null) {
-				scalar.setInlineComment(inlineComment);
-			}
-			return scalar;
-		} else if ("null".equalsIgnoreCase(scalarString)
-				|| "~".equalsIgnoreCase(scalarString)) {
-			final YamlScalar scalar = new YamlScalar(scalarString, YamlScalarType.NULL_VALUE);
-			if (inlineComment != null) {
-				scalar.setInlineComment(inlineComment);
-			}
-			return scalar;
-		} else if (scalarString.startsWith("-") || scalarString.startsWith("+") || scalarString.startsWith(".") || Character.isDigit(scalarString.charAt(0))) {
-			YamlScalar scalar;
-			try {
-				scalar = new YamlScalar(scalarString, YamlScalarType.NUMBER);
-			} catch (@SuppressWarnings("unused") final NumberFormatException e) {
-				scalar = new YamlScalar(scalarString, YamlScalarType.STRING);
-			}
-			if (inlineComment != null) {
-				scalar.setInlineComment(inlineComment);
-			}
-			return scalar;
-		} else if (scalarString.startsWith(">") || scalarString.startsWith("|")) {
+			return new YamlScalar(null);		} else if (scalarString.startsWith(">") || scalarString.startsWith("|")) {
 			final YamlMultilineScalarType type = YamlMultilineScalarType.getYamlMultilineScalarType(scalarString);
 			final YamlMultilineScalarChompingType comping = YamlMultilineScalarChompingType.getYamlMultilineScalarChompingType(scalarString);
 			final int indentationIndicator = YamlMultilineScalarType.getYamlMultilineScalarIndentationIndicator(scalarString);
@@ -1690,7 +1738,7 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 			return scalar;
 		} else {
-			final YamlScalar scalar = new YamlScalar(scalarString, YamlScalarType.STRING);
+			final YamlScalar scalar = YamlScalar.fromPlainScalarString(scalarString, currentYamlVersion);
 			if (inlineComment != null) {
 				scalar.setInlineComment(inlineComment);
 			}
@@ -1707,11 +1755,9 @@ public class YamlReader extends BasicReadAheadReader {
 	 *             if the data is invalid or the node does not fit its tag
 	 */
 	private YamlNode parseFlowNode() throws Exception {
-		String datatype = null;
-		if (peekCharMatch('!') && peekNextCharMatch(1, '!')) {
-			readChar();
-			readChar();
-			datatype = readUpToNext(false, null, ' ', '\t', '\n', ',', ']', '}');
+		String tag = null;
+		if (peekCharMatch('!')) {
+			tag = readUpToNext(false, null, ' ', '\t', '\n', ',', ']', '}');
 			skipBlanks();
 		}
 
@@ -1730,10 +1776,10 @@ public class YamlReader extends BasicReadAheadReader {
 			node = readFlowScalarString();
 		}
 
-		if (datatype == null) {
+		if (tag == null) {
 			return node;
 		} else {
-			return applyDatatype(datatype, node);
+			return applyTag(tag, node);
 		}
 	}
 

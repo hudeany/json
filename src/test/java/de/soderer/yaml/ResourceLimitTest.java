@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,7 @@ import de.soderer.yaml.exception.YamlParseException;
  */
 @SuppressWarnings("static-method")
 public class ResourceLimitTest {
-	private static ByteArrayInputStream toStream(final String data) {
+	private static InputStream toStream(final String data) {
 		return new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 	}
 
@@ -97,9 +98,14 @@ public class ResourceLimitTest {
 
 	@Test
 	public void testJsonNestingDepthConfigurable() throws Exception {
-		try (JsonReader reader = new JsonReader(toStream(nestedArrays(2000)))) {
-			reader.withMaximumNestingDepth(2000);
+		// Above the default limit, but low enough for the stack of any test runner
+		try (JsonReader reader = new JsonReader(toStream(nestedArrays(800)))) {
+			reader.withMaximumNestingDepth(800);
 			assertNotNull(reader.read());
+		}
+		try (JsonReader reader = new JsonReader(toStream(nestedArrays(801)))) {
+			reader.withMaximumNestingDepth(800);
+			assertThrows(MaximumNestingDepthExceededException.class, reader::read);
 		}
 		try (JsonReader reader = new JsonReader(toStream(nestedArrays(3)))) {
 			reader.withMaximumNestingDepth(2);
