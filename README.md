@@ -9,7 +9,7 @@ A lightweight Java library to read, write, validate and compare **JSON**, **JSON
 - **JSON and JSON5**: read and write documents, or stream them token by token
 - **YAML**: read and write documents while keeping comments, anchors, quote styles and empty lines
 - **Sequential reading**: process huge arrays and sequences item by item, like a SAX parser for XML
-- **JSON Schema validation**: drafts v4, v6 and v7 (see [json-schema.org](https://json-schema.org)), also applicable to YAML data
+- **JSON Schema validation**: drafts v3, v4, v6, v7, 2019-09 and 2020-12 (see [json-schema.org](https://json-schema.org)), tested against the official [JSON-Schema-Test-Suite](https://github.com/json-schema-org/JSON-Schema-Test-Suite), also applicable to YAML data
 - **JSON path**: navigate data with paths like `$.address.city`
 - **Conversion** between JSON and YAML, with resolution of YAML aliases and merge keys (`<<`)
 - **Diff and patch**: compare two data trees, render the differences as text and apply them as a patch
@@ -24,6 +24,7 @@ A lightweight Java library to read, write, validate and compare **JSON**, **JSON
   - [Sequential read of large arrays](#sequential-read-of-large-arrays)
   - [JSON5](#json5)
   - [JSON Schema validation](#json-schema-validation)
+  - [JSON Schema drafts 2019-09 and 2020-12](#json-schema-drafts-2019-09-and-2020-12)
 - [YAML](#yaml)
   - [Read YAML](#read-yaml)
   - [Write YAML](#write-yaml)
@@ -197,6 +198,53 @@ The schema version is taken from `$schema`. Without `$schema`, a strict simple m
 new JsonSchema(schemaInputStream, new JsonSchemaConfiguration().withJsonSchemaVersion(JsonSchemaVersion.draftV7));
 ```
 
+Supported versions are `draftV3`, `draftV4`, `draftV6`, `draftV7`, `draft2019_09`, `draft2020_12` and `simple`.
+
+### JSON Schema drafts 2019-09 and 2020-12
+
+All keywords of the newer drafts are supported, e.g. `$defs`, `$anchor`, `prefixItems`, `unevaluatedProperties`, `unevaluatedItems`, `dependentRequired`, `dependentSchemas`, `minContains`/`maxContains`, `$dynamicRef` (2020-12) and `$recursiveRef` (2019-09).
+
+```java
+final String schema = """
+		{
+		  "$schema": "https://json-schema.org/draft/2020-12/schema",
+		  "$defs": {
+		    "point": {"prefixItems": [{"type": "number"}, {"type": "number"}], "items": false}
+		  },
+		  "type": "object",
+		  "properties": {
+		    "name": {"type": "string"},
+		    "position": {"$ref": "#/$defs/point"}
+		  },
+		  "unevaluatedProperties": false
+		}""";
+final JsonSchema jsonSchema = new JsonSchema(new ByteArrayInputStream(schema.getBytes(StandardCharsets.UTF_8)));
+
+jsonSchema.validate(new ByteArrayInputStream("{\"name\": \"A\", \"position\": [1, 2]}".getBytes(StandardCharsets.UTF_8)));
+
+try {
+	jsonSchema.validate(new ByteArrayInputStream("{\"name\": \"A\", \"color\": \"red\"}".getBytes(StandardCharsets.UTF_8)));
+} catch (final JsonSchemaDataValidationError e) {
+	System.out.println(e.getMessage());
+	// Invalid JSON data: Unevaluated property 'color' is not valid at JSON path: $.color
+}
+```
+
+References (`$ref`) are resolved by URI as defined by the standard: `$id` may change the base URI in any sub schema, and plain name anchors (`$anchor`, `$dynamicAnchor`) and JSON pointers (`#/$defs/point`) are supported. Additional schemas are passed as `JsonSchemaDependency`, registered by their URI. The meta schemas of all supported drafts are included, so references to them need no download. Downloads of other referenced schemas are disabled by default and can be enabled by `JsonSchemaConfiguration.withDownloadReferencedSchemas(true)`.
+
+Since draft 2019-09, `format` is only an annotation by default, as defined by the standard. To validate formats like `email`, `date-time`, `ipv4`, `uri` or `uuid` anyway:
+
+```java
+new JsonSchema(schemaInputStream, new JsonSchemaConfiguration().withFormatAssertion(true));
+```
+
+A JSON schema itself can be checked against the meta schema of its draft:
+
+```java
+JsonUtilities.validateJsonSchemaDraft2020_12(schemaInputStream, StandardCharsets.UTF_8);
+JsonUtilities.validateJsonSchema(schemaInputStream, StandardCharsets.UTF_8, JsonSchemaVersion.draft2019_09);
+```
+
 ## YAML
 
 The YAML classes are in the packages `de.soderer.yaml` and `de.soderer.yaml.data`.
@@ -336,3 +384,6 @@ The unit tests show many more use cases:
 
 - [JsonTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/json/JsonTest.java)
 - [YamlTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/yaml/YamlTest.java)
+- [JsonSchemaNewDraftsTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/json/schema/JsonSchemaNewDraftsTest.java) for the JSON Schema drafts 2019-09 and 2020-12
+
+The JSON Schema implementation runs the official [JSON-Schema-Test-Suite](https://github.com/json-schema-org/JSON-Schema-Test-Suite) for all supported drafts as unit tests ([JsonSchemaTestSuiteTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/json/schema/JsonSchemaTestSuiteTest.java)). All required tests pass. Of the optional tests, only references between schemas of different drafts (`cross-draft`) are not supported.
