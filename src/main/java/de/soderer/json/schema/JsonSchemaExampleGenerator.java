@@ -158,7 +158,15 @@ public class JsonSchemaExampleGenerator {
 
 	private JsonArray generateArrayExample(final JsonObject schema, final Set<String> activeReferences) throws Exception {
 		final JsonArray result = new JsonArray();
-		if (schema.get("items") instanceof JsonObject) {
+		if (schema.get("prefixItems") instanceof JsonArray) {
+			// Draft 2020-12: one example per leading item schema
+			for (final JsonNode prefixItemSchema : ((JsonArray) schema.get("prefixItems")).items()) {
+				if (prefixItemSchema instanceof JsonObject) {
+					result.add(generateExample((JsonObject) prefixItemSchema, activeReferences));
+				}
+			}
+			return result;
+		} else if (schema.get("items") instanceof JsonObject) {
 			final JsonNode itemExample = generateExample((JsonObject) schema.get("items"), activeReferences);
 			if (itemExample != null) {
 				result.add(itemExample);

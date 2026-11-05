@@ -1,8 +1,6 @@
 package de.soderer.json.schema.validator;
 
-import de.soderer.json.JsonArray;
 import de.soderer.json.JsonNode;
-import de.soderer.json.JsonObject;
 import de.soderer.json.JsonValueBoolean;
 import de.soderer.json.JsonValueInteger;
 import de.soderer.json.JsonValueNumber;
@@ -55,9 +53,8 @@ public class ConstValidator extends BaseJsonSchemaValidator {
 			return;
 		} else if ((jsonNode.isInteger() || jsonNode.isNumber()) && (validatorDataInclusiveNull.isInteger() || validatorDataInclusiveNull.isNumber()) && NumberUtilities.compare(getNumberValue(jsonNode), getNumberValue(validatorDataInclusiveNull)) == 0) {
 			return;
-		} else if (jsonNode.isJsonObject() && validatorDataInclusiveNull.isJsonObject() && ((JsonObject) jsonNode).equals(validatorDataInclusiveNull)) {
-			return;
-		} else if (jsonNode.isJsonArray() && validatorDataInclusiveNull.isJsonArray() && ((JsonArray) jsonNode).equals(validatorDataInclusiveNull)) {
+		} else if ((jsonNode.isJsonObject() || jsonNode.isJsonArray()) && isJsonDataEqual(jsonNode, validatorDataInclusiveNull)) {
+			// Deep comparison with numbers compared by value (1 equals 1.0)
 			return;
 		}
 		throw new JsonSchemaDataValidationError("Const expected '" + (constIsNull ? null : validatorDataInclusiveNull) + "' but was '" + (jsonNode.isNull() ? null : jsonNode) + "'", jsonPath);

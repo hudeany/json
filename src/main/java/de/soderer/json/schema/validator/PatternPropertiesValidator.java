@@ -16,6 +16,7 @@ import de.soderer.json.schema.JsonSchemaDataValidationError;
 import de.soderer.json.schema.JsonSchemaDefinitionError;
 import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
+import de.soderer.json.schema.JsonSchemaRegexUtilities;
 
 /**
  * A JSON schema object with regex patterns as keys and subschemas which must match if the key pattern matches with a JSON data object property name<br />
@@ -61,7 +62,7 @@ public class PatternPropertiesValidator extends BaseJsonSchemaValidator {
 
 			final Pattern propertyKeyPattern;
 			try {
-				propertyKeyPattern = Pattern.compile(entry.getKey());
+				propertyKeyPattern = JsonSchemaRegexUtilities.compile(entry.getKey());
 			} catch (final Exception e) {
 				throw new JsonSchemaDefinitionError("PatternProperties data contains invalid RegEx pattern: " + entry.getKey(), entrySchemaPath, e);
 			}
@@ -96,6 +97,8 @@ public class PatternPropertiesValidator extends BaseJsonSchemaValidator {
 						for (final BaseJsonSchemaValidator subValidator : propertiesDefinitionsEntry.getValue()) {
 							subValidator.validate(newJsonNode, new JsonPath(jsonPath).addPropertyKey(propertyEntry.getKey()));
 						}
+						// Annotation for "unevaluatedProperties" (draft 2019-09 and newer)
+						jsonSchemaDependencyResolver.getEvaluationContext().markPropertyEvaluated(propertyEntry.getKey());
 					}
 				}
 			}

@@ -262,7 +262,9 @@ public class ReferenceValidatorTest {
 			Assertions.fail("Missing expected exception");
 		} catch (final JsonSchemaDefinitionError e) {
 			// Expected exception
-			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("#/definitions/unknownPredefType"));
+			// The error is reported at the position of the "$ref" keyword, its message names the reference
+			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath().addPropertyKey("properties").addPropertyKey("item1").addPropertyKey("$ref"));
+			Assertions.assertTrue(e.getMessage().contains("#/definitions/unknownPredefType"), e.getMessage());
 		} catch (final JsonSchemaDataValidationError e) {
 			// Expected exception
 			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$.item1"));
@@ -300,7 +302,9 @@ public class ReferenceValidatorTest {
 			Assertions.fail("Missing expected exception");
 		} catch (final JsonSchemaDefinitionError e) {
 			// Expected exception
-			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("#/definitions/predefType"));
+			// The error is reported at the position of the "$ref" keyword, its message names the reference
+			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath().addPropertyKey("properties").addPropertyKey("item1").addPropertyKey("$ref"));
+			Assertions.assertTrue(e.getMessage().contains("#/definitions/predefType"), e.getMessage());
 		} catch (final JsonSchemaDataValidationError e) {
 			// Expected exception
 			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$.item1"));
@@ -375,7 +379,9 @@ public class ReferenceValidatorTest {
 			Assertions.fail("Missing expected exception");
 		} catch (final JsonSchemaDefinitionError e) {
 			// Expected exception
-			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("#/definitions/predefType"));
+			// The error is reported at the position of the "$ref" keyword, its message names the reference
+			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath().addPropertyKey("properties").addPropertyKey("item1").addPropertyKey("$ref"));
+			Assertions.assertTrue(e.getMessage().contains("#/definitions/predefType"), e.getMessage());
 		} catch (final JsonSchemaDataValidationError e) {
 			// Expected exception
 			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$.item1"));
@@ -423,7 +429,9 @@ public class ReferenceValidatorTest {
 			Assertions.fail("Missing expected exception");
 		} catch (final JsonSchemaDefinitionError e) {
 			// Expected exception
-			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("otherSchema.json#/definitions/unknownPredefType"));
+			// The error is reported at the position of the "$ref" keyword, its message names the reference
+			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath().addPropertyKey("properties").addPropertyKey("item1").addPropertyKey("$ref"));
+			Assertions.assertTrue(e.getMessage().contains("otherSchema.json#/definitions/unknownPredefType"), e.getMessage());
 		} catch (final JsonSchemaDataValidationError e) {
 			// Expected exception
 			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$.item1"));
@@ -471,7 +479,9 @@ public class ReferenceValidatorTest {
 			Assertions.fail("Missing expected exception");
 		} catch (final JsonSchemaDefinitionError e) {
 			// Expected exception
-			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath("unknownOtherSchema.json#/definitions/unknownPredefType"));
+			// The error is reported at the position of the "$ref" keyword, its message names the reference
+			assertJsonSchemaDefinitionErrorJsonSchemaPath(e, new JsonSchemaPath().addPropertyKey("properties").addPropertyKey("item1").addPropertyKey("$ref"));
+			Assertions.assertTrue(e.getMessage().contains("unknownOtherSchema.json#/definitions/unknownPredefType"), e.getMessage());
 		} catch (final JsonSchemaDataValidationError e) {
 			// Expected exception
 			assertJsonSchemaDataValidationErrorJsonPath(e, new JsonPath("$.item1"));

@@ -443,6 +443,44 @@ public class JsonUtilities {
 	}
 
 	/**
+	 * Check for a valid JSON schema definition against the meta schema of JSON schema draft 2019-09.
+	 *
+	 * @param jsonSchemaDataInputStream
+	 *            JSON schema definition to check
+	 * @param encoding
+	 *            encoding of the JSON schema definition
+	 * @return parsed JSON schema definition
+	 * @throws IOException
+	 *             if the data cannot be read
+	 * @throws JsonSchemaDefinitionError
+	 *             if the meta schema cannot be loaded
+	 * @throws JsonSchemaDataValidationError
+	 *             if the JSON schema definition is invalid
+	 */
+	public static JsonNode validateJsonSchemaDraft2019_09(final InputStream jsonSchemaDataInputStream, final Charset encoding) throws IOException, JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+		return validateJsonSchema(jsonSchemaDataInputStream, encoding, JsonSchemaVersion.draft2019_09);
+	}
+
+	/**
+	 * Check for a valid JSON schema definition against the meta schema of JSON schema draft 2020-12.
+	 *
+	 * @param jsonSchemaDataInputStream
+	 *            JSON schema definition to check
+	 * @param encoding
+	 *            encoding of the JSON schema definition
+	 * @return parsed JSON schema definition
+	 * @throws IOException
+	 *             if the data cannot be read
+	 * @throws JsonSchemaDefinitionError
+	 *             if the meta schema cannot be loaded
+	 * @throws JsonSchemaDataValidationError
+	 *             if the JSON schema definition is invalid
+	 */
+	public static JsonNode validateJsonSchemaDraft2020_12(final InputStream jsonSchemaDataInputStream, final Charset encoding) throws IOException, JsonSchemaDefinitionError, JsonSchemaDataValidationError {
+		return validateJsonSchema(jsonSchemaDataInputStream, encoding, JsonSchemaVersion.draft2020_12);
+	}
+
+	/**
 	 * Check for a valid JSON schema definition against the meta schema of the given JSON schema version.
 	 *
 	 * @param jsonSchemaDataInputStream

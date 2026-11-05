@@ -14,15 +14,22 @@ import de.soderer.json.path.JsonPath;
 import de.soderer.json.schema.JsonSchemaDataValidationError;
 import de.soderer.json.schema.JsonSchemaDefinitionError;
 import de.soderer.json.schema.JsonSchemaDependencyResolver;
+import de.soderer.json.schema.JsonSchemaFormats;
 import de.soderer.json.schema.JsonSchemaPath;
+import de.soderer.json.schema.JsonSchemaRegexUtilities;
+import de.soderer.json.schema.JsonSchemaVersion;
 import de.soderer.json.utilities.DateUtilities;
-import de.soderer.json.utilities.NetworkUtilities;
 import de.soderer.json.utilities.TextUtilities;
 
 /**
  * Validator for the "format" keyword: checks string data against a named data format like "email",
- * "date-time" or "ipv4". Format names are case-insensitive. Some formats are accepted without
- * checks (e.g. "uri-reference", "json-pointer"). Data that is not a string is ignored.<br />
+ * "date-time" or "ipv4". Format names are case-insensitive. Data that is not a string is ignored.
+ * The checks follow the RFCs referenced by the JSON schema standard, see {@link JsonSchemaFormats}.
+ * <br />
+ * <br />
+ * In simple mode "date", "time" and "date-time" are checked leniently (optional and short time
+ * zones like "+01" are accepted) and unknown format names are a definition error. In all JSON
+ * schema drafts unknown format names are ignored.<br />
  * <br />
  * Security note: see {@link PatternValidator} regarding ReDoS risk — the "regex" format only checks that a data
  * value compiles as a pattern, but "pattern"/"patternProperties"/"propertyNames" elsewhere in a schema execute
@@ -38,7 +45,20 @@ public class FormatValidator extends BaseJsonSchemaValidator {
 			"uri", "iri", "uri-reference", "uri-template", "uri-pointer", "iri-reference",
 			"regex", "base64", "color",
 			"json-pointer", "relative-json-pointer",
+			"uuid", "duration",
 			"unknown"));
+
+	/** Pattern of the "time" format of draft 3: "hh:mm:ss" without time offset. */
+	private static final Pattern DRAFT_V3_TIME_PATTERN = Pattern.compile("(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]");
+
+	/** Whether the format name is unknown, which is ignored since draft 2019-09. */
+	private boolean unknownFormat = false;
+
+	/**
+	 * Whether "date", "time" and "date-time" are checked strictly after RFC 3339 (all JSON schema
+	 * drafts) or leniently with optional and short time zones (simple mode).
+	 */
+	private boolean strictDateTimeFormats = false;
 
 	/** CSS color names accepted by the "color" format. */
 	private static final Set<String> CSS_COLOR_NAMES = new HashSet<>(Arrays.asList(
@@ -78,13 +98,19 @@ public class FormatValidator extends BaseJsonSchemaValidator {
 		} else if (!(validatorData.isString())) {
 			throw new JsonSchemaDefinitionError("Format value is not a string", jsonSchemaPath);
 		} else if (!KNOWN_FORMATS.contains(((JsonValueString) validatorData).getValue().toLowerCase(Locale.ROOT))) {
-			throw new JsonSchemaDefinitionError("Unknown format name '" + validatorData + "'", jsonSchemaPath);
+			if (jsonSchemaDependencyResolver != null && !jsonSchemaDependencyResolver.isSimpleMode()) {
+				// The JSON schema drafts regard unknown formats as valid (custom formats are allowed), only simple mode rejects them
+				unknownFormat = true;
+			} else {
+				throw new JsonSchemaDefinitionError("Unknown format name '" + validatorData + "'", jsonSchemaPath);
+			}
 		}
+		strictDateTimeFormats = jsonSchemaDependencyResolver != null && !jsonSchemaDependencyResolver.isSimpleMode();
 	}
 
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
-		if (!jsonNode.isString()) {
+		if (!jsonNode.isString() || unknownFormat) {
 			// String formats only apply to string values
 			return;
 		}
@@ -93,115 +119,163 @@ public class FormatValidator extends BaseJsonSchemaValidator {
 		final String value = ((JsonValueString) jsonNode).getValue();
 		final String invalidDataMessage = "Invalid data for format '" + validatorDataString + "' was '" + value + "'";
 
+		final boolean valid;
 		switch (validatorDataString.toLowerCase(Locale.ROOT)) {
 			case "email":
+				valid = JsonSchemaFormats.isValidEmail(value);
+				break;
 			case "idn-email":
-				if (!NetworkUtilities.isValidEmail(value)) {
-					throw new JsonSchemaDataValidationError(invalidDataMessage, jsonPath);
-				}
+				valid = JsonSchemaFormats.isValidIdnEmail(value);
 				break;
 			case "date":
-				try {
-					DateUtilities.parseStrictLocalDate(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE, value);
-				} catch (final DateTimeParseException e1) {
-					try {
-						DateUtilities.parseStrictLocalDate(DateUtilities.ISO_8601_DATE_FORMAT, value);
-					} catch (@SuppressWarnings("unused") final DateTimeParseException e2) {
-						throw new JsonSchemaDataValidationError(invalidDataMessage, jsonPath, e1);
-					}
-				}
+				valid = strictDateTimeFormats ? JsonSchemaFormats.isValidDate(value) : isValidLenientDate(value);
 				break;
 			case "date-time":
-				try {
-					DateUtilities.parseIso8601DateTimeString(value);
-				} catch (final DateTimeParseException e) {
-					throw new JsonSchemaDataValidationError(invalidDataMessage, jsonPath, e);
-				}
+				valid = strictDateTimeFormats ? JsonSchemaFormats.isValidDateTime(value) : isValidLenientDateTime(value);
 				break;
 			case "time":
-				validateTime(value, jsonPath, invalidDataMessage);
+				if (jsonSchemaDependencyResolver != null && jsonSchemaDependencyResolver.isDraftV3Mode()) {
+					// Draft 3: "hh:mm:ss" without time offset
+					valid = DRAFT_V3_TIME_PATTERN.matcher(value).matches();
+				} else {
+					valid = strictDateTimeFormats ? JsonSchemaFormats.isValidTime(value) : isValidLenientTime(value);
+				}
+				break;
+			case "duration":
+				valid = JsonSchemaFormats.isValidDuration(value);
 				break;
 			case "hostname":
 			case "host-name":
+				// Up to draft 6 "hostname" is defined by RFC 1123 only, without the reserved labels of RFC 5891
+				valid = JsonSchemaFormats.isValidHostname(value, jsonSchemaDependencyResolver == null || jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isVersionAtLeast(JsonSchemaVersion.draftV7));
+				break;
 			case "idn-hostname":
 			case "idn-host-name":
-				if (!NetworkUtilities.isValidHostname(value)) {
-					throw new JsonSchemaDataValidationError(invalidDataMessage, jsonPath);
-				}
+				valid = JsonSchemaFormats.isValidIdnHostname(value);
 				break;
 			case "ipv4":
 			case "ip-address":
-				if (!NetworkUtilities.isValidIpV4(value)) {
-					throw new JsonSchemaDataValidationError(invalidDataMessage, jsonPath);
-				}
+				valid = JsonSchemaFormats.isValidIpv4(value);
 				break;
 			case "ipv6":
-				if (!NetworkUtilities.isValidIpV6(value)) {
-					throw new JsonSchemaDataValidationError(invalidDataMessage, jsonPath);
-				}
+				valid = JsonSchemaFormats.isValidIpv6(value);
 				break;
 			case "uri":
+				valid = JsonSchemaFormats.isValidUri(value);
+				break;
+			case "uri-reference":
+				valid = JsonSchemaFormats.isValidUriReference(value);
+				break;
 			case "iri":
-				if (!NetworkUtilities.isValidUri(value)) {
-					throw new JsonSchemaDataValidationError(invalidDataMessage, jsonPath);
-				}
+				valid = JsonSchemaFormats.isValidIri(value);
+				break;
+			case "iri-reference":
+				valid = JsonSchemaFormats.isValidIriReference(value);
+				break;
+			case "uri-template":
+				valid = JsonSchemaFormats.isValidUriTemplate(value);
+				break;
+			case "json-pointer":
+				valid = JsonSchemaFormats.isValidJsonPointer(value);
+				break;
+			case "relative-json-pointer":
+				valid = JsonSchemaFormats.isValidRelativeJsonPointer(value);
+				break;
+			case "uuid":
+				valid = JsonSchemaFormats.isValidUuid(value);
 				break;
 			case "regex":
-				try {
-					Pattern.compile(value);
-				} catch (final Exception e) {
-					throw new JsonSchemaDataValidationError(invalidDataMessage, jsonPath, e);
-				}
+				valid = isValidRegex(value);
 				break;
 			case "base64":
 				if (!TextUtilities.isValidBase64(value)) {
 					throw new JsonSchemaDataValidationError("Invalid data for format '" + validatorDataString + "' was '" + trimStringToMaximumLength(value, 20, " ...") + "'", jsonPath);
 				}
+				valid = true;
 				break;
 			case "color":
-				if (!CSS_COLOR_NAMES.contains(value) && !HEX_COLOR_PATTERN.matcher(value).matches()) {
-					throw new JsonSchemaDataValidationError("Invalid value for format 'color': " + value, jsonPath);
-				}
+				valid = CSS_COLOR_NAMES.contains(value) || HEX_COLOR_PATTERN.matcher(value).matches();
 				break;
-			case "uri-reference":
-			case "uri-template":
 			case "uri-pointer":
-			case "iri-reference":
-			case "json-pointer":
-			case "relative-json-pointer":
 			case "unknown":
 				// No special checks
+				valid = true;
 				break;
 			default:
 				throw new JsonSchemaDataValidationError("Unknown format name '" + validatorData + "'", jsonPath);
 		}
+		if (!valid) {
+			throw new JsonSchemaDataValidationError(invalidDataMessage, jsonPath);
+		}
 	}
 
 	/**
-	 * Checks a value for the "time" format against all supported time patterns.
+	 * Checks whether a value compiles as ECMA-262 regular expression.
 	 *
 	 * @param value
-	 *            the value to check
-	 * @param jsonPath
-	 *            the path of the JSON data node, used in error messages
-	 * @param invalidDataMessage
-	 *            the error message for an invalid value
-	 * @throws JsonSchemaDataValidationError
-	 *             if the value matches none of the time patterns
+	 *            the value
+	 * @return true, if valid
 	 */
-	private static void validateTime(final String value, final JsonPath jsonPath, final String invalidDataMessage) throws JsonSchemaDataValidationError {
-		DateTimeParseException firstParseException = null;
+	private static boolean isValidRegex(final String value) {
+		return JsonSchemaRegexUtilities.isValidEcmaScriptRegex(value);
+	}
+
+	/**
+	 * Lenient check of the "date" format in simple mode: ISO 8601 date with optional time zone.
+	 *
+	 * @param value
+	 *            the value
+	 * @return true, if valid
+	 */
+	private static boolean isValidLenientDate(final String value) {
+		try {
+			DateUtilities.parseStrictLocalDate(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE, value);
+			return true;
+		} catch (@SuppressWarnings("unused") final DateTimeParseException e1) {
+			try {
+				DateUtilities.parseStrictLocalDate(DateUtilities.ISO_8601_DATE_FORMAT, value);
+				return true;
+			} catch (@SuppressWarnings("unused") final DateTimeParseException e2) {
+				return false;
+			}
+		}
+	}
+
+	/**
+	 * Lenient check of the "date-time" format in simple mode: ISO 8601 date-time, time zone optional
+	 * and also in short form like "+01".
+	 *
+	 * @param value
+	 *            the value
+	 * @return true, if valid
+	 */
+	private static boolean isValidLenientDateTime(final String value) {
+		try {
+			DateUtilities.parseIso8601DateTimeString(value);
+			return true;
+		} catch (@SuppressWarnings("unused") final DateTimeParseException e) {
+			return false;
+		}
+	}
+
+	/**
+	 * Lenient check of the "time" format in simple mode: ISO 8601 time, time zone optional and also
+	 * in short form like "+01".
+	 *
+	 * @param value
+	 *            the value
+	 * @return true, if the value matches one of the supported time patterns
+	 */
+	private static boolean isValidLenientTime(final String value) {
 		for (final String timePattern : TIME_PATTERNS) {
 			try {
 				DateUtilities.parseLocalTime(timePattern, value);
-				return;
-			} catch (final DateTimeParseException e) {
-				if (firstParseException == null) {
-					firstParseException = e;
-				}
+				return true;
+			} catch (@SuppressWarnings("unused") final DateTimeParseException e) {
+				// Try next pattern
 			}
 		}
-		throw new JsonSchemaDataValidationError(invalidDataMessage, jsonPath, firstParseException);
+		return false;
 	}
 
 	/**

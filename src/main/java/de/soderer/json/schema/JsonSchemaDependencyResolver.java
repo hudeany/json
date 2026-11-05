@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -36,8 +35,82 @@ import de.soderer.json.utilities.Utilities;
  * downloaded by http(s) URL. The resolver also caches the validators built per reference and
  * detects cyclic references.
  * </p>
+ * <p>
+ * References are resolved by URI according to the JSON schema standard: every schema object has
+ * a base URI (changed by "$id", or "id" up to draft 4), and the reference is resolved against it.
+ * Plain name anchors ("$anchor", "$dynamicAnchor", "$id": "#name") and JSON pointer fragments are
+ * supported. The meta schemas of all supported JSON schema versions are available offline from
+ * classpath resources. If a reference cannot be resolved this way, the former lookup rules of this
+ * library are used as fallback (e.g. plain definition names like "$ref": "address").
+ * </p>
  */
 public class JsonSchemaDependencyResolver {
+	/**
+	 * Classpath resources of the bundled meta schemas by their normalized URI ("http" scheme, no
+	 * trailing "#"), so that references to meta schemas do not need any download.
+	 */
+	private static final Map<String, String> BUNDLED_META_SCHEMAS = new HashMap<>();
+	static {
+		BUNDLED_META_SCHEMAS.put("http://json-schema.org/draft-03/schema", JsonSchemaVersion.draftV3.getLocalFile());
+		BUNDLED_META_SCHEMAS.put("http://json-schema.org/draft-04/schema", JsonSchemaVersion.draftV4.getLocalFile());
+		BUNDLED_META_SCHEMAS.put("http://json-schema.org/draft-06/schema", JsonSchemaVersion.draftV6.getLocalFile());
+		BUNDLED_META_SCHEMAS.put("http://json-schema.org/draft-07/schema", JsonSchemaVersion.draftV7.getLocalFile());
+		BUNDLED_META_SCHEMAS.put("http://json-schema.org/draft/2019-09/schema", JsonSchemaVersion.draft2019_09.getLocalFile());
+		for (final String vocabulary : new String[] { "core", "applicator", "validation", "meta-data", "format", "content" }) {
+			BUNDLED_META_SCHEMAS.put("http://json-schema.org/draft/2019-09/meta/" + vocabulary, "json/JsonSchemaDescriptionDraft2019-09/meta/" + vocabulary + ".json");
+		}
+		BUNDLED_META_SCHEMAS.put("http://json-schema.org/draft/2020-12/schema", JsonSchemaVersion.draft2020_12.getLocalFile());
+		for (final String vocabulary : new String[] { "core", "applicator", "unevaluated", "validation", "meta-data", "format-annotation", "format-assertion", "content" }) {
+			BUNDLED_META_SCHEMAS.put("http://json-schema.org/draft/2020-12/meta/" + vocabulary, "json/JsonSchemaDescriptionDraft2020-12/meta/" + vocabulary + ".json");
+		}
+	}
+
+	/** URI of the validation vocabulary of draft 2019-09. */
+	private static final String VOCABULARY_2019_09_VALIDATION = "https://json-schema.org/draft/2019-09/vocab/validation";
+
+	/** URI of the validation vocabulary of draft 2020-12. */
+	private static final String VOCABULARY_2020_12_VALIDATION = "https://json-schema.org/draft/2020-12/vocab/validation";
+
+	/** URI of the format assertion vocabulary of draft 2020-12. */
+	private static final String VOCABULARY_2020_12_FORMAT_ASSERTION = "https://json-schema.org/draft/2020-12/vocab/format-assertion";
+
+	/**
+	 * Index of all known schema resources by URI, built on first use.
+	 */
+	private JsonSchemaResourceIndex resourceIndex = null;
+
+	/**
+	 * Initial base URI of the main schema document (before its own "$id").
+	 */
+	private String rootRetrievalUri = JsonSchemaUriUtilities.DEFAULT_ROOT_BASE_URI;
+
+	/**
+	 * Evaluation context without frames for JSON schema versions up to draft 7. No frames are ever
+	 * entered in it, so all annotation calls are without effect.
+	 */
+	private static final JsonSchemaEvaluationContext INACTIVE_EVALUATION_CONTEXT = new JsonSchemaEvaluationContext();
+
+	/**
+	 * Runtime state of the current validation per thread (draft 2019-09 and newer).
+	 */
+	private final ThreadLocal<JsonSchemaEvaluationContext> evaluationContext = ThreadLocal.withInitial(JsonSchemaEvaluationContext::new);
+
+	/**
+	 * Whether "format" is validated: null to use the default of the JSON schema version (validated
+	 * up to draft 7, annotation only since draft 2019-09).
+	 */
+	private Boolean formatAssertion = null;
+
+	/**
+	 * Whether the meta schema of the main schema declares the format assertion vocabulary.
+	 */
+	private boolean formatAssertionVocabulary = false;
+
+	/**
+	 * Whether the validation vocabulary is active (type, enum, minimum, required ...). It is only
+	 * disabled by a custom meta schema whose "$vocabulary" does not contain it.
+	 */
+	private boolean validationVocabulary = true;
 	/**
 	 * The main schema document.
 	 */
@@ -172,6 +245,31 @@ public class JsonSchemaDependencyResolver {
 	 *             downloaded
 	 */
 	public JsonObject getDependencyByReference(final String reference, final JsonSchemaPath jsonSchemaPath) throws Exception {
+		if (reference != null) {
+			// Standard resolution by URI relative to the main schema document
+			final JsonNode resolvedNode = getSchemaNodeByUri(JsonSchemaUriUtilities.resolve(getBaseUri(schemaDocumentNode), reference));
+			if (resolvedNode instanceof JsonObject) {
+				return (JsonObject) resolvedNode;
+			}
+		}
+		return getDependencyByLegacyReference(reference, jsonSchemaPath);
+	}
+
+	/**
+	 * Returns the schema object a reference points to by the former lookup rules of this library:
+	 * a reference without "#" is looked up in "definitions" of the main schema and the additional
+	 * schemas, "#..." in the main schema, and "name#..." in the additional schema of that name.
+	 *
+	 * @param reference
+	 *            the "$ref" value
+	 * @param jsonSchemaPath
+	 *            the path of the "$ref" keyword, used in error messages
+	 * @return the referenced schema object
+	 * @throws Exception
+	 *             if the reference cannot be resolved, or an external schema is missing and may not be
+	 *             downloaded
+	 */
+	public synchronized JsonObject getDependencyByLegacyReference(final String reference, final JsonSchemaPath jsonSchemaPath) throws Exception {
 		if (reference != null) {
 			if (!reference.contains("#")) {
 				// Dereference simple reference without '#'
@@ -489,6 +587,304 @@ public class JsonSchemaDependencyResolver {
 	}
 
 	/**
+	 * Adds an additional schema document to the resource index, if the index was already built.
+	 * Internal references of the document ("#...") are resolved against its own base URI, which is
+	 * its "$id" or otherwise its reference name.
+	 *
+	 * @param jsonSchemaReferenceName
+	 *            name or URI the document is registered by
+	 * @param jsonSchemaDocument
+	 *            the schema document
+	 */
+	private synchronized void addToResourceIndex(final String jsonSchemaReferenceName, final JsonObject jsonSchemaDocument) {
+		if (resourceIndex != null) {
+			resourceIndex.addDocument(JsonSchemaUriUtilities.resolve(rootRetrievalUri, jsonSchemaReferenceName), jsonSchemaDocument, jsonSchemaVersion);
+		}
+	}
+
+	/**
+	 * Returns the resource index, building it on first use.
+	 *
+	 * @return the resource index
+	 */
+	private synchronized JsonSchemaResourceIndex getResourceIndex() {
+		if (resourceIndex == null) {
+			final JsonSchemaResourceIndex newResourceIndex = new JsonSchemaResourceIndex();
+			newResourceIndex.addDocument(rootRetrievalUri, schemaDocumentNode, jsonSchemaVersion);
+			for (final Entry<String, JsonObject> additionalSchemaDocument : additionalSchemaDocumentNodes.entrySet()) {
+				if (additionalSchemaDocument.getValue() != null) {
+					newResourceIndex.addDocument(JsonSchemaUriUtilities.resolve(rootRetrievalUri, additionalSchemaDocument.getKey()), additionalSchemaDocument.getValue(), jsonSchemaVersion);
+				}
+			}
+			resourceIndex = newResourceIndex;
+		}
+		return resourceIndex;
+	}
+
+	/**
+	 * Returns the base URI in effect for a schema object, against which its "$ref" values are
+	 * resolved.
+	 *
+	 * @param schemaObject
+	 *            a schema object of one of the known schema documents
+	 * @return the base URI, or the base URI of the main schema document for unknown objects
+	 */
+	public synchronized String getBaseUri(final JsonNode schemaObject) {
+		final String baseUri = getResourceIndex().getBaseUri(schemaObject);
+		if (baseUri != null) {
+			return baseUri;
+		} else {
+			final String rootBaseUri = getResourceIndex().getBaseUri(schemaDocumentNode);
+			return rootBaseUri != null ? rootBaseUri : rootRetrievalUri;
+		}
+	}
+
+	/**
+	 * Returns the schema node identified by an absolute URI. Bundled meta schemas are loaded from
+	 * the classpath and, if allowed, other http(s) schemas are downloaded on first use.
+	 *
+	 * @param absoluteUri
+	 *            the absolute URI, optionally with a JSON pointer or anchor fragment
+	 * @return the schema node (object, boolean or any other node a JSON pointer leads to), or null
+	 *         if it cannot be resolved
+	 * @throws JsonSchemaDefinitionError
+	 *             if a download fails
+	 */
+	public JsonNode getSchemaNodeByUri(final String absoluteUri) throws JsonSchemaDefinitionError {
+		return getSchemaNodeByUri(absoluteUri, true);
+	}
+
+	/**
+	 * Returns the schema node identified by an absolute URI. Bundled meta schemas are loaded from
+	 * the classpath on first use.
+	 *
+	 * @param absoluteUri
+	 *            the absolute URI, optionally with a JSON pointer or anchor fragment
+	 * @param allowDownload
+	 *            true to download other http(s) schemas, if downloads are allowed by
+	 *            {@link #setDownloadReferencedSchemas(boolean)}
+	 * @return the schema node (object, boolean or any other node a JSON pointer leads to), or null
+	 *         if it cannot be resolved
+	 * @throws JsonSchemaDefinitionError
+	 *             if a download fails
+	 */
+	public synchronized JsonNode getSchemaNodeByUri(final String absoluteUri, final boolean allowDownload) throws JsonSchemaDefinitionError {
+		final JsonSchemaResourceIndex index = getResourceIndex();
+		final JsonNode node = index.get(absoluteUri);
+		if (node != null) {
+			return node;
+		}
+
+		final String documentUri = JsonSchemaUriUtilities.removeFragment(JsonSchemaUriUtilities.normalize(absoluteUri));
+		if (index.containsResource(documentUri) || additionalSchemaDocumentNodes.containsKey(documentUri)) {
+			// Document is known, but the fragment does not exist
+			return null;
+		}
+
+		if (loadBundledMetaSchema(documentUri)) {
+			return index.get(absoluteUri);
+		} else if (allowDownload && downloadReferencedSchemas && documentUri.toLowerCase().startsWith("http")) {
+			try {
+				downloadSchemaData(documentUri);
+			} catch (final JsonSchemaDefinitionError e) {
+				throw e;
+			} catch (final Exception e) {
+				throw new JsonSchemaDefinitionError("Cannot get content from '" + documentUri + "'", null, e);
+			}
+			return index.get(absoluteUri);
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * Checks whether the schema document a URI points to is already known (main schema, additional
+	 * schemas or already loaded schemas).
+	 *
+	 * @param uri
+	 *            the URI, a fragment is ignored
+	 * @return true, if the document is known
+	 */
+	public synchronized boolean isKnownSchemaDocument(final String uri) {
+		return getResourceIndex().containsResource(uri);
+	}
+
+	/**
+	 * Loads a bundled meta schema from the classpath, if the URI identifies one.
+	 *
+	 * @param documentUri
+	 *            the document URI without fragment
+	 * @return true, if a bundled meta schema was loaded
+	 */
+	private boolean loadBundledMetaSchema(final String documentUri) {
+		String normalizedUri = documentUri.toLowerCase();
+		if (normalizedUri.startsWith("https://")) {
+			normalizedUri = "http://" + normalizedUri.substring(8);
+		}
+		final String resourcePath = BUNDLED_META_SCHEMAS.get(normalizedUri);
+		if (resourcePath == null) {
+			return false;
+		}
+		try (InputStream metaSchemaStream = JsonSchemaDependencyResolver.class.getClassLoader().getResourceAsStream(resourcePath)) {
+			if (metaSchemaStream == null) {
+				return false;
+			}
+			addJsonSchemaDefinition(documentUri, metaSchemaStream);
+			return true;
+		} catch (@SuppressWarnings("unused") final Exception e) {
+			return false;
+		}
+	}
+
+	/**
+	 * Returns the runtime state of the current validation of this thread.
+	 *
+	 * @return the evaluation context
+	 */
+	public JsonSchemaEvaluationContext getEvaluationContext() {
+		if (!isVersionAtLeast(JsonSchemaVersion.draft2019_09)) {
+			// No annotations and dynamic scope up to draft 7: avoid creating thread bound state
+			return INACTIVE_EVALUATION_CONTEXT;
+		}
+		return evaluationContext.get();
+	}
+
+	/**
+	 * Removes the runtime state of the current thread after a validation run.
+	 */
+	public void clearEvaluationContext() {
+		evaluationContext.remove();
+	}
+
+	/**
+	 * Checks whether a schema resource defines a dynamic anchor (draft 2020-12).
+	 *
+	 * @param resourceUri
+	 *            the URI of the schema resource
+	 * @param anchorName
+	 *            the anchor name
+	 * @return true, if the resource contains "$dynamicAnchor" with this name
+	 */
+	public synchronized boolean hasDynamicAnchor(final String resourceUri, final String anchorName) {
+		return getResourceIndex().hasDynamicAnchor(resourceUri, anchorName);
+	}
+
+	/**
+	 * Checks whether the root schema of a resource has "$recursiveAnchor": true (draft 2019-09).
+	 *
+	 * @param resourceUri
+	 *            the URI of the schema resource
+	 * @return true, if the recursive anchor is set
+	 */
+	public synchronized boolean hasRecursiveAnchor(final String resourceUri) {
+		return getResourceIndex().hasRecursiveAnchor(resourceUri);
+	}
+
+	/**
+	 * Evaluates the meta schema given by "$schema" of the main schema document: detects the JSON
+	 * schema version of a custom meta schema and the vocabularies it declares by "$vocabulary".
+	 *
+	 * @param metaSchemaUri
+	 *            the "$schema" value
+	 * @return the JSON schema version the meta schema is written for, or null if unknown
+	 */
+	public JsonSchemaVersion applyMetaSchema(final String metaSchemaUri) {
+		JsonSchemaVersion version = JsonSchemaVersion.getJsonSchemaVersionByVersionUrl(metaSchemaUri);
+		if (version == null) {
+			try {
+				final JsonNode metaSchema = getSchemaNodeByUri(JsonSchemaUriUtilities.resolve(rootRetrievalUri, metaSchemaUri));
+				if (metaSchema instanceof JsonObject) {
+					final JsonObject metaSchemaObject = (JsonObject) metaSchema;
+					if (metaSchemaObject.get("$schema") instanceof JsonValueString) {
+						version = JsonSchemaVersion.getJsonSchemaVersionByVersionUrl(((JsonValueString) metaSchemaObject.get("$schema")).getValue());
+					}
+					if (metaSchemaObject.get("$vocabulary") instanceof JsonObject) {
+						final JsonObject vocabularies = (JsonObject) metaSchemaObject.get("$vocabulary");
+						validationVocabulary = vocabularies.containsKey(VOCABULARY_2019_09_VALIDATION) || vocabularies.containsKey(VOCABULARY_2020_12_VALIDATION);
+						formatAssertionVocabulary = vocabularies.containsKey(VOCABULARY_2020_12_FORMAT_ASSERTION);
+					}
+				}
+			} catch (@SuppressWarnings("unused") final Exception e) {
+				// Unknown meta schema, keep defaults
+			}
+		}
+		return version;
+	}
+
+	/**
+	 * Checks whether the validation vocabulary (type, enum, minimum, required ...) is active.
+	 *
+	 * @return false only if a custom meta schema does not declare the validation vocabulary
+	 */
+	public boolean isValidationVocabularyActive() {
+		return validationVocabulary;
+	}
+
+	/**
+	 * Checks whether "format" is validated as assertion.
+	 *
+	 * @return true if set explicitly, if the format assertion vocabulary is declared, or for JSON
+	 *         schema versions up to draft 7 and simple mode
+	 */
+	public boolean isFormatAssertion() {
+		if (formatAssertion != null) {
+			return formatAssertion;
+		} else if (formatAssertionVocabulary) {
+			return true;
+		} else {
+			return !isVersionAtLeast(JsonSchemaVersion.draft2019_09);
+		}
+	}
+
+	/**
+	 * Sets whether "format" is validated as assertion.
+	 *
+	 * @param formatAssertion
+	 *            true to validate, false to regard it as annotation only, null for the default of
+	 *            the JSON schema version
+	 */
+	public void setFormatAssertion(final Boolean formatAssertion) {
+		this.formatAssertion = formatAssertion;
+	}
+
+	/**
+	 * Sets whether "format" is validated as assertion.
+	 *
+	 * @param newFormatAssertion
+	 *            true to validate, false to regard it as annotation only, null for the default of
+	 *            the JSON schema version
+	 * @return this resolver for chaining
+	 */
+	public JsonSchemaDependencyResolver withFormatAssertion(final Boolean newFormatAssertion) {
+		setFormatAssertion(newFormatAssertion);
+		return this;
+	}
+
+	/**
+	 * Sets the URI the main schema document was retrieved from. It is the initial base URI for
+	 * resolving references, if the document has no absolute "$id".
+	 *
+	 * @param rootRetrievalUri
+	 *            an absolute URI
+	 */
+	public void setRootRetrievalUri(final String rootRetrievalUri) {
+		this.rootRetrievalUri = rootRetrievalUri == null ? JsonSchemaUriUtilities.DEFAULT_ROOT_BASE_URI : JsonSchemaUriUtilities.normalize(rootRetrievalUri);
+		resourceIndex = null;
+	}
+
+	/**
+	 * Sets the URI the main schema document was retrieved from.
+	 *
+	 * @param newRootRetrievalUri
+	 *            an absolute URI
+	 * @return this resolver for chaining
+	 */
+	public JsonSchemaDependencyResolver withRootRetrievalUri(final String newRootRetrievalUri) {
+		setRootRetrievalUri(newRootRetrievalUri);
+		return this;
+	}
+
+	/**
 	 * Adds an additional schema read from a stream (JSON5 syntax allowed).
 	 *
 	 * @param jsonSchemaReferenceName
@@ -498,7 +894,7 @@ public class JsonSchemaDependencyResolver {
 	 * @throws JsonSchemaDefinitionError
 	 *             if the name is blank or already used, or the data is no JSON object
 	 */
-	public void addJsonSchemaDefinition(final String jsonSchemaReferenceName, final InputStream jsonSchemaInputStream) throws JsonSchemaDefinitionError {
+	public synchronized void addJsonSchemaDefinition(final String jsonSchemaReferenceName, final InputStream jsonSchemaInputStream) throws JsonSchemaDefinitionError {
 		if (Utilities.isBlank(jsonSchemaReferenceName)) {
 			throw new JsonSchemaDefinitionError("Invalid empty JSON schema definition package name", null);
 		} else if (additionalSchemaDocumentNodes.containsKey(jsonSchemaReferenceName)) {
@@ -510,8 +906,8 @@ public class JsonSchemaDependencyResolver {
 					throw new JsonSchemaDefinitionError("Additional JSON schema definition package '" + jsonSchemaReferenceName + "' does not contain JSON schema data of type 'object'", null);
 				} else {
 					final JsonObject jsonSchema = (JsonObject) jsonNode;
-					redirectReferences(jsonSchema, "#", jsonSchemaReferenceName + "#");
 					additionalSchemaDocumentNodes.put(jsonSchemaReferenceName, jsonSchema);
+					addToResourceIndex(jsonSchemaReferenceName, jsonSchema);
 				}
 			} catch (final JsonSchemaDefinitionError e) {
 				throw e;
@@ -522,7 +918,8 @@ public class JsonSchemaDependencyResolver {
 	}
 
 	/**
-	 * Adds an additional schema. Its internal references are redirected to its name in place.
+	 * Adds an additional schema. Its internal references ("#...") are resolved against its own base
+	 * URI, which is its "$id" or otherwise its reference name.
 	 *
 	 * @param jsonSchemaReferenceName
 	 *            name used to reference the schema
@@ -531,63 +928,14 @@ public class JsonSchemaDependencyResolver {
 	 * @throws Exception
 	 *             if the name is blank or already used
 	 */
-	public void addJsonSchemaDefinition(final String jsonSchemaReferenceName, final JsonObject jsonSchemaReferenceObject) throws Exception {
+	public synchronized void addJsonSchemaDefinition(final String jsonSchemaReferenceName, final JsonObject jsonSchemaReferenceObject) throws Exception {
 		if (Utilities.isBlank(jsonSchemaReferenceName)) {
 			throw new JsonSchemaDefinitionError("Invalid empty JSON schema definition package name", null);
 		} else if (additionalSchemaDocumentNodes.containsKey(jsonSchemaReferenceName)) {
 			throw new JsonSchemaDefinitionError("Additional JSON schema definition package '" + jsonSchemaReferenceName + "' was already added before", null);
 		} else {
-			redirectReferences(jsonSchemaReferenceObject, "#", jsonSchemaReferenceName + "#");
 			additionalSchemaDocumentNodes.put(jsonSchemaReferenceName, jsonSchemaReferenceObject);
-		}
-	}
-
-	/**
-	 * Redirects internal references ("#...") of a schema to its reference name, recursively.
-	 *
-	 * @param jsonObject
-	 *            the schema object to change in place
-	 * @param referenceDefinitionStart
-	 *            the reference prefix to replace, "#"
-	 * @param referenceDefinitionReplacement
-	 *            the new prefix, e.g. "other.json#"
-	 * @throws Exception
-	 *             if a reference cannot be replaced
-	 */
-	private void redirectReferences(final JsonObject jsonObject, final String referenceDefinitionStart, final String referenceDefinitionReplacement) throws Exception {
-		// Iterate over a snapshot of the entries: the loop body calls jsonObject.remove(...)/add(...) on "$ref",
-		// which would otherwise modify the map while entrySet() is being iterated (ConcurrentModificationException).
-		for (final Entry<String, JsonNode> entry : new ArrayList<>(jsonObject.entrySet())) {
-			if ("$ref".equals(entry.getKey()) && entry.getValue() != null && entry.getValue() instanceof JsonValueString && ((JsonValueString) entry.getValue()).getValue().startsWith(referenceDefinitionStart)) {
-				// Replace keeps the position of the property
-				jsonObject.replace("$ref", referenceDefinitionReplacement + ((JsonValueString) entry.getValue()).getValue().substring(referenceDefinitionStart.length()));
-			} else if (entry.getValue() instanceof JsonObject) {
-				redirectReferences((JsonObject) entry.getValue(), referenceDefinitionStart, referenceDefinitionReplacement);
-			} else if (entry.getValue() instanceof JsonArray) {
-				redirectReferences((JsonArray) entry.getValue(), referenceDefinitionStart, referenceDefinitionReplacement);
-			}
-		}
-	}
-
-	/**
-	 * Redirects internal references of all objects within an array, recursively.
-	 *
-	 * @param jsonArray
-	 *            the array to change in place
-	 * @param referenceDefinitionStart
-	 *            the reference prefix to replace, "#"
-	 * @param referenceDefinitionReplacement
-	 *            the new prefix, e.g. "other.json#"
-	 * @throws Exception
-	 *             if a reference cannot be replaced
-	 */
-	private void redirectReferences(final JsonArray jsonArray, final String referenceDefinitionStart, final String referenceDefinitionReplacement) throws Exception {
-		for (final JsonNode item : jsonArray.items()) {
-			if (item instanceof JsonObject) {
-				redirectReferences((JsonObject) item, referenceDefinitionStart, referenceDefinitionReplacement);
-			} else if (item instanceof JsonArray) {
-				redirectReferences((JsonArray) item, referenceDefinitionStart, referenceDefinitionReplacement);
-			}
+			addToResourceIndex(jsonSchemaReferenceName, jsonSchemaReferenceObject);
 		}
 	}
 
@@ -598,7 +946,20 @@ public class JsonSchemaDependencyResolver {
 	 *            the version, null means simple mode
 	 */
 	public void setJsonSchemaVersion(final JsonSchemaVersion jsonSchemaVersion) {
+		if (this.jsonSchemaVersion != jsonSchemaVersion) {
+			// Identifier keywords depend on the version, so the index has to be rebuilt
+			resourceIndex = null;
+		}
 		this.jsonSchemaVersion = jsonSchemaVersion;
+	}
+
+	/**
+	 * Returns the JSON schema version.
+	 *
+	 * @return the version, null means simple mode
+	 */
+	public JsonSchemaVersion getJsonSchemaVersion() {
+		return jsonSchemaVersion;
 	}
 
 	/**
@@ -656,6 +1017,35 @@ public class JsonSchemaDependencyResolver {
 	 */
 	public boolean isDraftV7Mode() {
 		return jsonSchemaVersion == JsonSchemaVersion.draftV7;
+	}
+
+	/**
+	 * Checks for JSON schema draft 2019-09.
+	 *
+	 * @return true, if the version is draft 2019-09
+	 */
+	public boolean isDraft2019_09Mode() {
+		return jsonSchemaVersion == JsonSchemaVersion.draft2019_09;
+	}
+
+	/**
+	 * Checks for JSON schema draft 2020-12.
+	 *
+	 * @return true, if the version is draft 2020-12
+	 */
+	public boolean isDraft2020_12Mode() {
+		return jsonSchemaVersion == JsonSchemaVersion.draft2020_12;
+	}
+
+	/**
+	 * Checks whether the JSON schema version is the given version or a newer one.
+	 *
+	 * @param minimumVersion
+	 *            the version to compare with
+	 * @return true, if the version is equal or newer, false in simple mode
+	 */
+	public boolean isVersionAtLeast(final JsonSchemaVersion minimumVersion) {
+		return jsonSchemaVersion != null && jsonSchemaVersion.isAtLeast(minimumVersion);
 	}
 
 	/**

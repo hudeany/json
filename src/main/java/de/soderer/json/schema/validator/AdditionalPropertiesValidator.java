@@ -17,6 +17,7 @@ import de.soderer.json.schema.JsonSchemaDataValidationError;
 import de.soderer.json.schema.JsonSchemaDefinitionError;
 import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
+import de.soderer.json.schema.JsonSchemaRegexUtilities;
 import de.soderer.json.utilities.Utilities;
 
 /**
@@ -95,7 +96,7 @@ public class AdditionalPropertiesValidator extends ExtendedBaseJsonSchemaValidat
 					} else {
 						Pattern propertyKeyPattern;
 						try {
-							propertyKeyPattern = Pattern.compile(entry.getKey());
+							propertyKeyPattern = JsonSchemaRegexUtilities.compile(entry.getKey());
 						} catch (final Exception e) {
 							throw new JsonSchemaDefinitionError("PatternProperties data contains invalid RegEx pattern: " + entry.getKey(), jsonSchemaPath, e);
 						}
@@ -144,6 +145,10 @@ public class AdditionalPropertiesValidator extends ExtendedBaseJsonSchemaValidat
 							subValidator.validate(propertyJsonNode, new JsonPath(jsonPath).addPropertyKey(propertyKey));
 						}
 					}
+				}
+				// Annotation for "unevaluatedProperties" (draft 2019-09 and newer)
+				for (final String propertyKey : additionalPropertyNames) {
+					jsonSchemaDependencyResolver.getEvaluationContext().markPropertyEvaluated(propertyKey);
 				}
 			}
 		}

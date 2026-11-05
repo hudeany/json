@@ -19,6 +19,10 @@ public class JsonSchemaConfiguration {
 	 * Whether external schemas referenced by URL may be downloaded.
 	 */
 	private boolean downloadReferencedSchemas;
+	/**
+	 * Whether "format" is validated, null to use the default of the JSON schema version.
+	 */
+	private Boolean formatAssertion = null;
 
 	/**
 	 * Creates a configuration with UTF-8 encoding, version detection from "$schema" and without
@@ -139,6 +143,41 @@ public class JsonSchemaConfiguration {
 	 */
 	public JsonSchemaConfiguration withDownloadReferencedSchemas(final boolean newDownloadReferencedSchemas) {
 		setDownloadReferencedSchemas(newDownloadReferencedSchemas);
+		return this;
+	}
+
+	/**
+	 * Returns whether "format" is validated as assertion.
+	 *
+	 * @return true or false if set explicitly, null for the default of the JSON schema version:
+	 *         validated up to draft 7, annotation only since draft 2019-09 (unless the meta schema
+	 *         declares the format assertion vocabulary)
+	 */
+	public Boolean getFormatAssertion() {
+		return formatAssertion;
+	}
+
+	/**
+	 * Sets whether "format" is validated as assertion.
+	 *
+	 * @param formatAssertion
+	 *            true to validate, false to regard it as annotation only, null for the default of
+	 *            the JSON schema version
+	 */
+	public void setFormatAssertion(final Boolean formatAssertion) {
+		this.formatAssertion = formatAssertion;
+	}
+
+	/**
+	 * Sets whether "format" is validated as assertion.
+	 *
+	 * @param newFormatAssertion
+	 *            true to validate, false to regard it as annotation only, null for the default of
+	 *            the JSON schema version
+	 * @return this configuration for chaining
+	 */
+	public JsonSchemaConfiguration withFormatAssertion(final Boolean newFormatAssertion) {
+		setFormatAssertion(newFormatAssertion);
 		return this;
 	}
 }

@@ -68,13 +68,23 @@ public class AnyOfValidator extends BaseJsonSchemaValidator {
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		final List<JsonSchemaDataValidationError> subSchemaErrors = new ArrayList<>();
+		// Since draft 2019-09 the annotations of all valid options are needed for "unevaluatedProperties" and
+		// "unevaluatedItems", so all options are evaluated then
+		final boolean evaluateAllOptions = jsonSchemaDependencyResolver != null && jsonSchemaDependencyResolver.getEvaluationContext().isActive();
+		boolean foundMatch = false;
 		for (final List<BaseJsonSchemaValidator> subValidatorPackage : subValidatorPackages) {
 			final JsonSchemaDataValidationError subSchemaError = getSubSchemaValidationError(subValidatorPackage, jsonNode, jsonPath);
 			if (subSchemaError == null) {
-				return;
+				foundMatch = true;
+				if (!evaluateAllOptions) {
+					return;
+				}
 			} else {
 				subSchemaErrors.add(subSchemaError);
 			}
+		}
+		if (foundMatch) {
+			return;
 		}
 
 		// Keep the errors of all sub schemas for diagnosis: the first one as cause, the others as suppressed

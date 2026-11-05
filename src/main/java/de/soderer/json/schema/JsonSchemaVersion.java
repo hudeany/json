@@ -19,10 +19,21 @@ public enum JsonSchemaVersion {
 	/** JSON schema draft v7, see https://json-schema.org/draft-07/json-schema-release-notes */
 	draftV7("http://json-schema.org/draft-07/schema", "json/JsonSchemaDescriptionDraftV7.json"),
 
-	// Not supported yet:
-	// v2019_09("https://json-schema.org/draft/2019-09/schema", "json/2019-09/schema"), see https://json-schema.org/draft/2019-09/release-notes
-	// v2020_12("https://json-schema.org/draft/2020-12/schema", "json/2020-12/schema"), see https://json-schema.org/draft/2020-12/release-notes
-	;
+	/**
+	 * JSON schema draft 2019-09, see https://json-schema.org/draft/2019-09/release-notes<br />
+	 * Main changes: "$defs", "$anchor", "$recursiveRef"/"$recursiveAnchor", "unevaluatedProperties",
+	 * "unevaluatedItems", "dependentRequired", "dependentSchemas", "minContains"/"maxContains", "$ref"
+	 * applies together with its sibling keywords, "format" and "content*" are annotations only.
+	 */
+	draft2019_09("https://json-schema.org/draft/2019-09/schema", "json/JsonSchemaDescriptionDraft2019-09/schema.json"),
+
+	/**
+	 * JSON schema draft 2020-12, see https://json-schema.org/draft/2020-12/release-notes<br />
+	 * Main changes compared to 2019-09: "prefixItems" replaces the array form of "items", "items"
+	 * replaces "additionalItems", "$dynamicRef"/"$dynamicAnchor" replace
+	 * "$recursiveRef"/"$recursiveAnchor", "contains" marks matched items as evaluated.
+	 */
+	draft2020_12("https://json-schema.org/draft/2020-12/schema", "json/JsonSchemaDescriptionDraft2020-12/schema.json");
 
 	/**
 	 * URL of the meta schema, also used as "$schema" value.
@@ -66,7 +77,20 @@ public enum JsonSchemaVersion {
 	}
 
 	/**
-	 * Returns the version for a "$schema" URL. "https" and a trailing "#" are accepted.
+	 * Checks whether this version is the given version or a newer one. Simple mode is regarded as
+	 * older than any draft.
+	 *
+	 * @param otherVersion
+	 *            the version to compare with
+	 * @return true, if this version is equal to or newer than the other version
+	 */
+	public boolean isAtLeast(final JsonSchemaVersion otherVersion) {
+		return otherVersion != null && ordinal() >= otherVersion.ordinal();
+	}
+
+	/**
+	 * Returns the version for a "$schema" URL. "http" and "https" are regarded as equal and a
+	 * trailing "#" is accepted.
 	 *
 	 * @param jsonSchemaVersionUrl
 	 *            the "$schema" URL, may be null
@@ -76,18 +100,30 @@ public enum JsonSchemaVersion {
 		if (jsonSchemaVersionUrl == null) {
 			return null;
 		}
-		String jsonSchemaVersionUrlNormalized = jsonSchemaVersionUrl.toLowerCase();
-		if (jsonSchemaVersionUrlNormalized.startsWith("https://")) {
-			jsonSchemaVersionUrlNormalized = "http://" + jsonSchemaVersionUrlNormalized.substring(8);
-		}
-		if (jsonSchemaVersionUrlNormalized.endsWith("#")) {
-			jsonSchemaVersionUrlNormalized = jsonSchemaVersionUrlNormalized.substring(0, jsonSchemaVersionUrlNormalized.length() - 1);
-		}
+		final String jsonSchemaVersionUrlNormalized = normalizeVersionUrl(jsonSchemaVersionUrl);
 		for (final JsonSchemaVersion jsonSchemaVersion : JsonSchemaVersion.values()) {
-			if (jsonSchemaVersion.getDownloadUrl() != null && jsonSchemaVersion.getDownloadUrl().equalsIgnoreCase(jsonSchemaVersionUrlNormalized)) {
+			if (jsonSchemaVersion.getDownloadUrl() != null && normalizeVersionUrl(jsonSchemaVersion.getDownloadUrl()).equals(jsonSchemaVersionUrlNormalized)) {
 				return jsonSchemaVersion;
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Normalizes a meta schema URL for comparison: lower case, "http" scheme and no trailing "#".
+	 *
+	 * @param url
+	 *            the URL
+	 * @return the normalized URL
+	 */
+	private static String normalizeVersionUrl(final String url) {
+		String normalizedUrl = url.trim().toLowerCase();
+		if (normalizedUrl.startsWith("https://")) {
+			normalizedUrl = "http://" + normalizedUrl.substring(8);
+		}
+		if (normalizedUrl.endsWith("#")) {
+			normalizedUrl = normalizedUrl.substring(0, normalizedUrl.length() - 1);
+		}
+		return normalizedUrl;
 	}
 }

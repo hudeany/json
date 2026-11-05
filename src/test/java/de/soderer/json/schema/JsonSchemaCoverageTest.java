@@ -121,11 +121,16 @@ class JsonSchemaCoverageTest {
 		assertThrows(JsonSchemaDefinitionError.class, () -> schema("{\"$id\": \"x\"}", JsonSchemaVersion.draftV4));
 		assertDoesNotThrow(() -> schema("{\"id\": \"x\"}", JsonSchemaVersion.draftV4));
 
-		// Keywords only allowed at the root level
-		assertThrows(JsonSchemaDefinitionError.class, () -> schema("{\"properties\": {\"a\": {\"id\": \"x\"}}}", JsonSchemaVersion.draftV4));
-		assertThrows(JsonSchemaDefinitionError.class, () -> schema("{\"properties\": {\"a\": {\"$id\": \"x\"}}}", JsonSchemaVersion.draftV7));
-		assertThrows(JsonSchemaDefinitionError.class, () -> schema("{\"properties\": {\"a\": {\"$schema\": \"x\"}}}", JsonSchemaVersion.draftV7));
-		assertThrows(JsonSchemaDefinitionError.class, () -> schema("{\"properties\": {\"a\": {\"definitions\": {}}}}", JsonSchemaVersion.draftV7));
+		// Identifiers and definitions are allowed in sub schemas in the JSON schema drafts (they change the base URI) ...
+		assertDoesNotThrow(() -> schema("{\"properties\": {\"a\": {\"id\": \"x\"}}}", JsonSchemaVersion.draftV4));
+		assertDoesNotThrow(() -> schema("{\"properties\": {\"a\": {\"$id\": \"x\"}}}", JsonSchemaVersion.draftV7));
+		assertDoesNotThrow(() -> schema("{\"properties\": {\"a\": {\"$schema\": \"x\"}}}", JsonSchemaVersion.draftV7));
+		assertDoesNotThrow(() -> schema("{\"properties\": {\"a\": {\"definitions\": {}}}}", JsonSchemaVersion.draftV7));
+		assertDoesNotThrow(() -> schema("{\"properties\": {\"a\": {\"$id\": \"x\", \"$defs\": {}}}}", JsonSchemaVersion.draft2020_12));
+		// ... but only allowed at the root level in simple mode
+		assertThrows(JsonSchemaDefinitionError.class, () -> schema("{\"properties\": {\"a\": {\"$id\": \"x\"}}}", JsonSchemaVersion.simple));
+		assertThrows(JsonSchemaDefinitionError.class, () -> schema("{\"properties\": {\"a\": {\"$schema\": \"x\"}}}", JsonSchemaVersion.simple));
+		assertThrows(JsonSchemaDefinitionError.class, () -> schema("{\"properties\": {\"a\": {\"definitions\": {}}}}", JsonSchemaVersion.simple));
 
 		// Descriptive keywords in sub schemas must be strings
 		assertThrows(JsonSchemaDefinitionError.class, () -> schema("{\"properties\": {\"a\": {\"title\": 1}}}", JsonSchemaVersion.draftV7));

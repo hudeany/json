@@ -24,7 +24,10 @@ import de.soderer.json.schema.validator.ContainsValidator;
 import de.soderer.json.schema.validator.ContentEncodingValidator;
 import de.soderer.json.schema.validator.ContentMediaTypeValidator;
 import de.soderer.json.schema.validator.DependenciesValidator;
+import de.soderer.json.schema.validator.DependentRequiredValidator;
+import de.soderer.json.schema.validator.DependentSchemasValidator;
 import de.soderer.json.schema.validator.DisallowValidator;
+import de.soderer.json.schema.validator.DynamicReferenceValidator;
 import de.soderer.json.schema.validator.EnumValidator;
 import de.soderer.json.schema.validator.ExclusiveMaximumValidator;
 import de.soderer.json.schema.validator.ExclusiveMinimumValidator;
@@ -45,23 +48,35 @@ import de.soderer.json.schema.validator.NotValidator;
 import de.soderer.json.schema.validator.OneOfValidator;
 import de.soderer.json.schema.validator.PatternPropertiesValidator;
 import de.soderer.json.schema.validator.PatternValidator;
+import de.soderer.json.schema.validator.PrefixItemsValidator;
 import de.soderer.json.schema.validator.PropertiesValidator;
 import de.soderer.json.schema.validator.PropertyNamesValidator;
 import de.soderer.json.schema.validator.ReferenceValidator;
 import de.soderer.json.schema.validator.RequiredValidator;
+import de.soderer.json.schema.validator.SchemaObjectValidator;
 import de.soderer.json.schema.validator.TypeValidator;
+import de.soderer.json.schema.validator.UnevaluatedItemsValidator;
+import de.soderer.json.schema.validator.UnevaluatedPropertiesValidator;
 import de.soderer.json.schema.validator.UniqueItemsValidator;
 
 /**
- * JSON Schema Validator for Draft Version v4 / v6 / v7<br />
+ * JSON Schema Validator for Draft Version v3 / v4 / v6 / v7 / 2019-09 / 2020-12<br />
  * https://json-schema.org/draft-04/schema#<br />
  * https://json-schema.org/draft-06/schema#<br />
  * https://json-schema.org/draft-07/schema#<br />
+ * https://json-schema.org/draft/2019-09/schema<br />
+ * https://json-schema.org/draft/2020-12/schema<br />
  * <br />
- * For Validation of JSON schemas you may use the included file resource "JsonSchemaDescriptionDraftVx.json":<br />
+ * The JSON schema version is taken from {@link JsonSchemaConfiguration} or detected from "$schema".
+ * Without both, simple mode (strict validation without version specific rules) is used.<br />
+ * <br />
+ * For Validation of JSON schemas you may use the included meta schema file resources, see
+ * {@link JsonSchemaVersion#getLocalFile()}:<br />
  * JsonSchema.class.getClassLoader().getResourceAsStream("json/JsonSchemaDescriptionDraftV4.json")<br />
  * JsonSchema.class.getClassLoader().getResourceAsStream("json/JsonSchemaDescriptionDraftV6.json")<br />
  * JsonSchema.class.getClassLoader().getResourceAsStream("json/JsonSchemaDescriptionDraftV7.json")<br />
+ * JsonSchema.class.getClassLoader().getResourceAsStream("json/JsonSchemaDescriptionDraft2019-09/schema.json")<br />
+ * JsonSchema.class.getClassLoader().getResourceAsStream("json/JsonSchemaDescriptionDraft2020-12/schema.json")<br />
  * <br />
  * For the JSON schema standard definition see:<br />
  * https://json-schema.org<br />
@@ -357,6 +372,14 @@ public class JsonSchema {
 		}
 
 		jsonSchemaDependencyResolver = new JsonSchemaDependencyResolver(jsonSchemaDefinitionObject, dependencies);
+		jsonSchemaDependencyResolver.setFormatAssertion(jsonSchemaConfiguration.getFormatAssertion());
+		if (schemaVersionUrl != null) {
+			// Detects the version of custom meta schemas and the vocabularies they declare
+			final JsonSchemaVersion metaSchemaVersion = jsonSchemaDependencyResolver.applyMetaSchema(schemaVersionUrl);
+			if (jsonSchemaConfiguration.getJsonSchemaVersion() == null) {
+				jsonSchemaConfiguration.setJsonSchemaVersion(metaSchemaVersion);
+			}
+		}
 	}
 
 	/**
@@ -475,7 +498,11 @@ public class JsonSchema {
 
 	/**
 	 * Creates the validators for all keywords of a schema object. Descriptive keywords like "title"
-	 * are only checked; unknown keywords are ignored, except in simple mode.
+	 * are only checked; unknown keywords are ignored, except in simple mode.<br />
+	 * <br />
+	 * For JSON schema draft 2019-09 and newer the returned list contains a single
+	 * {@link SchemaObjectValidator}, which applies the keyword validators and collects their
+	 * annotations.
 	 *
 	 * @param jsonSchemaDefinitionObject
 	 *            the schema object
@@ -490,6 +517,354 @@ public class JsonSchema {
 	 *             if a sub schema contains duplicate keys
 	 */
 	public static List<BaseJsonSchemaValidator> createValidators(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath currentJsonSchemaPath) throws JsonSchemaDefinitionError, DuplicateKeyException {
+		if (jsonSchemaDependencyResolver != null && jsonSchemaDependencyResolver.isVersionAtLeast(JsonSchemaVersion.draft2019_09)) {
+			final List<BaseJsonSchemaValidator> keywordValidators = createValidatorsDraft2019_09AndNewer(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, currentJsonSchemaPath);
+			final List<BaseJsonSchemaValidator> validators = new ArrayList<>();
+			validators.add(new SchemaObjectValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath, jsonSchemaDefinitionObject, keywordValidators, jsonSchemaDependencyResolver.getBaseUri(jsonSchemaDefinitionObject)));
+			return validators;
+		} else if (jsonSchemaDependencyResolver != null && jsonSchemaDefinitionObject.containsKey("$ref") && !jsonSchemaDependencyResolver.isSimpleMode()) {
+			// Up to draft 7 "$ref" overrides all sibling keywords, they are ignored
+			final List<BaseJsonSchemaValidator> validators = new ArrayList<>();
+			validators.add(createReferenceValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, currentJsonSchemaPath, jsonSchemaDefinitionObject.get("$ref")));
+			return validators;
+		} else {
+			return createValidatorsUpToDraftV7(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, currentJsonSchemaPath);
+		}
+	}
+
+	/**
+	 * Creates the validators for a schema node, which may be a schema object or a boolean schema.
+	 *
+	 * @param jsonSchemaNode
+	 *            the schema object or boolean
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings
+	 * @param currentJsonSchemaPath
+	 *            the path of the schema within the JSON schema
+	 * @return the validators
+	 * @throws JsonSchemaDefinitionError
+	 *             if the node is neither object nor boolean, or a keyword has an invalid value
+	 * @throws DuplicateKeyException
+	 *             if a sub schema contains duplicate keys
+	 */
+	public static List<BaseJsonSchemaValidator> createValidatorsForSchemaNode(final JsonNode jsonSchemaNode, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath currentJsonSchemaPath) throws JsonSchemaDefinitionError, DuplicateKeyException {
+		if (jsonSchemaNode == null || jsonSchemaNode.isNull()) {
+			throw new JsonSchemaDefinitionError("JSON schema is 'null'", currentJsonSchemaPath);
+		} else if (jsonSchemaNode.isBoolean()) {
+			final List<BaseJsonSchemaValidator> validators = new ArrayList<>();
+			validators.add(new BooleanValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath, jsonSchemaNode));
+			return validators;
+		} else if (jsonSchemaNode.isJsonObject()) {
+			return createValidators((JsonObject) jsonSchemaNode, jsonSchemaDependencyResolver, currentJsonSchemaPath);
+		} else {
+			throw new JsonSchemaDefinitionError("JSON schema is neither 'object' nor 'boolean' but '" + jsonSchemaNode.getJsonDataType().getName() + "'", currentJsonSchemaPath);
+		}
+	}
+
+	/**
+	 * Creates the validator for a "$ref" keyword. The reference is resolved against the base URI
+	 * of the schema object containing it.
+	 *
+	 * @param jsonSchemaDefinitionObject
+	 *            the schema object containing "$ref"
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings
+	 * @param currentJsonSchemaPath
+	 *            the path of the schema object within the JSON schema
+	 * @param referenceNode
+	 *            the value of "$ref"
+	 * @return the validator
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is not a string or cannot be resolved
+	 */
+	private static ReferenceValidator createReferenceValidator(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath currentJsonSchemaPath, final JsonNode referenceNode) throws JsonSchemaDefinitionError {
+		if (referenceNode == null || !referenceNode.isString()) {
+			throw new JsonSchemaDefinitionError("Invalid data type for key '$ref'. String expected", currentJsonSchemaPath);
+		}
+		return new ReferenceValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey("$ref"), referenceNode, jsonSchemaDependencyResolver.getBaseUri(jsonSchemaDefinitionObject));
+	}
+
+	/**
+	 * Creates the keyword validators of a schema object for JSON schema draft 2019-09 and newer.
+	 * Unknown keywords are ignored. "unevaluatedProperties" and "unevaluatedItems" are placed last,
+	 * because they depend on the annotations of all other keywords.
+	 *
+	 * @param jsonSchemaDefinitionObject
+	 *            the schema object
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings
+	 * @param currentJsonSchemaPath
+	 *            the path of the schema object within the JSON schema
+	 * @return the keyword validators
+	 * @throws JsonSchemaDefinitionError
+	 *             if a keyword has an invalid value
+	 * @throws DuplicateKeyException
+	 *             if a sub schema contains duplicate keys
+	 */
+	private static List<BaseJsonSchemaValidator> createValidatorsDraft2019_09AndNewer(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath currentJsonSchemaPath) throws JsonSchemaDefinitionError, DuplicateKeyException {
+		final boolean draft2020_12 = jsonSchemaDependencyResolver.isVersionAtLeast(JsonSchemaVersion.draft2020_12);
+		final boolean validationVocabulary = jsonSchemaDependencyResolver.isValidationVocabularyActive();
+		final List<BaseJsonSchemaValidator> validators = new ArrayList<>();
+		final List<BaseJsonSchemaValidator> unevaluatedValidators = new ArrayList<>();
+
+		for (final Entry<String, JsonNode> entry : jsonSchemaDefinitionObject.entrySet()) {
+			final JsonSchemaPath keywordPath = new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey());
+			switch (entry.getKey()) {
+				// Core vocabulary
+				case "$ref":
+					validators.add(createReferenceValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, currentJsonSchemaPath, entry.getValue()));
+					break;
+				case "$dynamicRef":
+					if (draft2020_12) {
+						validators.add(createDynamicReferenceValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, keywordPath, entry.getValue(), false));
+					}
+					break;
+				case "$recursiveRef":
+					if (!draft2020_12) {
+						validators.add(createDynamicReferenceValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, keywordPath, entry.getValue(), true));
+					}
+					break;
+				case "$id":
+				case "$schema":
+				case "$anchor":
+				case "$dynamicAnchor":
+				case "$recursiveAnchor":
+				case "$vocabulary":
+				case "$comment":
+				case "$defs":
+				case "definitions":
+					// Identifiers and definitions are handled by the resource index of the dependency resolver
+					break;
+
+				// Applicator vocabulary
+				case "allOf":
+					validators.add(new AllOfValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					break;
+				case "anyOf":
+					validators.add(new AnyOfValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					break;
+				case "oneOf":
+					validators.add(new OneOfValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					break;
+				case "not":
+					validators.add(new NotValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					break;
+				case "if":
+					validators.add(new IfThenElseValidator(jsonSchemaDependencyResolver, currentJsonSchemaPath, entry.getValue(), jsonSchemaDefinitionObject.get("then"), jsonSchemaDefinitionObject.get("else")));
+					break;
+				case "then":
+				case "else":
+					// Only relevant together with "if"
+					break;
+				case "dependentSchemas":
+					validators.add(new DependentSchemasValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					break;
+				case "dependencies":
+					// Removed in draft 2019-09 ("dependentSchemas" and "dependentRequired"), still applied for compatibility
+					validators.add(new DependenciesValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					break;
+				case "prefixItems":
+					if (draft2020_12) {
+						validators.add(new PrefixItemsValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "items":
+					validators.add(new ItemsValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					break;
+				case "additionalItems":
+					// Draft 2019-09: validated by ItemsValidator, if "items" is an array. Draft 2020-12: no keyword anymore
+					break;
+				case "contains":
+					validators.add(new ContainsValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					break;
+				case "minContains":
+				case "maxContains":
+					// Validated by ContainsValidator, no effect without "contains"
+					break;
+				case "properties":
+					validators.add(new PropertiesValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					break;
+				case "patternProperties":
+					validators.add(new PatternPropertiesValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					break;
+				case "additionalProperties":
+					validators.add(new AdditionalPropertiesValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					break;
+				case "propertyNames":
+					validators.add(new PropertyNamesValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					break;
+
+				// Unevaluated vocabulary
+				case "unevaluatedProperties":
+					unevaluatedValidators.add(new UnevaluatedPropertiesValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					break;
+				case "unevaluatedItems":
+					unevaluatedValidators.add(new UnevaluatedItemsValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					break;
+
+				// Validation vocabulary
+				case "type":
+					if (validationVocabulary) {
+						validators.add(new TypeValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "enum":
+					if (validationVocabulary) {
+						validators.add(new EnumValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "const":
+					if (validationVocabulary) {
+						validators.add(new ConstValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "multipleOf":
+					if (validationVocabulary) {
+						validators.add(new MultipleOfValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "maximum":
+					if (validationVocabulary) {
+						validators.add(new MaximumValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "exclusiveMaximum":
+					if (validationVocabulary) {
+						validators.add(new ExclusiveMaximumValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "minimum":
+					if (validationVocabulary) {
+						validators.add(new MinimumValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "exclusiveMinimum":
+					if (validationVocabulary) {
+						validators.add(new ExclusiveMinimumValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "maxLength":
+					if (validationVocabulary) {
+						validators.add(new MaxLengthValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "minLength":
+					if (validationVocabulary) {
+						validators.add(new MinLengthValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "pattern":
+					if (validationVocabulary) {
+						validators.add(new PatternValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "maxItems":
+					if (validationVocabulary) {
+						validators.add(new MaxItemsValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "minItems":
+					if (validationVocabulary) {
+						validators.add(new MinItemsValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "uniqueItems":
+					if (validationVocabulary) {
+						validators.add(new UniqueItemsValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "maxProperties":
+					if (validationVocabulary) {
+						validators.add(new MaxPropertiesValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "minProperties":
+					if (validationVocabulary) {
+						validators.add(new MinPropertiesValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "required":
+					if (validationVocabulary) {
+						validators.add(new RequiredValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+				case "dependentRequired":
+					if (validationVocabulary) {
+						validators.add(new DependentRequiredValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+
+				// Format vocabulary: annotation only, unless format assertion is configured or declared by the meta schema
+				case "format":
+					if (jsonSchemaDependencyResolver.isFormatAssertion()) {
+						validators.add(new FormatValidator(jsonSchemaDependencyResolver, keywordPath, entry.getValue()));
+					}
+					break;
+
+				// Content and meta-data vocabularies: annotations only
+				case "contentMediaType":
+				case "contentEncoding":
+				case "contentSchema":
+				case "title":
+				case "description":
+				case "default":
+				case "deprecated":
+				case "readOnly":
+				case "writeOnly":
+				case "examples":
+					break;
+
+				default:
+					// Unknown keywords are ignored
+					break;
+			}
+		}
+
+		validators.addAll(unevaluatedValidators);
+		return validators;
+	}
+
+	/**
+	 * Creates the validator for a "$dynamicRef" or "$recursiveRef" keyword.
+	 *
+	 * @param jsonSchemaDefinitionObject
+	 *            the schema object containing the keyword
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings
+	 * @param keywordPath
+	 *            the path of the keyword within the JSON schema
+	 * @param referenceNode
+	 *            the value of the keyword
+	 * @param recursiveReference
+	 *            true for "$recursiveRef", false for "$dynamicRef"
+	 * @return the validator
+	 * @throws JsonSchemaDefinitionError
+	 *             if the value is invalid
+	 */
+	private static DynamicReferenceValidator createDynamicReferenceValidator(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath keywordPath, final JsonNode referenceNode, final boolean recursiveReference) throws JsonSchemaDefinitionError {
+		if (referenceNode == null || !referenceNode.isString()) {
+			throw new JsonSchemaDefinitionError("Invalid data type for dynamic reference. String expected", keywordPath);
+		}
+		return new DynamicReferenceValidator(jsonSchemaDependencyResolver, keywordPath, referenceNode, jsonSchemaDependencyResolver.getBaseUri(jsonSchemaDefinitionObject), recursiveReference);
+	}
+
+	/**
+	 * Creates the validators for all keywords of a schema object for JSON schema versions up to
+	 * draft 7 and simple mode.
+	 *
+	 * @param jsonSchemaDefinitionObject
+	 *            the schema object
+	 * @param jsonSchemaDependencyResolver
+	 *            the resolver for references and settings
+	 * @param currentJsonSchemaPath
+	 *            the path of the schema object within the JSON schema
+	 * @return the validators
+	 * @throws JsonSchemaDefinitionError
+	 *             if a keyword has an invalid value
+	 * @throws DuplicateKeyException
+	 *             if a sub schema contains duplicate keys
+	 */
+	private static List<BaseJsonSchemaValidator> createValidatorsUpToDraftV7(final JsonObject jsonSchemaDefinitionObject, final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath currentJsonSchemaPath) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		final List<BaseJsonSchemaValidator> validators = new ArrayList<>();
 
 		JsonNode ifJsonObject = null;
@@ -581,7 +956,10 @@ public class JsonSchema {
 					validators.add(new ConstValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
 					break;
 				case "format":
-					validators.add(new FormatValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
+					// Validated by default up to draft 7, unless switched off by the configuration
+					if (jsonSchemaDependencyResolver.isFormatAssertion()) {
+						validators.add(new FormatValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
+					}
 					break;
 				case "pattern":
 					validators.add(new PatternValidator(jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
@@ -622,22 +1000,15 @@ public class JsonSchema {
 					break;
 
 				case "$ref":
-					if (entry.getValue() == null || !entry.getValue().isString()) {
-						throw new JsonSchemaDefinitionError("Invalid data type for key '$ref'. String expected", currentJsonSchemaPath);
-					}
-					validators.add(new ReferenceValidator(
-							jsonSchemaDependencyResolver,
-							new JsonSchemaPath(parseJsonSchemaReference(jsonSchemaDependencyResolver, ((JsonValueString) entry.getValue()).getValue(), currentJsonSchemaPath).toString()),
-							entry.getValue())
-							);
+					validators.add(createReferenceValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, currentJsonSchemaPath, entry.getValue()));
 					break;
 
 				case "id":
 					if (!jsonSchemaDependencyResolver.isSimpleMode() && !jsonSchemaDependencyResolver.isDraftV3Mode() && !jsonSchemaDependencyResolver.isDraftV4Mode()) {
 						throw new JsonSchemaDefinitionError("JSON schema 'id' on top level of JSON schema is only allowed for JSON schema versions draft v4 and lower", currentJsonSchemaPath);
 					}
-					// $id should be a descriptive url
-					if (!currentJsonSchemaPath.isRoot()) {
+					// "id" may change the base URI of sub schemas, only simple mode restricts it to the top level
+					if (jsonSchemaDependencyResolver.isSimpleMode() && !currentJsonSchemaPath.isRoot()) {
 						throw new JsonSchemaDefinitionError("JSON schema 'id' must be defined on top level of JSON schema", currentJsonSchemaPath);
 					}
 					break;
@@ -645,20 +1016,20 @@ public class JsonSchema {
 					if (jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV3Mode() || jsonSchemaDependencyResolver.isDraftV4Mode()) {
 						throw new JsonSchemaDefinitionError("JSON schema '$id' on top level of JSON schema is only allowed for JSON schema versions draft v6 and higher", currentJsonSchemaPath);
 					}
-					// $id should be a descriptive url
-					if (!currentJsonSchemaPath.isRoot()) {
+					// "$id" may change the base URI of sub schemas, only simple mode restricts it to the top level
+					if (jsonSchemaDependencyResolver.isSimpleMode() && !currentJsonSchemaPath.isRoot()) {
 						throw new JsonSchemaDefinitionError("JSON schema '$id' must be defined on top level of JSON schema", currentJsonSchemaPath);
 					}
 					break;
 				case "$schema":
 					// $schema should be a descriptive url
-					if (!currentJsonSchemaPath.isRoot()) {
+					if (jsonSchemaDependencyResolver.isSimpleMode() && !currentJsonSchemaPath.isRoot()) {
 						throw new JsonSchemaDefinitionError("JSON schema '$schema' must be defined on top level of JSON schema", currentJsonSchemaPath);
 					}
 					break;
 				case "definitions":
 					// Defined JSON schema definitions
-					if (!currentJsonSchemaPath.isRoot()) {
+					if (jsonSchemaDependencyResolver.isSimpleMode() && !currentJsonSchemaPath.isRoot()) {
 						throw new JsonSchemaDefinitionError("JSON schema 'definitions' must be defined on top level of JSON schema", currentJsonSchemaPath);
 					}
 					break;
@@ -710,41 +1081,5 @@ public class JsonSchema {
 		}
 
 		return validators;
-	}
-
-	/**
-	 * Parses a "$ref" value into an internal or external reference.
-	 *
-	 * @param jsonSchemaDependencyResolver
-	 *            the resolver to find the schema containing a reference without "#", may be null
-	 * @param referenceValue
-	 *            the "$ref" value
-	 * @param jsonSchemaPath
-	 *            the path of the "$ref" keyword, used in error messages
-	 * @return the reference path element
-	 * @throws JsonSchemaDefinitionError
-	 *             if the reference cannot be resolved
-	 */
-	private static JsonSchemaPathElement parseJsonSchemaReference(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final String referenceValue, final JsonSchemaPath jsonSchemaPath) throws JsonSchemaDefinitionError {
-		if (referenceValue.startsWith("#")) {
-			return new JsonSchemaPathInternalReference(referenceValue);
-		} else if (referenceValue.contains("#")) {
-			final String schemaLocation = referenceValue.substring(0, referenceValue.indexOf("#"));
-			final String referenceString = referenceValue.substring(referenceValue.indexOf("#"));
-			return new JsonSchemaPathExternalReference(schemaLocation, referenceString);
-		} else {
-			if (jsonSchemaDependencyResolver != null) {
-				final String schemaName = jsonSchemaDependencyResolver.getSchemaContainingReference(referenceValue, jsonSchemaPath);
-				if (schemaName == null) {
-					throw new JsonSchemaDefinitionError("Invalid schema reference: " + referenceValue, jsonSchemaPath);
-				} else if ("#".equals(schemaName)) {
-					return new JsonSchemaPathInternalReference(referenceValue);
-				} else {
-					return new JsonSchemaPathExternalReference(schemaName, referenceValue);
-				}
-			} else {
-				throw new JsonSchemaDefinitionError("Invalid schema reference: " + referenceValue, jsonSchemaPath);
-			}
-		}
 	}
 }

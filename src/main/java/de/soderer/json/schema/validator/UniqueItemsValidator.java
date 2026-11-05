@@ -65,8 +65,7 @@ public class UniqueItemsValidator extends BaseJsonSchemaValidator {
 				final JsonArray jsonArray = (JsonArray) jsonNode;
 				for (int i = 0; i < jsonArray.size(); i++) {
 					for (int j = i + 1; j < jsonArray.size(); j++) {
-						if ((jsonArray.get(i) == jsonArray.get(j))
-								|| (jsonArray.get(i) != null && jsonArray.get(i).equals(jsonArray.get(j)))) {
+						if ((jsonArray.get(i) == jsonArray.get(j)) || isJsonDataEqual(jsonArray.get(i), jsonArray.get(j))) {
 							throw new JsonSchemaDataValidationError("Item '" + jsonArray.get(i) + "' of array is not unique", jsonPath);
 						}
 					}

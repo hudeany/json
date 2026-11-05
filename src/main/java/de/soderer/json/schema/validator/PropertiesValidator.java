@@ -98,6 +98,8 @@ public class PropertiesValidator extends BaseJsonSchemaValidator {
 					for (final BaseJsonSchemaValidator subValidator : propertiesDefinitions.get(propertyEntry.getKey())) {
 						subValidator.validate(newJsonNode, new JsonPath(jsonPath).addPropertyKey(propertyEntry.getKey()));
 					}
+					// Annotation for "unevaluatedProperties" (draft 2019-09 and newer)
+					jsonSchemaDependencyResolver.getEvaluationContext().markPropertyEvaluated(propertyEntry.getKey());
 				}
 			}
 

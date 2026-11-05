@@ -141,8 +141,8 @@ class JsonSchemaDependencyResolverTest {
 
 		final JsonObject resolved = resolver.getDependencyByReference("ext.json#/definitions/x", new JsonSchemaPath());
 		assertEquals("boolean", resolved.getSimpleValue("type"));
-		// Internal references of the added schema are redirected to its name
-		assertEquals("ext.json#/definitions/y", ((JsonObject) ((de.soderer.json.JsonArray) resolved.get("items")).get(0)).getSimpleValue("$ref"));
+		// Internal references of the added schema stay unchanged, they are resolved against its own base URI
+		assertEquals("#/definitions/y", ((JsonObject) ((de.soderer.json.JsonArray) resolved.get("items")).get(0)).getSimpleValue("$ref"));
 		assertThrows(JsonSchemaDefinitionError.class, () -> resolver.getDependencyByReference("ext.json#/definitions/missing", new JsonSchemaPath()));
 		assertThrows(JsonSchemaDefinitionError.class, () -> resolver.getDependencyByReference("ext.json#/definitions/scalar", new JsonSchemaPath()));
 		assertThrows(Exception.class, () -> resolver.getDependencyByReference("unknown.json#/definitions/x", new JsonSchemaPath()));
@@ -242,8 +242,9 @@ class JsonSchemaDependencyResolverTest {
 		final JsonSchemaDependency fromStream = new JsonSchemaDependency("dep", stream("{\"allOf\": [{\"$ref\": \"#/definitions/a\"}, [{\"$ref\": \"#/x\"}]], \"definitions\": {\"a\": {}}}"));
 		assertEquals("dep", fromStream.getJsonSchemaReferenceName());
 		final de.soderer.json.JsonArray allOf = (de.soderer.json.JsonArray) fromStream.getJsonSchemaReferenceObject().get("allOf");
-		assertEquals("dep#/definitions/a", ((JsonObject) allOf.get(0)).getSimpleValue("$ref"));
-		assertEquals("dep#/x", ((JsonObject) ((de.soderer.json.JsonArray) allOf.get(1)).get(0)).getSimpleValue("$ref"));
+		// The schema data is not changed, internal references are resolved against the base URI of the dependency
+		assertEquals("#/definitions/a", ((JsonObject) allOf.get(0)).getSimpleValue("$ref"));
+		assertEquals("#/x", ((JsonObject) ((de.soderer.json.JsonArray) allOf.get(1)).get(0)).getSimpleValue("$ref"));
 
 		assertThrows(Exception.class, () -> new JsonSchemaDependency("", stream("{}")));
 		assertThrows(Exception.class, () -> new JsonSchemaDependency("dep", stream("[]")));
@@ -253,8 +254,18 @@ class JsonSchemaDependencyResolverTest {
 		@SuppressWarnings("unused")
 		final
 		JsonSchemaDependency dependency = new JsonSchemaDependency("obj", schemaObject);
-		assertEquals("obj#/a", ((JsonObject) ((de.soderer.json.JsonArray) schemaObject.get("items")).get(0)).getSimpleValue("$ref"));
+		assertEquals("#/a", ((JsonObject) ((de.soderer.json.JsonArray) schemaObject.get("items")).get(0)).getSimpleValue("$ref"));
 		assertEquals("other#/c", schemaObject.getSimpleValue("$ref"));
+	}
+
+	@Test
+	void jsonSchemaDependency_internalReferencesResolveWithinDependency() throws Exception {
+		// "#/definitions/y" within the dependency must resolve to the dependency, not to the main schema
+		final JsonSchemaDependency dependency = new JsonSchemaDependency("dep.json", object("{\"definitions\": {\"x\": {\"$ref\": \"#/definitions/y\"}, \"y\": {\"type\": \"integer\"}}}"));
+		final JsonSchema jsonSchema = new JsonSchema(object("{\"properties\": {\"a\": {\"$ref\": \"dep.json#/definitions/x\"}}, \"definitions\": {\"y\": {\"type\": \"string\"}}}"),
+				new JsonSchemaConfiguration().withJsonSchemaVersion(JsonSchemaVersion.draftV7), dependency);
+		jsonSchema.validate(new ByteArrayInputStream("{\"a\": 1}".getBytes(StandardCharsets.UTF_8)));
+		assertThrows(JsonSchemaDataValidationError.class, () -> jsonSchema.validate(new ByteArrayInputStream("{\"a\": \"text\"}".getBytes(StandardCharsets.UTF_8))));
 	}
 
 	@Test

@@ -12,6 +12,7 @@ import de.soderer.json.schema.JsonSchemaDataValidationError;
 import de.soderer.json.schema.JsonSchemaDefinitionError;
 import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
+import de.soderer.json.schema.JsonSchemaVersion;
 
 /**
  * Tripartite directive with mandatory "if", optional "then" and optional "else" part.
@@ -42,7 +43,7 @@ public class IfThenElseValidator extends BaseJsonSchemaValidator {
 	 *
 	 * @param jsonSchemaDependencyResolver
 	 *            the resolver for references and settings of the JSON schema, must be in draft 7
-	 *            mode
+	 *            mode or newer
 	 * @param jsonSchemaPath
 	 *            the path of the schema object containing the keywords
 	 * @param ifJsonObject
@@ -52,7 +53,7 @@ public class IfThenElseValidator extends BaseJsonSchemaValidator {
 	 * @param elseObject
 	 *            the value of "else", a schema object or a boolean, or null if not defined
 	 * @throws JsonSchemaDefinitionError
-	 *             if not in draft 7 mode, a value is neither object nor boolean, or a schema is
+	 *             if not in draft 7 mode or newer, a value is neither object nor boolean, or a schema is
 	 *             invalid
 	 * @throws DuplicateKeyException
 	 *             if a schema contains duplicate keys
@@ -60,7 +61,7 @@ public class IfThenElseValidator extends BaseJsonSchemaValidator {
 	public IfThenElseValidator(final JsonSchemaDependencyResolver jsonSchemaDependencyResolver, final JsonSchemaPath jsonSchemaPath, final JsonNode ifJsonObject, final JsonNode thenObject, final JsonNode elseObject) throws JsonSchemaDefinitionError, DuplicateKeyException {
 		super(jsonSchemaDependencyResolver, jsonSchemaPath, ifJsonObject);
 
-		if (!jsonSchemaDependencyResolver.isDraftV7Mode()) {
+		if (!jsonSchemaDependencyResolver.isVersionAtLeast(JsonSchemaVersion.draftV7)) {
 			throw new JsonSchemaDefinitionError("Support for 'if' comes with draft version v7. Please configure used JSON schema version accordingly.", jsonSchemaPath);
 		} else if (ifJsonObject == null) {
 			throw new JsonSchemaDefinitionError("'if' value is 'null'", jsonSchemaPath);

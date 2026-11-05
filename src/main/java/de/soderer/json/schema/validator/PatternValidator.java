@@ -12,6 +12,7 @@ import de.soderer.json.schema.JsonSchemaDataValidationError;
 import de.soderer.json.schema.JsonSchemaDefinitionError;
 import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
+import de.soderer.json.schema.JsonSchemaRegexUtilities;
 
 /**
  * Validator for the "pattern" keyword: the JSON data string must contain a match of the given regex
@@ -48,7 +49,7 @@ public class PatternValidator extends BaseJsonSchemaValidator {
 		}
 
 		try {
-			pattern = Pattern.compile(((JsonValueString) validatorData).getValue());
+			pattern = JsonSchemaRegexUtilities.compile(((JsonValueString) validatorData).getValue());
 		} catch (final Exception e) {
 			throw new JsonSchemaDefinitionError("Pattern '" + ((JsonValueString) validatorData).getValue() + "' is not a valid RegEx pattern", jsonSchemaPath, e);
 		}

@@ -2,7 +2,6 @@ package de.soderer.json.schema.validator;
 
 import de.soderer.json.JsonArray;
 import de.soderer.json.JsonNode;
-import de.soderer.json.JsonObject;
 import de.soderer.json.JsonValueBoolean;
 import de.soderer.json.JsonValueInteger;
 import de.soderer.json.JsonValueNumber;
@@ -12,6 +11,7 @@ import de.soderer.json.schema.JsonSchemaDataValidationError;
 import de.soderer.json.schema.JsonSchemaDefinitionError;
 import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
+import de.soderer.json.schema.JsonSchemaVersion;
 import de.soderer.json.utilities.NumberUtilities;
 import de.soderer.json.utilities.Utilities;
 
@@ -40,7 +40,8 @@ public class EnumValidator extends BaseJsonSchemaValidator {
 			throw new JsonSchemaDefinitionError("Enum data is 'null'", jsonSchemaPath);
 		} else if (!(validatorData.isJsonArray())) {
 			throw new JsonSchemaDefinitionError("Enum contains a non-JsonArray", jsonSchemaPath);
-		} else if (((JsonArray) validatorData).size() == 0) {
+		} else if (((JsonArray) validatorData).size() == 0 && !jsonSchemaDependencyResolver.isVersionAtLeast(JsonSchemaVersion.draft2019_09)) {
+			// Since draft 2019-09 an empty enum is allowed, which no data matches
 			throw new JsonSchemaDefinitionError("Enum contains an empty JsonArray", jsonSchemaPath);
 		}
 	}
@@ -76,12 +77,9 @@ public class EnumValidator extends BaseJsonSchemaValidator {
 					if (NumberUtilities.compare(((JsonValueInteger) enumObject).getValue(), ((JsonValueNumber) jsonNode).getValue()) == 0) {
 						return;
 					}
-				} else if (enumObject.isJsonObject()) {
-					if (jsonNode.isJsonObject() && enumObject.isJsonObject() && ((JsonObject) enumObject).equals(jsonNode)) {
-						return;
-					}
-				} else if (enumObject.isJsonArray()) {
-					if (jsonNode.isJsonArray() && enumObject.isJsonArray() && ((JsonArray) enumObject).equals(jsonNode)) {
+				} else if (enumObject.isJsonObject() || enumObject.isJsonArray()) {
+					// Deep comparison with numbers compared by value (1 equals 1.0)
+					if (isJsonDataEqual(enumObject, jsonNode)) {
 						return;
 					}
 				}

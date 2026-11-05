@@ -1,20 +1,17 @@
 package de.soderer.json.schema;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Map.Entry;
 
 import de.soderer.json.Json5Reader;
-import de.soderer.json.JsonArray;
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
-import de.soderer.json.JsonValueString;
 import de.soderer.json.utilities.Utilities;
 
 /**
  * Additional JSON schema whose definitions are referenced by another schema, like
- * "other.json#/definitions/address". Internal references ("#/...") within it are redirected to its
- * name.
+ * "other.json#/definitions/address". The name is its URI (relative names are resolved against the
+ * base URI of the main schema). Internal references ("#/...") within it are resolved against its
+ * own base URI, which is its "$id" or otherwise its name. The schema data is not changed.
  */
 public class JsonSchemaDependency {
 	/**
@@ -48,7 +45,6 @@ public class JsonSchemaDependency {
 				} else {
 					final JsonObject jsonSchema = (JsonObject) jsonNode;
 					jsonSchemaReferenceObject = jsonSchema;
-					redirectReferences(jsonSchema, "#", jsonSchemaReferenceName + "#");
 				}
 			}
 		}
@@ -71,7 +67,6 @@ public class JsonSchemaDependency {
 		} else {
 			this.jsonSchemaReferenceName = jsonSchemaReferenceName;
 			this.jsonSchemaReferenceObject = jsonSchemaReferenceObject;
-			redirectReferences(jsonSchemaReferenceObject, "#", jsonSchemaReferenceName + "#");
 		}
 	}
 
@@ -87,34 +82,9 @@ public class JsonSchemaDependency {
 	/**
 	 * Returns the schema data.
 	 *
-	 * @return the schema data with redirected references
+	 * @return the schema data, unchanged
 	 */
 	public JsonObject getJsonSchemaReferenceObject() {
 		return jsonSchemaReferenceObject;
-	}
-
-	private void redirectReferences(final JsonObject jsonObject, final String referenceDefinitionStart, final String referenceDefinitionReplacement) throws Exception {
-		// Iterate over a snapshot of the entries: the loop body calls jsonObject.remove(...)/add(...) on "$ref",
-		// which would otherwise modify the map while entrySet() is being iterated (ConcurrentModificationException).
-		for (final Entry<String, JsonNode> entry : new ArrayList<>(jsonObject.entrySet())) {
-			if ("$ref".equals(entry.getKey()) && entry.getValue() != null && entry.getValue() instanceof JsonValueString && ((JsonValueString) entry.getValue()).getValue().startsWith(referenceDefinitionStart)) {
-				// Replace keeps the position of the property
-				jsonObject.replace("$ref", referenceDefinitionReplacement + ((JsonValueString) entry.getValue()).getValue().substring(referenceDefinitionStart.length()));
-			} else if (entry.getValue() instanceof JsonObject) {
-				redirectReferences((JsonObject) entry.getValue(), referenceDefinitionStart, referenceDefinitionReplacement);
-			} else if (entry.getValue() instanceof JsonArray) {
-				redirectReferences((JsonArray) entry.getValue(), referenceDefinitionStart, referenceDefinitionReplacement);
-			}
-		}
-	}
-
-	private void redirectReferences(final JsonArray jsonArray, final String referenceDefinitionStart, final String referenceDefinitionReplacement) throws Exception {
-		for (final JsonNode item : jsonArray.items()) {
-			if (item instanceof JsonObject) {
-				redirectReferences((JsonObject) item, referenceDefinitionStart, referenceDefinitionReplacement);
-			} else if (item instanceof JsonArray) {
-				redirectReferences((JsonArray) item, referenceDefinitionStart, referenceDefinitionReplacement);
-			}
-		}
 	}
 }
