@@ -57,6 +57,22 @@ public class YamlReader extends BasicReadAheadReader {
 	private int pendingLeadingEmptyLines = 0;
 	private int pendingTrailingEmptyLinesAfterComments = 0;
 	private Boolean documentContentStarted = null;
+
+	/**
+	 * Default maximum nesting depth of mappings and sequences.
+	 */
+	public static final int DEFAULT_MAXIMUM_NESTING_DEPTH = 500;
+
+	/**
+	 * Maximum allowed nesting depth of mappings and sequences.
+	 */
+	private int maximumNestingDepth = DEFAULT_MAXIMUM_NESTING_DEPTH;
+
+	/**
+	 * Current nesting depth of mappings and sequences while parsing.
+	 */
+	private int nestingDepth = 0;
+
 	/**
 	 * Path of the current read position.
 	 */
@@ -98,6 +114,70 @@ public class YamlReader extends BasicReadAheadReader {
 		setNormalizeLinebreaks(true);
 
 		indentationsAdd(0);
+	}
+
+	/**
+	 * Returns the maximum allowed nesting depth of mappings and sequences.
+	 *
+	 * @return the maximum nesting depth
+	 */
+	public int getMaximumNestingDepth() {
+		return maximumNestingDepth;
+	}
+
+	/**
+	 * Sets the maximum allowed nesting depth of mappings and sequences. Deeper nested data is
+	 * rejected by a {@link YamlParseException} instead of risking a {@link StackOverflowError}.
+	 * Default is {@link #DEFAULT_MAXIMUM_NESTING_DEPTH}.
+	 *
+	 * @param maximumNestingDepth
+	 *            the maximum nesting depth, must be at least 1
+	 */
+	public void setMaximumNestingDepth(final int maximumNestingDepth) {
+		if (maximumNestingDepth < 1) {
+			throw new IllegalArgumentException("Maximum nesting depth must be at least 1");
+		}
+		this.maximumNestingDepth = maximumNestingDepth;
+	}
+
+	/**
+	 * Sets the maximum allowed nesting depth of mappings and sequences, see
+	 * {@link #setMaximumNestingDepth(int)}.
+	 *
+	 * @param newMaximumNestingDepth
+	 *            the maximum nesting depth, must be at least 1
+	 * @return this reader
+	 */
+	public YamlReader withMaximumNestingDepth(final int newMaximumNestingDepth) {
+		setMaximumNestingDepth(newMaximumNestingDepth);
+		return this;
+	}
+
+	/**
+	 * Enters the next nesting level of a mapping or sequence. The caller must decrement
+	 * {@link #nestingDepth} in a finally block.
+	 *
+	 * @throws YamlParseException
+	 *             if the maximum nesting depth is exceeded
+	 */
+	private void enterNesting() throws YamlParseException {
+		nestingDepth++;
+		if (nestingDepth > maximumNestingDepth) {
+			nestingDepth--;
+			throw new YamlParseException("Maximum nesting depth of " + maximumNestingDepth + " exceeded", getCurrentLine(), getCurrentColumn());
+		}
+	}
+
+	/**
+	 * Checks the current nesting depth for a level that was entered without check.
+	 *
+	 * @throws YamlParseException
+	 *             if the maximum nesting depth is exceeded
+	 */
+	private void checkNestingDepth() throws YamlParseException {
+		if (nestingDepth > maximumNestingDepth) {
+			throw new YamlParseException("Maximum nesting depth of " + maximumNestingDepth + " exceeded", getCurrentLine(), getCurrentColumn());
+		}
 	}
 
 	/**
@@ -828,6 +908,15 @@ public class YamlReader extends BasicReadAheadReader {
 	}
 
 	private YamlNode parseBlockSequence() throws Exception {
+		enterNesting();
+		try {
+			return parseBlockSequenceInternal();
+		} finally {
+			nestingDepth--;
+		}
+	}
+
+	private YamlNode parseBlockSequenceInternal() throws Exception {
 		if (peekCharNotMatch('-') || (peekNextCharNotMatch(1, ' ') && peekNextCharNotMatch(1, '\t') && peekNextCharNotMatch(1, '\n'))) {
 			throw new YamlParseException("Expected sequence start not found", getCurrentLine(), getCurrentColumn());
 		}
@@ -907,6 +996,17 @@ public class YamlReader extends BasicReadAheadReader {
 	}
 
 	private YamlNode parseBlockMappingOrScalar(final YamlNode firstKeyNode) throws Exception {
+		// Not checked yet, because the node may turn out to be a simple scalar, which is no nesting
+		// level of its own. The check follows as soon as the node is known to be a mapping.
+		nestingDepth++;
+		try {
+			return parseBlockMappingOrScalarInternal(firstKeyNode);
+		} finally {
+			nestingDepth--;
+		}
+	}
+
+	private YamlNode parseBlockMappingOrScalarInternal(final YamlNode firstKeyNode) throws Exception {
 		final int mappingIndentation = getNumberOfIndentationChars();
 
 		YamlNode keyOrScalarNode;
@@ -947,6 +1047,8 @@ public class YamlReader extends BasicReadAheadReader {
 				readChar();
 				skipBlanks();
 				indentationsAdd(2);
+				// Complex key: this node is a mapping
+				checkNestingDepth();
 				keyOrScalarNode = parseYamlNode();
 			} else {
 				if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
@@ -983,6 +1085,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 			String pendingAnchor = readUpToNextContent(keyOrScalarNode);
 
+			checkNestingDepth();
 			final YamlMapping mapping = new YamlMapping();
 			updatePath(YamlToken.YamlMapping_Start, null);
 			updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
@@ -1110,6 +1213,15 @@ public class YamlReader extends BasicReadAheadReader {
 	}
 
 	private YamlNode parseFlowMapping() throws Exception {
+		enterNesting();
+		try {
+			return parseFlowMappingInternal();
+		} finally {
+			nestingDepth--;
+		}
+	}
+
+	private YamlNode parseFlowMappingInternal() throws Exception {
 		if (peekCharNotMatch('{')) {
 			throw new YamlParseException("Expected flow YAML mapping start character not found", getCurrentLine(), getCurrentColumn());
 		}
@@ -1268,6 +1380,15 @@ public class YamlReader extends BasicReadAheadReader {
 	}
 
 	private YamlNode parseFlowSequence() throws Exception {
+		enterNesting();
+		try {
+			return parseFlowSequenceInternal();
+		} finally {
+			nestingDepth--;
+		}
+	}
+
+	private YamlNode parseFlowSequenceInternal() throws Exception {
 		if (peekCharNotMatch('[')) {
 			throw new YamlParseException("Expected flow YAML sequence start character not found", getCurrentLine(), getCurrentColumn());
 		}

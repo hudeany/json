@@ -15,6 +15,7 @@ import java.util.Set;
 import de.soderer.json.JsonArray;
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
+import de.soderer.json.JsonReader;
 import de.soderer.json.JsonValueBoolean;
 import de.soderer.json.JsonValueInteger;
 import de.soderer.json.JsonValueNull;
@@ -29,6 +30,7 @@ import de.soderer.yaml.data.YamlScalar;
 import de.soderer.yaml.data.YamlScalarType;
 import de.soderer.yaml.data.YamlSequence;
 import de.soderer.yaml.data.YamlStringQuoteType;
+import de.soderer.yaml.exception.YamlAliasExpansionLimitException;
 
 /**
  * Converts YAML data to JSON data.
@@ -39,10 +41,38 @@ import de.soderer.yaml.data.YamlStringQuoteType;
  * number values. Scalar mapping keys are converted to their text, e.g. the key 200 to "200".
  * Comments, anchors and styles are not part of JSON and get lost.
  * </p>
+ * <p>
+ * Each alias and merge key copies the referenced data into the JSON result. To protect against
+ * "billion laughs" data, the number of nodes created by these copies is limited, see
+ * {@link #DEFAULT_MAXIMUM_ALIAS_EXPANDED_NODES}. Data without aliases is not limited.
+ * </p>
  */
 public class YamlToJsonConverter {
 	/** Merge key of YAML 1.1. */
 	private static final String MERGE_KEY = "<<";
+
+	/**
+	 * Default maximum number of JSON nodes created by resolving aliases and merge keys.
+	 */
+	public static final int DEFAULT_MAXIMUM_ALIAS_EXPANDED_NODES = 100_000;
+
+	/** Maximum number of JSON nodes created by resolving aliases and merge keys. */
+	private final int maximumAliasExpandedNodes;
+
+	/** Number of nested alias or merge key expansions at the current conversion position. */
+	private int aliasExpansionDepth = 0;
+
+	/** Number of JSON nodes created by alias or merge key expansions so far. */
+	private int aliasExpandedNodes = 0;
+
+	/**
+	 * Maximum nesting depth of the created JSON data. Aliases can create data nested deeper than the
+	 * YAML source, so the limit of the reader alone does not prevent a {@link StackOverflowError}.
+	 */
+	public static final int MAXIMUM_NESTING_DEPTH = JsonReader.DEFAULT_MAXIMUM_NESTING_DEPTH;
+
+	/** Nesting depth of mappings and sequences at the current conversion position. */
+	private int nestingDepth = 0;
 
 	/** Anchor definitions within the converted data. */
 	private final Map<String, YamlNode> anchors = new HashMap<>();
@@ -55,8 +85,14 @@ public class YamlToJsonConverter {
 	 *
 	 * @param rootNode
 	 *            the root node of the data to collect the anchors from
+	 * @param maximumAliasExpandedNodes
+	 *            the maximum number of JSON nodes created by resolving aliases and merge keys
 	 */
-	private YamlToJsonConverter(final YamlNode rootNode) {
+	private YamlToJsonConverter(final YamlNode rootNode, final int maximumAliasExpandedNodes) {
+		if (maximumAliasExpandedNodes < 0) {
+			throw new IllegalArgumentException("Maximum number of alias expanded nodes must not be negative");
+		}
+		this.maximumAliasExpandedNodes = maximumAliasExpandedNodes;
 		collectAnchors(rootNode);
 	}
 
@@ -72,10 +108,29 @@ public class YamlToJsonConverter {
 	 *             if the data contains null keys, complex keys, unknown or cyclic aliases
 	 */
 	public static JsonNode convert(final YamlDocument yamlDocument) throws DuplicateKeyException {
+		return convert(yamlDocument, DEFAULT_MAXIMUM_ALIAS_EXPANDED_NODES);
+	}
+
+	/**
+	 * Converts the root node of a YAML document with a specific limit for alias expansion.
+	 *
+	 * @param yamlDocument
+	 *            the YAML document, may be null
+	 * @param maximumAliasExpandedNodes
+	 *            the maximum number of JSON nodes created by resolving aliases and merge keys
+	 * @return the JSON data, or null if the document or its root is null
+	 * @throws DuplicateKeyException
+	 *             if two mapping keys have the same text, e.g. the number 1 and the string "1"
+	 * @throws YamlAliasExpansionLimitException
+	 *             if alias expansion creates more nodes than allowed
+	 * @throws RuntimeException
+	 *             if the data contains null keys, complex keys, unknown or cyclic aliases
+	 */
+	public static JsonNode convert(final YamlDocument yamlDocument, final int maximumAliasExpandedNodes) throws DuplicateKeyException {
 		if (yamlDocument == null || yamlDocument.getRoot() == null) {
 			return null;
 		} else {
-			return convert(yamlDocument.getRoot());
+			return convert(yamlDocument.getRoot(), maximumAliasExpandedNodes);
 		}
 	}
 
@@ -91,10 +146,30 @@ public class YamlToJsonConverter {
 	 *             if the data contains null keys, complex keys, unknown or cyclic aliases
 	 */
 	public static JsonNode convert(final YamlNode yamlNode) throws DuplicateKeyException {
+		return convert(yamlNode, DEFAULT_MAXIMUM_ALIAS_EXPANDED_NODES);
+	}
+
+	/**
+	 * Converts a YAML node with a specific limit for alias expansion. Aliases may only refer to
+	 * anchors within this node.
+	 *
+	 * @param yamlNode
+	 *            the YAML node, may be null
+	 * @param maximumAliasExpandedNodes
+	 *            the maximum number of JSON nodes created by resolving aliases and merge keys
+	 * @return the JSON data, or null if the node is null
+	 * @throws DuplicateKeyException
+	 *             if two mapping keys have the same text, e.g. the number 1 and the string "1"
+	 * @throws YamlAliasExpansionLimitException
+	 *             if alias expansion creates more nodes than allowed
+	 * @throws RuntimeException
+	 *             if the data contains null keys, complex keys, unknown or cyclic aliases
+	 */
+	public static JsonNode convert(final YamlNode yamlNode, final int maximumAliasExpandedNodes) throws DuplicateKeyException {
 		if (yamlNode == null) {
 			return null;
 		} else {
-			return new YamlToJsonConverter(yamlNode).convertNode(yamlNode);
+			return new YamlToJsonConverter(yamlNode, maximumAliasExpandedNodes).convertNode(yamlNode);
 		}
 	}
 
@@ -248,7 +323,19 @@ public class YamlToJsonConverter {
 		if (!aliasTargetsInProgress.add(resolvedNode)) {
 			throw new RuntimeException("Cyclic YAML alias reference found" + (node instanceof final YamlAlias alias ? ": '*" + alias.getTargetAnchorName() + "'" : ""));
 		}
+		final boolean isAlias = node instanceof YamlAlias;
+		if (isAlias) {
+			aliasExpansionDepth++;
+		}
+		final boolean isCollection = resolvedNode instanceof YamlMapping || resolvedNode instanceof YamlSequence;
+		if (isCollection) {
+			nestingDepth++;
+		}
 		try {
+			countAliasExpandedNode();
+			if (isCollection && nestingDepth > MAXIMUM_NESTING_DEPTH) {
+				throw new RuntimeException("Maximum nesting depth of " + MAXIMUM_NESTING_DEPTH + " exceeded in converted YAML data");
+			}
 			if (resolvedNode instanceof final YamlMapping mapping) {
 				return convertMapping(mapping);
 			} else if (resolvedNode instanceof final YamlSequence sequence) {
@@ -264,6 +351,27 @@ public class YamlToJsonConverter {
 			}
 		} finally {
 			aliasTargetsInProgress.remove(resolvedNode);
+			if (isAlias) {
+				aliasExpansionDepth--;
+			}
+			if (isCollection) {
+				nestingDepth--;
+			}
+		}
+	}
+
+	/**
+	 * Counts a JSON node created within an alias or merge key expansion.
+	 *
+	 * @throws YamlAliasExpansionLimitException
+	 *             if the maximum number of expanded nodes is exceeded
+	 */
+	private void countAliasExpandedNode() {
+		if (aliasExpansionDepth > 0) {
+			aliasExpandedNodes++;
+			if (aliasExpandedNodes > maximumAliasExpandedNodes) {
+				throw new YamlAliasExpansionLimitException(maximumAliasExpandedNodes);
+			}
 		}
 	}
 
@@ -288,7 +396,14 @@ public class YamlToJsonConverter {
 		for (final Entry<YamlNode, YamlNode> entry : mapping.entrySet()) {
 			if (isMergeKey(entry.getKey())) {
 				for (final YamlMapping mergedMapping : getMergedMappings(entry.getValue())) {
-					final JsonObject mergedObject = (JsonObject) convertNode(mergedMapping);
+					// Merged mappings are copies of their source data like aliases, even when written inline
+					final JsonObject mergedObject;
+					aliasExpansionDepth++;
+					try {
+						mergedObject = (JsonObject) convertNode(mergedMapping);
+					} finally {
+						aliasExpansionDepth--;
+					}
 					for (final Entry<String, JsonNode> mergedEntry : mergedObject.entrySet()) {
 						// Explicit keys and keys of earlier merged mappings take precedence
 						if (!explicitKeys.contains(mergedEntry.getKey()) && !jsonObject.containsKey(mergedEntry.getKey())) {

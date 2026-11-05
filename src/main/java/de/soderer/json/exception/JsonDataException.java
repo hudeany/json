@@ -70,6 +70,29 @@ public class JsonDataException extends Exception {
 	 *
 	 * @return the invalid data
 	 */
+	/**
+	 * Creates a new exception with a specific message for subclasses.
+	 *
+	 * @param message
+	 *            the message without position information
+	 * @param erroneousData
+	 *            the erroneous data
+	 * @param lineIndex
+	 *            the zero based line index of the error position
+	 * @param columnIndex
+	 *            the column index of the error position
+	 * @param overallCharacterIndex
+	 *            the overall character index of the error position
+	 */
+	protected JsonDataException(final String message, final String erroneousData, final long lineIndex, final long columnIndex, final long overallCharacterIndex) {
+		super(message + " in line " + (lineIndex + 1) + " at column " + columnIndex + " at overall index " + overallCharacterIndex);
+
+		this.erroneousData = erroneousData;
+		this.lineIndex = lineIndex;
+		this.columnIndex = columnIndex;
+		this.overallCharacterIndex = overallCharacterIndex;
+	}
+
 	public String getErroneousData() {
 		return erroneousData;
 	}

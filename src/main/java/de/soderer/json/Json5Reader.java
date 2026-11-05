@@ -60,6 +60,12 @@ public class Json5Reader extends JsonReader {
 	}
 
 	@Override
+	public Json5Reader withMaximumNestingDepth(final int maximumNestingDepth) {
+		setMaximumNestingDepth(maximumNestingDepth);
+		return this;
+	}
+
+	@Override
 	protected JsonToken readNextTokenInternal(final boolean updateJsonPath) throws Exception {
 		currentObject = null;
 		Character currentChar = readNextNonWhitespace();

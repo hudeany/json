@@ -9,6 +9,7 @@ import java.util.Stack;
 
 import de.soderer.json.exception.JsonDataException;
 import de.soderer.json.exception.JsonReaderStateException;
+import de.soderer.json.exception.MaximumNestingDepthExceededException;
 import de.soderer.json.exception.UnexpectedEndOfJsonDataException;
 import de.soderer.json.exception.UnexpectedJsonTokenException;
 import de.soderer.json.path.JsonPath;
@@ -27,6 +28,16 @@ import de.soderer.json.utilities.NumberUtilities;
  * </p>
  */
 public class JsonReader extends BasicReader {
+	/**
+	 * Default maximum nesting depth of objects and arrays.
+	 */
+	public static final int DEFAULT_MAXIMUM_NESTING_DEPTH = 500;
+
+	/**
+	 * Maximum allowed nesting depth of objects and arrays.
+	 */
+	private int maximumNestingDepth = DEFAULT_MAXIMUM_NESTING_DEPTH;
+
 	/**
 	 * Simple value or property key read by the last token, otherwise null.
 	 */
@@ -128,7 +139,50 @@ public class JsonReader extends BasicReader {
 	 *             if the JSON data is invalid
 	 */
 	public JsonToken readNextToken() throws Exception {
-		return readNextTokenInternal(true);
+		final JsonToken jsonToken = readNextTokenInternal(true);
+		// The stack holds only open objects and arrays, plus at most one property key on top.
+		// So directly after an opening token its size is the current nesting depth.
+		if ((jsonToken == JsonToken.JsonObject_Open || jsonToken == JsonToken.JsonArray_Open) && openJsonItems.size() > maximumNestingDepth) {
+			throw new MaximumNestingDepthExceededException(maximumNestingDepth, jsonToken == JsonToken.JsonObject_Open ? "{" : "[", getReadLines(), getReadCharactersInCurrentLine(), getReadCharacters());
+		}
+		return jsonToken;
+	}
+
+	/**
+	 * Returns the maximum allowed nesting depth of objects and arrays.
+	 *
+	 * @return the maximum nesting depth
+	 */
+	public int getMaximumNestingDepth() {
+		return maximumNestingDepth;
+	}
+
+	/**
+	 * Sets the maximum allowed nesting depth of objects and arrays. Deeper nested data is rejected
+	 * by a {@link MaximumNestingDepthExceededException} instead of risking a
+	 * {@link StackOverflowError}. Default is {@link #DEFAULT_MAXIMUM_NESTING_DEPTH}.
+	 *
+	 * @param maximumNestingDepth
+	 *            the maximum nesting depth, must be at least 1
+	 */
+	public void setMaximumNestingDepth(final int maximumNestingDepth) {
+		if (maximumNestingDepth < 1) {
+			throw new IllegalArgumentException("Maximum nesting depth must be at least 1");
+		}
+		this.maximumNestingDepth = maximumNestingDepth;
+	}
+
+	/**
+	 * Sets the maximum allowed nesting depth of objects and arrays, see
+	 * {@link #setMaximumNestingDepth(int)}.
+	 *
+	 * @param newMaximumNestingDepth
+	 *            the maximum nesting depth, must be at least 1
+	 * @return this reader
+	 */
+	public JsonReader withMaximumNestingDepth(final int newMaximumNestingDepth) {
+		setMaximumNestingDepth(newMaximumNestingDepth);
+		return this;
 	}
 
 	/**
