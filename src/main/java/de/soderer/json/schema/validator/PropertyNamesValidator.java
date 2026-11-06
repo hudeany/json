@@ -59,12 +59,14 @@ public class PropertyNamesValidator extends BaseJsonSchemaValidator {
 				throw new JsonSchemaDataValidationError("Expected data type 'object' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {
+			boolean valid = true;
 			for (final String propertyName : ((JsonObject) jsonNode).keySet()) {
 				final JsonNode newJsonNode = new JsonValueString(propertyName).withRootNode(false);
-				for (final BaseJsonSchemaValidator subValidator : subValidators) {
-					// The path of the property shows which property name is invalid
-					subValidator.validate(newJsonNode, new JsonPath(jsonPath).addPropertyKey(propertyName));
-				}
+				// The path of the property shows which property name is invalid
+				valid = applyValidators(subValidators, newJsonNode, new JsonPath(jsonPath).addPropertyKey(propertyName)) && valid;
+			}
+			if (!valid) {
+				throw JsonSchemaDataValidationError.createCollectedMarker(jsonPath);
 			}
 		}
 	}

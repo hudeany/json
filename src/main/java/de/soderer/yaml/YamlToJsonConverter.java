@@ -74,7 +74,10 @@ public class YamlToJsonConverter {
 	/** Nesting depth of mappings and sequences at the current conversion position. */
 	private int nestingDepth = 0;
 
-	/** Anchor definitions within the converted data. */
+	/**
+	 * Anchor definitions converted so far. They are registered in document order, so an alias refers
+	 * to the latest definition of its anchor before it, also if an anchor is defined again.
+	 */
 	private final Map<String, YamlNode> anchors = new HashMap<>();
 
 	/** Aliases currently being resolved, to detect cyclic references. */
@@ -84,7 +87,7 @@ public class YamlToJsonConverter {
 	 * Creates a converter for data with the given anchor definitions.
 	 *
 	 * @param rootNode
-	 *            the root node of the data to collect the anchors from
+	 *            the root node of the data, whose anchors are registered while converting
 	 * @param maximumAliasExpandedNodes
 	 *            the maximum number of JSON nodes created by resolving aliases and merge keys
 	 */
@@ -93,7 +96,6 @@ public class YamlToJsonConverter {
 			throw new IllegalArgumentException("Maximum number of alias expanded nodes must not be negative");
 		}
 		this.maximumAliasExpandedNodes = maximumAliasExpandedNodes;
-		collectAnchors(rootNode);
 	}
 
 	/**
@@ -264,27 +266,14 @@ public class YamlToJsonConverter {
 	}
 
 	/**
-	 * Collects the anchor definitions of a YAML tree, keys included.
+	 * Registers the anchor of a node, which is no alias.
 	 *
 	 * @param node
-	 *            the node to start at
+	 *            the node
 	 */
-	private void collectAnchors(final YamlNode node) {
-		if (node == null) {
-			return;
-		}
-		if (node.getAnchorName() != null) {
+	private void registerAnchor(final YamlNode node) {
+		if (node != null && !(node instanceof YamlAlias) && node.getAnchorName() != null) {
 			anchors.put(node.getAnchorName(), node);
-		}
-		if (node instanceof final YamlMapping mapping) {
-			for (final Entry<YamlNode, YamlNode> entry : mapping.entrySet()) {
-				collectAnchors(entry.getKey());
-				collectAnchors(entry.getValue());
-			}
-		} else if (node instanceof final YamlSequence sequence) {
-			for (final YamlNode item : sequence.items()) {
-				collectAnchors(item);
-			}
 		}
 	}
 
@@ -319,6 +308,7 @@ public class YamlToJsonConverter {
 	 *             if two mapping keys have the same text
 	 */
 	private JsonNode convertNode(final YamlNode node) throws DuplicateKeyException {
+		registerAnchor(node);
 		final YamlNode resolvedNode = resolve(node);
 		if (!aliasTargetsInProgress.add(resolvedNode)) {
 			throw new RuntimeException("Cyclic YAML alias reference found" + (node instanceof final YamlAlias alias ? ": '*" + alias.getTargetAnchorName() + "'" : ""));
@@ -468,6 +458,7 @@ public class YamlToJsonConverter {
 	 *             for null keys and complex keys
 	 */
 	private String convertKey(final YamlNode key) {
+		registerAnchor(key);
 		if (resolve(key) instanceof final YamlScalar keyScalar) {
 			if (keyScalar.getType() == YamlScalarType.NULL_VALUE) {
 				throw new RuntimeException("Cannot create JsonObject, because YamlMapping contains a null key");

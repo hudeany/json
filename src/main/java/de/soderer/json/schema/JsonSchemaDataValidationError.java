@@ -1,5 +1,8 @@
 package de.soderer.json.schema;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import de.soderer.json.path.JsonPath;
 
 /**
@@ -13,6 +16,16 @@ public class JsonSchemaDataValidationError extends Exception {
 	 * Path of the invalid data.
 	 */
 	private final JsonPath jsonDataPath;
+
+	/**
+	 * Path of the schema keyword that failed, null if unknown.
+	 */
+	private JsonSchemaPath jsonSchemaPath = null;
+
+	/**
+	 * Whether this error only signals, that the errors of a node were already collected.
+	 */
+	private boolean collectedMarker = false;
 
 	/**
 	 * Creates a new error.
@@ -45,12 +58,77 @@ public class JsonSchemaDataValidationError extends Exception {
 	}
 
 	/**
+	 * Creates an error that signals invalid data, whose errors were already collected by
+	 * {@link JsonSchemaValidationCollector}. It is not reported itself.
+	 *
+	 * @param jsonDataPath
+	 *            path of the invalid data
+	 * @return the error
+	 */
+	public static JsonSchemaDataValidationError createCollectedMarker(final JsonPath jsonDataPath) {
+		final JsonSchemaDataValidationError error = new JsonSchemaDataValidationError("Errors were collected", jsonDataPath);
+		error.collectedMarker = true;
+		return error;
+	}
+
+	/**
+	 * Checks whether this error only signals, that the errors of a node were already collected.
+	 *
+	 * @return true for a marker created by {@link #createCollectedMarker(JsonPath)}
+	 */
+	public boolean isCollectedMarker() {
+		return collectedMarker;
+	}
+
+	/**
 	 * Returns the path of the invalid data.
 	 *
 	 * @return the path, may be null
 	 */
 	public JsonPath getJsonDataPath() {
 		return jsonDataPath;
+	}
+
+	/**
+	 * Returns the path of the schema keyword that failed, e.g. ".properties.name.type". For a
+	 * keyword within a referenced schema the path continues after the "$ref".
+	 *
+	 * @return the path, may be null
+	 */
+	public JsonSchemaPath getJsonSchemaPath() {
+		return jsonSchemaPath;
+	}
+
+	/**
+	 * Sets the path of the schema keyword that failed, if it is not set yet. The innermost keyword
+	 * sets it first, so outer keywords do not overwrite it.
+	 *
+	 * @param newJsonSchemaPath
+	 *            the path of the schema keyword
+	 */
+	public void setJsonSchemaPathIfMissing(final JsonSchemaPath newJsonSchemaPath) {
+		if (jsonSchemaPath == null) {
+			jsonSchemaPath = newJsonSchemaPath;
+		}
+	}
+
+	/**
+	 * Returns the errors of the sub schemas that caused this error, e.g. the errors of all options
+	 * of a failing "anyOf".
+	 *
+	 * @return the errors of the sub schemas, empty if there are none
+	 */
+	public List<JsonSchemaDataValidationError> getSubSchemaErrors() {
+		final List<JsonSchemaDataValidationError> subSchemaErrors = new ArrayList<>();
+		if (getCause() instanceof final JsonSchemaDataValidationError causeError) {
+			subSchemaErrors.add(causeError);
+		}
+		for (final Throwable suppressed : getSuppressed()) {
+			if (suppressed instanceof final JsonSchemaDataValidationError suppressedError) {
+				subSchemaErrors.add(suppressedError);
+			}
+		}
+		return subSchemaErrors;
 	}
 
 	/**

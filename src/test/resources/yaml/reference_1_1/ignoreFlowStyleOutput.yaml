@@ -81,7 +81,7 @@
   : "Boolean true"
   ? n: null
   : "Boolean false"
-  "R0lG...BADS=\n": >-
+  !!binary "R0lG...BADS=\n": >-
     Base 64 binary value.
 "Escape codes":
   "Numeric":

@@ -22,6 +22,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import de.soderer.yaml.data.YamlAlias;
+import de.soderer.json.JsonObject;
 import de.soderer.yaml.data.YamlDocument;
 import de.soderer.yaml.data.YamlMapping;
 import de.soderer.yaml.data.YamlMultilineScalarChompingType;
@@ -507,10 +508,19 @@ class YamlReaderWriterTest {
         }
 
         @Test
-        @DisplayName("Duplicate anchor name throws exception")
-        void duplicateAnchorNameThrowsException() {
+        @DisplayName("Anchor defined again is used by the following aliases (YAML 1.2 example 7.1)")
+        void duplicateAnchorNameRedefinesAnchor() throws Exception {
+            final YamlDocument doc = read("a: &dup val1\nb: *dup\nc: &dup val2\nd: *dup\n");
+            final JsonObject json = (JsonObject) YamlToJsonConverter.convert(doc);
+            assertEquals("val1", json.getSimpleValue("b"));
+            assertEquals("val2", json.getSimpleValue("d"));
+        }
+
+        @Test
+        @DisplayName("Two anchors of one node throw exception")
+        void twoAnchorsOfOneNodeThrowException() {
             assertThrows(Exception.class, () ->
-                    read("a: &dup val1\nb: &dup val2\n"));
+                    read("a: &first\n  &second value\n"));
         }
     }
 
@@ -593,10 +603,11 @@ class YamlReaderWriterTest {
         }
 
         @Test
-        @DisplayName("Unknown directive throws exception")
-        void unknownDirectiveThrowsException() {
-            assertThrows(Exception.class, () ->
-                    read("%UNKNOWN foo\n---\nkey: value\n...\n"));
+        @DisplayName("Unknown directive is ignored (YAML 1.2 chapter 6.8)")
+        void unknownDirectiveIsIgnored() throws Exception {
+            final YamlDocument doc = read("%UNKNOWN foo # comment\n---\nkey: value\n...\n");
+            assertEquals("value", ((YamlMapping) doc.getRoot()).getSimpleValue("key"));
+            assertTrue(doc.getDirectives() == null || doc.getDirectives().isEmpty());
         }
     }
 

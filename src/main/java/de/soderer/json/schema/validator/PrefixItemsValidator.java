@@ -53,9 +53,13 @@ public class PrefixItemsValidator extends BaseJsonSchemaValidator {
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		if (jsonNode.isJsonArray()) {
 			final JsonArray jsonArray = (JsonArray) jsonNode;
+			boolean valid = true;
 			for (int i = 0; i < indexedValidatorPacks.size() && i < jsonArray.size(); i++) {
-				ItemsValidator.validateItem(jsonArray, i, indexedValidatorPacks.get(i), jsonPath);
+				valid = ItemsValidator.validateItem(jsonArray, i, indexedValidatorPacks.get(i), jsonPath) && valid;
 				jsonSchemaDependencyResolver.getEvaluationContext().markItemEvaluated(i);
+			}
+			if (!valid) {
+				throw JsonSchemaDataValidationError.createCollectedMarker(jsonPath);
 			}
 		}
 	}

@@ -11,6 +11,7 @@ import de.soderer.json.schema.JsonSchemaDataValidationError;
 import de.soderer.json.schema.JsonSchemaDefinitionError;
 import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaEvaluationContext;
+import de.soderer.json.schema.JsonSchemaValidationCollector;
 import de.soderer.json.schema.JsonSchemaPath;
 
 /**
@@ -51,16 +52,27 @@ public class UnevaluatedItemsValidator extends BaseJsonSchemaValidator {
 		if (jsonNode.isJsonArray()) {
 			final JsonSchemaEvaluationContext context = jsonSchemaDependencyResolver.getEvaluationContext();
 			final JsonArray jsonArray = (JsonArray) jsonNode;
+			final boolean collecting = isCollectingErrors();
+			boolean valid = true;
 			for (int i = 0; i < jsonArray.size(); i++) {
 				if (!context.isItemEvaluated(i)) {
 					final JsonPath itemPath = new JsonPath(jsonPath).addArrayIndex(i);
 					final JsonSchemaDataValidationError subSchemaError = getSubSchemaValidationError(subValidators, jsonArray.get(i), itemPath);
 					if (subSchemaError != null) {
-						throw new JsonSchemaDataValidationError("Unevaluated array item at index " + i + " is not valid", itemPath, subSchemaError);
+						final JsonSchemaDataValidationError error = new JsonSchemaDataValidationError("Unevaluated array item at index " + i + " is not valid", itemPath, subSchemaError);
+						if (!collecting) {
+							throw error;
+						}
+						error.setJsonSchemaPathIfMissing(jsonSchemaPath);
+						JsonSchemaValidationCollector.getActive().addError(error);
+						valid = false;
 					}
 				}
 			}
 			context.markAllItemsEvaluated();
+			if (!valid) {
+				throw JsonSchemaDataValidationError.createCollectedMarker(jsonPath);
+			}
 		}
 	}
 }

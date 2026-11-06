@@ -51,7 +51,17 @@ public class DependentSchemasValidator extends BaseJsonSchemaValidator {
 
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
-		if (jsonNode.isJsonObject()) {
+		if (jsonNode.isJsonObject() && isCollectingErrors()) {
+			boolean valid = true;
+			for (final Entry<String, List<BaseJsonSchemaValidator>> dependentValidatorEntry : dependentValidators.entrySet()) {
+				if (((JsonObject) jsonNode).containsKey(dependentValidatorEntry.getKey())) {
+					valid = applyValidators(dependentValidatorEntry.getValue(), jsonNode, jsonPath) && valid;
+				}
+			}
+			if (!valid) {
+				throw JsonSchemaDataValidationError.createCollectedMarker(jsonPath);
+			}
+		} else if (jsonNode.isJsonObject()) {
 			for (final Entry<String, List<BaseJsonSchemaValidator>> dependentValidatorEntry : dependentValidators.entrySet()) {
 				if (((JsonObject) jsonNode).containsKey(dependentValidatorEntry.getKey())) {
 					final JsonSchemaDataValidationError subSchemaError = getSubSchemaValidationError(dependentValidatorEntry.getValue(), jsonNode, jsonPath);

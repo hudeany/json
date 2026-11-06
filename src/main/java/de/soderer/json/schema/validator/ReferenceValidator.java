@@ -127,10 +127,7 @@ public class ReferenceValidator extends BaseJsonSchemaValidator {
 			throw new JsonSchemaDataValidationError("Cyclic reference detected for '" + validatorData + "'", jsonPath);
 		}
 		try {
-			final List<BaseJsonSchemaValidator> subValidators = getOrBuildSubValidators(targetUri, jsonPath);
-			for (final BaseJsonSchemaValidator subValidator : subValidators) {
-				subValidator.validate(jsonNode, jsonPath);
-			}
+			applyValidatorsOrThrow(getOrBuildSubValidators(targetUri, jsonPath), jsonNode, jsonPath);
 		} finally {
 			jsonSchemaDependencyResolver.exitReferenceResolution(targetUri, jsonPathString);
 		}

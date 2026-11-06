@@ -96,12 +96,10 @@ public class DependenciesValidator extends BaseJsonSchemaValidator {
 				throw new JsonSchemaDataValidationError("Expected a 'object' value for dependency but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {
+			boolean valid = true;
 			for (final Entry<String, List<BaseJsonSchemaValidator>> validatorEntry : validators.entrySet()) {
 				if (((JsonObject) jsonNode).containsKey(validatorEntry.getKey())) {
-					final List<BaseJsonSchemaValidator> subValidators = validatorEntry.getValue();
-					for (final BaseJsonSchemaValidator validator : subValidators) {
-						validator.validate(jsonNode, jsonPath);
-					}
+					valid = applyValidators(validatorEntry.getValue(), jsonNode, jsonPath) && valid;
 				}
 			}
 
@@ -113,6 +111,9 @@ public class DependenciesValidator extends BaseJsonSchemaValidator {
 						}
 					}
 				}
+			}
+			if (!valid) {
+				throw JsonSchemaDataValidationError.createCollectedMarker(jsonPath);
 			}
 		}
 	}

@@ -96,6 +96,16 @@ public class JsonSchemaTestSuiteTest {
 		return createTests(Draft.DRAFT2020_12);
 	}
 
+	@TestFactory
+	@DisplayName("all drafts, collecting all errors")
+	Stream<DynamicNode> allDraftsCollectingAllErrors() throws Exception {
+		final List<DynamicNode> draftContainers = new ArrayList<>();
+		for (final Draft draft : Draft.values()) {
+			draftContainers.add(DynamicContainer.dynamicContainer(draft.getDirectoryName(), createTests(draft, true)));
+		}
+		return draftContainers.stream();
+	}
+
 	/**
 	 * Creates the dynamic tests of a draft: one container per test file, one test per test case.
 	 *
@@ -106,11 +116,26 @@ public class JsonSchemaTestSuiteTest {
 	 *             if a test file cannot be read
 	 */
 	private static Stream<DynamicNode> createTests(final Draft draft) throws Exception {
+		return createTests(draft, false);
+	}
+
+	/**
+	 * Creates the dynamic tests of a draft: one container per test file, one test per test case.
+	 *
+	 * @param draft
+	 *            the draft
+	 * @param collectAllErrors
+	 *            true to validate by collecting all errors
+	 * @return the containers
+	 * @throws Exception
+	 *             if a test file cannot be read
+	 */
+	private static Stream<DynamicNode> createTests(final Draft draft, final boolean collectAllErrors) throws Exception {
 		final List<DynamicNode> fileContainers = new ArrayList<>();
 		for (final String file : testSuite.getTestFiles(draft, true, true)) {
 			final List<DynamicNode> tests = new ArrayList<>();
 			for (final TestCase testCase : testSuite.getTestCases(draft, file)) {
-				tests.add(DynamicTest.dynamicTest(testCase.getGroupDescription() + " | " + testCase.getTestDescription(), () -> executeTestCase(testCase)));
+				tests.add(DynamicTest.dynamicTest(testCase.getGroupDescription() + " | " + testCase.getTestDescription(), () -> executeTestCase(testCase, collectAllErrors)));
 			}
 			fileContainers.add(DynamicContainer.dynamicContainer(file, tests.stream()));
 		}
@@ -122,9 +147,11 @@ public class JsonSchemaTestSuiteTest {
 	 *
 	 * @param testCase
 	 *            the test case
+	 * @param collectAllErrors
+	 *            true to validate by collecting all errors
 	 */
-	private static void executeTestCase(final TestCase testCase) {
-		final TestResult result = testSuite.execute(testCase);
+	private static void executeTestCase(final TestCase testCase, final boolean collectAllErrors) {
+		final TestResult result = testSuite.execute(testCase, collectAllErrors);
 		if (!result.isPassed()) {
 			final boolean knownIssue = testCase.isOptional() && KNOWN_OPTIONAL_ISSUES.stream().anyMatch(testCase.getKey()::startsWith);
 			Assumptions.assumeFalse(knownIssue, () -> "Known issue of optional test: " + result.getDetail());

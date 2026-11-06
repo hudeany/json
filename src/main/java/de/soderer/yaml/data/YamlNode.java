@@ -135,7 +135,8 @@ public abstract class YamlNode {
 	/**
 	 * Returns the tag of this node that is not resolved to a datatype, like a local tag "!custom", a
 	 * verbatim tag "!&lt;tag:example.com,2026:point&gt;" or a named tag "!e!point". Datatype tags
-	 * like "!!str" or "!!int" are applied to the node instead and are not stored.
+	 * like "!!str" or "!!int" are applied to the node instead and are not stored, except "!!binary",
+	 * which marks a base64 text as binary data (see {@link YamlScalar#getBinaryValue()}).
 	 *
 	 * @return the tag including its leading "!", or null
 	 */

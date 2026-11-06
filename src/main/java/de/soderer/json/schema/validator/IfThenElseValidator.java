@@ -113,15 +113,11 @@ public class IfThenElseValidator extends BaseJsonSchemaValidator {
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		if (validateSubSchema(ifSubValidators, jsonNode, jsonPath)) {
 			if (thenSubValidators != null) {
-				for (final BaseJsonSchemaValidator subValidator : thenSubValidators) {
-					subValidator.validate(jsonNode, jsonPath);
-				}
+				applyValidatorsOrThrow(thenSubValidators, jsonNode, jsonPath);
 			}
 		} else {
 			if (elseSubValidators != null) {
-				for (final BaseJsonSchemaValidator subValidator : elseSubValidators) {
-					subValidator.validate(jsonNode, jsonPath);
-				}
+				applyValidatorsOrThrow(elseSubValidators, jsonNode, jsonPath);
 			}
 		}
 	}

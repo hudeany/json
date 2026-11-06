@@ -71,10 +71,12 @@ public class ExtendsValidator extends BaseJsonSchemaValidator {
 
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
+		boolean valid = true;
 		for (final List<BaseJsonSchemaValidator> subValidators : extendedSchemaValidators) {
-			for (final BaseJsonSchemaValidator subValidator : subValidators) {
-				subValidator.validate(jsonNode, jsonPath);
-			}
+			valid = applyValidators(subValidators, jsonNode, jsonPath) && valid;
+		}
+		if (!valid) {
+			throw JsonSchemaDataValidationError.createCollectedMarker(jsonPath);
 		}
 	}
 }

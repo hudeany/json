@@ -67,11 +67,22 @@ public class AllOfValidator extends BaseJsonSchemaValidator {
 
 	@Override
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
-		for (final List<BaseJsonSchemaValidator> subValidatorPackage : subValidatorPackages) {
-			final JsonSchemaDataValidationError subSchemaError = getSubSchemaValidationError(subValidatorPackage, jsonNode, jsonPath);
-			if (subSchemaError != null) {
-				// Keep the error of the failing sub schema as cause for diagnosis
-				throw new JsonSchemaDataValidationError("Some option of 'allOf' property did not apply to JsonNode", jsonPath, subSchemaError);
+		if (isCollectingErrors()) {
+			// Every option must apply, so the errors of all options are errors of the data
+			boolean valid = true;
+			for (final List<BaseJsonSchemaValidator> subValidatorPackage : subValidatorPackages) {
+				valid = applyValidators(subValidatorPackage, jsonNode, jsonPath) && valid;
+			}
+			if (!valid) {
+				throw JsonSchemaDataValidationError.createCollectedMarker(jsonPath);
+			}
+		} else {
+			for (final List<BaseJsonSchemaValidator> subValidatorPackage : subValidatorPackages) {
+				final JsonSchemaDataValidationError subSchemaError = getSubSchemaValidationError(subValidatorPackage, jsonNode, jsonPath);
+				if (subSchemaError != null) {
+					// Keep the error of the failing sub schema as cause for diagnosis
+					throw new JsonSchemaDataValidationError("Some option of 'allOf' property did not apply to JsonNode", jsonPath, subSchemaError);
+				}
 			}
 		}
 	}

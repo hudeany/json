@@ -166,6 +166,7 @@ public class YamlWriter implements Closeable {
 				}
 			}
 			writePostCommentEmptyLines(document.getRoot());
+			writeRootNodeProperties(document.getRoot());
 			writeNode(document.getRoot(), 0, false, false);
 		}
 
@@ -620,23 +621,25 @@ public class YamlWriter implements Closeable {
 
 			writePostCommentEmptyLines(key);
 
+			// Anchor and tag of a key are written before the key, like "&anchor !tag key: value"
+			final String keyTagPrefix = hasNodeProperties(key) ? getNodeProperties(key) + " " : "";
 			if (key instanceof final YamlScalar scalarKey) {
 				if (scalarKey.getType() == YamlScalarType.STRING || scalarKey.getType() == YamlScalarType.MULTILINE) {
 					// Multiline keys are written as quoted string with escaped linebreaks
 					if (!isFirstData) {
 						writeIndent(indentLevel);
-						write(escapePlainString(scalarKey.getValueString(), scalarKey.getQuoteType(), true, false));
+						write(keyTagPrefix + escapePlainString(scalarKey.getValueString(), scalarKey.getQuoteType(), true, false));
 						isFirstData = false;
 					} else {
-						write(escapePlainString(scalarKey.getValueString(), scalarKey.getQuoteType(), true, false));
+						write(keyTagPrefix + escapePlainString(scalarKey.getValueString(), scalarKey.getQuoteType(), true, false));
 					}
 				} else {
 					if (!isFirstData) {
 						writeIndent(indentLevel);
-						write(scalarKey.getValueString());
+						write(keyTagPrefix + scalarKey.getValueString());
 						isFirstData = false;
 					} else {
-						write(scalarKey.getValueString());
+						write(keyTagPrefix + scalarKey.getValueString());
 					}
 				}
 			} else {
@@ -644,17 +647,11 @@ public class YamlWriter implements Closeable {
 					writeIndent(indentLevel);
 					isFirstData = false;
 				}
-				write("? ");
+				write("? " + keyTagPrefix);
 				writeNode(key, indentLevel + 1, false, false);
 				writeIndent(indentLevel);
 			}
 
-			if (hasNodeProperties(key)) {
-				write(" " + getNodeProperties(key));
-				if (key.getInlineComment() == null) {
-					write(" ");
-				}
-			}
 
 			write(":");
 
@@ -989,6 +986,24 @@ public class YamlWriter implements Closeable {
 				write(escapePlainString(scalar.getValueString(), scalar.getQuoteType(), isKey, true));
 		}
 		return this;
+	}
+
+	/**
+	 * Writes the tag and anchor of a root node: on the line of a scalar or flow collection, on a
+	 * line of their own before a block collection.
+	 *
+	 * @param root
+	 *            the root node
+	 * @throws Exception
+	 *             if writing fails
+	 */
+	private void writeRootNodeProperties(final YamlNode root) throws Exception {
+		if (hasNodeProperties(root)) {
+			write(getNodeProperties(root));
+			final boolean blockCollection = (root instanceof final YamlMapping mapping && (!mapping.isFlowStyle() || yamlFormat.isIgnoreFlowStyleSettings()) && mapping.size() > 0)
+					|| (root instanceof final YamlSequence sequence && (!sequence.isFlowStyle() || yamlFormat.isIgnoreFlowStyleSettings()) && sequence.size() > 0);
+			write(blockCollection ? yamlFormat.getLinebreakString() : " ");
+		}
 	}
 
 	/**

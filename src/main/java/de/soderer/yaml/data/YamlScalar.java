@@ -2,6 +2,7 @@ package de.soderer.yaml.data;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Base64;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -83,6 +84,11 @@ public class YamlScalar extends YamlNode {
 	 * Not a number of YAML 1.2 like ".nan".
 	 */
 	private static final Pattern YAML12_NAN_PATTERN = Pattern.compile("\\.(nan|NaN|NAN)");
+
+	/**
+	 * Tag of base64 encoded binary data.
+	 */
+	public static final String BINARY_TAG = "!!binary";
 
 	/**
 	 * The value as written.
@@ -437,6 +443,63 @@ public class YamlScalar extends YamlNode {
 	public YamlScalar withIndentationIndicator(final int newIndentationIndicator) throws Exception {
 		setIndentationIndicator(newIndentationIndicator);
 		return this;
+	}
+
+	/**
+	 * Creates a scalar of binary data, written as base64 text with the tag "!!binary".
+	 *
+	 * @param data
+	 *            the binary data
+	 * @return the scalar
+	 */
+	public static YamlScalar fromBinaryValue(final byte[] data) {
+		if (data == null) {
+			throw new IllegalArgumentException("Binary data must not be null");
+		}
+		final YamlScalar scalar = new YamlScalar(Base64.getEncoder().encodeToString(data));
+		scalar.setTag(BINARY_TAG);
+		return scalar;
+	}
+
+	/**
+	 * Checks whether this scalar contains binary data, which is marked by the tag "!!binary".
+	 *
+	 * @return true for binary data
+	 */
+	public boolean isBinary() {
+		return BINARY_TAG.equals(getTag());
+	}
+
+	/**
+	 * Returns the binary data of a scalar with the tag "!!binary". Its value is the base64 text.
+	 *
+	 * @return the decoded binary data
+	 * @throws IllegalStateException
+	 *             if the scalar has no "!!binary" tag
+	 * @throws IllegalArgumentException
+	 *             if the value is no valid base64 text
+	 */
+	public byte[] getBinaryValue() {
+		if (!isBinary()) {
+			throw new IllegalStateException("YAML scalar has no '" + BINARY_TAG + "' tag");
+		}
+		return decodeBase64((String) value);
+	}
+
+	/**
+	 * Decodes base64 text of a "!!binary" scalar, which may contain linebreaks and blanks.
+	 *
+	 * @param base64Text
+	 *            the base64 text
+	 * @return the decoded data
+	 * @throws IllegalArgumentException
+	 *             if the text is no valid base64 text
+	 */
+	public static byte[] decodeBase64(final String base64Text) {
+		if (base64Text == null) {
+			throw new IllegalArgumentException("Base64 text must not be null");
+		}
+		return Base64.getDecoder().decode(base64Text.replaceAll("\\s", ""));
 	}
 
 	/**

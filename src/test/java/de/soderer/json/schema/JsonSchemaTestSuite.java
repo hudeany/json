@@ -418,6 +418,21 @@ public class JsonSchemaTestSuite {
 	 * @return the result
 	 */
 	public TestResult execute(final TestCase testCase) {
+		return execute(testCase, false);
+	}
+
+	/**
+	 * Executes a test case: reads the schema of its group and validates the test data.
+	 *
+	 * @param testCase
+	 *            the test case
+	 * @param collectAllErrors
+	 *            true to validate by {@link JsonSchema#validateAll(JsonNode)}, which must find the same
+	 *            result as {@link JsonSchema#validate(JsonNode)} and report at least one error for
+	 *            invalid data
+	 * @return the result
+	 */
+	public TestResult execute(final TestCase testCase, final boolean collectAllErrors) {
 		try {
 			final JsonObject group = (JsonObject) ((JsonArray) parse(files.get("tests/" + testCase.draft.getDirectoryName() + "/" + testCase.file))).get(testCase.groupIndex);
 			final JsonNode schemaNode = group.get("schema");
@@ -437,12 +452,23 @@ public class JsonSchemaTestSuite {
 
 			boolean actualValid;
 			String validationMessage = null;
-			try {
-				jsonSchema.validate(dataNode);
-				actualValid = true;
-			} catch (final JsonSchemaDataValidationError e) {
-				actualValid = false;
-				validationMessage = e.getMessage();
+			if (collectAllErrors) {
+				final JsonSchemaValidationResult validationResult = jsonSchema.validateAll(dataNode);
+				actualValid = validationResult.isValid();
+				validationMessage = validationResult.toString();
+				for (final JsonSchemaDataValidationError error : validationResult.getErrors()) {
+					if (error.isCollectedMarker()) {
+						return new TestResult(false, "Internal marker reported as error at " + error.getJsonDataPath());
+					}
+				}
+			} else {
+				try {
+					jsonSchema.validate(dataNode);
+					actualValid = true;
+				} catch (final JsonSchemaDataValidationError e) {
+					actualValid = false;
+					validationMessage = e.getMessage();
+				}
 			}
 			if (actualValid == testCase.expectedValid) {
 				return new TestResult(true, null);

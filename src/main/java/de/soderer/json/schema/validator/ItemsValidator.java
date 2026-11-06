@@ -169,10 +169,11 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 
 		final JsonArray jsonArray = (JsonArray) jsonNode;
 		final JsonSchemaEvaluationContext context = jsonSchemaDependencyResolver.getEvaluationContext();
+		boolean valid = true;
 		if (singleSchema) {
 			if (singleValidatorPack != null) {
 				for (int i = prefixItemsCount; i < jsonArray.size(); i++) {
-					validateItem(jsonArray, i, singleValidatorPack, jsonPath);
+					valid = validateItem(jsonArray, i, singleValidatorPack, jsonPath) && valid;
 				}
 			}
 			// Annotation for "unevaluatedItems" (draft 2019-09 and newer)
@@ -181,7 +182,7 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 			// Without indexed schemas all items are additional items
 			final int indexedItemsCount = indexedValidatorPacks == null ? 0 : indexedValidatorPacks.size();
 			for (int i = 0; i < indexedItemsCount && i < jsonArray.size(); i++) {
-				validateItem(jsonArray, i, indexedValidatorPacks.get(i), jsonPath);
+				valid = validateItem(jsonArray, i, indexedValidatorPacks.get(i), jsonPath) && valid;
 				context.markItemEvaluated(i);
 			}
 
@@ -192,10 +193,13 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 				context.markAllItemsEvaluated();
 			} else if (additionalItemsDefinitions != null) {
 				for (int i = indexedItemsCount; i < jsonArray.size(); i++) {
-					validateItem(jsonArray, i, additionalItemsDefinitions, jsonPath);
+					valid = validateItem(jsonArray, i, additionalItemsDefinitions, jsonPath) && valid;
 				}
 				context.markAllItemsEvaluated();
 			}
+		}
+		if (!valid) {
+			throw JsonSchemaDataValidationError.createCollectedMarker(jsonPath);
 		}
 	}
 
@@ -210,19 +214,18 @@ public class ItemsValidator extends ExtendedBaseJsonSchemaValidator {
 	 *            the validators the item must match
 	 * @param jsonPath
 	 *            the path of the JSON data array, used in error messages
+	 * @return true if the item is valid, false if its errors were collected (see
+	 *         {@link BaseJsonSchemaValidator#applyValidators(List, JsonNode, JsonPath)})
 	 * @throws JsonSchemaDataValidationError
-	 *             if the item is not valid
+	 *             if the item is not valid and errors are not collected
 	 */
-	static void validateItem(final JsonArray jsonArray, final int index, final List<BaseJsonSchemaValidator> validators, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
+	static boolean validateItem(final JsonArray jsonArray, final int index, final List<BaseJsonSchemaValidator> validators, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		final JsonNode jsonNodeToCheck;
 		try {
 			jsonNodeToCheck = jsonArray.get(index).withRootNode(false);
 		} catch (final Exception e) {
 			throw new JsonSchemaDataValidationError("Invalid data type '" + jsonArray.get(index).getClass().getSimpleName() + "'", new JsonPath(jsonPath).addArrayIndex(index), e);
 		}
-		for (final BaseJsonSchemaValidator validator : validators) {
-			// Separate path object per validator, as validators may modify it
-			validator.validate(jsonNodeToCheck, new JsonPath(jsonPath).addArrayIndex(index));
-		}
+		return applyValidators(validators, jsonNodeToCheck, new JsonPath(jsonPath).addArrayIndex(index));
 	}
 }

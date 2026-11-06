@@ -72,10 +72,10 @@ public class SchemaObjectValidator extends BaseJsonSchemaValidator {
 		final JsonSchemaEvaluationContext.Frame frame = context.enterSchemaObject(jsonPath == null ? "" : jsonPath.toString(), resourceUri);
 		boolean valid = false;
 		try {
-			for (final BaseJsonSchemaValidator keywordValidator : keywordValidators) {
-				keywordValidator.validate(jsonNode, jsonPath);
+			valid = applyValidators(keywordValidators, jsonNode, jsonPath);
+			if (!valid) {
+				throw JsonSchemaDataValidationError.createCollectedMarker(jsonPath);
 			}
-			valid = true;
 		} finally {
 			context.exitSchemaObject(frame, valid);
 			if (!context.isActive()) {

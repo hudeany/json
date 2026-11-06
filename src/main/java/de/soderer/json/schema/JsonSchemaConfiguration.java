@@ -8,6 +8,11 @@ import java.nio.charset.StandardCharsets;
  */
 public class JsonSchemaConfiguration {
 	/**
+	 * Default maximum number of errors reported by {@link JsonSchema#validateAll(de.soderer.json.JsonNode)}.
+	 */
+	public static final int DEFAULT_MAXIMUM_VALIDATION_ERRORS = 100;
+
+	/**
 	 * Encoding of the JSON schema and data streams.
 	 */
 	private Charset encoding;
@@ -23,6 +28,10 @@ public class JsonSchemaConfiguration {
 	 * Whether "format" is validated, null to use the default of the JSON schema version.
 	 */
 	private Boolean formatAssertion = null;
+	/**
+	 * Maximum number of errors reported by {@link JsonSchema#validateAll(de.soderer.json.JsonNode)}.
+	 */
+	private int maximumValidationErrors = DEFAULT_MAXIMUM_VALIDATION_ERRORS;
 
 	/**
 	 * Creates a configuration with UTF-8 encoding, version detection from "$schema" and without
@@ -178,6 +187,46 @@ public class JsonSchemaConfiguration {
 	 */
 	public JsonSchemaConfiguration withFormatAssertion(final Boolean newFormatAssertion) {
 		setFormatAssertion(newFormatAssertion);
+		return this;
+	}
+
+	/**
+	 * Returns the maximum number of errors reported by
+	 * {@link JsonSchema#validateAll(de.soderer.json.JsonNode)}.
+	 *
+	 * @return the maximum number of errors
+	 */
+	public int getMaximumValidationErrors() {
+		return maximumValidationErrors;
+	}
+
+	/**
+	 * Sets the maximum number of errors reported by
+	 * {@link JsonSchema#validateAll(de.soderer.json.JsonNode)}. The validation stops after this
+	 * number of errors, which protects against huge error lists for large invalid data. Default is
+	 * {@link #DEFAULT_MAXIMUM_VALIDATION_ERRORS}.
+	 *
+	 * @param maximumValidationErrors
+	 *            the maximum number of errors, at least 1
+	 */
+	public void setMaximumValidationErrors(final int maximumValidationErrors) {
+		if (maximumValidationErrors < 1) {
+			throw new IllegalArgumentException("Maximum number of validation errors must be at least 1");
+		}
+		this.maximumValidationErrors = maximumValidationErrors;
+	}
+
+	/**
+	 * Sets the maximum number of errors reported by
+	 * {@link JsonSchema#validateAll(de.soderer.json.JsonNode)}, see
+	 * {@link #setMaximumValidationErrors(int)}.
+	 *
+	 * @param newMaximumValidationErrors
+	 *            the maximum number of errors, at least 1
+	 * @return this configuration for chaining
+	 */
+	public JsonSchemaConfiguration withMaximumValidationErrors(final int newMaximumValidationErrors) {
+		setMaximumValidationErrors(newMaximumValidationErrors);
 		return this;
 	}
 }

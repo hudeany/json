@@ -85,6 +85,7 @@ public class PatternPropertiesValidator extends BaseJsonSchemaValidator {
 				throw new JsonSchemaDataValidationError("Expected data type 'object' but was '" + jsonNode.getJsonDataType().getName() + "'", jsonPath);
 			}
 		} else {
+			boolean valid = true;
 			for (final Entry<Pattern, List<BaseJsonSchemaValidator>> propertiesDefinitionsEntry : propertiesDefinitionsByPattern.entrySet()) {
 				for (final Entry<String, JsonNode> propertyEntry : ((JsonObject) jsonNode).entrySet()) {
 					if (propertiesDefinitionsEntry.getKey().matcher(propertyEntry.getKey()).find()) {
@@ -94,13 +95,14 @@ public class PatternPropertiesValidator extends BaseJsonSchemaValidator {
 						} catch (final Exception e) {
 							throw new JsonSchemaDataValidationError("Invalid data type '" + propertyEntry.getValue().getClass().getSimpleName() + "'", new JsonPath(jsonPath).addPropertyKey(propertyEntry.getKey()), e);
 						}
-						for (final BaseJsonSchemaValidator subValidator : propertiesDefinitionsEntry.getValue()) {
-							subValidator.validate(newJsonNode, new JsonPath(jsonPath).addPropertyKey(propertyEntry.getKey()));
-						}
+						valid = applyValidators(propertiesDefinitionsEntry.getValue(), newJsonNode, new JsonPath(jsonPath).addPropertyKey(propertyEntry.getKey())) && valid;
 						// Annotation for "unevaluatedProperties" (draft 2019-09 and newer)
 						jsonSchemaDependencyResolver.getEvaluationContext().markPropertyEvaluated(propertyEntry.getKey());
 					}
 				}
+			}
+			if (!valid) {
+				throw JsonSchemaDataValidationError.createCollectedMarker(jsonPath);
 			}
 		}
 	}

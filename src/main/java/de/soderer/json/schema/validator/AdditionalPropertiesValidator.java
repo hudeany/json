@@ -138,12 +138,17 @@ public class AdditionalPropertiesValidator extends ExtendedBaseJsonSchemaValidat
 						throw new JsonSchemaDataValidationError("Unexpected property keys found '" + Utilities.join(additionalPropertyNames, "', '") + "'", jsonPath);
 					}
 				} else {
+					boolean valid = true;
 					for (final String propertyKey : additionalPropertyNames) {
 						final JsonNode propertyJsonNode = ((JsonObject) jsonNode).get(propertyKey);
-						for (final BaseJsonSchemaValidator subValidator : subValidators) {
-							// Separate path object per validator, as validators may modify it
-							subValidator.validate(propertyJsonNode, new JsonPath(jsonPath).addPropertyKey(propertyKey));
+						valid = applyValidators(subValidators, propertyJsonNode, new JsonPath(jsonPath).addPropertyKey(propertyKey)) && valid;
+					}
+					if (!valid) {
+						// Annotation also for the invalid properties, to avoid follow-up errors of "unevaluatedProperties"
+						for (final String propertyKey : additionalPropertyNames) {
+							jsonSchemaDependencyResolver.getEvaluationContext().markPropertyEvaluated(propertyKey);
 						}
+						throw JsonSchemaDataValidationError.createCollectedMarker(jsonPath);
 					}
 				}
 				// Annotation for "unevaluatedProperties" (draft 2019-09 and newer)

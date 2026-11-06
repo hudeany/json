@@ -28,8 +28,8 @@ import de.soderer.yaml.data.YamlScalar;
 import de.soderer.yaml.data.YamlScalarType;
 import de.soderer.yaml.data.YamlSequence;
 import de.soderer.yaml.data.YamlStringQuoteType;
-import de.soderer.yaml.data.YamlVersion;
 import de.soderer.yaml.data.YamlToken;
+import de.soderer.yaml.data.YamlVersion;
 import de.soderer.yaml.data.directive.YamlDirective;
 import de.soderer.yaml.data.directive.YamlTagDirective;
 import de.soderer.yaml.data.directive.YamlVersionDirective;
@@ -68,6 +68,44 @@ public class YamlReader extends BasicReadAheadReader {
 	 * Maximum allowed nesting depth of mappings and sequences.
 	 */
 	private int maximumNestingDepth = DEFAULT_MAXIMUM_NESTING_DEPTH;
+
+	/**
+	 * Tag read before content on the same line, like "!tag key: value". It belongs to the first key,
+	 * if the content is a block mapping, otherwise to the node. Null if there is none.
+	 */
+	private String pendingNodeTag = null;
+
+	/**
+	 * Line of the content following {@link #pendingNodeTag}.
+	 */
+	private long pendingNodeTagLine = -1;
+
+	/**
+	 * Column of the content following {@link #pendingNodeTag}.
+	 */
+	private long pendingNodeTagColumn = -1;
+
+	/**
+	 * Column of {@link #pendingNodeTag} itself, which is the column of a key it belongs to.
+	 */
+	private long pendingNodeTagStartColumn = -1;
+
+	/**
+	 * Anchor read before content on the same line, like "&amp;anchor key: value". Like
+	 * {@link #pendingNodeTag} it belongs to the first key, if the content is a block mapping,
+	 * otherwise to the node. It shares the position of {@link #pendingNodeTag}.
+	 */
+	private String pendingNodeAnchor = null;
+
+	/**
+	 * Nesting level of flow collections, in which linebreaks have no meaning.
+	 */
+	private int flowLevel = 0;
+
+	/**
+	 * Blanks before the root node on its line, which are not part of the indentations yet.
+	 */
+	private int rootLineIndentation = 0;
 
 	/**
 	 * Current nesting depth of mappings and sequences while parsing.
@@ -277,10 +315,20 @@ public class YamlReader extends BasicReadAheadReader {
 			// here so they naturally end up attributed to the document's root node instead.
 
 			while (isNotEOF()) {
-				readUpToNextContent(null);
+				// Blanks before a root node on the current line, which readUpToNextContent() skips
+				// without adding them to the indentations
+				final long lineBeforeContent = getCurrentLine();
+				final int leadingBlanks = getCurrentColumn() == 1 ? skipAndCountBlanks() : 0;
+				// An anchor of the root node is read by parseYamlNode()
+				skipToNextContent();
+				rootLineIndentation = getCurrentLine() == lineBeforeContent ? leadingBlanks : 0;
 				if (peekCharMatch('%')) {
 					final YamlDirective<?> directive = readDirective();
-					if (directive instanceof final YamlVersionDirective versionDirective) {
+					if (directive == null) {
+						// Unknown directive, which is ignored
+						documentContentStarted = false;
+						continue;
+					} else if (directive instanceof final YamlVersionDirective versionDirective) {
 						final YamlVersion directiveVersion = YamlVersion.fromDirectiveValue(versionDirective.getYamlVersion());
 						if (directiveVersion != null) {
 							currentYamlVersion = directiveVersion;
@@ -310,7 +358,7 @@ public class YamlReader extends BasicReadAheadReader {
 							documentContentStarted = true;
 						} else {
 							documentContentStarted = true;
-							readUpToNextContent(null);
+							skipToNextContent();
 							document.setRoot(parseYamlNode());
 							return document;
 						}
@@ -318,6 +366,7 @@ public class YamlReader extends BasicReadAheadReader {
 						if (documentContentStarted != null && !documentContentStarted) {
 							throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
 						} else {
+							addRootIndentation();
 							document.setRoot(parseBlockSequence());
 							return document;
 						}
@@ -331,7 +380,7 @@ public class YamlReader extends BasicReadAheadReader {
 					readChar();
 					readChar();
 					readChar();
-					readUpToNextContent(null);
+					skipToNextContent();
 					documentContentStarted = null;
 					// End of document
 					break;
@@ -342,6 +391,7 @@ public class YamlReader extends BasicReadAheadReader {
 					if (searchPath != null && getCurrentPath().equals(searchPath)) {
 						throw new FoundPathEvent("Path '" + searchPath + "' was found");
 					}
+					addRootIndentation();
 					document.setRoot(parseYamlNode());
 					return document;
 				}
@@ -683,6 +733,14 @@ public class YamlReader extends BasicReadAheadReader {
 		return commentText;
 	}
 
+	/**
+	 * Reads a "%YAML" or "%TAG" directive. Other directives are reserved for future use and ignored,
+	 * as the YAML specification requires.
+	 *
+	 * @return the directive, or null for an unknown directive
+	 * @throws Exception
+	 *             if the directive data is invalid
+	 */
 	private YamlDirective<?> readDirective() throws Exception {
 		final long startLine = getCurrentLine();
 		final long startColumn = getCurrentColumn();
@@ -699,7 +757,11 @@ public class YamlReader extends BasicReadAheadReader {
 			} else if (directiveText.toUpperCase().startsWith("%TAG ")) {
 				directive = new YamlTagDirective(directiveText.substring(5));
 			} else {
-				throw new YamlParseException("Unknown yaml directive: " + directiveText, startLine, startColumn);
+				// Reserved for future use: the YAML specification (chapter 6.8) requires to ignore unknown directives
+				if (peekCharMatch('#')) {
+					readInlineComment();
+				}
+				return null;
 			}
 		} catch (final Exception e) {
 			throw new YamlParseException("Invalid YAML directive data '" + directiveText + "': " + e.getMessage(), startLine, startColumn, e);
@@ -717,6 +779,147 @@ public class YamlReader extends BasicReadAheadReader {
 	}
 
 	/**
+	 * Assigns an anchor to a node and registers it. An anchor defined again replaces the former
+	 * definition for the following aliases.
+	 *
+	 * @param node
+	 *            the node
+	 * @param anchor
+	 *            the anchor name
+	 * @throws YamlParseException
+	 *             if the node already has another anchor
+	 */
+	private void assignAnchor(final YamlNode node, final String anchor) throws YamlParseException {
+		if (node.getAnchorName() != null && !node.getAnchorName().equals(anchor)) {
+			throw new YamlParseException("Assignment of multiple anchors single YAML node: '" + node.getAnchorName() + "' and '" + anchor + "'", getCurrentLine(), getCurrentColumn());
+		}
+		node.setAnchorName(anchor);
+		anchorTable.put(anchor, node);
+	}
+
+	/**
+	 * Tag and anchor waiting for the first key of a block mapping, see {@link #pendingNodeTag}.
+	 */
+	private static final class PendingNodeProperties {
+		/** The tag, or null. */
+		private final String tag;
+		/** The anchor name, or null. */
+		private final String anchor;
+		/** Line of the content following the properties. */
+		private final long line;
+		/** Column of the content following the properties. */
+		private final long column;
+		/** Column of the first property, which is the column of a key they belong to. */
+		private final long startColumn;
+
+		/**
+		 * Creates pending properties.
+		 *
+		 * @param tag
+		 *            the tag, or null
+		 * @param anchor
+		 *            the anchor name, or null
+		 * @param line
+		 *            line of the content following the properties
+		 * @param column
+		 *            column of the content following the properties
+		 * @param startColumn
+		 *            column of the first property
+		 */
+		private PendingNodeProperties(final String tag, final String anchor, final long line, final long column, final long startColumn) {
+			this.tag = tag;
+			this.anchor = anchor;
+			this.line = line;
+			this.column = column;
+			this.startColumn = startColumn;
+		}
+	}
+
+	/**
+	 * Returns the current pending tag and anchor, to restore them after a nested node.
+	 *
+	 * @return the pending properties
+	 */
+	private PendingNodeProperties savePendingNodeProperties() {
+		return new PendingNodeProperties(pendingNodeTag, pendingNodeAnchor, pendingNodeTagLine, pendingNodeTagColumn, pendingNodeTagStartColumn);
+	}
+
+	/**
+	 * Restores pending tag and anchor saved by {@link #savePendingNodeProperties()}.
+	 *
+	 * @param properties
+	 *            the saved properties
+	 */
+	private void restorePendingNodeProperties(final PendingNodeProperties properties) {
+		pendingNodeTag = properties.tag;
+		pendingNodeAnchor = properties.anchor;
+		pendingNodeTagLine = properties.line;
+		pendingNodeTagColumn = properties.column;
+		pendingNodeTagStartColumn = properties.startColumn;
+	}
+
+	/**
+	 * Takes the pending tag and anchor, if they precede the current position. Used for flow
+	 * collections, to which properties directly before them always belong, also if the collection is
+	 * a mapping key.
+	 *
+	 * @return the properties taken, or null if there are none for the current position
+	 */
+	private PendingNodeProperties takePendingNodePropertiesAtCurrentPosition() {
+		if ((pendingNodeTag != null || pendingNodeAnchor != null) && pendingNodeTagLine == getCurrentLine() && pendingNodeTagColumn == getCurrentColumn()) {
+			final PendingNodeProperties properties = savePendingNodeProperties();
+			pendingNodeTag = null;
+			pendingNodeAnchor = null;
+			return properties;
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * Applies properties taken by {@link #takePendingNodePropertiesAtCurrentPosition()} to a node.
+	 *
+	 * @param properties
+	 *            the properties, may be null
+	 * @param node
+	 *            the node
+	 * @return the node, which is a different node if a datatype tag changed it
+	 * @throws Exception
+	 *             if the node does not fit a datatype tag or has another anchor
+	 */
+	private YamlNode applyPendingNodeProperties(final PendingNodeProperties properties, final YamlNode node) throws Exception {
+		YamlNode result = node;
+		if (properties != null) {
+			if (properties.tag != null) {
+				result = applyTag(properties.tag, result);
+			}
+			if (properties.anchor != null) {
+				assignAnchor(result, properties.anchor);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Sets tag and anchor for the content at the current position, which belong to its first key if
+	 * the content is a block mapping.
+	 *
+	 * @param tag
+	 *            the tag, or null
+	 * @param anchor
+	 *            the anchor name, or null
+	 * @param startColumn
+	 *            the column of the first property, which is the column of the key
+	 */
+	private void setPendingNodeProperties(final String tag, final String anchor, final long startColumn) {
+		pendingNodeTag = tag;
+		pendingNodeAnchor = anchor;
+		pendingNodeTagLine = getCurrentLine();
+		pendingNodeTagColumn = getCurrentColumn();
+		pendingNodeTagStartColumn = startColumn;
+	}
+
+	/**
 	 * Reads a node, optionally preceded by a tag like "!!str".
 	 *
 	 * @param parentIndentation
@@ -728,23 +931,56 @@ public class YamlReader extends BasicReadAheadReader {
 	 */
 	private YamlNode parseYamlNode(final Integer parentIndentation, final boolean allowSequenceAtParentIndentation) throws Exception {
 		if (peekCharMatch('!')) {
+			final long tagLine = getCurrentLine();
+			final long tagColumn = getCurrentColumn();
+			// An anchor directly before the tag on the same line, like "&anchor !tag key: value"
+			String anchor = null;
+			long propertiesStartColumn = tagColumn;
+			if (pendingNodeAnchor != null && pendingNodeTagLine == tagLine && pendingNodeTagColumn == tagColumn) {
+				anchor = pendingNodeAnchor;
+				propertiesStartColumn = pendingNodeTagStartColumn;
+				pendingNodeAnchor = null;
+			}
+
 			final String tag = readUpToNext(false, null, ' ', '\t', '\n');
 			skipBlanks();
 			final boolean tagLineEnded = isEOF() || peekCharMatch('\n') || peekCharMatch('#');
 			// An anchor may also follow the tag, like "!!str &anchor value"
 			final String anchorAfterTag = readUpToNextContent(null);
+			if (anchorAfterTag != null) {
+				if (anchor != null) {
+					throw new YamlParseException("Assignment of multiple anchors single YAML node: '" + anchor + "'", getCurrentLine(), getCurrentColumn());
+				}
+				anchor = anchorAfterTag;
+			}
+			final boolean contentOnTagLine = !tagLineEnded && getCurrentLine() == tagLine;
 
 			final YamlNode typedNode;
 			if (tagLineEnded && parentIndentation != null && isEmptyTaggedValue(parentIndentation, allowSequenceAtParentIndentation)) {
 				// Tag without value, like "key: !!null" followed by the next key
 				typedNode = applyTag(tag, new YamlScalar("", YamlScalarType.NULL_VALUE));
-			} else {
+			} else if (!contentOnTagLine) {
+				// Properties on a line of their own belong to the following node, also to a block mapping
 				typedNode = applyTag(tag, parseYamlNodeWithoutTag());
+			} else {
+				// The block mapping parser takes the properties for its first key, if the content turns
+				// out to be a block mapping starting at this position, like "!tag key: value"
+				final PendingNodeProperties outerPendingProperties = savePendingNodeProperties();
+				setPendingNodeProperties(tag, anchor, propertiesStartColumn);
+				final YamlNode node;
+				final String remainingTag;
+				try {
+					node = parseYamlNodeWithoutTag();
+				} finally {
+					remainingTag = pendingNodeTag;
+					anchor = pendingNodeAnchor;
+					restorePendingNodeProperties(outerPendingProperties);
+				}
+				typedNode = remainingTag == null ? node : applyTag(remainingTag, node);
 			}
 
-			if (anchorAfterTag != null) {
-				typedNode.setAnchorName(anchorAfterTag);
-				anchorTable.put(anchorAfterTag, typedNode);
+			if (anchor != null) {
+				assignAnchor(typedNode, anchor);
 			}
 			return typedNode;
 		} else {
@@ -774,14 +1010,35 @@ public class YamlReader extends BasicReadAheadReader {
 			final YamlNode sequence = parseBlockSequence();
 			return sequence;
 		} else if (peekCharMatch('&')) {
-			String pendingAnchor = readUpToNextContent(null);
+			final long anchorLine = getCurrentLine();
+			final long anchorColumn = getCurrentColumn();
+			readChar();
+			final String anchor = readUpToNext(false, null, '\n', ' ', '\t');
+			if (anchor == null || anchor.isEmpty()) {
+				throw new YamlParseException("Missing anchor name", anchorLine, anchorColumn);
+			}
+			skipToNextContent();
 
-			final YamlNode yamlNode = parseYamlNode();
+			final YamlNode yamlNode;
+			String remainingAnchor = anchor;
+			if (getCurrentLine() == anchorLine) {
+				// Content on the line of the anchor: the block mapping parser takes the anchor for its
+				// first key, if the content turns out to be a block mapping, like "&anchor key: value"
+				final PendingNodeProperties outerPendingProperties = savePendingNodeProperties();
+				setPendingNodeProperties(null, anchor, anchorColumn);
+				try {
+					yamlNode = parseYamlNode();
+				} finally {
+					remainingAnchor = pendingNodeAnchor;
+					restorePendingNodeProperties(outerPendingProperties);
+				}
+			} else {
+				// An anchor on a line of its own belongs to the following node, also to a block mapping
+				yamlNode = parseYamlNode();
+			}
 
-			if (pendingAnchor != null) {
-				yamlNode.setAnchorName(pendingAnchor);
-				anchorTable.put(pendingAnchor, yamlNode);
-				pendingAnchor = null;
+			if (remainingAnchor != null) {
+				assignAnchor(yamlNode, remainingAnchor);
 			}
 			return yamlNode;
 		} else if (peekCharMatch('*')) {
@@ -796,7 +1053,9 @@ public class YamlReader extends BasicReadAheadReader {
 			final int flowStartIndentations = getNumberOfIndentationChars();
 			final PendingLeadingState pendingLeadingState = takePendingLeadingState();
 
-			final YamlNode flowMapping = parseFlowMapping();
+			final PendingNodeProperties flowProperties = takePendingNodePropertiesAtCurrentPosition();
+			YamlNode flowMapping = parseFlowMapping();
+			flowMapping = applyPendingNodeProperties(flowProperties, flowMapping);
 
 			applyPendingLeadingState(pendingLeadingState, flowMapping);
 
@@ -811,7 +1070,9 @@ public class YamlReader extends BasicReadAheadReader {
 			final int flowStartIndentations = getNumberOfIndentationChars();
 			final PendingLeadingState pendingLeadingState = takePendingLeadingState();
 
-			final YamlNode flowSequence = parseFlowSequence();
+			final PendingNodeProperties flowProperties = takePendingNodePropertiesAtCurrentPosition();
+			YamlNode flowSequence = parseFlowSequence();
+			flowSequence = applyPendingNodeProperties(flowProperties, flowSequence);
 
 			applyPendingLeadingState(pendingLeadingState, flowSequence);
 
@@ -877,8 +1138,14 @@ public class YamlReader extends BasicReadAheadReader {
 				throw new Exception("Invalid value '" + scalar.getValueString() + "' for YAML datatype: '" + datatype + "'");
 			}
 		} else if ("binary".equals(datatype)) {
-			// TODO
-			return yamlNode;
+			// The value stays the base64 text, the tag marks it as binary data (see YamlScalar.getBinaryValue())
+			final YamlScalar scalar = requireScalar(datatype, yamlNode);
+			if (scalar.getType() != YamlScalarType.STRING && scalar.getType() != YamlScalarType.MULTILINE) {
+				throw new Exception("Invalid value '" + scalar.getValueString() + "' for YAML datatype: '" + datatype + "'");
+			}
+			// The base64 text is checked when it is decoded, so documents with placeholders can still be read
+			scalar.setTag(YamlScalar.BINARY_TAG);
+			return scalar;
 		} else if ("map".equals(datatype)) {
 			if (yamlNode instanceof YamlMapping) {
 				return yamlNode;
@@ -1057,15 +1324,11 @@ public class YamlReader extends BasicReadAheadReader {
 				indentationsAdd(1 + blanksAfterDash);
 			}
 
-			String pendingAnchor = readUpToNextContent(null);
+			// An anchor of the item is read by parseYamlNode(), which decides whether it belongs to
+			// the item or to the first key of a compact mapping like "- &anchor key: value"
+			skipToNextContent();
 
 			final YamlNode nextItemNode = parseYamlNode(dashIndentation, false);
-
-			if (pendingAnchor != null) {
-				nextItemNode.setAnchorName(pendingAnchor);
-				anchorTable.put(pendingAnchor, nextItemNode);
-				pendingAnchor = null;
-			}
 
 			applyPendingLeadingState(pendingLeadingState, nextItemNode);
 
@@ -1079,14 +1342,32 @@ public class YamlReader extends BasicReadAheadReader {
 		// Not checked yet, because the node may turn out to be a simple scalar, which is no nesting
 		// level of its own. The check follows as soon as the node is known to be a mapping.
 		nestingDepth++;
+		// A tag directly before this position belongs to the first key, if a block mapping starts here
+		String firstKeyTag = null;
+		String firstKeyAnchor = null;
+		// Column of the first key including its tag and anchor, which decides the indentation
+		long firstKeyColumn = getCurrentColumn();
+		if (firstKeyNode == null && (pendingNodeTag != null || pendingNodeAnchor != null) && pendingNodeTagLine == getCurrentLine() && pendingNodeTagColumn == getCurrentColumn()) {
+			firstKeyTag = pendingNodeTag;
+			firstKeyAnchor = pendingNodeAnchor;
+			firstKeyColumn = pendingNodeTagStartColumn;
+			pendingNodeTag = null;
+			pendingNodeAnchor = null;
+		}
+		final boolean[] firstKeyPropertiesUsed = { false };
 		try {
-			return parseBlockMappingOrScalarInternal(firstKeyNode);
+			return parseBlockMappingOrScalarInternal(firstKeyNode, firstKeyTag, firstKeyAnchor, firstKeyColumn, firstKeyPropertiesUsed);
 		} finally {
 			nestingDepth--;
+			if ((firstKeyTag != null || firstKeyAnchor != null) && !firstKeyPropertiesUsed[0]) {
+				// No block mapping: the properties belong to the node
+				pendingNodeTag = firstKeyTag;
+				pendingNodeAnchor = firstKeyAnchor;
+			}
 		}
 	}
 
-	private YamlNode parseBlockMappingOrScalarInternal(final YamlNode firstKeyNode) throws Exception {
+	private YamlNode parseBlockMappingOrScalarInternal(final YamlNode firstKeyNode, final String firstKeyTag, final String firstKeyAnchor, final long firstKeyColumn, final boolean[] firstKeyPropertiesUsed) throws Exception {
 		final int mappingIndentation = getNumberOfIndentationChars();
 
 		YamlNode keyOrScalarNode;
@@ -1102,8 +1383,8 @@ public class YamlReader extends BasicReadAheadReader {
 			final int postCommentEmptyLinesCountBeforeNode = pendingTrailingEmptyLinesAfterComments;
 
 			if (peekCharMatch('\"')) {
-				if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
-					indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
+				if (firstKeyColumn - 1 - getNumberOfIndentationChars() > 0) {
+					indentationsAdd((int) firstKeyColumn - 1 - getNumberOfIndentationChars());
 				}
 				keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.DOUBLE);
 				skipBlanks();
@@ -1111,8 +1392,8 @@ public class YamlReader extends BasicReadAheadReader {
 					keyOrScalarNode.setInlineComment(readInlineComment());
 				}
 			} else if (peekCharMatch('\'')) {
-				if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
-					indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
+				if (firstKeyColumn - 1 - getNumberOfIndentationChars() > 0) {
+					indentationsAdd((int) firstKeyColumn - 1 - getNumberOfIndentationChars());
 				}
 				keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.SINGLE);
 				skipBlanks();
@@ -1131,8 +1412,8 @@ public class YamlReader extends BasicReadAheadReader {
 				checkNestingDepth();
 				keyOrScalarNode = parseYamlNode();
 			} else {
-				if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
-					indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
+				if (firstKeyColumn - 1 - getNumberOfIndentationChars() > 0) {
+					indentationsAdd((int) firstKeyColumn - 1 - getNumberOfIndentationChars());
 				}
 				keyOrScalarNode = readUnquotedScalarString(mappingIndentation);
 			}
@@ -1166,6 +1447,13 @@ public class YamlReader extends BasicReadAheadReader {
 			String pendingAnchor = readUpToNextContent(keyOrScalarNode);
 
 			checkNestingDepth();
+			if (firstKeyTag != null) {
+				keyOrScalarNode = applyTag(firstKeyTag, keyOrScalarNode);
+			}
+			if (firstKeyAnchor != null) {
+				assignAnchor(keyOrScalarNode, firstKeyAnchor);
+			}
+			firstKeyPropertiesUsed[0] = true;
 			final YamlMapping mapping = new YamlMapping();
 			updatePath(YamlToken.YamlMapping_Start, null);
 			updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
@@ -1180,8 +1468,7 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 
 			if (pendingAnchor != null) {
-				valueNode.setAnchorName(pendingAnchor);
-				anchorTable.put(pendingAnchor, valueNode);
+				assignAnchor(valueNode, pendingAnchor);
 				pendingAnchor = null;
 			}
 
@@ -1202,9 +1489,26 @@ public class YamlReader extends BasicReadAheadReader {
 					documentContentStarted = true;
 					pendingAnchor = readUpToNextContent(null);
 					return mapping;
-				} else if (peekCharMatch('\"')) {
-					if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
-						indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
+				}
+
+				// Tag and anchor of the key in any order, like "&anchor !tag key: value"
+				String keyTag = null;
+				String keyAnchor = null;
+				// Column of the key including its properties, which decides the indentation
+				final long keyColumn = getCurrentColumn();
+				while ((peekCharMatch('!') && keyTag == null) || (peekCharMatch('&') && keyAnchor == null)) {
+					if (peekCharMatch('!')) {
+						keyTag = readUpToNext(false, null, ' ', '\t', '\n');
+					} else {
+						readChar();
+						keyAnchor = readUpToNext(false, null, ' ', '\t', '\n');
+					}
+					skipBlanks();
+				}
+
+				if (peekCharMatch('\"')) {
+					if (keyColumn - 1 - getNumberOfIndentationChars() > 0) {
+						indentationsAdd((int) keyColumn - 1 - getNumberOfIndentationChars());
 					}
 					keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.DOUBLE);
 					skipBlanks();
@@ -1212,8 +1516,8 @@ public class YamlReader extends BasicReadAheadReader {
 						keyOrScalarNode.setInlineComment(readInlineComment());
 					}
 				} else if (peekCharMatch('\'')) {
-					if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
-						indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
+					if (keyColumn - 1 - getNumberOfIndentationChars() > 0) {
+						indentationsAdd((int) keyColumn - 1 - getNumberOfIndentationChars());
 					}
 					keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.SINGLE);
 					skipBlanks();
@@ -1230,10 +1534,17 @@ public class YamlReader extends BasicReadAheadReader {
 					indentationsAdd(2);
 					keyOrScalarNode = parseYamlNode();
 				} else {
-					if (getCurrentColumn() - 1 - getNumberOfIndentationChars() > 0) {
-						indentationsAdd((int) getCurrentColumn() - 1 - getNumberOfIndentationChars());
+					if (keyColumn - 1 - getNumberOfIndentationChars() > 0) {
+						indentationsAdd((int) keyColumn - 1 - getNumberOfIndentationChars());
 					}
 					keyOrScalarNode = readUnquotedScalarString(mappingIndentation);
+				}
+
+				if (keyTag != null) {
+					keyOrScalarNode = applyTag(keyTag, keyOrScalarNode);
+				}
+				if (keyAnchor != null) {
+					assignAnchor(keyOrScalarNode, keyAnchor);
 				}
 
 				applyAndClearPendingLeadingState(keyOrScalarNode);
@@ -1257,8 +1568,7 @@ public class YamlReader extends BasicReadAheadReader {
 						valueNode = new YamlScalar("", YamlScalarType.NULL_VALUE);
 					}
 					if (pendingAnchor != null) {
-						valueNode.setAnchorName(pendingAnchor);
-						anchorTable.put(pendingAnchor, valueNode);
+						assignAnchor(valueNode, pendingAnchor);
 						pendingAnchor = null;
 					}
 
@@ -1273,8 +1583,7 @@ public class YamlReader extends BasicReadAheadReader {
 			updatePath(YamlToken.YamlMapping_End, null);
 
 			if (pendingAnchor != null) {
-				mapping.setAnchorName(pendingAnchor);
-				anchorTable.put(pendingAnchor, mapping);
+				assignAnchor(mapping, pendingAnchor);
 				pendingAnchor = null;
 			}
 
@@ -1282,8 +1591,7 @@ public class YamlReader extends BasicReadAheadReader {
 		} else {
 			String pendingAnchor = readUpToNextContent(null);
 			if (pendingAnchor != null) {
-				keyOrScalarNode.setAnchorName(pendingAnchor);
-				anchorTable.put(pendingAnchor, keyOrScalarNode);
+				assignAnchor(keyOrScalarNode, pendingAnchor);
 				pendingAnchor = null;
 			}
 
@@ -1294,9 +1602,11 @@ public class YamlReader extends BasicReadAheadReader {
 
 	private YamlNode parseFlowMapping() throws Exception {
 		enterNesting();
+		flowLevel++;
 		try {
 			return parseFlowMappingInternal();
 		} finally {
+			flowLevel--;
 			nestingDepth--;
 		}
 	}
@@ -1332,8 +1642,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 			final YamlNode keyNode = parseFlowNode();
 			if (pendingAnchor != null) {
-				keyNode.setAnchorName(pendingAnchor);
-				anchorTable.put(pendingAnchor, keyNode);
+				assignAnchor(keyNode, pendingAnchor);
 				pendingAnchor = null;
 			}
 
@@ -1341,8 +1650,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 			pendingAnchor = readUpToNextContent(null);
 			if (pendingAnchor != null) {
-				keyNode.setAnchorName(pendingAnchor);
-				anchorTable.put(pendingAnchor, keyNode);
+				assignAnchor(keyNode, pendingAnchor);
 				pendingAnchor = null;
 			}
 
@@ -1355,8 +1663,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 				pendingAnchor = readUpToNextContent(mapping);
 				if (pendingAnchor != null) {
-					keyNode.setAnchorName(pendingAnchor);
-					anchorTable.put(pendingAnchor, keyNode);
+					assignAnchor(keyNode, pendingAnchor);
 					pendingAnchor = null;
 				}
 
@@ -1382,8 +1689,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 					final YamlScalar valueNode = new YamlScalar(null);
 					if (valueAnchor != null) {
-						valueNode.setAnchorName(valueAnchor);
-						anchorTable.put(valueAnchor, valueNode);
+						assignAnchor(valueNode, valueAnchor);
 					}
 
 					// An anchor after ',' belongs to the next key
@@ -1405,8 +1711,7 @@ public class YamlReader extends BasicReadAheadReader {
 					final YamlNode valueNode = parseFlowNode();
 
 					if (pendingAnchor != null) {
-						valueNode.setAnchorName(pendingAnchor);
-						anchorTable.put(pendingAnchor, valueNode);
+						assignAnchor(valueNode, pendingAnchor);
 						pendingAnchor = null;
 					}
 
@@ -1415,8 +1720,7 @@ public class YamlReader extends BasicReadAheadReader {
 					pendingAnchor = readUpToNextContent(valueNode);
 
 					if (pendingAnchor != null) {
-						valueNode.setAnchorName(pendingAnchor);
-						anchorTable.put(pendingAnchor, valueNode);
+						assignAnchor(valueNode, pendingAnchor);
 						pendingAnchor = null;
 					}
 
@@ -1428,8 +1732,7 @@ public class YamlReader extends BasicReadAheadReader {
 						// An anchor after ',' belongs to the next key
 						pendingAnchor = readUpToNextContent(valueNode);
 						if (pendingAnchor != null && mapIsClosed) {
-							valueNode.setAnchorName(pendingAnchor);
-							anchorTable.put(pendingAnchor, valueNode);
+							assignAnchor(valueNode, pendingAnchor);
 							pendingAnchor = null;
 						}
 
@@ -1438,8 +1741,7 @@ public class YamlReader extends BasicReadAheadReader {
 						if (mapIsClosed) {
 							pendingAnchor = readUpToNextContent(mapping);
 							if (pendingAnchor != null) {
-								valueNode.setAnchorName(pendingAnchor);
-								anchorTable.put(pendingAnchor, valueNode);
+								assignAnchor(valueNode, pendingAnchor);
 								pendingAnchor = null;
 							}
 
@@ -1461,9 +1763,11 @@ public class YamlReader extends BasicReadAheadReader {
 
 	private YamlNode parseFlowSequence() throws Exception {
 		enterNesting();
+		flowLevel++;
 		try {
 			return parseFlowSequenceInternal();
 		} finally {
+			flowLevel--;
 			nestingDepth--;
 		}
 	}
@@ -1510,8 +1814,7 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 
 			if (pendingAnchor != null) {
-				itemNode.setAnchorName(pendingAnchor);
-				anchorTable.put(pendingAnchor, itemNode);
+				assignAnchor(itemNode, pendingAnchor);
 				pendingAnchor = null;
 			}
 
@@ -1519,8 +1822,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 			pendingAnchor = readUpToNextContent(null);
 			if (pendingAnchor != null) {
-				itemNode.setAnchorName(pendingAnchor);
-				anchorTable.put(pendingAnchor, itemNode);
+				assignAnchor(itemNode, pendingAnchor);
 				pendingAnchor = null;
 			}
 
@@ -1532,8 +1834,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 				pendingAnchor = readUpToNextContent(sequence);
 				if (pendingAnchor != null) {
-					sequence.setAnchorName(pendingAnchor);
-					anchorTable.put(pendingAnchor, sequence);
+					assignAnchor(sequence, pendingAnchor);
 					pendingAnchor = null;
 				}
 
@@ -1555,16 +1856,14 @@ public class YamlReader extends BasicReadAheadReader {
 				final String valueAnchor = readUpToNextContent(null);
 				final YamlNode valueNode = parseFlowNode();
 				if (valueAnchor != null) {
-					valueNode.setAnchorName(valueAnchor);
-					anchorTable.put(valueAnchor, valueNode);
+					assignAnchor(valueNode, valueAnchor);
 				}
 
 				applyAndClearPendingLeadingState(valueNode);
 
 				pendingAnchor = readUpToNextContent(valueNode);
 				if (pendingAnchor != null) {
-					valueNode.setAnchorName(pendingAnchor);
-					anchorTable.put(pendingAnchor, valueNode);
+					assignAnchor(valueNode, pendingAnchor);
 					pendingAnchor = null;
 				}
 
@@ -1577,8 +1876,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 					pendingAnchor = readUpToNextContent(sequence);
 					if (pendingAnchor != null) {
-						sequence.setAnchorName(pendingAnchor);
-						anchorTable.put(pendingAnchor, sequence);
+						assignAnchor(sequence, pendingAnchor);
 						pendingAnchor = null;
 					}
 
@@ -1597,6 +1895,37 @@ public class YamlReader extends BasicReadAheadReader {
 
 		updatePath(YamlToken.YamlSequence_End, null);
 		return sequence;
+	}
+
+	/**
+	 * Skips the blanks (spaces and tabs) at the current read position and counts them.
+	 *
+	 * @return the number of blanks skipped
+	 * @throws Exception
+	 *             if reading fails
+	 */
+	private int skipAndCountBlanks() throws Exception {
+		int blanks = 0;
+		while (isNotEOF() && (peekCharMatch(' ') || peekCharMatch('\t'))) {
+			readChar();
+			blanks++;
+		}
+		return blanks;
+	}
+
+	/**
+	 * Adds the indentation of a root node, which starts indented at the beginning of a line, like
+	 * " - item". The leading blanks were already read, but the following lines are indented
+	 * relative to them.
+	 */
+	private void addRootIndentation() {
+		int rootIndentation = rootLineIndentation;
+		for (final int indentationSize : indentations) {
+			rootIndentation -= indentationSize;
+		}
+		if (rootIndentation > 0) {
+			indentationsAdd(rootIndentation);
+		}
 	}
 
 	private void indentationsAdd(final int indentationSize) {
@@ -2153,21 +2482,34 @@ public class YamlReader extends BasicReadAheadReader {
 		currentPath.add(new JsonPathArrayElement(currentJsonPathArrayElement.getIndex() + 1));
 	}
 
+	/**
+	 * Skips blanks, comments and empty lines up to the next content, reading an anchor on the way.
+	 * <p>
+	 * In block context only an anchor on the current line is read, like the anchor of a value in
+	 * "key: &amp;anchor value". An anchor at the beginning of a following line belongs to the node
+	 * starting there and is left for {@link #parseYamlNode()}, e.g. the anchor of a key in
+	 * "&amp;anchor key: value". In flow collections linebreaks have no meaning, so an anchor on a
+	 * following line is read, too.
+	 * </p>
+	 *
+	 * @param yamlNodeForInlineComment
+	 *            the node to set a comment on the current line at, or null
+	 * @return the anchor name, or null if there is none
+	 * @throws Exception
+	 *             if reading fails or a node has two anchors
+	 */
 	private String readUpToNextContent(final YamlNode yamlNodeForInlineComment) throws Exception {
+		// At the beginning of a line an anchor belongs to the node starting there, not to the node
+		// read before, e.g. after the value "1" of "x: 1" followed by the line "&anchor key: 2"
+		final boolean anchorAllowed = flowLevel > 0 || getCurrentColumn() > 1;
 		skipBlanks();
 
+		final long startLine = getCurrentLine();
 		String pendingAnchor = null;
-		if (peekCharMatch('&')) {
-			final long startLine = getCurrentLine();
-			final long startColumn = getCurrentColumn();
-
+		if (anchorAllowed && peekCharMatch('&')) {
 			readChar();
-
+			// Anchors may be redefined: aliases refer to the latest definition before them
 			pendingAnchor = readUpToNext(false, null, '\n', ' ', '\t');
-			if (anchorTable.containsKey(pendingAnchor)) {
-				throw new YamlParseException("Multiple definition of anchor name found: '" + pendingAnchor + "'", startLine, startColumn);
-			}
-
 			skipBlanks();
 		}
 
@@ -2177,24 +2519,31 @@ public class YamlReader extends BasicReadAheadReader {
 
 		skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 
-		if (peekCharMatch('&')) {
+		if (anchorAllowed && peekCharMatch('&') && (flowLevel > 0 || getCurrentLine() == startLine)) {
 			if (pendingAnchor != null) {
 				throw new YamlParseException("Assignment of multiple anchors single YAML node: '" + pendingAnchor + "'", getCurrentLine(), getCurrentColumn());
 			}
 
-			final long startLine = getCurrentLine();
-			final long startColumn = getCurrentColumn();
-
 			readChar();
-
 			pendingAnchor = readUpToNext(false, null, '\n', ' ', '\t');
-			if (anchorTable.containsKey(pendingAnchor)) {
-				throw new YamlParseException("Multiple definition of anchor name found: '" + pendingAnchor + "'", startLine, startColumn);
-			}
 
 			skipEmptyLinesAndReadNextIndentationAndLeadingComments();
 		}
 
 		return pendingAnchor;
 	}
+
+	/**
+	 * Skips blanks, comments and empty lines up to the next content without reading an anchor. An
+	 * anchor there is read by {@link #parseYamlNode()}, which decides whether it belongs to the node
+	 * or to the first key of a block mapping.
+	 *
+	 * @throws Exception
+	 *             if reading fails
+	 */
+	private void skipToNextContent() throws Exception {
+		skipBlanks();
+		skipEmptyLinesAndReadNextIndentationAndLeadingComments();
+	}
+
 }

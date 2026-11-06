@@ -14,6 +14,7 @@ import de.soderer.json.schema.JsonSchemaDataValidationError;
 import de.soderer.json.schema.JsonSchemaDefinitionError;
 import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
+import de.soderer.json.schema.JsonSchemaValidationCollector;
 import de.soderer.json.utilities.NumberUtilities;
 
 /**
@@ -86,14 +87,131 @@ public abstract class BaseJsonSchemaValidator {
 	 */
 	@SuppressWarnings("static-method")
 	protected JsonSchemaDataValidationError getSubSchemaValidationError(final List<BaseJsonSchemaValidator> subSchemaValidators, final JsonNode jsonNode, final JsonPath jsonPath) {
-		for (final BaseJsonSchemaValidator validator : subSchemaValidators) {
-			try {
-				validator.validate(jsonNode, jsonPath);
-			} catch (final JsonSchemaDataValidationError e) {
-				return e;
+		// The failure of a sub schema checked here may be expected (e.g. options of "anyOf"), so its
+		// errors are not collected
+		JsonSchemaValidationCollector.suspend();
+		try {
+			for (final BaseJsonSchemaValidator validator : subSchemaValidators) {
+				try {
+					validator.validate(jsonNode, jsonPath);
+				} catch (final JsonSchemaDataValidationError e) {
+					e.setJsonSchemaPathIfMissing(validator.jsonSchemaPath);
+					return e;
+				}
 			}
+			return null;
+		} finally {
+			JsonSchemaValidationCollector.resume();
 		}
-		return null;
+	}
+
+	/**
+	 * Checks whether errors are collected at the current validation position, see
+	 * {@link de.soderer.json.schema.JsonSchema#validateAll(JsonNode)}.
+	 *
+	 * @return true if errors are collected instead of thrown
+	 */
+	protected static boolean isCollectingErrors() {
+		return JsonSchemaValidationCollector.getActive() != null;
+	}
+
+	/**
+	 * Validates a JSON data node against the validators of a schema.
+	 * <p>
+	 * Without collecting the first error is thrown. While errors are collected (see
+	 * {@link de.soderer.json.schema.JsonSchema#validateAll(JsonNode)}), all validators are applied
+	 * and their errors are recorded. A failing "type" stops the other validators then, because their
+	 * errors would only follow from the wrong data type.
+	 * </p>
+	 *
+	 * @param validators
+	 *            the validators of the schema
+	 * @param jsonNode
+	 *            the JSON data node to validate
+	 * @param jsonPath
+	 *            the path of the JSON data node
+	 * @return true if the data node is valid, false if errors were collected
+	 * @throws JsonSchemaDataValidationError
+	 *             the first error, if errors are not collected
+	 */
+	public static boolean applyValidators(final List<BaseJsonSchemaValidator> validators, final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
+		final JsonSchemaValidationCollector collector = JsonSchemaValidationCollector.getActive();
+		if (collector == null) {
+			for (final BaseJsonSchemaValidator validator : validators) {
+				try {
+					// Separate path object per validator, as validators may modify it
+					validator.validate(jsonNode, jsonPath == null ? null : new JsonPath(jsonPath));
+				} catch (final JsonSchemaDataValidationError e) {
+					e.setJsonSchemaPathIfMissing(validator.jsonSchemaPath);
+					throw e;
+				}
+			}
+			return true;
+		} else if (collector.isFull()) {
+			// No further errors are reported, so the remaining validation is skipped
+			return false;
+		} else {
+			for (final BaseJsonSchemaValidator validator : validators) {
+				if (validator instanceof TypeValidator && !applyValidator(collector, validator, jsonNode, jsonPath)) {
+					return false;
+				}
+			}
+			boolean valid = true;
+			for (final BaseJsonSchemaValidator validator : validators) {
+				if (!(validator instanceof TypeValidator)) {
+					valid = applyValidator(collector, validator, jsonNode, jsonPath) && valid;
+				}
+			}
+			return valid;
+		}
+	}
+
+	/**
+	 * Validates a JSON data node against the validators of a schema, see
+	 * {@link #applyValidators(List, JsonNode, JsonPath)}, and throws an error if it is not valid.
+	 *
+	 * @param validators
+	 *            the validators of the schema
+	 * @param jsonNode
+	 *            the JSON data node to validate
+	 * @param jsonPath
+	 *            the path of the JSON data node
+	 * @throws JsonSchemaDataValidationError
+	 *             the first error, or a marker of already collected errors
+	 */
+	public static void applyValidatorsOrThrow(final List<BaseJsonSchemaValidator> validators, final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
+		if (!applyValidators(validators, jsonNode, jsonPath)) {
+			throw JsonSchemaDataValidationError.createCollectedMarker(jsonPath);
+		}
+	}
+
+	/**
+	 * Applies a single validator while collecting errors.
+	 *
+	 * @param collector
+	 *            the active collector
+	 * @param validator
+	 *            the validator
+	 * @param jsonNode
+	 *            the JSON data node to validate
+	 * @param jsonPath
+	 *            the path of the JSON data node
+	 * @return true if the data node is valid for the validator
+	 */
+	private static boolean applyValidator(final JsonSchemaValidationCollector collector, final BaseJsonSchemaValidator validator, final JsonNode jsonNode, final JsonPath jsonPath) {
+		if (collector.isFull()) {
+			return false;
+		}
+		try {
+			validator.validate(jsonNode, jsonPath == null ? null : new JsonPath(jsonPath));
+			return true;
+		} catch (final JsonSchemaDataValidationError e) {
+			if (!e.isCollectedMarker()) {
+				e.setJsonSchemaPathIfMissing(validator.jsonSchemaPath);
+				collector.addError(e);
+			}
+			return false;
+		}
 	}
 
 	/**

@@ -110,6 +110,11 @@ public class JsonSchema {
 	private List<BaseJsonSchemaValidator> validators;
 
 	/**
+	 * Maximum number of errors reported by {@link #validateAll(JsonNode)}.
+	 */
+	private int maximumValidationErrors = JsonSchemaConfiguration.DEFAULT_MAXIMUM_VALIDATION_ERRORS;
+
+	/**
 	 * Reads a JSON schema with default configuration. The schema may be written in JSON5 syntax.
 	 *
 	 * @param jsonSchemaInputStream
@@ -288,6 +293,8 @@ public class JsonSchema {
 	 *            the configuration, its JSON schema version is set from "$schema" if not defined yet
 	 * @param dependencies
 	 *            additional JSON schemas referenced by this schema via "$ref"
+	 * @throws IllegalArgumentException
+	 *             if the configuration is null
 	 * @throws Exception
 	 *             if a keyword has an invalid value or is defined twice
 	 */
@@ -295,6 +302,11 @@ public class JsonSchema {
 		if (jsonSchemaDefinitionObject == null) {
 			throw new JsonSchemaDefinitionError("Contains null data", null);
 		}
+
+		if (jsonSchemaConfiguration == null) {
+			throw new IllegalArgumentException("JSON schema configuration must not be null");
+		}
+		maximumValidationErrors = jsonSchemaConfiguration.getMaximumValidationErrors();
 
 		if (jsonSchemaDefinitionObject.containsKey("id")) {
 			if (jsonSchemaDefinitionObject.getSimpleValue("id") == null) {
@@ -446,9 +458,7 @@ public class JsonSchema {
 			throw new JsonSchemaDataValidationError("Cannot read JSON data: " + e.getMessage(), new JsonPath(), e);
 		}
 
-		for (final BaseJsonSchemaValidator validator : validators) {
-			validator.validate(jsonDataNode, new JsonPath());
-		}
+		BaseJsonSchemaValidator.applyValidators(validators, jsonDataNode, new JsonPath());
 		return jsonDataNode;
 	}
 
@@ -469,9 +479,7 @@ public class JsonSchema {
 			throw new JsonSchemaDataValidationError("Cannot read JSON data: " + e.getMessage(), new JsonPath(), e);
 		}
 
-		for (final BaseJsonSchemaValidator validator : validators) {
-			validator.validate(jsonDataNode, new JsonPath());
-		}
+		BaseJsonSchemaValidator.applyValidators(validators, jsonDataNode, new JsonPath());
 		return jsonDataNode;
 	}
 
@@ -491,9 +499,106 @@ public class JsonSchema {
 			throw new JsonSchemaDataValidationError(e.getMessage(), new JsonPath(), e);
 		}
 
-		for (final BaseJsonSchemaValidator validator : validators) {
-			validator.validate(jsonDataNode, new JsonPath());
+		BaseJsonSchemaValidator.applyValidators(validators, jsonDataNode, new JsonPath());
+	}
+
+	/**
+	 * Validates already parsed JSON data against this schema and collects all errors instead of
+	 * stopping at the first one, up to the maximum configured by
+	 * {@link JsonSchemaConfiguration#setMaximumValidationErrors(int)}.
+	 * <p>
+	 * The failing options of "anyOf" and "oneOf" are reported as one error, whose causes are the
+	 * errors of the options. Errors that only follow from a wrong data type of a node (e.g. missing
+	 * properties of a string) are not reported. Use {@link #validate(JsonNode)} for a quick check
+	 * whether the data is valid.
+	 * </p>
+	 *
+	 * @param jsonData
+	 *            the JSON data
+	 * @return the result with all errors found
+	 */
+	public JsonSchemaValidationResult validateAll(final JsonNode jsonData) {
+		final JsonSchemaValidationCollector collector = JsonSchemaValidationCollector.start(maximumValidationErrors);
+		try {
+			JsonNode jsonDataNode;
+			try {
+				jsonDataNode = jsonData.withRootNode(true);
+			} catch (final Exception e) {
+				collector.addError(new JsonSchemaDataValidationError(e.getMessage(), new JsonPath(), e));
+				return collector.getResult();
+			}
+			try {
+				BaseJsonSchemaValidator.applyValidators(validators, jsonDataNode, new JsonPath());
+			} catch (final JsonSchemaDataValidationError e) {
+				// Only thrown for errors outside of collecting, e.g. by a validator of an unexpected structure
+				if (!e.isCollectedMarker()) {
+					collector.addError(e);
+				}
+			}
+			return collector.getResult();
+		} finally {
+			JsonSchemaValidationCollector.stop();
 		}
+	}
+
+	/**
+	 * Reads JSON data (JSON5 syntax allowed) and validates it against this schema, collecting all
+	 * errors, see {@link #validateAll(JsonNode)}.
+	 *
+	 * @param jsonDataInputStream
+	 *            the stream to read the JSON data from
+	 * @param encoding
+	 *            the encoding of the JSON data
+	 * @return the result with all errors found
+	 * @throws JsonSchemaDataValidationError
+	 *             if the data cannot be read
+	 */
+	public JsonSchemaValidationResult validateAll(final InputStream jsonDataInputStream, final Charset encoding) throws JsonSchemaDataValidationError {
+		JsonNode jsonDataNode;
+		try (JsonReader jsonReader = new Json5Reader(jsonDataInputStream, encoding)) {
+			jsonDataNode = jsonReader.read();
+		} catch (final Exception e) {
+			throw new JsonSchemaDataValidationError("Cannot read JSON data: " + e.getMessage(), new JsonPath(), e);
+		}
+		return validateAll(jsonDataNode);
+	}
+
+	/**
+	 * Returns the maximum number of errors reported by {@link #validateAll(JsonNode)}.
+	 *
+	 * @return the maximum number of errors
+	 */
+	public int getMaximumValidationErrors() {
+		return maximumValidationErrors;
+	}
+
+	/**
+	 * Sets the maximum number of errors reported by {@link #validateAll(JsonNode)}. The validation
+	 * stops after this number of errors. Default is
+	 * {@link JsonSchemaConfiguration#DEFAULT_MAXIMUM_VALIDATION_ERRORS} or the value of the
+	 * configuration used to create this schema.
+	 *
+	 * @param maximumValidationErrors
+	 *            the maximum number of errors, at least 1
+	 */
+	public void setMaximumValidationErrors(final int maximumValidationErrors) {
+		if (maximumValidationErrors < 1) {
+			throw new IllegalArgumentException("Maximum number of validation errors must be at least 1");
+		}
+		this.maximumValidationErrors = maximumValidationErrors;
+	}
+
+	/**
+	 * Sets the maximum number of errors reported by {@link #validateAll(JsonNode)}, see
+	 * {@link #setMaximumValidationErrors(int)}.
+	 *
+	 * @param newMaximumValidationErrors
+	 *            the maximum number of errors, at least 1
+	 * @return this schema for chaining
+	 */
+	public JsonSchema withMaximumValidationErrors(final int newMaximumValidationErrors) {
+		setMaximumValidationErrors(newMaximumValidationErrors);
+		return this;
 	}
 
 	/**

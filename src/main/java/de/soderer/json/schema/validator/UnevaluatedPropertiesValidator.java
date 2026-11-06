@@ -12,6 +12,7 @@ import de.soderer.json.schema.JsonSchemaDataValidationError;
 import de.soderer.json.schema.JsonSchemaDefinitionError;
 import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaEvaluationContext;
+import de.soderer.json.schema.JsonSchemaValidationCollector;
 import de.soderer.json.schema.JsonSchemaPath;
 
 /**
@@ -51,17 +52,28 @@ public class UnevaluatedPropertiesValidator extends BaseJsonSchemaValidator {
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		if (jsonNode.isJsonObject()) {
 			final JsonSchemaEvaluationContext context = jsonSchemaDependencyResolver.getEvaluationContext();
+			final boolean collecting = isCollectingErrors();
+			boolean valid = true;
 			for (final Entry<String, JsonNode> propertyEntry : ((JsonObject) jsonNode).entrySet()) {
 				if (!context.isPropertyEvaluated(propertyEntry.getKey())) {
 					final JsonPath propertyPath = new JsonPath(jsonPath).addPropertyKey(propertyEntry.getKey());
 					final JsonSchemaDataValidationError subSchemaError = getSubSchemaValidationError(subValidators, propertyEntry.getValue(), propertyPath);
 					if (subSchemaError != null) {
-						throw new JsonSchemaDataValidationError("Unevaluated property '" + propertyEntry.getKey() + "' is not valid", propertyPath, subSchemaError);
+						final JsonSchemaDataValidationError error = new JsonSchemaDataValidationError("Unevaluated property '" + propertyEntry.getKey() + "' is not valid", propertyPath, subSchemaError);
+						if (!collecting) {
+							throw error;
+						}
+						error.setJsonSchemaPathIfMissing(jsonSchemaPath);
+						JsonSchemaValidationCollector.getActive().addError(error);
+						valid = false;
 					}
 				}
 			}
 			for (final String propertyName : ((JsonObject) jsonNode).keySet()) {
 				context.markPropertyEvaluated(propertyName);
+			}
+			if (!valid) {
+				throw JsonSchemaDataValidationError.createCollectedMarker(jsonPath);
 			}
 		}
 	}
