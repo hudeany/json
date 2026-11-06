@@ -273,7 +273,7 @@ public class YamlTestSuite {
 			} else {
 				return new TestResult(false, "Valid YAML was rejected: " + e.getClass().getSimpleName() + ": " + e.getMessage());
 			}
-		} catch (final StackOverflowError e) {
+		} catch (@SuppressWarnings("unused") final StackOverflowError e) {
 			return new TestResult(false, "StackOverflowError");
 		}
 
