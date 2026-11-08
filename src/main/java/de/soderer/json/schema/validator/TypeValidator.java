@@ -17,6 +17,7 @@ import de.soderer.json.schema.JsonSchemaDataValidationError;
 import de.soderer.json.schema.JsonSchemaDefinitionError;
 import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
+import de.soderer.json.schema.JsonSchemaVersion;
 
 /**
  * Validator for the "type" keyword: the JSON data node must be of the given type. The value is a type
@@ -135,7 +136,7 @@ public class TypeValidator extends BaseJsonSchemaValidator {
 			return jsonNode.getJsonDataType() == JsonDataType.INTEGER;
 		} else if (jsonDataType == JsonDataType.INTEGER && jsonNode.getJsonDataType() == JsonDataType.NUMBER) {
 			// In JSON schema draft v6+ a float value with zero fraction is also allowed as integer, although it is NOT recommended
-			if (jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV3Mode() || jsonSchemaDependencyResolver.isDraftV4Mode()) {
+			if (!jsonSchemaDependencyResolver.isVersionAtLeast(JsonSchemaVersion.draftV6)) {
 				return false;
 			} else {
 				final Number numberValue = ((JsonValueNumber) jsonNode).getValue();

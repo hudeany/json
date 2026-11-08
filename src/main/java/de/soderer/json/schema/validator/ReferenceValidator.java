@@ -175,7 +175,9 @@ public class ReferenceValidator extends BaseJsonSchemaValidator {
 			if (dereferencedValue == null) {
 				throw new JsonSchemaDefinitionError("Invalid JSON schema reference data type for key '" + validatorData + "'. Expected 'object' but was 'null'", jsonSchemaPath);
 			} else {
-				subValidators = JsonSchema.createValidatorsForSchemaNode(dereferencedValue, jsonSchemaDependencyResolver, new JsonSchemaPath(jsonSchemaPath));
+				// A referenced document may declare another JSON schema version by "$schema", which is then used for it
+				final JsonSchemaDependencyResolver targetResolver = jsonSchemaDependencyResolver.getResolverForSchemaNode(dereferencedValue);
+				subValidators = JsonSchema.createValidatorsForSchemaNode(dereferencedValue, targetResolver, new JsonSchemaPath(jsonSchemaPath));
 			}
 		} catch (final JsonSchemaDefinitionError e) {
 			throw new JsonSchemaDataValidationError("JsonSchemaDefinitionError while using JSON schema reference: " + e.getMessage(), jsonPath, e);

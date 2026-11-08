@@ -35,8 +35,8 @@ public class JsonSchemaTestSuiteTest {
 	 * They concern optional behavior of the JSON schema standard which is not implemented.
 	 */
 	private static final Set<String> KNOWN_OPTIONAL_ISSUE_PREFIXES = Set.of(
-			// References into schemas of other drafts are evaluated with the draft of the referencing schema
-			"optional/cross-draft.json|");
+	// Currently none, entries are prefixes of test case keys like "optional/cross-draft.json|"
+	);
 
 	/** Known issues, filled in {@link #loadTestSuite()} with keys including the draft directory. */
 	private static final List<String> KNOWN_OPTIONAL_ISSUES = new ArrayList<>();

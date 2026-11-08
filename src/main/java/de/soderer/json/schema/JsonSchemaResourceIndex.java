@@ -42,6 +42,12 @@ public class JsonSchemaResourceIndex {
 	private final Map<String, JsonSchemaVersion> documentVersions = new HashMap<>();
 
 	/**
+	 * JSON schema version each indexed schema object is evaluated with, i.e. the version of the
+	 * document it belongs to. Needed to evaluate references into documents of other drafts.
+	 */
+	private final Map<JsonNode, JsonSchemaVersion> schemaVersions = new IdentityHashMap<>();
+
+	/**
 	 * Keywords whose values are data, not schemas. Identifiers within them must not be indexed.
 	 */
 	private static final Set<String> NON_SCHEMA_KEYWORDS = Set.of("enum", "const", "examples", "default", "example");
@@ -78,6 +84,25 @@ public class JsonSchemaResourceIndex {
 	 *            the version used, if the document does not declare a known "$schema"
 	 */
 	public void addDocument(final String retrievalUri, final JsonNode document, final JsonSchemaVersion defaultVersion) {
+		addDocument(retrievalUri, document, defaultVersion, null);
+	}
+
+	/**
+	 * Adds a schema document and indexes all its resources and anchors.
+	 *
+	 * @param retrievalUri
+	 *            the URI the document was retrieved from or is registered by, used as initial base
+	 *            URI
+	 * @param document
+	 *            the schema document (object or boolean)
+	 * @param defaultVersion
+	 *            the version used, if the document does not declare a known "$schema"
+	 * @param evaluationVersion
+	 *            the version the schema objects of the document are evaluated with regardless of
+	 *            "$schema" (used for the main schema document, whose version may be configured
+	 *            explicitly), null to use the declared or default version
+	 */
+	public void addDocument(final String retrievalUri, final JsonNode document, final JsonSchemaVersion defaultVersion, final JsonSchemaVersion evaluationVersion) {
 		final String documentUri = JsonSchemaUriUtilities.removeFragment(JsonSchemaUriUtilities.normalize(retrievalUri));
 		JsonSchemaVersion version = defaultVersion;
 		if (document instanceof JsonObject && ((JsonObject) document).get("$schema") instanceof JsonValueString) {
@@ -88,7 +113,7 @@ public class JsonSchemaResourceIndex {
 		}
 		resources.put(documentUri, document);
 		documentVersions.put(documentUri, version);
-		walk(document, documentUri, version);
+		walk(document, documentUri, version, evaluationVersion != null ? evaluationVersion : version);
 	}
 
 	/**
@@ -217,6 +242,18 @@ public class JsonSchemaResourceIndex {
 	}
 
 	/**
+	 * Returns the JSON schema version an indexed schema object is evaluated with, which is the
+	 * version of the document containing it.
+	 *
+	 * @param schemaNode
+	 *            a schema object of an indexed document
+	 * @return the version, or null if the node is not indexed (e.g. a boolean schema)
+	 */
+	public JsonSchemaVersion getSchemaVersion(final JsonNode schemaNode) {
+		return schemaVersions.get(schemaNode);
+	}
+
+	/**
 	 * Walks a schema node recursively and registers base URIs, resources and anchors.
 	 *
 	 * @param node
@@ -225,23 +262,28 @@ public class JsonSchemaResourceIndex {
 	 *            the base URI in effect for the parent of the node
 	 * @param version
 	 *            the JSON schema version used to interpret identifier keywords
+	 * @param evaluationVersion
+	 *            the JSON schema version the schema objects are evaluated with
 	 */
-	private void walk(final JsonNode node, final String baseUri, final JsonSchemaVersion version) {
+	private void walk(final JsonNode node, final String baseUri, final JsonSchemaVersion version, final JsonSchemaVersion evaluationVersion) {
 		if (node instanceof JsonObject) {
 			final JsonObject jsonObject = (JsonObject) node;
 			final String currentBaseUri = registerIdentifiers(jsonObject, baseUri, version);
 			if (!baseUris.containsKey(jsonObject)) {
 				baseUris.put(jsonObject, currentBaseUri);
 			}
+			if (evaluationVersion != null) {
+				schemaVersions.putIfAbsent(jsonObject, evaluationVersion);
+			}
 			for (final Entry<String, JsonNode> entry : jsonObject.entrySet()) {
 				final JsonNode value = entry.getValue();
 				if (NON_SCHEMA_KEYWORDS.contains(entry.getKey()) || !(value instanceof JsonObject || value instanceof JsonArray)) {
 					continue;
 				} else if (SCHEMA_KEYWORDS.contains(entry.getKey())) {
-					walk(value, currentBaseUri, version);
+					walk(value, currentBaseUri, version, evaluationVersion);
 				} else if (SCHEMA_MAP_KEYWORDS.contains(entry.getKey()) && value instanceof JsonObject) {
 					for (final JsonNode subSchema : ((JsonObject) value).values()) {
-						walk(subSchema, currentBaseUri, version);
+						walk(subSchema, currentBaseUri, version, evaluationVersion);
 					}
 					recordBaseUris(value, currentBaseUri);
 				} else {
@@ -251,7 +293,7 @@ public class JsonSchemaResourceIndex {
 			}
 		} else if (node instanceof JsonArray) {
 			for (final JsonNode item : ((JsonArray) node).items()) {
-				walk(item, baseUri, version);
+				walk(item, baseUri, version, evaluationVersion);
 			}
 		}
 	}

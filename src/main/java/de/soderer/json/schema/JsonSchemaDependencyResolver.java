@@ -137,6 +137,18 @@ public class JsonSchemaDependencyResolver {
 	private final ThreadLocal<Set<String>> activeReferenceResolutions = ThreadLocal.withInitial(HashSet::new);
 
 	/**
+	 * The resolver this one is a version view of, null for a main resolver. See
+	 * {@link #getResolverForSchemaNode(JsonNode)}.
+	 */
+	private final JsonSchemaDependencyResolver mainResolver;
+
+	/**
+	 * Version views of this main resolver for schema documents of other JSON schema versions, created
+	 * on first use.
+	 */
+	private final Map<JsonSchemaVersion, JsonSchemaDependencyResolver> versionViews = new ConcurrentHashMap<>();
+
+	/**
 	 * Returns the cached validators for a reference.
 	 *
 	 * @param referenceKey
@@ -226,8 +238,57 @@ public class JsonSchemaDependencyResolver {
 			throw new JsonSchemaDefinitionError("Invalid data type 'null' for JsonSchemaDependencyResolver", new JsonSchemaPath());
 		}
 		this.schemaDocumentNode = schemaDocumentNode;
+		mainResolver = null;
 		for (final JsonSchemaDependency dependency : dependencies) {
 			addJsonSchemaDefinition(dependency.getJsonSchemaReferenceName(), dependency.getJsonSchemaReferenceObject());
+		}
+	}
+
+	/**
+	 * Creates a version view of a main resolver, see {@link VersionView}.
+	 *
+	 * @param mainResolver
+	 *            the main resolver
+	 * @param jsonSchemaVersion
+	 *            the JSON schema version of the view
+	 */
+	private JsonSchemaDependencyResolver(final JsonSchemaDependencyResolver mainResolver, final JsonSchemaVersion jsonSchemaVersion) {
+		this.mainResolver = mainResolver;
+		this.schemaDocumentNode = mainResolver.schemaDocumentNode;
+		this.jsonSchemaVersion = jsonSchemaVersion;
+	}
+
+	/**
+	 * Returns the resolver to build the validators of a schema object with. Schema objects of
+	 * documents declaring another JSON schema version by "$schema" than the main schema (e.g. a
+	 * referenced draft 7 schema within a draft 2020-12 schema) are evaluated with the version of
+	 * their own document. For them a view of this resolver is returned, which shares all schema
+	 * documents, caches, settings and the runtime state of the validation, but has the other JSON
+	 * schema version.<br />
+	 * <br />
+	 * The main schema document is always evaluated with the configured version, and simple mode
+	 * never switches to another version.
+	 *
+	 * @param schemaNode
+	 *            a schema node of one of the known schema documents
+	 * @return this resolver or a view of it for another JSON schema version
+	 */
+	public JsonSchemaDependencyResolver getResolverForSchemaNode(final JsonNode schemaNode) {
+		final JsonSchemaDependencyResolver main = mainResolver != null ? mainResolver : this;
+		if (schemaNode == null || main.isSimpleMode()) {
+			return this;
+		}
+
+		final JsonSchemaVersion schemaVersion;
+		synchronized (main) {
+			schemaVersion = main.getResourceIndex().getSchemaVersion(schemaNode);
+		}
+		if (schemaVersion == null || schemaVersion == JsonSchemaVersion.simple || schemaVersion == jsonSchemaVersion) {
+			return this;
+		} else if (schemaVersion == main.jsonSchemaVersion) {
+			return main;
+		} else {
+			return main.versionViews.computeIfAbsent(schemaVersion, version -> new VersionView(main, version));
 		}
 	}
 
@@ -610,7 +671,8 @@ public class JsonSchemaDependencyResolver {
 	private synchronized JsonSchemaResourceIndex getResourceIndex() {
 		if (resourceIndex == null) {
 			final JsonSchemaResourceIndex newResourceIndex = new JsonSchemaResourceIndex();
-			newResourceIndex.addDocument(rootRetrievalUri, schemaDocumentNode, jsonSchemaVersion);
+			// The main schema document is evaluated with the configured version, even if its "$schema" differs
+			newResourceIndex.addDocument(rootRetrievalUri, schemaDocumentNode, jsonSchemaVersion, jsonSchemaVersion);
 			for (final Entry<String, JsonObject> additionalSchemaDocument : additionalSchemaDocumentNodes.entrySet()) {
 				if (additionalSchemaDocument.getValue() != null) {
 					newResourceIndex.addDocument(JsonSchemaUriUtilities.resolve(rootRetrievalUri, additionalSchemaDocument.getKey()), additionalSchemaDocument.getValue(), jsonSchemaVersion);
@@ -870,6 +932,7 @@ public class JsonSchemaDependencyResolver {
 	public void setRootRetrievalUri(final String rootRetrievalUri) {
 		this.rootRetrievalUri = rootRetrievalUri == null ? JsonSchemaUriUtilities.DEFAULT_ROOT_BASE_URI : JsonSchemaUriUtilities.normalize(rootRetrievalUri);
 		resourceIndex = null;
+		versionViews.clear();
 	}
 
 	/**
@@ -949,6 +1012,7 @@ public class JsonSchemaDependencyResolver {
 		if (this.jsonSchemaVersion != jsonSchemaVersion) {
 			// Identifier keywords depend on the version, so the index has to be rebuilt
 			resourceIndex = null;
+			versionViews.clear();
 		}
 		this.jsonSchemaVersion = jsonSchemaVersion;
 	}
@@ -1091,6 +1155,194 @@ public class JsonSchemaDependencyResolver {
 	public JsonSchemaDependencyResolver withLazyFailOnMissingExternalSchemas(final boolean newLazyFailOnMissingExternalSchemas) {
 		setLazyFailOnMissingExternalSchemas(newLazyFailOnMissingExternalSchemas);
 		return this;
+	}
+
+	/**
+	 * View of a main resolver with another JSON schema version, used for schema documents declaring
+	 * another version by "$schema" than the main schema (see
+	 * {@link JsonSchemaDependencyResolver#getResolverForSchemaNode(JsonNode)}).<br />
+	 * <br />
+	 * Only the version dependent queries are answered by the view itself. Everything else (schema
+	 * documents, resource index, reference resolution, validator cache, cycle detection, settings
+	 * and the evaluation context) is delegated to the main resolver, so that all validators of one
+	 * validation run share the same state. Every new public method of the resolver has to be
+	 * delegated here, which is checked by a unit test.
+	 */
+	private static final class VersionView extends JsonSchemaDependencyResolver {
+		/** The main resolver all state is delegated to. */
+		private final JsonSchemaDependencyResolver main;
+
+		/**
+		 * Creates a version view.
+		 *
+		 * @param main
+		 *            the main resolver
+		 * @param jsonSchemaVersion
+		 *            the JSON schema version of the view
+		 */
+		private VersionView(final JsonSchemaDependencyResolver main, final JsonSchemaVersion jsonSchemaVersion) {
+			super(main, jsonSchemaVersion);
+			this.main = main;
+		}
+
+		@Override
+		public List<BaseJsonSchemaValidator> getCachedReferenceValidators(final String referenceKey) {
+			return main.getCachedReferenceValidators(referenceKey);
+		}
+
+		@Override
+		public void putCachedReferenceValidators(final String referenceKey, final List<BaseJsonSchemaValidator> validators) {
+			main.putCachedReferenceValidators(referenceKey, validators);
+		}
+
+		@Override
+		public boolean enterReferenceResolution(final String referenceKey, final String jsonPathString) {
+			return main.enterReferenceResolution(referenceKey, jsonPathString);
+		}
+
+		@Override
+		public void exitReferenceResolution(final String referenceKey, final String jsonPathString) {
+			main.exitReferenceResolution(referenceKey, jsonPathString);
+		}
+
+		@Override
+		public JsonObject getDependencyByReference(final String reference, final JsonSchemaPath jsonSchemaPath) throws Exception {
+			return main.getDependencyByReference(reference, jsonSchemaPath);
+		}
+
+		@Override
+		public JsonObject getDependencyByLegacyReference(final String reference, final JsonSchemaPath jsonSchemaPath) throws Exception {
+			return main.getDependencyByLegacyReference(reference, jsonSchemaPath);
+		}
+
+		@Override
+		public String getSchemaContainingReference(final String reference, final JsonSchemaPath jsonSchemaPath) throws JsonSchemaDefinitionError {
+			return main.getSchemaContainingReference(reference, jsonSchemaPath);
+		}
+
+		@Override
+		public String getBaseUri(final JsonNode schemaObject) {
+			return main.getBaseUri(schemaObject);
+		}
+
+		@Override
+		public JsonNode getSchemaNodeByUri(final String absoluteUri) throws JsonSchemaDefinitionError {
+			return main.getSchemaNodeByUri(absoluteUri);
+		}
+
+		@Override
+		public JsonNode getSchemaNodeByUri(final String absoluteUri, final boolean allowDownload) throws JsonSchemaDefinitionError {
+			return main.getSchemaNodeByUri(absoluteUri, allowDownload);
+		}
+
+		@Override
+		public boolean isKnownSchemaDocument(final String uri) {
+			return main.isKnownSchemaDocument(uri);
+		}
+
+		@Override
+		public JsonSchemaEvaluationContext getEvaluationContext() {
+			if (!isVersionAtLeast(JsonSchemaVersion.draft2019_09)) {
+				// Same as the main resolver: no annotations and dynamic scope up to draft 7
+				return INACTIVE_EVALUATION_CONTEXT;
+			}
+			// The runtime state must be shared with the main resolver, e.g. for "unevaluatedProperties"
+			return main.evaluationContext.get();
+		}
+
+		@Override
+		public void clearEvaluationContext() {
+			main.clearEvaluationContext();
+		}
+
+		@Override
+		public boolean hasDynamicAnchor(final String resourceUri, final String anchorName) {
+			return main.hasDynamicAnchor(resourceUri, anchorName);
+		}
+
+		@Override
+		public boolean hasRecursiveAnchor(final String resourceUri) {
+			return main.hasRecursiveAnchor(resourceUri);
+		}
+
+		@Override
+		public JsonSchemaVersion applyMetaSchema(final String metaSchemaUri) {
+			return main.applyMetaSchema(metaSchemaUri);
+		}
+
+		@Override
+		public boolean isFormatAssertion() {
+			if (main.formatAssertion != null) {
+				return main.formatAssertion;
+			} else {
+				// The vocabularies of a custom meta schema only apply to the main schema
+				return !isVersionAtLeast(JsonSchemaVersion.draft2019_09);
+			}
+		}
+
+		@Override
+		public void setFormatAssertion(final Boolean formatAssertion) {
+			main.setFormatAssertion(formatAssertion);
+		}
+
+		@Override
+		public JsonSchemaDependencyResolver withFormatAssertion(final Boolean newFormatAssertion) {
+			main.setFormatAssertion(newFormatAssertion);
+			return this;
+		}
+
+		@Override
+		public void setRootRetrievalUri(final String rootRetrievalUri) {
+			main.setRootRetrievalUri(rootRetrievalUri);
+		}
+
+		@Override
+		public JsonSchemaDependencyResolver withRootRetrievalUri(final String newRootRetrievalUri) {
+			main.setRootRetrievalUri(newRootRetrievalUri);
+			return this;
+		}
+
+		@Override
+		public void addJsonSchemaDefinition(final String jsonSchemaReferenceName, final InputStream jsonSchemaInputStream) throws JsonSchemaDefinitionError {
+			main.addJsonSchemaDefinition(jsonSchemaReferenceName, jsonSchemaInputStream);
+		}
+
+		@Override
+		public void addJsonSchemaDefinition(final String jsonSchemaReferenceName, final JsonObject jsonSchemaReferenceObject) throws Exception {
+			main.addJsonSchemaDefinition(jsonSchemaReferenceName, jsonSchemaReferenceObject);
+		}
+
+		@Override
+		public void setJsonSchemaVersion(final JsonSchemaVersion jsonSchemaVersion) {
+			throw new UnsupportedOperationException("The JSON schema version of a version view cannot be changed");
+		}
+
+		@Override
+		public JsonSchemaDependencyResolver withJsonSchemaVersion(final JsonSchemaVersion newJsonSchemaVersion) {
+			throw new UnsupportedOperationException("The JSON schema version of a version view cannot be changed");
+		}
+
+		@Override
+		public void setDownloadReferencedSchemas(final boolean downloadReferencedSchemas) {
+			main.setDownloadReferencedSchemas(downloadReferencedSchemas);
+		}
+
+		@Override
+		public JsonSchemaDependencyResolver withDownloadReferencedSchemas(final boolean newDownloadReferencedSchemas) {
+			main.setDownloadReferencedSchemas(newDownloadReferencedSchemas);
+			return this;
+		}
+
+		@Override
+		public void setLazyFailOnMissingExternalSchemas(final boolean lazyFailOnMissingExternalSchemas) {
+			main.setLazyFailOnMissingExternalSchemas(lazyFailOnMissingExternalSchemas);
+		}
+
+		@Override
+		public JsonSchemaDependencyResolver withLazyFailOnMissingExternalSchemas(final boolean newLazyFailOnMissingExternalSchemas) {
+			main.setLazyFailOnMissingExternalSchemas(newLazyFailOnMissingExternalSchemas);
+			return this;
+		}
 	}
 
 	/**

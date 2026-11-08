@@ -1079,20 +1079,20 @@ public class JsonSchema {
 				case "exclusiveMinimum":
 					// Do nothing, because this is validated by MinimumValidator, too
 					// Value must be of boolean type and "minimum" value item must exist in simpleMode and draft v3/v4.
-					if ((jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV3Mode() || jsonSchemaDependencyResolver.isDraftV4Mode())
+					if (!jsonSchemaDependencyResolver.isVersionAtLeast(JsonSchemaVersion.draftV6)
 							&& !jsonSchemaDefinitionObject.containsKey("minimum")) {
 						throw new JsonSchemaDefinitionError("Missing 'minimum' rule for 'exclusiveMinimum'", currentJsonSchemaPath);
-					} else if (!jsonSchemaDependencyResolver.isSimpleMode() && !jsonSchemaDependencyResolver.isDraftV3Mode() && !jsonSchemaDependencyResolver.isDraftV4Mode()) {
+					} else if (jsonSchemaDependencyResolver.isVersionAtLeast(JsonSchemaVersion.draftV6)) {
 						validators.add(new ExclusiveMinimumValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
 					}
 					break;
 				case "exclusiveMaximum":
 					// Do nothing, because this is validated by MaximumValidator, too
 					// Value must be of boolean type and "maximum" value item must exist in simpleMode and draft v3/v4.
-					if ((jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV3Mode() || jsonSchemaDependencyResolver.isDraftV4Mode())
+					if (!jsonSchemaDependencyResolver.isVersionAtLeast(JsonSchemaVersion.draftV6)
 							&& !jsonSchemaDefinitionObject.containsKey("maximum")) {
 						throw new JsonSchemaDefinitionError("Missing 'maximum' rule for 'exclusiveMaximum'", currentJsonSchemaPath);
-					} else if (!jsonSchemaDependencyResolver.isSimpleMode() && !jsonSchemaDependencyResolver.isDraftV3Mode() && !jsonSchemaDependencyResolver.isDraftV4Mode()) {
+					} else if (jsonSchemaDependencyResolver.isVersionAtLeast(JsonSchemaVersion.draftV6)) {
 						validators.add(new ExclusiveMaximumValidator(jsonSchemaDefinitionObject, jsonSchemaDependencyResolver, new JsonSchemaPath(currentJsonSchemaPath).addPropertyKey(entry.getKey()), entry.getValue()));
 					}
 					break;
@@ -1109,7 +1109,7 @@ public class JsonSchema {
 					break;
 
 				case "id":
-					if (!jsonSchemaDependencyResolver.isSimpleMode() && !jsonSchemaDependencyResolver.isDraftV3Mode() && !jsonSchemaDependencyResolver.isDraftV4Mode()) {
+					if (jsonSchemaDependencyResolver.isVersionAtLeast(JsonSchemaVersion.draftV6)) {
 						throw new JsonSchemaDefinitionError("JSON schema 'id' on top level of JSON schema is only allowed for JSON schema versions draft v4 and lower", currentJsonSchemaPath);
 					}
 					// "id" may change the base URI of sub schemas, only simple mode restricts it to the top level
@@ -1118,7 +1118,7 @@ public class JsonSchema {
 					}
 					break;
 				case "$id":
-					if (jsonSchemaDependencyResolver.isSimpleMode() || jsonSchemaDependencyResolver.isDraftV3Mode() || jsonSchemaDependencyResolver.isDraftV4Mode()) {
+					if (!jsonSchemaDependencyResolver.isVersionAtLeast(JsonSchemaVersion.draftV6)) {
 						throw new JsonSchemaDefinitionError("JSON schema '$id' on top level of JSON schema is only allowed for JSON schema versions draft v6 and higher", currentJsonSchemaPath);
 					}
 					// "$id" may change the base URI of sub schemas, only simple mode restricts it to the top level
