@@ -16,9 +16,9 @@ sequence2:
   - Sequence item 23
 sequence3: [Sequence item 31, Sequence item 32, Sequence item 33]
 sequence4: [Sequence item 41,
-Sequence item 42,
-Sequence item 43
-]
+  Sequence item 42,
+  Sequence item 43
+  ]
 mapping1:
   property 11:   Value 11 # Separation by tab is allowed
   property 12:  12

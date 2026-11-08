@@ -1,0 +1,6 @@
+# Test cases of the official YAML test suite (yaml/yaml-test-suite.zip), which YamlReader handles
+# differently by design. YamlTestSuiteTest checks, that these cases still deviate.
+# Format: <test case id> # <description>
+
+## Duplicate mapping keys are rejected, also two empty (null) keys: mapping keys must be unique (1)
+2JQS # Block Mapping with Missing Keys

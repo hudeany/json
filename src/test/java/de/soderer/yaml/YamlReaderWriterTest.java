@@ -986,8 +986,7 @@ class YamlReaderWriterTest {
         @DisplayName("Whitespace-only document returns null")
         void whitespaceOnlyDocumentReturnsNull() throws Exception {
             final YamlDocument doc = read("   \n  \n");
-            final YamlNode root = doc.getRoot();
-            assert(root != null && root instanceof YamlScalar && ((YamlScalar) root).getType() == YamlScalarType.NULL_VALUE);
+            assertNull(doc, "Data without content contains no document");
         }
 
         @Test
@@ -995,8 +994,7 @@ class YamlReaderWriterTest {
         void commentOnlyDocumentReturnsNull() throws Exception {
             // A pure comment document without any content
             final YamlDocument doc = read("# just a comment\n");
-            final YamlNode root = doc.getRoot();
-            assert(root != null && root instanceof YamlScalar && ((YamlScalar) root).getType() == YamlScalarType.NULL_VALUE);
+            assertNull(doc, "Data without content contains no document");
         }
     }
 

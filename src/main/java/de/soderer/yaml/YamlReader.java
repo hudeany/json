@@ -1,15 +1,20 @@
 package de.soderer.yaml;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 
 import de.soderer.json.exception.DuplicateKeyException;
@@ -57,7 +62,44 @@ public class YamlReader extends BasicReadAheadReader {
 	private List<String> pendingLeadingComments = new ArrayList<>();
 	private int pendingLeadingEmptyLines = 0;
 	private int pendingTrailingEmptyLinesAfterComments = 0;
-	private Boolean documentContentStarted = null;
+	/**
+	 * True if a document was read, which was not ended by a document end marker "..." yet. Only a
+	 * document start marker "---" may follow then.
+	 */
+	private boolean documentOpen = false;
+
+	/**
+	 * Named tag handles like "!e!" declared by "%TAG" directives of the current document.
+	 */
+	private final Set<String> currentTagHandles = new HashSet<>();
+
+	/**
+	 * True if a "%TAG !! ..." directive of the current document assigns the secondary tag handle
+	 * "!!" to other tags than the YAML core schema, so "!!int" is no datatype then.
+	 */
+	private boolean secondaryTagHandleRedefined = false;
+
+	/**
+	 * Line and column of content preceded by a tab in the whitespace before it. A block collection
+	 * must not start there, because tabs must not be used for indentation. -1 if there is none.
+	 */
+	private long tabSeparatedContentLine = -1;
+
+	/**
+	 * Column belonging to {@link #tabSeparatedContentLine}.
+	 */
+	private long tabSeparatedContentColumn = -1;
+
+	/**
+	 * Line on which no block collection may start, like the line of a document start marker or the
+	 * rest of the line of a block mapping key. -1 if there is none.
+	 */
+	private long blockCollectionForbiddenLine = -1;
+
+	/**
+	 * Number of characters the reader looks ahead.
+	 */
+	private static final int READ_AHEAD_CHARACTERS = 4;
 
 	/**
 	 * Default maximum nesting depth of mappings and sequences.
@@ -103,9 +145,23 @@ public class YamlReader extends BasicReadAheadReader {
 	private int flowLevel = 0;
 
 	/**
+	 * Indentations of the block structure before each flow collection currently read, which are
+	 * restored after its closing bracket.
+	 */
+	private final Deque<List<Integer>> flowIndentationSnapshots = new ArrayDeque<>();
+
+	/**
 	 * Blanks before the root node on its line, which are not part of the indentations yet.
 	 */
 	private int rootLineIndentation = 0;
+
+	/**
+	 * Indentation of the block collection the node currently read belongs to: the column (0-based)
+	 * of the mapping keys for a mapping value, the column of the dash for a sequence item, -1 for the
+	 * root node of a document. Continuation lines of multi-line flow scalars and the content of
+	 * block scalars must be indented deeper than this.
+	 */
+	private int blockParentIndentation = -1;
 
 	/**
 	 * Current nesting depth of mappings and sequences while parsing.
@@ -158,7 +214,8 @@ public class YamlReader extends BasicReadAheadReader {
 	 *             if the input stream is null
 	 */
 	public YamlReader(final InputStream inputStream, final Charset encodingCharset) throws Exception {
-		super(inputStream, encodingCharset);
+		// Four characters read ahead: a document marker "---" or "..." is only one, if a blank or linebreak follows
+		super(inputStream, encodingCharset, READ_AHEAD_CHARACTERS);
 
 		setNormalizeLinebreaks(true);
 
@@ -304,6 +361,7 @@ public class YamlReader extends BasicReadAheadReader {
 			final YamlDocument document = new YamlDocument();
 			currentPath = new JsonPath();
 			currentYamlVersion = defaultYamlVersion;
+			blockParentIndentation = -1;
 			if (!pendingLeadingComments.isEmpty()) {
 				for (final String commentLine : pendingLeadingComments) {
 					document.addLeadingComment(commentLine);
@@ -314,7 +372,15 @@ public class YamlReader extends BasicReadAheadReader {
 			// any pendingLeadingEmptyLines accumulated so far are intentionally left untouched
 			// here so they naturally end up attributed to the document's root node instead.
 
-			while (isNotEOF()) {
+			boolean directivesRead = false;
+			boolean yamlDirectiveRead = false;
+			secondaryTagHandleRedefined = false;
+			currentTagHandles.clear();
+			while (true) {
+				// Each document starts at the beginning of the block structure again
+				indentations.clear();
+				indentationsAdd(0);
+
 				// Blanks before a root node on the current line, which readUpToNextContent() skips
 				// without adding them to the indentations
 				final long lineBeforeContent = getCurrentLine();
@@ -322,72 +388,88 @@ public class YamlReader extends BasicReadAheadReader {
 				// An anchor of the root node is read by parseYamlNode()
 				skipToNextContent();
 				rootLineIndentation = getCurrentLine() == lineBeforeContent ? leadingBlanks : 0;
-				if (peekCharMatch('%')) {
+
+				if (isEOF()) {
+					if (directivesRead) {
+						throw new YamlParseException("Directives without following document", getCurrentLine(), getCurrentColumn());
+					}
+					// No further document: data of only blanks and comments contains no document at all
+					documentOpen = false;
+					return null;
+				} else if (peekCharMatch('%') && getCurrentColumn() == 1) {
+					if (documentOpen) {
+						throw new YamlParseException("Directive after a document, which was not ended by \"...\"", getCurrentLine(), getCurrentColumn());
+					}
 					final YamlDirective<?> directive = readDirective();
-					if (directive == null) {
-						// Unknown directive, which is ignored
-						documentContentStarted = false;
-						continue;
-					} else if (directive instanceof final YamlVersionDirective versionDirective) {
+					directivesRead = true;
+					if (directive instanceof final YamlVersionDirective versionDirective) {
+						if (yamlDirectiveRead) {
+							throw new YamlParseException("Duplicate %YAML directive", getCurrentLine(), getCurrentColumn());
+						}
+						yamlDirectiveRead = true;
 						final YamlVersion directiveVersion = YamlVersion.fromDirectiveValue(versionDirective.getYamlVersion());
 						if (directiveVersion != null) {
 							currentYamlVersion = directiveVersion;
 						}
 					}
-					document.addDirective(directive);
-					documentContentStarted = false;
-				} else if (peekCharMatch('-')) {
+					if (directive instanceof final YamlTagDirective tagDirective) {
+						currentTagHandles.add(tagDirective.getTag());
+					}
+					if (directive instanceof final YamlTagDirective tagDirective && "!!".equals(tagDirective.getTag())) {
+						// "!!" refers to other tags than the YAML core schema datatypes
+						secondaryTagHandleRedefined = !"tag:yaml.org,2002:".equals(tagDirective.getReplacement());
+					}
+					if (directive != null) {
+						document.addDirective(directive);
+					}
+				} else if (isDocumentMarkerAtLineStart() && peekCharMatch('.')) {
+					// Document end marker
+					if (directivesRead) {
+						throw new YamlParseException("Directives without following document", getCurrentLine(), getCurrentColumn());
+					}
+					readChar();
+					readChar();
+					readChar();
+					skipBlanks();
+					if (peekCharMatch('#')) {
+						pendingLeadingComments.add(readInlineComment());
+					} else if (isNotEOF() && peekCharNotMatch('\n')) {
+						throw new YamlParseException("Unexpected content after document end marker", getCurrentLine(), getCurrentColumn());
+					}
+					documentOpen = false;
+				} else if (isDocumentMarkerAtLineStart()) {
+					// Document start marker
 					if (searchPath != null && getCurrentPath().equals(searchPath)) {
 						throw new FoundPathEvent("Path '" + searchPath + "' was found");
 					}
-					if (peekNextCharMatch(1, '-') && peekNextCharMatch(2, '-')) {
-						readChar();
-						readChar();
-						readChar();
-
-						skipBlanks();
-						if (peekCharMatch('#')) {
-							final String documentComment = readInlineComment();
-							document.addLeadingComment(documentComment);
-						}
-
-						if (documentContentStarted != null && documentContentStarted) {
-							// Start of next document
-							break;
-						} else if (documentContentStarted != null && !documentContentStarted) {
-							documentContentStarted = true;
-						} else {
-							documentContentStarted = true;
-							skipToNextContent();
-							document.setRoot(parseYamlNode());
-							return document;
-						}
-					} else if (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n')) {
-						if (documentContentStarted != null && !documentContentStarted) {
-							throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
-						} else {
-							addRootIndentation();
-							document.setRoot(parseBlockSequence());
-							return document;
-						}
-					} else if (documentContentStarted != null && !documentContentStarted) {
-						throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
-					} else {
-						document.setRoot(parseBlockMappingOrScalar(null));
+					readChar();
+					readChar();
+					readChar();
+					documentOpen = true;
+					final long markerLine = getCurrentLine();
+					skipBlanks();
+					if (peekCharMatch('#')) {
+						document.addLeadingComment(readInlineComment());
+					}
+					skipToNextContent();
+					if (isEOF() || isDocumentMarkerAtLineStart()) {
+						// Empty document
 						return document;
 					}
-				} else if (peekCharMatch('.') && peekNextCharMatch(1, '.') && peekNextCharMatch(2, '.')) {
-					readChar();
-					readChar();
-					readChar();
-					skipToNextContent();
-					documentContentStarted = null;
-					// End of document
-					break;
-				} else if (documentContentStarted != null && !documentContentStarted) {
-					throw new YamlParseException("Unexpected content found within YAML document directives section", getCurrentLine(), getCurrentColumn());
+					if (getCurrentLine() == markerLine) {
+						// A block collection must not start on the line of the document start marker
+						blockCollectionForbiddenLine = markerLine;
+					}
+					document.setRoot(parseYamlNode());
+					return document;
 				} else {
-					documentContentStarted = true;
+					// Bare document without document start marker
+					if (documentOpen) {
+						throw new YamlParseException("Unexpected content after the end of the document", getCurrentLine(), getCurrentColumn());
+					} else if (directivesRead) {
+						throw new YamlParseException("Directives must be followed by a document start marker \"---\"", getCurrentLine(), getCurrentColumn());
+					}
+					documentOpen = true;
 					if (searchPath != null && getCurrentPath().equals(searchPath)) {
 						throw new FoundPathEvent("Path '" + searchPath + "' was found");
 					}
@@ -396,8 +478,6 @@ public class YamlReader extends BasicReadAheadReader {
 					return document;
 				}
 			}
-
-			return null;
 		} catch (final DuplicateKeyException e) {
 			throw new YamlParseException("Duplicate key found: " + e.getMessage(), getCurrentLine(), getCurrentColumn());
 		}
@@ -569,11 +649,30 @@ public class YamlReader extends BasicReadAheadReader {
 
 	private int skipBlanks() throws Exception {
 		int count = 0;
+		boolean tabRead = false;
 		while (peekCharMatch(' ') || peekCharMatch('\t')) {
+			tabRead |= peekCharMatch('\t');
 			readChar();
 			count++;
 		}
+		if (tabRead && isNotEOF()) {
+			// Remember the position, a block collection must not start after a tab
+			tabSeparatedContentLine = getCurrentLine();
+			tabSeparatedContentColumn = getCurrentColumn();
+		}
 		return count;
+	}
+
+	/**
+	 * Checks that a block collection starting at the given position is not preceded by a tab.
+	 *
+	 * @throws YamlParseException
+	 *             if a tab precedes the position on its line
+	 */
+	private void checkNoTabBeforeBlockCollection(final long line, final long column) throws YamlParseException {
+		if (line == tabSeparatedContentLine && column == tabSeparatedContentColumn) {
+			throw new YamlParseException("Tabs must not be used for indentation of block collections", line, column);
+		}
 	}
 
 	/**
@@ -597,8 +696,19 @@ public class YamlReader extends BasicReadAheadReader {
 		// line. Only lines consisting purely of whitespace (or nothing) between two linebreaks
 		// are counted as empty lines.
 		boolean currentLineHasContent = getCurrentColumn() > 1;
+		boolean linebreakRead = false;
+		boolean tabInLinePrefix = false;
+		boolean lineStartsWithTab = false;
+		// Spaces at the beginning of the current line before any tab, which are its indentation
+		int lineIndentationSpaces = 0;
 		while (isNotEOF()) {
 			if (peekCharMatch(' ') || peekCharMatch('\t')) {
+				if (peekCharMatch('\t')) {
+					tabInLinePrefix = true;
+					lineStartsWithTab |= getCurrentColumn() == 1;
+				} else if (!tabInLinePrefix && !currentLineHasContent) {
+					lineIndentationSpaces++;
+				}
 				readChar();
 				nextIndentationSize++;
 			} else if (peekCharMatch('#')) {
@@ -614,9 +724,35 @@ public class YamlReader extends BasicReadAheadReader {
 				}
 				currentLineHasContent = false;
 				nextIndentationSize = 0;
+				linebreakRead = true;
+				tabInLinePrefix = false;
+				lineStartsWithTab = false;
+				lineIndentationSpaces = 0;
 			} else {
 				break;
 			}
+		}
+
+		if (tabInLinePrefix && isNotEOF()) {
+			// Remember the position, a block collection must not start after a tab
+			tabSeparatedContentLine = getCurrentLine();
+			tabSeparatedContentColumn = getCurrentColumn();
+		}
+
+		if (flowLevel > 0 && linebreakRead && isNotEOF()) {
+			// Lines of flow collections must be indented deeper than the surrounding block collection
+			if (lineIndentationSpaces <= blockParentIndentation && peekCharNotMatch('#')) {
+				throw new YamlParseException("Line of flow collection is not indented enough", getCurrentLine(), getCurrentColumn());
+			} else if (isDocumentMarkerAtLineStart()) {
+				throw new YamlParseException("Document marker within flow collection", getCurrentLine(), getCurrentColumn());
+			} else if (lineStartsWithTab && blockParentIndentation >= 0 && peekCharNotMatch('#')) {
+				throw new YamlParseException("Tabs must not be used for indentation", getCurrentLine(), getCurrentColumn());
+			}
+		}
+
+		if (flowLevel > 0) {
+			// Lines within flow collections do not change the block indentation
+			return null;
 		}
 
 		for (final int indentationSize : indentations) {
@@ -691,37 +827,6 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 	}
 
-	/**
-	 * Measures the indentation (number of leading spaces/tabs) of the next line without
-	 * touching the {@link #indentations} stack and without comparing it against any
-	 * previously known indentation level.
-	 * This is used while reading the raw content lines of a multiline block scalar,
-	 * where each line's indentation must only be compared against the block scalar's own
-	 * base indentation, not against the general block-structure indentation stack.
-	 *
-	 * @return
-	 * 	the number of leading spaces/tabs of the next line<br />
-	 * 	or -1 if the next line is empty (only a linebreak or EOF, no indentation consumed)
-	 */
-	private int peekNextLineIndentation() throws Exception {
-		int nextIndentationSize = 0;
-		while (isNotEOF()) {
-			if (peekCharMatch(' ') || peekCharMatch('\t')) {
-				readChar();
-				nextIndentationSize++;
-			} else if (peekCharMatch('\n')) {
-				return -1;
-			} else {
-				break;
-			}
-		}
-		if (isEOF()) {
-			return -1;
-		} else {
-			return nextIndentationSize;
-		}
-	}
-
 	private String readInlineComment() throws Exception {
 		if (peekCharNotMatch('#')) {
 			throw new YamlParseException("Expected comment not found", getCurrentLine(), getCurrentColumn());
@@ -767,6 +872,7 @@ public class YamlReader extends BasicReadAheadReader {
 			throw new YamlParseException("Invalid YAML directive data '" + directiveText + "': " + e.getMessage(), startLine, startColumn, e);
 		}
 
+		checkCommentSeparation();
 		if (peekCharMatch('#')) {
 			directive.setInlineComment(readInlineComment());
 		}
@@ -790,6 +896,9 @@ public class YamlReader extends BasicReadAheadReader {
 	 *             if the node already has another anchor
 	 */
 	private void assignAnchor(final YamlNode node, final String anchor) throws YamlParseException {
+		if (node instanceof YamlAlias) {
+			throw new YamlParseException("An alias must not have an anchor: '" + anchor + "'", getCurrentLine(), getCurrentColumn());
+		}
 		if (node.getAnchorName() != null && !node.getAnchorName().equals(anchor)) {
 			throw new YamlParseException("Assignment of multiple anchors single YAML node: '" + node.getAnchorName() + "' and '" + anchor + "'", getCurrentLine(), getCurrentColumn());
 		}
@@ -930,62 +1039,87 @@ public class YamlReader extends BasicReadAheadReader {
 	 *            true if a block sequence at the parent indentation is the content, as for mapping values
 	 */
 	private YamlNode parseYamlNode(final Integer parentIndentation, final boolean allowSequenceAtParentIndentation) throws Exception {
-		if (peekCharMatch('!')) {
-			final long tagLine = getCurrentLine();
-			final long tagColumn = getCurrentColumn();
-			// An anchor directly before the tag on the same line, like "&anchor !tag key: value"
-			String anchor = null;
-			long propertiesStartColumn = tagColumn;
-			if (pendingNodeAnchor != null && pendingNodeTagLine == tagLine && pendingNodeTagColumn == tagColumn) {
-				anchor = pendingNodeAnchor;
-				propertiesStartColumn = pendingNodeTagStartColumn;
-				pendingNodeAnchor = null;
-			}
-
-			final String tag = readUpToNext(false, null, ' ', '\t', '\n');
-			skipBlanks();
-			final boolean tagLineEnded = isEOF() || peekCharMatch('\n') || peekCharMatch('#');
-			// An anchor may also follow the tag, like "!!str &anchor value"
-			final String anchorAfterTag = readUpToNextContent(null);
-			if (anchorAfterTag != null) {
-				if (anchor != null) {
-					throw new YamlParseException("Assignment of multiple anchors single YAML node: '" + anchor + "'", getCurrentLine(), getCurrentColumn());
-				}
-				anchor = anchorAfterTag;
-			}
-			final boolean contentOnTagLine = !tagLineEnded && getCurrentLine() == tagLine;
-
-			final YamlNode typedNode;
-			if (tagLineEnded && parentIndentation != null && isEmptyTaggedValue(parentIndentation, allowSequenceAtParentIndentation)) {
-				// Tag without value, like "key: !!null" followed by the next key
-				typedNode = applyTag(tag, new YamlScalar("", YamlScalarType.NULL_VALUE));
-			} else if (!contentOnTagLine) {
-				// Properties on a line of their own belong to the following node, also to a block mapping
-				typedNode = applyTag(tag, parseYamlNodeWithoutTag());
-			} else {
-				// The block mapping parser takes the properties for its first key, if the content turns
-				// out to be a block mapping starting at this position, like "!tag key: value"
-				final PendingNodeProperties outerPendingProperties = savePendingNodeProperties();
-				setPendingNodeProperties(tag, anchor, propertiesStartColumn);
-				final YamlNode node;
-				final String remainingTag;
-				try {
-					node = parseYamlNodeWithoutTag();
-				} finally {
-					remainingTag = pendingNodeTag;
-					anchor = pendingNodeAnchor;
-					restorePendingNodeProperties(outerPendingProperties);
-				}
-				typedNode = remainingTag == null ? node : applyTag(remainingTag, node);
-			}
-
-			if (anchor != null) {
-				assignAnchor(typedNode, anchor);
-			}
-			return typedNode;
-		} else {
-			return parseYamlNodeWithoutTag();
+		// Kept small, because it is part of the recursion per nesting level
+		final int outerBlockParentIndentation = blockParentIndentation;
+		if (parentIndentation != null) {
+			blockParentIndentation = parentIndentation;
 		}
+		try {
+			if (peekCharMatch('!')) {
+				return parseTaggedYamlNode(parentIndentation, allowSequenceAtParentIndentation);
+			} else {
+				return parseYamlNodeWithoutTag();
+			}
+		} finally {
+			blockParentIndentation = outerBlockParentIndentation;
+		}
+	}
+
+	/**
+	 * Reads a node preceded by a tag like "!!str", see {@link #parseYamlNode(Integer, boolean)}.
+	 */
+	private YamlNode parseTaggedYamlNode(final Integer parentIndentation, final boolean allowSequenceAtParentIndentation) throws Exception {
+		final long tagLine = getCurrentLine();
+		final long tagColumn = getCurrentColumn();
+		// An anchor directly before the tag on the same line, like "&anchor !tag key: value"
+		String anchor = null;
+		long propertiesStartColumn = tagColumn;
+		if (pendingNodeAnchor != null && pendingNodeTagLine == tagLine && pendingNodeTagColumn == tagColumn) {
+			anchor = pendingNodeAnchor;
+			propertiesStartColumn = pendingNodeTagStartColumn;
+			pendingNodeAnchor = null;
+		}
+
+		final String tag = readUpToNext(false, null, ' ', '\t', '\n');
+		skipBlanks();
+		final boolean tagLineEnded = isEOF() || peekCharMatch('\n') || peekCharMatch('#');
+		if (tagLineEnded && flowLevel == 0 && propertiesStartColumn == tagColumn && indentations.size() > 1 && getNumberOfIndentationChars() == tagColumn - 1) {
+			// The tag is alone on its line, so the indentation of its line is no level of the block
+			// structure: the content on the following lines may be indented differently
+			indentations.pop();
+		}
+		// An anchor may also follow the tag, like "!!str &anchor value"
+		final String anchorAfterTag = readUpToNextContent(null);
+		if (anchorAfterTag != null) {
+			if (anchor != null) {
+				throw new YamlParseException("Assignment of multiple anchors single YAML node: '" + anchor + "'", getCurrentLine(), getCurrentColumn());
+			}
+			anchor = anchorAfterTag;
+		}
+		final boolean contentOnTagLine = !tagLineEnded && getCurrentLine() == tagLine;
+		if (contentOnTagLine && isIndicatorFollowedBySeparator('-')) {
+			throw new YamlParseException("Block sequence must not start on the line of its tag", getCurrentLine(), getCurrentColumn());
+		}
+
+		final YamlNode typedNode;
+		if (tagLineEnded && parentIndentation != null && isEmptyTaggedValue(parentIndentation, allowSequenceAtParentIndentation)) {
+			// Tag without value, like "key: !!null" followed by the next key
+			typedNode = applyTag(tag, new YamlScalar("", YamlScalarType.NULL_VALUE));
+		} else if (!contentOnTagLine) {
+			// Properties on a line of their own belong to the following node, also to a block mapping,
+			// whose first key may have properties of its own
+			typedNode = applyTag(tag, peekCharMatch('!') ? parseYamlNode() : parseYamlNodeWithoutTag());
+		} else {
+			// The block mapping parser takes the properties for its first key, if the content turns
+			// out to be a block mapping starting at this position, like "!tag key: value"
+			final PendingNodeProperties outerPendingProperties = savePendingNodeProperties();
+			setPendingNodeProperties(tag, anchor, propertiesStartColumn);
+			final YamlNode node;
+			final String remainingTag;
+			try {
+				node = parseYamlNodeWithoutTag();
+			} finally {
+				remainingTag = pendingNodeTag;
+				anchor = pendingNodeAnchor;
+				restorePendingNodeProperties(outerPendingProperties);
+			}
+			typedNode = remainingTag == null ? node : applyTag(remainingTag, node);
+		}
+
+		if (anchor != null) {
+			assignAnchor(typedNode, anchor);
+		}
+		return typedNode;
 	}
 
 	/**
@@ -998,7 +1132,7 @@ public class YamlReader extends BasicReadAheadReader {
 		final int contentIndentation = (int) getCurrentColumn() - 1;
 		if (contentIndentation > parentIndentation) {
 			return false;
-		} else if (allowSequenceAtParentIndentation && contentIndentation == parentIndentation && peekCharMatch('-') && peekNextCharMatchAny(1, " \t\n")) {
+		} else if (allowSequenceAtParentIndentation && contentIndentation == parentIndentation && isIndicatorFollowedBySeparator('-')) {
 			return false;
 		} else {
 			return true;
@@ -1006,87 +1140,103 @@ public class YamlReader extends BasicReadAheadReader {
 	}
 
 	private YamlNode parseYamlNodeWithoutTag() throws Exception {
-		if (peekCharMatch('-') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
-			final YamlNode sequence = parseBlockSequence();
-			return sequence;
+		// Kept small, because it is part of the recursion per nesting level
+		if (isIndicatorFollowedBySeparator('-')) {
+			return parseBlockSequence();
 		} else if (peekCharMatch('&')) {
-			final long anchorLine = getCurrentLine();
-			final long anchorColumn = getCurrentColumn();
-			readChar();
-			final String anchor = readUpToNext(false, null, '\n', ' ', '\t');
-			if (anchor == null || anchor.isEmpty()) {
-				throw new YamlParseException("Missing anchor name", anchorLine, anchorColumn);
-			}
-			skipToNextContent();
-
-			final YamlNode yamlNode;
-			String remainingAnchor = anchor;
-			if (getCurrentLine() == anchorLine) {
-				// Content on the line of the anchor: the block mapping parser takes the anchor for its
-				// first key, if the content turns out to be a block mapping, like "&anchor key: value"
-				final PendingNodeProperties outerPendingProperties = savePendingNodeProperties();
-				setPendingNodeProperties(null, anchor, anchorColumn);
-				try {
-					yamlNode = parseYamlNode();
-				} finally {
-					remainingAnchor = pendingNodeAnchor;
-					restorePendingNodeProperties(outerPendingProperties);
-				}
-			} else {
-				// An anchor on a line of its own belongs to the following node, also to a block mapping
-				yamlNode = parseYamlNode();
-			}
-
-			if (remainingAnchor != null) {
-				assignAnchor(yamlNode, remainingAnchor);
-			}
-			return yamlNode;
+			return parseAnchoredYamlNode();
 		} else if (peekCharMatch('*')) {
-			final PendingLeadingState pendingLeadingState = takePendingLeadingState();
-
-			final YamlNode alias = parseAlias();
-
-			applyPendingLeadingState(pendingLeadingState, alias);
-
-			return alias;
-		} else if (peekCharMatch('{')) {
-			final int flowStartIndentations = getNumberOfIndentationChars();
-			final PendingLeadingState pendingLeadingState = takePendingLeadingState();
-
-			final PendingNodeProperties flowProperties = takePendingNodePropertiesAtCurrentPosition();
-			YamlNode flowMapping = parseFlowMapping();
-			flowMapping = applyPendingNodeProperties(flowProperties, flowMapping);
-
-			applyPendingLeadingState(pendingLeadingState, flowMapping);
-
-			readUpToNextContent(flowMapping);
-
-			if (peekCharMatch(':') && flowStartIndentations + 1 < getCurrentColumn()) {
-				return parseBlockMappingOrScalar(flowMapping);
-			} else {
-				return flowMapping;
-			}
-		} else if (peekCharMatch('[')) {
-			final int flowStartIndentations = getNumberOfIndentationChars();
-			final PendingLeadingState pendingLeadingState = takePendingLeadingState();
-
-			final PendingNodeProperties flowProperties = takePendingNodePropertiesAtCurrentPosition();
-			YamlNode flowSequence = parseFlowSequence();
-			flowSequence = applyPendingNodeProperties(flowProperties, flowSequence);
-
-			applyPendingLeadingState(pendingLeadingState, flowSequence);
-
-			readUpToNextContent(flowSequence);
-
-			if (peekCharMatch(':') && flowStartIndentations + 1 < getCurrentColumn()) {
-				return parseBlockMappingOrScalar(flowSequence);
-			} else {
-				return flowSequence;
-			}
+			return parseAliasOrAliasKeyMapping();
+		} else if (peekCharMatch('{') || peekCharMatch('[')) {
+			return parseFlowCollectionOrFlowKeyMapping();
 		} else {
 			return parseBlockMappingOrScalar(null);
 		}
 	}
+
+	/**
+	 * Reads a node preceded by an anchor like "&amp;anchor".
+	 */
+	private YamlNode parseAnchoredYamlNode() throws Exception {
+		final long anchorLine = getCurrentLine();
+		final long anchorColumn = getCurrentColumn();
+		readChar();
+		final String anchor = readUpToNext(false, null, '\n', ' ', '\t');
+		if (anchor == null || anchor.isEmpty()) {
+			throw new YamlParseException("Missing anchor name", anchorLine, anchorColumn);
+		}
+		skipToNextContent();
+
+		final YamlNode yamlNode;
+		String remainingAnchor = anchor;
+		if (getCurrentLine() == anchorLine && isIndicatorFollowedBySeparator('-')) {
+			throw new YamlParseException("Block sequence must not start on the line of its anchor", getCurrentLine(), getCurrentColumn());
+		} else if (getCurrentLine() == anchorLine) {
+			// Content on the line of the anchor: the block mapping parser takes the anchor for its
+			// first key, if the content turns out to be a block mapping, like "&anchor key: value"
+			final PendingNodeProperties outerPendingProperties = savePendingNodeProperties();
+			setPendingNodeProperties(null, anchor, anchorColumn);
+			try {
+				yamlNode = parseYamlNode();
+			} finally {
+				remainingAnchor = pendingNodeAnchor;
+				restorePendingNodeProperties(outerPendingProperties);
+			}
+		} else {
+			// An anchor on a line of its own belongs to the following node, also to a block mapping
+			yamlNode = parseYamlNode();
+		}
+
+		if (remainingAnchor != null) {
+			assignAnchor(yamlNode, remainingAnchor);
+		}
+		return yamlNode;
+	}
+
+	/**
+	 * Reads an alias, or a block mapping with an alias as first key like "*anchor : value".
+	 */
+	private YamlNode parseAliasOrAliasKeyMapping() throws Exception {
+		final PendingLeadingState pendingLeadingState = takePendingLeadingState();
+
+		final YamlNode alias = parseAlias();
+
+		applyPendingLeadingState(pendingLeadingState, alias);
+
+		if (isIndicatorFollowedBySeparator(':')) {
+			// Alias as key of a block mapping like "*anchor : value"
+			return parseBlockMappingOrScalar(alias);
+		}
+		return alias;
+	}
+
+	/**
+	 * Reads a flow collection in block context, or a block mapping with a flow collection as first
+	 * key like "[a, b]: value".
+	 */
+	private YamlNode parseFlowCollectionOrFlowKeyMapping() throws Exception {
+		final int flowStartIndentations = getNumberOfIndentationChars();
+		final long flowStartLine = getCurrentLine();
+		final PendingLeadingState pendingLeadingState = takePendingLeadingState();
+
+		final PendingNodeProperties flowProperties = takePendingNodePropertiesAtCurrentPosition();
+		YamlNode flowCollection = peekCharMatch('{') ? parseFlowMapping() : parseFlowSequence();
+		flowCollection = applyPendingNodeProperties(flowProperties, flowCollection);
+
+		applyPendingLeadingState(pendingLeadingState, flowCollection);
+
+		readUpToNextContent(flowCollection);
+
+		if (peekCharMatch(':') && flowStartIndentations + 1 < getCurrentColumn()) {
+			if (getCurrentLine() != flowStartLine) {
+				throw new YamlParseException("Implicit mapping key must be on a single line", getCurrentLine(), getCurrentColumn());
+			}
+			return parseBlockMappingOrScalar(flowCollection);
+		} else {
+			return flowCollection;
+		}
+	}
+
 
 	/**
 	 * Applies a YAML core schema tag like "!!str" to a node: scalars are converted to the tagged type,
@@ -1158,9 +1308,30 @@ public class YamlReader extends BasicReadAheadReader {
 			} else {
 				throw new Exception("Invalid data '" + yamlNode.getClass().getSimpleName() + "' for YAML datatype: '" + datatype + "'");
 			}
+		} else if ("set".equals(datatype)) {
+			// YAML 1.1 type: a mapping with null values only
+			if (yamlNode instanceof final YamlMapping mapping && mapping.values().stream().allMatch(YamlReader::isNullValue)) {
+				return yamlNode;
+			} else {
+				throw new Exception("Invalid data for YAML datatype: '" + datatype + "', expected a mapping with null values");
+			}
+		} else if ("omap".equals(datatype) || "pairs".equals(datatype)) {
+			// YAML 1.1 types: a sequence of mappings with a single entry each
+			if (yamlNode instanceof final YamlSequence sequence && sequence.items().stream().allMatch(item -> item instanceof final YamlMapping pair && pair.size() == 1)) {
+				return yamlNode;
+			} else {
+				throw new Exception("Invalid data for YAML datatype: '" + datatype + "', expected a sequence of single entry mappings");
+			}
 		} else {
 			throw new Exception("Unknown YAML datatype: '" + datatype + "'");
 		}
+	}
+
+	/**
+	 * Checks whether a node is a null scalar.
+	 */
+	private static boolean isNullValue(final YamlNode node) {
+		return node instanceof final YamlScalar scalar && scalar.getType() == YamlScalarType.NULL_VALUE;
 	}
 
 	/**
@@ -1175,8 +1346,9 @@ public class YamlReader extends BasicReadAheadReader {
 	 * @throws Exception
 	 *             if the node does not fit the datatype of the tag
 	 */
-	private static YamlNode applyTag(final String tag, final YamlNode yamlNode) throws Exception {
-		if (tag.startsWith("!!")) {
+	private YamlNode applyTag(final String tag, final YamlNode yamlNode) throws Exception {
+		checkTag(tag);
+		if (tag.startsWith("!!") && !secondaryTagHandleRedefined) {
 			return applyDatatype(tag.substring(2), yamlNode);
 		} else {
 			if (yamlNode instanceof final YamlScalar scalar && "!".equals(tag) && scalar.getType() != YamlScalarType.STRING && scalar.getType() != YamlScalarType.MULTILINE) {
@@ -1185,6 +1357,31 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 			yamlNode.setTag(tag);
 			return yamlNode;
+		}
+	}
+
+	/**
+	 * Checks the syntax of a tag and that a named tag handle is declared.
+	 *
+	 * @param tag
+	 *            the tag as written, starting with "!"
+	 * @throws YamlParseException
+	 *             if the tag is invalid
+	 */
+	private void checkTag(final String tag) throws YamlParseException {
+		if (tag.startsWith("!<")) {
+			// Verbatim tag
+			return;
+		}
+		for (final char character : tag.toCharArray()) {
+			if ("{}[],".indexOf(character) >= 0) {
+				throw new YamlParseException("Invalid character '" + character + "' in tag '" + tag + "'", getCurrentLine(), getCurrentColumn());
+			}
+		}
+		// A named tag handle like "!e!" must be declared by a "%TAG" directive of the document
+		final int handleEnd = tag.indexOf('!', 1);
+		if (handleEnd > 1 && !currentTagHandles.contains(tag.substring(0, handleEnd + 1))) {
+			throw new YamlParseException("Tag handle '" + tag.substring(0, handleEnd + 1) + "' is not declared by a %TAG directive", getCurrentLine(), getCurrentColumn());
 		}
 	}
 
@@ -1233,7 +1430,315 @@ public class YamlReader extends BasicReadAheadReader {
 		return target;
 	}
 
-	private YamlNode parseAlias() throws Exception {
+	/**
+	 * True if the last quoted scalar read by {@link #readQuotedScalar(char)} spanned several lines.
+	 */
+	private boolean lastQuotedScalarWasMultiline = false;
+
+	/**
+	 * The last quoted scalar node, which spanned several lines and therefore must not be used as an
+	 * implicit mapping key. Null if there is none.
+	 */
+	private YamlNode lastMultilineQuotedScalarNode = null;
+
+	/**
+	 * Reads a quoted scalar node, see {@link #readQuotedScalar(char)}.
+	 *
+	 * @param quoteChar
+	 *            '"' or '\''
+	 * @return the scalar node
+	 */
+	private YamlScalar readQuotedScalarNode(final char quoteChar) throws Exception {
+		final YamlScalar scalar = new YamlScalar(readQuotedScalar(quoteChar), YamlScalarType.STRING).withQuoteType(quoteChar == '"' ? YamlStringQuoteType.DOUBLE : YamlStringQuoteType.SINGLE);
+		lastMultilineQuotedScalarNode = lastQuotedScalarWasMultiline ? scalar : null;
+		return scalar;
+	}
+
+	/**
+	 * Checks that a node about to be used as implicit block mapping key is not a quoted scalar spanning several lines.
+	 */
+	private void checkImplicitKey(final YamlNode keyNode) throws YamlParseException {
+		if (keyNode != null && keyNode == lastMultilineQuotedScalarNode) {
+			throw new YamlParseException("Implicit mapping key must not span several lines", getCurrentLine(), getCurrentColumn());
+		}
+	}
+
+	/**
+	 * Reads a single or double quoted scalar including its quotes, following the YAML rules for
+	 * escape sequences (double quoted only) and line folding: a single linebreak becomes a blank, n
+	 * linebreaks in a row become n-1 linebreaks, and blanks around linebreaks are removed. An escaped
+	 * linebreak in a double quoted scalar joins the lines without a blank and keeps the blanks before
+	 * it.
+	 *
+	 * @param quoteChar
+	 *            '"' or '\''
+	 * @return the text of the scalar
+	 * @throws YamlParseException
+	 *             if the scalar is not closed, contains an invalid escape sequence or a document
+	 *             marker, or a continuation line is not indented deep enough
+	 */
+	private String readQuotedScalar(final char quoteChar) throws Exception {
+		final long startLine = getCurrentLine();
+		final long startColumn = getCurrentColumn();
+		if (peekCharNotMatch(quoteChar)) {
+			throw new YamlParseException("Expected quote character not found", startLine, startColumn);
+		}
+		readChar();
+		lastQuotedScalarWasMultiline = false;
+
+		final StringBuilder text = new StringBuilder();
+		// Text up to this length must not be trimmed at a linebreak, because it was written escaped
+		int protectedLength = 0;
+		while (true) {
+			if (isEOF()) {
+				throw new YamlParseException("Missing closing quote character for quoted string", startLine, startColumn);
+			}
+			final char nextChar = peekChar();
+			if (nextChar == quoteChar) {
+				readChar();
+				if (quoteChar == '\'' && peekCharMatch('\'')) {
+					// Doubled single quote represents a single quote
+					readChar();
+					text.append('\'');
+					protectedLength = text.length();
+				} else {
+					return text.toString();
+				}
+			} else if (nextChar == '\\' && quoteChar == '"') {
+				readChar();
+				if (isEOF()) {
+					throw new YamlParseException("Missing closing quote character for quoted string", startLine, startColumn);
+				} else if (peekCharMatch('\n')) {
+					// Escaped linebreak: the lines are joined without blank, blanks before the escape are kept
+					readChar();
+					protectedLength = text.length();
+					final int emptyLines = skipQuotedScalarLinePrefixes(startLine, startColumn);
+					text.append("\n".repeat(emptyLines));
+					protectedLength = text.length();
+				} else {
+					appendEscapedCharacter(text);
+					protectedLength = text.length();
+				}
+			} else if (nextChar == '\n') {
+				readChar();
+				// Blanks before a linebreak are no content
+				int textEnd = text.length();
+				while (textEnd > protectedLength && (text.charAt(textEnd - 1) == ' ' || text.charAt(textEnd - 1) == '\t')) {
+					textEnd--;
+				}
+				text.setLength(textEnd);
+				final int emptyLines = skipQuotedScalarLinePrefixes(startLine, startColumn);
+				if (emptyLines == 0) {
+					text.append(' ');
+				} else {
+					text.append("\n".repeat(emptyLines));
+				}
+				protectedLength = text.length();
+			} else {
+				text.append(readChar());
+			}
+		}
+	}
+
+	/**
+	 * Skips the leading blanks of the continuation lines of a quoted scalar after a linebreak and the
+	 * empty lines in between.
+	 *
+	 * @return the number of empty lines skipped
+	 * @throws YamlParseException
+	 *             if a line starts with a document marker or is not indented deep enough
+	 */
+	private int skipQuotedScalarLinePrefixes(final long startLine, final long startColumn) throws Exception {
+		lastQuotedScalarWasMultiline = true;
+		int emptyLines = 0;
+		while (true) {
+			if (isEOF()) {
+				throw new YamlParseException("Missing closing quote character for quoted string", startLine, startColumn);
+			} else if (isDocumentMarkerAtLineStart()) {
+				throw new YamlParseException("Document marker within quoted string", getCurrentLine(), getCurrentColumn());
+			}
+			int leadingSpaces = 0;
+			while (peekCharMatch(' ')) {
+				readChar();
+				leadingSpaces++;
+			}
+			skipBlanks();
+			if (peekCharMatch('\n')) {
+				readChar();
+				emptyLines++;
+			} else {
+				if (flowLevel == 0 && leadingSpaces <= blockParentIndentation && isNotEOF()) {
+					throw new YamlParseException("Continuation line of quoted string is not indented enough", getCurrentLine(), getCurrentColumn());
+				}
+				return emptyLines;
+			}
+		}
+	}
+
+	/**
+	 * The character read last, null at the beginning of the data.
+	 */
+	private Character lastReadCharacter = null;
+
+	@Override
+	protected Character readChar() throws IOException {
+		final Character character = super.readChar();
+		lastReadCharacter = character;
+		return character;
+	}
+
+	/**
+	 * Checks that a comment at the read position is separated from preceding content by a blank.
+	 *
+	 * @throws YamlParseException
+	 *             if a '#' directly follows content
+	 */
+	private void checkCommentSeparation() throws YamlParseException {
+		if (peekCharMatch('#') && getCurrentColumn() > 1 && lastReadCharacter != null && lastReadCharacter != ' ' && lastReadCharacter != '\t' && lastReadCharacter != '\n') {
+			throw new YamlParseException("Comment must be separated from content by a blank", getCurrentLine(), getCurrentColumn());
+		}
+	}
+
+	/**
+	 * Checks the rest of the line after a quoted scalar or a flow collection in block context: only
+	 * blanks, a comment or the ':' of a mapping key may follow.
+	 *
+	 * @throws YamlParseException
+	 *             if other content follows or a comment is not separated by a blank
+	 */
+	private void checkEndOfBlockValueLine() throws Exception {
+		checkCommentSeparation();
+		skipBlanks();
+		if (isNotEOF() && peekCharNotMatch('\n') && peekCharNotMatch('#') && peekCharNotMatch(':')) {
+			throw new YamlParseException("Unexpected content after value", getCurrentLine(), getCurrentColumn());
+		}
+	}
+
+	/**
+	 * Leaves a flow collection after its closing bracket was read. The rest of the line after the
+	 * outermost flow collection is checked, see {@link #checkEndOfBlockValueLine()}.
+	 */
+	private void closeFlowCollection() throws Exception {
+		flowLevel--;
+		final List<Integer> indentationsBeforeFlowCollection = flowIndentationSnapshots.pop();
+		indentations.clear();
+		indentations.addAll(indentationsBeforeFlowCollection);
+		if (flowLevel == 0) {
+			checkEndOfBlockValueLine();
+		}
+	}
+
+	/**
+	 * Checks whether the next character is the given indicator followed by a blank, a linebreak or
+	 * the end of the data, like "- " of a sequence item.
+	 */
+	private boolean isIndicatorFollowedBySeparator(final char indicator) {
+		return peekCharMatch(indicator) && (peekNextChar(1) == null || peekNextCharMatchAny(1, " \t\n"));
+	}
+
+	/**
+	 * Checks whether the read position is at the beginning of a line with a document marker "---" or
+	 * "..." followed by a blank, a linebreak or the end of the data.
+	 */
+	private boolean isDocumentMarkerAtLineStart() {
+		if (getCurrentColumn() != 1) {
+			return false;
+		}
+		final boolean dashes = peekCharMatch('-') && peekNextCharMatch(1, '-') && peekNextCharMatch(2, '-');
+		final boolean dots = peekCharMatch('.') && peekNextCharMatch(1, '.') && peekNextCharMatch(2, '.');
+		return (dashes || dots) && (peekNextChar(3) == null || peekNextCharMatchAny(3, " \t\n"));
+	}
+
+	/**
+	 * Reads the character(s) of an escape sequence in a double quoted scalar after the backslash and
+	 * appends the character it represents.
+	 */
+	private void appendEscapedCharacter(final StringBuilder text) throws Exception {
+		final long line = getCurrentLine();
+		final long column = getCurrentColumn();
+		final char escapedChar = readChar();
+		switch (escapedChar) {
+			case '0':
+				text.append('\0');
+				break;
+			case 'a':
+				text.append('\u0007');
+				break;
+			case 'b':
+				text.append('\b');
+				break;
+			case 't':
+			case '\t':
+				text.append('\t');
+				break;
+			case 'n':
+				text.append('\n');
+				break;
+			case 'v':
+				text.append('\u000B');
+				break;
+			case 'f':
+				text.append('\f');
+				break;
+			case 'r':
+				text.append('\r');
+				break;
+			case 'e':
+				text.append('\u001B');
+				break;
+			case ' ':
+			case '"':
+			case '/':
+			case '\\':
+				text.append(escapedChar);
+				break;
+			case 'N':
+				text.append('\u0085');
+				break;
+			case '_':
+				text.append(' ');
+				break;
+			case 'L':
+				text.append(' ');
+				break;
+			case 'P':
+				text.append(' ');
+				break;
+			case 'x':
+				text.appendCodePoint(readEscapedHexDigits(2, line, column));
+				break;
+			case 'u':
+				text.append((char) readEscapedHexDigits(4, line, column));
+				break;
+			case 'U':
+				final int codePoint = readEscapedHexDigits(8, line, column);
+				if (!Character.isValidCodePoint(codePoint) || (codePoint >= Character.MIN_SURROGATE && codePoint <= Character.MAX_SURROGATE)) {
+					throw new YamlParseException("Invalid unicode escape sequence", line, column);
+				}
+				text.appendCodePoint(codePoint);
+				break;
+			default:
+				throw new YamlParseException("Invalid escape sequence '\\" + escapedChar + "'", line, column);
+		}
+	}
+
+	private int readEscapedHexDigits(final int digitCount, final long line, final long column) throws Exception {
+		int value = 0;
+		for (int i = 0; i < digitCount; i++) {
+			final int digitValue = isEOF() ? -1 : Character.digit(peekChar(), 16);
+			if (digitValue < 0 || peekChar() > 'f') {
+				throw new YamlParseException("Invalid hexadecimal escape sequence", line, column);
+			}
+			readChar();
+			value = (value << 4) | digitValue;
+		}
+		return value;
+	}
+
+	/**
+	 * Reads an alias like "*anchor" and the blanks after it.
+	 */
+	private YamlAlias readAliasNode() throws Exception {
 		if (peekCharNotMatch('*')) {
 			throw new YamlParseException("Expected alias start not found", getCurrentLine(), getCurrentColumn());
 		}
@@ -1241,9 +1746,21 @@ public class YamlReader extends BasicReadAheadReader {
 		readChar();
 
 		final String anchorName = readUpToNext(false, null, '\n', ' ', '\t');
+		if (anchorName.isEmpty()) {
+			throw new YamlParseException("Missing alias name", getCurrentLine(), getCurrentColumn());
+		}
 		final YamlAlias alias = new YamlAlias(anchorName);
 
 		skipBlanks();
+		return alias;
+	}
+
+	private YamlNode parseAlias() throws Exception {
+		final YamlAlias alias = readAliasNode();
+		if (isIndicatorFollowedBySeparator(':')) {
+			// Alias as implicit mapping key, the caller reads the mapping
+			return alias;
+		}
 
 		if (peekCharMatch('#')) {
 			alias.setInlineComment(readInlineComment());
@@ -1264,33 +1781,25 @@ public class YamlReader extends BasicReadAheadReader {
 	}
 
 	private YamlNode parseBlockSequenceInternal() throws Exception {
-		if (peekCharNotMatch('-') || (peekNextCharNotMatch(1, ' ') && peekNextCharNotMatch(1, '\t') && peekNextCharNotMatch(1, '\n'))) {
+		if (!isIndicatorFollowedBySeparator('-')) {
 			throw new YamlParseException("Expected sequence start not found", getCurrentLine(), getCurrentColumn());
 		}
 
+		if (getCurrentLine() == blockCollectionForbiddenLine) {
+			throw new YamlParseException("Block sequence must not start on this line", getCurrentLine(), getCurrentColumn());
+		}
+		checkNoTabBeforeBlockCollection(getCurrentLine(), getCurrentColumn());
 		final int sequenceIndentation = (int) getCurrentColumn() - 1;
 
 		final YamlSequence sequence = new YamlSequence();
 		updatePath(YamlToken.YamlSequence_Start, null);
 
-		while (isNotEOF() && peekCharMatch('-') && (int) getCurrentColumn() - 1 == sequenceIndentation) {
-			if (peekCharMatch('-') && peekNextCharMatch(1, '-') && peekNextCharMatch(2, '-')) {
-				readChar();
-				readChar();
-				readChar();
-				documentContentStarted = true;
-			} else if (peekCharMatch('.') && peekNextCharMatch(1, '.') && peekNextCharMatch(2, '.')) {
-				readChar();
-				readChar();
-				readChar();
-				documentContentStarted = null;
+		while (isNotEOF() && peekCharMatch('-') && (int) getCurrentColumn() - 1 == sequenceIndentation && !isDocumentMarkerAtLineStart()) {
+			final YamlNode nextItemNode = readNextSequenceItem();
+			if (nextItemNode != null) {
+				sequence.add(nextItemNode);
 			} else {
-				final YamlNode nextItemNode = readNextSequenceItem();
-				if (nextItemNode != null) {
-					sequence.add(nextItemNode);
-				} else {
-					break;
-				}
+				break;
 			}
 		}
 
@@ -1302,7 +1811,7 @@ public class YamlReader extends BasicReadAheadReader {
 	private YamlNode readNextSequenceItem() throws Exception {
 		final PendingLeadingState pendingLeadingState = takePendingLeadingState();
 
-		if (peekCharMatch('-') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
+		if (isIndicatorFollowedBySeparator('-')) {
 			final int dashIndentation = (int) getCurrentColumn() - 1;
 			readChar();
 
@@ -1310,11 +1819,9 @@ public class YamlReader extends BasicReadAheadReader {
 			final int blanksAfterDash = skipBlanks();
 			final boolean noContentInItemLine = isEOF() || peekCharMatch('\n') || peekCharMatch('#');
 			if (noContentInItemLine) {
-				indentationsAdd(2);
-
 				// The item content may follow on the next lines, but only if they are indented deeper than the dash
 				final Boolean indentationChange = skipEmptyLinesAndReadNextIndentationAndLeadingComments();
-				if (isEOF() || Boolean.FALSE.equals(indentationChange)) {
+				if (isEOF() || !Boolean.TRUE.equals(indentationChange) || (int) getCurrentColumn() - 1 <= dashIndentation) {
 					// Empty item like "-" followed by the next item or a less indented line: the value is null
 					final YamlScalar nullItemNode = new YamlScalar(null);
 					applyPendingLeadingState(pendingLeadingState, nullItemNode);
@@ -1367,84 +1874,218 @@ public class YamlReader extends BasicReadAheadReader {
 		}
 	}
 
-	private YamlNode parseBlockMappingOrScalarInternal(final YamlNode firstKeyNode, final String firstKeyTag, final String firstKeyAnchor, final long firstKeyColumn, final boolean[] firstKeyPropertiesUsed) throws Exception {
-		final int mappingIndentation = getNumberOfIndentationChars();
+	/**
+	 * True if the key read last by {@link #readBlockMappingKey(int, long)} was an explicit key "? key".
+	 */
+	private boolean lastBlockMappingKeyWasExplicit = false;
 
-		YamlNode keyOrScalarNode;
-		if (firstKeyNode != null) {
-			keyOrScalarNode = firstKeyNode;
-		} else {
-			// Comments collected while parsing the node itself (e.g. by a multiline block
-			// scalar's own lookahead past its content, which may run into a trailing comment
-			// belonging to whatever follows) must not be mistaken for comments that preceded
-			// this node; only comments already pending before parsing started belong to it.
-			final int leadingCommentsCountBeforeNode = pendingLeadingComments.size();
-			final int leadingEmptyLinesCountBeforeNode = pendingLeadingEmptyLines;
-			final int postCommentEmptyLinesCountBeforeNode = pendingTrailingEmptyLinesAfterComments;
+	/**
+	 * Reads the first key of a possible block mapping, which may also turn out to be a simple
+	 * scalar, and assigns the comments and empty lines pending before it.
+	 * <p>
+	 * Kept separate from {@link #parseBlockMappingOrScalarInternal}, so the stack frame of the
+	 * recursion per nesting level stays small.
+	 * </p>
+	 */
+	private YamlNode readFirstBlockMappingKeyOrScalar(final int mappingIndentation, final long firstKeyColumn) throws Exception {
+		// Comments collected while parsing the node itself (e.g. by a multiline block
+		// scalar's own lookahead past its content, which may run into a trailing comment
+		// belonging to whatever follows) must not be mistaken for comments that preceded
+		// this node; only comments already pending before parsing started belong to it.
+		final int leadingCommentsCountBeforeNode = pendingLeadingComments.size();
+		final int leadingEmptyLinesCountBeforeNode = pendingLeadingEmptyLines;
+		final int postCommentEmptyLinesCountBeforeNode = pendingTrailingEmptyLinesAfterComments;
 
-			if (peekCharMatch('\"')) {
-				if (firstKeyColumn - 1 - getNumberOfIndentationChars() > 0) {
-					indentationsAdd((int) firstKeyColumn - 1 - getNumberOfIndentationChars());
-				}
-				keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.DOUBLE);
-				skipBlanks();
-				if (peekCharMatch('#')) {
-					keyOrScalarNode.setInlineComment(readInlineComment());
-				}
-			} else if (peekCharMatch('\'')) {
-				if (firstKeyColumn - 1 - getNumberOfIndentationChars() > 0) {
-					indentationsAdd((int) firstKeyColumn - 1 - getNumberOfIndentationChars());
-				}
-				keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.SINGLE);
-				skipBlanks();
-				if (peekCharMatch('#')) {
-					keyOrScalarNode.setInlineComment(readInlineComment());
-				}
-			} else if (peekCharMatch('[')) {
-				keyOrScalarNode = parseFlowSequence();
-			} else if (peekCharMatch('{')) {
-				keyOrScalarNode = parseFlowMapping();
-			} else if (peekCharMatch('?') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
-				readChar();
-				skipBlanks();
-				indentationsAdd(2);
-				// Complex key: this node is a mapping
-				checkNestingDepth();
-				keyOrScalarNode = parseYamlNode();
+		final YamlNode keyOrScalarNode = readBlockMappingKey(mappingIndentation, firstKeyColumn);
+
+		// A nested node (like an explicit key) may already have taken the pending comments
+		final int leadingCommentsOfNode = Math.min(leadingCommentsCountBeforeNode, pendingLeadingComments.size());
+		if (leadingCommentsOfNode > 0) {
+			for (final String commentLine1 : pendingLeadingComments.subList(0, leadingCommentsOfNode)) {
+				keyOrScalarNode.addLeadingComment(commentLine1);
+			}
+			pendingLeadingComments = new ArrayList<>(
+					pendingLeadingComments.subList(leadingCommentsOfNode, pendingLeadingComments.size()));
+		}
+
+		if (leadingEmptyLinesCountBeforeNode > 0) {
+			keyOrScalarNode.setLeadingEmptyLinesCount(leadingEmptyLinesCountBeforeNode);
+			pendingLeadingEmptyLines -= leadingEmptyLinesCountBeforeNode;
+		}
+
+		if (postCommentEmptyLinesCountBeforeNode > 0) {
+			keyOrScalarNode.setPostCommentEmptyLinesCount(postCommentEmptyLinesCountBeforeNode);
+			pendingTrailingEmptyLinesAfterComments -= postCommentEmptyLinesCountBeforeNode;
+		}
+
+		skipBlanks();
+		return keyOrScalarNode;
+	}
+
+	/**
+	 * Reads a further key of a block mapping including its tag and anchor in any order, like
+	 * "&amp;anchor !tag key: value", and assigns the comments and empty lines pending before it.
+	 */
+	private YamlNode readFurtherBlockMappingKey(final int mappingIndentation) throws Exception {
+		String keyTag = null;
+		String keyAnchor = null;
+		// Column of the key including its properties, which decides the indentation
+		final long keyColumn = getCurrentColumn();
+		while ((peekCharMatch('!') && keyTag == null) || (peekCharMatch('&') && keyAnchor == null)) {
+			if (peekCharMatch('!')) {
+				keyTag = readUpToNext(false, null, ' ', '\t', '\n');
 			} else {
-				if (firstKeyColumn - 1 - getNumberOfIndentationChars() > 0) {
-					indentationsAdd((int) firstKeyColumn - 1 - getNumberOfIndentationChars());
-				}
-				keyOrScalarNode = readUnquotedScalarString(mappingIndentation);
+				readChar();
+				keyAnchor = readUpToNext(false, null, ' ', '\t', '\n');
 			}
-
-			if (leadingCommentsCountBeforeNode > 0) {
-				for (final String commentLine1 : pendingLeadingComments.subList(0, leadingCommentsCountBeforeNode)) {
-					keyOrScalarNode.addLeadingComment(commentLine1);
-				}
-				pendingLeadingComments = new ArrayList<>(
-						pendingLeadingComments.subList(leadingCommentsCountBeforeNode, pendingLeadingComments.size()));
-			}
-
-			if (leadingEmptyLinesCountBeforeNode > 0) {
-				keyOrScalarNode.setLeadingEmptyLinesCount(leadingEmptyLinesCountBeforeNode);
-				pendingLeadingEmptyLines -= leadingEmptyLinesCountBeforeNode;
-			}
-
-			if (postCommentEmptyLinesCountBeforeNode > 0) {
-				keyOrScalarNode.setPostCommentEmptyLinesCount(postCommentEmptyLinesCountBeforeNode);
-				pendingTrailingEmptyLinesAfterComments -= postCommentEmptyLinesCountBeforeNode;
-			}
-
 			skipBlanks();
 		}
 
-		if (peekCharMatch(':')
-				&& mappingIndentation < getCurrentColumn()
-				&& (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
-			readChar();
+		YamlNode keyNode = readBlockMappingKey(mappingIndentation, keyColumn);
 
-			String pendingAnchor = readUpToNextContent(keyOrScalarNode);
+		if (keyTag != null) {
+			keyNode = applyTag(keyTag, keyNode);
+		}
+		if (keyAnchor != null) {
+			assignAnchor(keyNode, keyAnchor);
+		}
+
+		applyAndClearPendingLeadingState(keyNode);
+
+		skipBlanks();
+		return keyNode;
+	}
+
+	/**
+	 * Reads a key of a block mapping, which may also turn out to be a simple scalar: a quoted or
+	 * plain scalar, a flow collection, an alias or an explicit key "? key". Sets
+	 * {@link #lastBlockMappingKeyWasExplicit}.
+	 *
+	 * @param mappingIndentation
+	 *            the indentation of the mapping
+	 * @param keyColumn
+	 *            the column of the key including its properties
+	 */
+	private YamlNode readBlockMappingKey(final int mappingIndentation, final long keyColumn) throws Exception {
+		lastBlockMappingKeyWasExplicit = false;
+		final YamlNode keyNode;
+		if (peekCharMatch('\"') || peekCharMatch('\'')) {
+			if (keyColumn - 1 - getNumberOfIndentationChars() > 0) {
+				indentationsAdd((int) keyColumn - 1 - getNumberOfIndentationChars());
+			}
+			keyNode = readQuotedScalarNode(peekChar());
+			checkEndOfBlockValueLine();
+			skipBlanks();
+			if (peekCharMatch('#')) {
+				keyNode.setInlineComment(readInlineComment());
+			}
+		} else if (peekCharMatch('[')) {
+			keyNode = parseFlowSequence();
+		} else if (peekCharMatch('{')) {
+			keyNode = parseFlowMapping();
+		} else if (peekCharMatch('*')) {
+			keyNode = readAliasNode();
+		} else if (isIndicatorFollowedBySeparator('?')) {
+			readChar();
+			lastBlockMappingKeyWasExplicit = true;
+			skipBlanks();
+			// Complex key: this node is a mapping
+			checkNestingDepth();
+			if (isEOF() || peekCharMatch('\n') || peekCharMatch('#')) {
+				// The explicit key starts on the next line, it may be a block sequence at the indentation of the mapping
+				skipToNextContent();
+				if (isNotEOF() && (getCurrentColumn() - 1 > mappingIndentation || (getCurrentColumn() - 1 == mappingIndentation && isIndicatorFollowedBySeparator('-')))) {
+					keyNode = parseYamlNode(mappingIndentation, true);
+				} else {
+					// Empty explicit key
+					keyNode = new YamlScalar(null);
+				}
+			} else {
+				indentationsAdd(2);
+				// The explicit key belongs to this mapping
+				final int outerBlockParentIndentation = blockParentIndentation;
+				blockParentIndentation = mappingIndentation;
+				try {
+					keyNode = parseYamlNode();
+				} finally {
+					blockParentIndentation = outerBlockParentIndentation;
+				}
+			}
+			// A nested parse may have read further keys, the flag belongs to this key
+			lastBlockMappingKeyWasExplicit = true;
+		} else {
+			if (keyColumn - 1 - getNumberOfIndentationChars() > 0) {
+				indentationsAdd((int) keyColumn - 1 - getNumberOfIndentationChars());
+			}
+			keyNode = readUnquotedScalarString(mappingIndentation);
+		}
+		return keyNode;
+	}
+
+	/**
+	 * Reads the ':' after a block mapping key and the blanks, comment and anchor up to the value.
+	 * The rest of the line of an implicit key may not contain a block collection.
+	 *
+	 * @return the anchor of the value, or null
+	 */
+	private String readBlockMappingValueIndicator(final YamlNode keyNode, final boolean explicitKey) throws Exception {
+		readChar();
+		final long colonLine = getCurrentLine();
+		final String valueAnchor = readUpToNextContent(keyNode);
+		if (!explicitKey && getCurrentLine() == colonLine) {
+			// No block collection may start in the rest of the line of an implicit key, like "key: - item"
+			blockCollectionForbiddenLine = colonLine;
+		}
+		return valueAnchor;
+	}
+
+	/**
+	 * Reads the value of a block mapping entry after its ':', or returns an empty value if the value
+	 * is missing.
+	 */
+	private YamlNode readBlockMappingValue(final int mappingIndentation, final boolean valueIndicatorRead, final String valueAnchor) throws Exception {
+		final YamlNode valueNode;
+		if (valueIndicatorRead && (getCurrentColumn() - 1 > mappingIndentation || isIndicatorFollowedBySeparator('-'))) {
+			valueNode = parseYamlNode(mappingIndentation, true);
+		} else {
+			// Empty mapping property value
+			valueNode = new YamlScalar("", YamlScalarType.NULL_VALUE);
+		}
+		if (valueAnchor != null) {
+			assignAnchor(valueNode, valueAnchor);
+		}
+		return valueNode;
+	}
+
+	private YamlNode parseBlockMappingOrScalarInternal(final YamlNode firstKeyNode, final String firstKeyTag, final String firstKeyAnchor, final long firstKeyColumn, final boolean[] firstKeyPropertiesUsed) throws Exception {
+		final int mappingIndentation = getNumberOfIndentationChars();
+		final long firstKeyLine = getCurrentLine();
+
+		YamlNode keyOrScalarNode;
+		final boolean explicitKey;
+		if (firstKeyNode != null) {
+			keyOrScalarNode = firstKeyNode;
+			explicitKey = false;
+		} else {
+			keyOrScalarNode = readFirstBlockMappingKeyOrScalar(mappingIndentation, firstKeyColumn);
+			explicitKey = lastBlockMappingKeyWasExplicit;
+		}
+
+		// The ':' of an implicit key is on the line of the key
+		final boolean colonFollows = peekCharMatch(':')
+				&& mappingIndentation < getCurrentColumn()
+				&& (peekNextChar(1) == null || peekNextCharMatchAny(1, " \t\n"))
+				&& (explicitKey || firstKeyNode != null || getCurrentLine() == firstKeyLine);
+		// An explicit key "? key" is a mapping entry, also without value
+		if (colonFollows || (explicitKey && getNumberOfIndentationChars() == mappingIndentation)) {
+			if (!explicitKey) {
+				checkImplicitKey(keyOrScalarNode);
+				if (firstKeyLine == blockCollectionForbiddenLine) {
+					throw new YamlParseException("Block mapping must not start on this line", getCurrentLine(), getCurrentColumn());
+				}
+				checkNoTabBeforeBlockCollection(firstKeyLine, firstKeyColumn);
+			}
+			final String valueAnchor = colonFollows ? readBlockMappingValueIndicator(keyOrScalarNode, explicitKey) : null;
 
 			checkNestingDepth();
 			if (firstKeyTag != null) {
@@ -1458,141 +2099,49 @@ public class YamlReader extends BasicReadAheadReader {
 			updatePath(YamlToken.YamlMapping_Start, null);
 			updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
 
-			YamlNode valueNode;
-			if (getCurrentColumn() - 1 > mappingIndentation
-					|| (peekCharMatch('-') && peekNextCharMatchAny(1, " \t\n"))) {
-				valueNode = parseYamlNode(mappingIndentation, true);
-			} else {
-				// Empty mapping property value
-				valueNode = new YamlScalar("", YamlScalarType.NULL_VALUE);
-			}
-
-			if (pendingAnchor != null) {
-				assignAnchor(valueNode, pendingAnchor);
-				pendingAnchor = null;
-			}
-
-			mapping.add(keyOrScalarNode, valueNode);
+			mapping.add(keyOrScalarNode, readBlockMappingValue(mappingIndentation, colonFollows, valueAnchor));
 
 			while (isNotEOF() && getNumberOfIndentationChars() == mappingIndentation) {
-				if (peekCharMatch('.') && peekNextCharMatch(1, '.') && peekNextCharMatch(2, '.')) {
-					readChar();
-					readChar();
-					readChar();
-					documentContentStarted = null;
-					pendingAnchor = readUpToNextContent(null);
-					return mapping;
-				} else if (peekCharMatch('-') && peekNextCharMatch(1, '-') && peekNextCharMatch(2, '-')) {
-					readChar();
-					readChar();
-					readChar();
-					documentContentStarted = true;
-					pendingAnchor = readUpToNextContent(null);
+				if (isDocumentMarkerAtLineStart()) {
+					// End of the document, the marker is read by parseDocument()
+					updatePath(YamlToken.YamlMapping_End, null);
 					return mapping;
 				}
 
-				// Tag and anchor of the key in any order, like "&anchor !tag key: value"
-				String keyTag = null;
-				String keyAnchor = null;
-				// Column of the key including its properties, which decides the indentation
-				final long keyColumn = getCurrentColumn();
-				while ((peekCharMatch('!') && keyTag == null) || (peekCharMatch('&') && keyAnchor == null)) {
-					if (peekCharMatch('!')) {
-						keyTag = readUpToNext(false, null, ' ', '\t', '\n');
-					} else {
-						readChar();
-						keyAnchor = readUpToNext(false, null, ' ', '\t', '\n');
-					}
-					skipBlanks();
-				}
-
-				if (peekCharMatch('\"')) {
-					if (keyColumn - 1 - getNumberOfIndentationChars() > 0) {
-						indentationsAdd((int) keyColumn - 1 - getNumberOfIndentationChars());
-					}
-					keyOrScalarNode = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.DOUBLE);
-					skipBlanks();
-					if (peekCharMatch('#')) {
-						keyOrScalarNode.setInlineComment(readInlineComment());
-					}
-				} else if (peekCharMatch('\'')) {
-					if (keyColumn - 1 - getNumberOfIndentationChars() > 0) {
-						indentationsAdd((int) keyColumn - 1 - getNumberOfIndentationChars());
-					}
-					keyOrScalarNode = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.SINGLE);
-					skipBlanks();
-					if (peekCharMatch('#')) {
-						keyOrScalarNode.setInlineComment(readInlineComment());
-					}
-				} else if (peekCharMatch('[')) {
-					keyOrScalarNode = parseFlowSequence();
-				} else if (peekCharMatch('{')) {
-					keyOrScalarNode = parseFlowMapping();
-				} else if (peekCharMatch('?') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
-					readChar();
-					skipBlanks();
-					indentationsAdd(2);
-					keyOrScalarNode = parseYamlNode();
-				} else {
-					if (keyColumn - 1 - getNumberOfIndentationChars() > 0) {
-						indentationsAdd((int) keyColumn - 1 - getNumberOfIndentationChars());
-					}
-					keyOrScalarNode = readUnquotedScalarString(mappingIndentation);
-				}
-
-				if (keyTag != null) {
-					keyOrScalarNode = applyTag(keyTag, keyOrScalarNode);
-				}
-				if (keyAnchor != null) {
-					assignAnchor(keyOrScalarNode, keyAnchor);
-				}
-
-				applyAndClearPendingLeadingState(keyOrScalarNode);
-
-				skipBlanks();
+				keyOrScalarNode = readFurtherBlockMappingKey(mappingIndentation);
+				final boolean keyIsExplicit = lastBlockMappingKeyWasExplicit;
 
 				if (peekCharMatch(':')
 						&& mappingIndentation < getCurrentColumn()
-						&& (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
-					readChar();
-
-					pendingAnchor = readUpToNextContent(keyOrScalarNode);
-
+						&& (peekNextChar(1) == null || peekNextCharMatchAny(1, " \t\n"))) {
+					if (!keyIsExplicit) {
+						checkImplicitKey(keyOrScalarNode);
+					}
+					final String entryValueAnchor = readBlockMappingValueIndicator(keyOrScalarNode, keyIsExplicit);
 					updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
-
-					if (getCurrentColumn() - 1 > mappingIndentation
-							|| (peekCharMatch('-') && peekNextCharMatchAny(1, " \t\n"))) {
-						valueNode = parseYamlNode(mappingIndentation, true);
-					} else {
-						// Empty mapping property value
-						valueNode = new YamlScalar("", YamlScalarType.NULL_VALUE);
-					}
-					if (pendingAnchor != null) {
-						assignAnchor(valueNode, pendingAnchor);
-						pendingAnchor = null;
-					}
-
-					mapping.add(keyOrScalarNode, valueNode);
+					mapping.add(keyOrScalarNode, readBlockMappingValue(mappingIndentation, true, entryValueAnchor));
+				} else if (keyIsExplicit && getNumberOfIndentationChars() == mappingIndentation) {
+					// Explicit key without value
+					updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
+					mapping.add(keyOrScalarNode, new YamlScalar("", YamlScalarType.NULL_VALUE));
 				} else {
 					throw new YamlParseException("Invalid YAML data when expecting mapping key found", getCurrentLine(), getCurrentColumn());
 				}
 			}
 
-			pendingAnchor = readUpToNextContent(null);
+			final String mappingAnchor = readUpToNextContent(null);
 
 			updatePath(YamlToken.YamlMapping_End, null);
 
-			if (pendingAnchor != null) {
-				assignAnchor(mapping, pendingAnchor);
-				pendingAnchor = null;
+			if (mappingAnchor != null) {
+				assignAnchor(mapping, mappingAnchor);
 			}
 
 			return mapping;
 		} else {
-			String pendingAnchor = readUpToNextContent(null);
+			final String pendingAnchor = readUpToNextContent(null);
 			if (pendingAnchor != null) {
 				assignAnchor(keyOrScalarNode, pendingAnchor);
-				pendingAnchor = null;
 			}
 
 			updatePath(YamlToken.YamlScalar, null);
@@ -1602,11 +2151,19 @@ public class YamlReader extends BasicReadAheadReader {
 
 	private YamlNode parseFlowMapping() throws Exception {
 		enterNesting();
+		final int outerFlowLevel = flowLevel;
 		flowLevel++;
+		// Lines within flow collections do not change the block indentation, see closeFlowCollection()
+		flowIndentationSnapshots.push(new ArrayList<>(indentations));
+		final int snapshotCount = flowIndentationSnapshots.size();
 		try {
 			return parseFlowMappingInternal();
 		} finally {
-			flowLevel--;
+			// The closing bracket may already have decreased the flow level and restored the indentations
+			flowLevel = outerFlowLevel;
+			while (flowIndentationSnapshots.size() >= snapshotCount) {
+				flowIndentationSnapshots.pop();
+			}
 			nestingDepth--;
 		}
 	}
@@ -1628,6 +2185,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 		if (peekCharMatch('}')) {
 			readChar();
+			closeFlowCollection();
 			return mapping;
 		}
 
@@ -1640,6 +2198,16 @@ public class YamlReader extends BasicReadAheadReader {
 				pendingAnchor = keyAnchor;
 			}
 
+			if (peekCharMatch(',')) {
+				throw new YamlParseException("Empty flow mapping entry", getCurrentLine(), getCurrentColumn());
+			} else if (peekCharMatch('}') && pendingAnchor == null) {
+				// Closing bracket after a trailing ','
+				readChar();
+				closeFlowCollection();
+				readUpToNextContent(mapping);
+				updatePath(YamlToken.YamlMapping_End, null);
+				return mapping;
+			}
 			final YamlNode keyNode = parseFlowNode();
 			if (pendingAnchor != null) {
 				assignAnchor(keyNode, pendingAnchor);
@@ -1658,6 +2226,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 			if (peekCharMatch('}')) {
 				readChar();
+				closeFlowCollection();
 
 				mapping.add(keyNode, new YamlScalar("null", YamlScalarType.NULL_VALUE));
 
@@ -1676,7 +2245,7 @@ public class YamlReader extends BasicReadAheadReader {
 				pendingAnchor = readUpToNextContent(keyNode);
 
 				mapping.add(keyNode, new YamlScalar(null));
-			} else if (peekCharMatch(':') && peekNextCharMatchAny(1, ", \t\n")) {
+			} else if (peekCharMatch(':') && (peekNextChar(1) == null || peekNextCharMatchAny(1, ", \t\n]}") || isJsonLikeNode(keyNode))) {
 				readChar();
 
 				indentationsAdd(1);
@@ -1728,6 +2297,9 @@ public class YamlReader extends BasicReadAheadReader {
 					if (peekCharMatch('}') || peekCharMatch(',')) {
 						mapIsClosed = peekCharMatch('}');
 						readChar();
+						if (mapIsClosed) {
+							closeFlowCollection();
+						}
 
 						// An anchor after ',' belongs to the next key
 						pendingAnchor = readUpToNextContent(valueNode);
@@ -1757,17 +2329,24 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 		}
 
-		updatePath(YamlToken.YamlMapping_End, null);
-		return mapping;
+		throw new YamlParseException("Missing closing bracket '}' of flow mapping", getCurrentLine(), getCurrentColumn());
 	}
 
 	private YamlNode parseFlowSequence() throws Exception {
 		enterNesting();
+		final int outerFlowLevel = flowLevel;
 		flowLevel++;
+		// Lines within flow collections do not change the block indentation, see closeFlowCollection()
+		flowIndentationSnapshots.push(new ArrayList<>(indentations));
+		final int snapshotCount = flowIndentationSnapshots.size();
 		try {
 			return parseFlowSequenceInternal();
 		} finally {
-			flowLevel--;
+			// The closing bracket may already have decreased the flow level and restored the indentations
+			flowLevel = outerFlowLevel;
+			while (flowIndentationSnapshots.size() >= snapshotCount) {
+				flowIndentationSnapshots.pop();
+			}
 			nestingDepth--;
 		}
 	}
@@ -1789,6 +2368,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 		if (peekCharMatch(']')) {
 			readChar();
+			closeFlowCollection();
 			return sequence;
 		}
 
@@ -1802,8 +2382,12 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 
 			final YamlNode itemNode;
-			if (peekCharMatch(']')) {
+			final long itemLine = getCurrentLine();
+			if (peekCharMatch(',')) {
+				throw new YamlParseException("Empty flow sequence entry", getCurrentLine(), getCurrentColumn());
+			} else if (peekCharMatch(']')) {
 				readChar();
+				closeFlowCollection();
 
 				readUpToNextContent(sequence);
 
@@ -1812,6 +2396,7 @@ public class YamlReader extends BasicReadAheadReader {
 			} else {
 				itemNode = parseFlowNode();
 			}
+			final boolean itemIsExplicitKey = lastFlowNodeWasExplicitKey;
 
 			if (pendingAnchor != null) {
 				assignAnchor(itemNode, pendingAnchor);
@@ -1831,6 +2416,7 @@ public class YamlReader extends BasicReadAheadReader {
 			if (peekCharMatch(']')) {
 				sequence.add(itemNode);
 				readChar();
+				closeFlowCollection();
 
 				pendingAnchor = readUpToNextContent(sequence);
 				if (pendingAnchor != null) {
@@ -1847,6 +2433,9 @@ public class YamlReader extends BasicReadAheadReader {
 				// An anchor after ',' belongs to the next item
 				pendingAnchor = readUpToNextContent(itemNode);
 			} else if (peekCharMatch(':')) {
+				if (getCurrentLine() != itemLine && !itemIsExplicitKey) {
+					throw new YamlParseException("Implicit key of a flow sequence entry must be on a single line", getCurrentLine(), getCurrentColumn());
+				}
 				readChar();
 
 				indentationsAdd(1);
@@ -1873,6 +2462,7 @@ public class YamlReader extends BasicReadAheadReader {
 
 				if (peekCharMatch(']')) {
 					readChar();
+					closeFlowCollection();
 
 					pendingAnchor = readUpToNextContent(sequence);
 					if (pendingAnchor != null) {
@@ -1893,8 +2483,7 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 		}
 
-		updatePath(YamlToken.YamlSequence_End, null);
-		return sequence;
+		throw new YamlParseException("Missing closing bracket ']' of flow sequence", getCurrentLine(), getCurrentColumn());
 	}
 
 	/**
@@ -1940,13 +2529,16 @@ public class YamlReader extends BasicReadAheadReader {
 	 * 	removed again before parsing a multiline block scalar's own, independent indentation.
 	 */
 	private YamlNode readUnquotedScalarString(final int mappingIndentation) throws Exception {
+		if (peekCharMatchAny("%@`,]}")) {
+			throw new YamlParseException("Plain scalar must not start with the indicator character '" + peekChar() + "'", getCurrentLine(), getCurrentColumn());
+		}
 		String scalarString = "";
 		final int scalarStartIndentations = (int) getCurrentColumn() - 1;
 		String nextScalarStringLine = "";
 		String inlineComment = null;
 		boolean continuationLineRead = false;
 		while (isNotEOF()) {
-			if (peekCharMatch(':') && (peekNextCharMatch(1, ' ') || peekNextCharMatch(1, '\t') || peekNextCharMatch(1, '\n'))) {
+			if (isIndicatorFollowedBySeparator(':')) {
 				if (continuationLineRead) {
 					throw new YamlParseException("Mapping values are not allowed within a multi-line plain scalar", getCurrentLine(), getCurrentColumn());
 				}
@@ -1988,7 +2580,11 @@ public class YamlReader extends BasicReadAheadReader {
 				} else if (peekCharMatch('#')) {
 					// A comment line ends the scalar, its indentation is irrelevant for the block structure
 					break;
-				} else if (nextLineIndentation > mappingIndentation || nextLineIndentation >= scalarStartIndentations) {
+				} else if (nextLineIndentation == 0 && isDocumentMarkerAtLineStart()) {
+					// A document marker ends the scalar and the document
+					applyIndentationLevel(0);
+					break;
+				} else if (nextLineIndentation > mappingIndentation || nextLineIndentation >= scalarStartIndentations || (flowLevel == 0 && nextLineIndentation > blockParentIndentation && blockParentIndentation >= 0)) {
 					// Continuation line of a multi-line plain scalar: indented deeper than its parent
 					// (e.g. the mapping key) or at least as deep as the scalar itself (e.g. a sequence item)
 					continuationLineRead = true;
@@ -2058,7 +2654,7 @@ public class YamlReader extends BasicReadAheadReader {
 				if (removeCallerColumnIndentationBeforeMultiline) {
 					indentations.pop();
 				}
-				scalar = parseMultilineScalar(type, comping, indentationIndicator, !removeCallerColumnIndentationBeforeMultiline);
+				scalar = parseMultilineScalar(type, comping, indentationIndicator);
 			} catch (final Exception e) {
 				throw new YamlParseException("Invalid YAML mulitline scalar: " + e.getMessage(), getCurrentLine(), getCurrentColumn());
 			}
@@ -2083,18 +2679,37 @@ public class YamlReader extends BasicReadAheadReader {
 	 * @throws Exception
 	 *             if the data is invalid or the node does not fit its tag
 	 */
+	/**
+	 * True if the node read last by {@link #parseFlowNode()} was an explicit key "? key".
+	 */
+	private boolean lastFlowNodeWasExplicitKey = false;
+
 	private YamlNode parseFlowNode() throws Exception {
 		String tag = null;
 		if (peekCharMatch('!')) {
 			tag = readUpToNext(false, null, ' ', '\t', '\n', ',', ']', '}');
-			skipBlanks();
+			// The tagged node may follow on the next line
+			skipToNextContent();
+		}
+
+		lastFlowNodeWasExplicitKey = false;
+		if (tag == null && isIndicatorFollowedBySeparator('?')) {
+			// Explicit key like "[? key : value]", which may span several lines
+			readChar();
+			skipToNextContent();
+			final YamlNode keyNode = parseFlowNode();
+			lastFlowNodeWasExplicitKey = true;
+			return keyNode;
 		}
 
 		final YamlNode node;
-		if (peekCharMatch('\"')) {
-			node = new YamlScalar(readQuotedText('\\'), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.DOUBLE);
+		if (tag != null && (isEOF() || peekCharMatchAny(",]}") || isIndicatorFollowedBySeparator(':'))) {
+			// Tag without value, like "!!str" in "{key: !!str, other: 1}"
+			node = new YamlScalar("", YamlScalarType.NULL_VALUE);
+		} else if (peekCharMatch('\"')) {
+			node = readQuotedScalarNode('"');
 		} else if (peekCharMatch('\'')) {
-			node = new YamlScalar(readQuotedText('\''), YamlScalarType.STRING).withQuoteType(YamlStringQuoteType.SINGLE);
+			node = readQuotedScalarNode('\'');
 		} else if (peekCharMatch('{')) {
 			node = parseFlowMapping();
 		} else if (peekCharMatch('[')) {
@@ -2130,7 +2745,18 @@ public class YamlReader extends BasicReadAheadReader {
 		return new YamlAlias(anchorName);
 	}
 
+	/**
+	 * Checks whether a node is a quoted scalar or a flow collection. After such a "JSON like" key in a
+	 * flow collection the ':' may be directly followed by the value, like in {"key":value}.
+	 */
+	private static boolean isJsonLikeNode(final YamlNode node) {
+		return (node instanceof final YamlScalar scalar && scalar.getQuoteType() != null) || node instanceof YamlMapping || node instanceof YamlSequence;
+	}
+
 	private YamlNode readFlowScalarString() throws Exception {
+		if (peekCharMatch('-') && (peekNextChar(1) == null || peekNextCharMatchAny(1, " \t\n,[]{}"))) {
+			throw new YamlParseException("Plain scalar must not consist of the indicator '-' only", getCurrentLine(), getCurrentColumn());
+		}
 		String scalarString = "";
 		while(true) {
 			scalarString += readUpToNext(false, null, ",:#{}[]\n".toCharArray());
@@ -2143,6 +2769,20 @@ public class YamlReader extends BasicReadAheadReader {
 				// '#' only starts a comment after whitespace, otherwise it is part of the text like "a#b"
 				readChar();
 				scalarString += "#";
+			} else if (peekCharMatch('\n') && !scalarString.isBlank()) {
+				// A plain scalar in a flow collection may continue on the next lines, linebreaks are folded
+				int linebreaks = 0;
+				while (isNotEOF() && (peekCharMatch(' ') || peekCharMatch('\t') || peekCharMatch('\n'))) {
+					if (readChar() == '\n') {
+						linebreaks++;
+					}
+				}
+				if (isDocumentMarkerAtLineStart()) {
+					throw new YamlParseException("Document marker within flow collection", getCurrentLine(), getCurrentColumn());
+				} else if (isEOF() || peekCharMatchAny(",[]{}#") || (peekCharMatch(':') && (peekNextChar(1) == null || peekNextCharMatchAny(1, ",{}[] \t\n")))) {
+					break;
+				}
+				scalarString = scalarString.stripTrailing() + (linebreaks == 1 ? " " : "\n".repeat(linebreaks - 1));
 			} else {
 				break;
 			}
@@ -2163,168 +2803,137 @@ public class YamlReader extends BasicReadAheadReader {
 	}
 
 	/**
-	 * @param parentColumnIsValidContentColumn
-	 * 	true if {@code parentIndentationLevel} (derived from the shared indentations stack) is
-	 * 	itself already a valid column for the block scalar's content to start at, as is the case
-	 * 	for a multiline scalar used directly as a sequence item's value (e.g. "- |-"), where the
-	 * 	sequence item's dash already established the column content is expected to align with.
-	 * 	false if content must be indented strictly more than {@code parentIndentationLevel}, as is
-	 * 	the case for a multiline scalar used as a mapping value (e.g. "key: |-"), where the column
-	 * 	the scalar indicator happens to start on carries no meaning for the content's indentation.
+	 * Reads the content lines of a block scalar after its header line.
+	 * <p>
+	 * The content indentation is given by the indentation indicator relative to
+	 * {@link #blockParentIndentation}, or detected from the first non-empty line, which must be
+	 * indented deeper than the parent. Only spaces count as indentation, tabs after the indentation
+	 * are content. Lines consisting of spaces only are empty lines, unless they have more spaces than
+	 * the content indentation. A less indented comment line ends the content: it and all following
+	 * comment and empty lines are trailing comments, which belong to the node that follows.
+	 * </p>
 	 */
 	private YamlScalar parseMultilineScalar(
 			final YamlMultilineScalarType multilineType,
 			final YamlMultilineScalarChompingType chompingType,
-			final int indentationIndicator,
-			final boolean parentColumnIsValidContentColumn) throws Exception {
-		// Indentation level of the block-structure context the multiline scalar starts in
-		// (e.g. the mapping or sequence it is a value of). Content lines of the block scalar
-		// must be indented at least as much as this (exactly this, for a sequence item's direct
-		// value; strictly more, for a mapping value). Each content line's *own* indentation may
-		// vary (it may decrease compared to a previous content line, as long as it does not
-		// fall below the base indentation established by the first content line), which is
-		// unrelated to the block-structure indentations stack used elsewhere for mappings and
-		// sequences, so that stack must not be used to validate content line indentation here.
-		final int parentIndentationLevel = getNumberOfIndentationChars();
+			final int indentationIndicator) throws Exception {
+		final int parentIndentation = blockParentIndentation;
+		final int minimumContentIndentation = parentIndentation + 1;
 
 		final StringBuilder raw = new StringBuilder();
 
-		// Base indentation column of the block scalar's content, determined either by an
-		// explicit indentation indicator or automatically from the first non-empty content line
-		int contentIndentation = indentationIndicator > 0 ? parentIndentationLevel + indentationIndicator : -1;
+		// Base indentation of the content, given by the indentation indicator or detected from the first non-empty line
+		int contentIndentation = -1;
+		if (indentationIndicator > 0) {
+			contentIndentation = parentIndentation < 0 ? indentationIndicator : parentIndentation + indentationIndicator;
+		}
 
+		// Empty lines since the last content line
 		int pendingEmptyLines = 0;
 
-		// How much of pendingEmptyLines has already been reported to the leading/post-comment
-		// empty lines metadata (see addPendingEmptyLines below). This is tracked separately so
-		// that pendingEmptyLines itself keeps accumulating uninterrupted for the raw scalar
-		// content flushing further down, exactly as before; only the metadata bucketing needs
-		// to happen at the precise chronological point relative to any interleaved comments.
-		int emptyLinesAlreadyReportedAsMetadata = 0;
+		// Most spaces of an empty line before the first content line, which must not be more than the content indentation
+		int leadingEmptyLinesMaximumSpaces = 0;
 
-		// Indentation (in spaces/tabs) already consumed while looking ahead at the line that
-		// turned out to not belong to the scalar anymore. This must be restored to the shared
-		// indentations stack afterwards, since it was consumed from the input but never validated
-		// nor accounted for there.
+		// Empty lines after the last content line and before trailing comments, which are linebreaks of the scalar (kept by "+" chomping)
+		int trailingEmptyLines = -1;
+
+		// Indentation of the line following the scalar, which belongs to the surrounding block structure again
 		int trailingNonScalarLineIndentation = -1;
 
 		while (isNotEOF()) {
-			final int lineIndentation = peekNextLineIndentation();
+			if (isDocumentMarkerAtLineStart()) {
+				// A document marker ends the scalar and the document
+				if (trailingEmptyLines < 0) {
+					trailingEmptyLines = pendingEmptyLines;
+					pendingEmptyLines = 0;
+				}
+				trailingNonScalarLineIndentation = 0;
+				break;
+			}
+			int lineIndentation = 0;
+			while (peekCharMatch(' ')) {
+				readChar();
+				lineIndentation++;
+			}
 
-			if (lineIndentation == -1) {
-				// Empty line (or EOF right after a linebreak): belongs to the scalar regardless
-				// of indentation, collect it and continue looking ahead
-				if (isEOF()) {
+			if (isEOF() || peekCharMatch('\n')) {
+				// Empty line, or a content line of spaces only if it has more spaces than the content indentation
+				final boolean lineHadLinebreak = isNotEOF();
+				if (lineHadLinebreak) {
+					readChar();
+				} else if (lineIndentation == 0) {
 					break;
 				}
-				readChar();
-				pendingEmptyLines++;
+				if (trailingEmptyLines >= 0) {
+					// Empty line between trailing comments
+					addPendingEmptyLines(1);
+				} else if (contentIndentation >= 0 && lineIndentation > contentIndentation) {
+					appendEmptyLines(raw, pendingEmptyLines);
+					pendingEmptyLines = 0;
+					raw.append(Utilities.repeat(" ", lineIndentation - contentIndentation)).append('\n');
+				} else {
+					if (contentIndentation < 0) {
+						leadingEmptyLinesMaximumSpaces = Math.max(leadingEmptyLinesMaximumSpaces, lineIndentation);
+					}
+					pendingEmptyLines++;
+				}
 				continue;
 			}
 
-			if (contentIndentation < 0) {
-				// First non-empty line establishes the base indentation
-				final boolean lineIsTooShallow = parentColumnIsValidContentColumn
-						? lineIndentation < parentIndentationLevel
-						: lineIndentation <= parentIndentationLevel;
-				if (lineIsTooShallow) {
-					if (peekCharMatch('#')) {
-						// A comment line is not subject to indentation rules at all, so it must
-						// not be mistaken for a non-scalar line ending lookahead, nor be allowed
-						// to influence the (not yet established) content indentation or the
-						// shared indentations stack. Skip over it, but keep its text as a leading
-						// comment for whichever node follows the multiline scalar, the same way
-						// such comments are collected outside of multiline scalar parsing.
-						// Any blank lines collected so far occurred *before* this comment in the
-						// source and must be flushed into the correct bucket now, before the
-						// comment itself is added to the pending comments below - otherwise they
-						// would later be seen as occurring after a comment that is already
-						// pending and be misattributed to the wrong bucket.
-						addPendingEmptyLines(pendingEmptyLines);
-						pendingEmptyLines = 0;
-						pendingLeadingComments.add(readInlineComment());
-						if (isEOF()) {
-							break;
-						} else {
-							readChar();
-						}
-						continue;
-					}
-					// Empty lines collected so far were only ever look-ahead within the block
-					// scalar's own region (between the indicator line and this non-scalar line)
-					// and never belonged to actual content; with no content line establishing
-					// the scalar at all, they are leading blank lines outside the scalar's value,
-					// i.e. genuinely blank source lines preceding whatever node follows.
-					addPendingEmptyLines(pendingEmptyLines);
-					pendingEmptyLines = 0;
-					trailingNonScalarLineIndentation = lineIndentation;
-					break;
-				}
-				contentIndentation = lineIndentation;
-			} else if (lineIndentation < contentIndentation) {
+			final boolean belowContentIndentation = contentIndentation >= 0 ? lineIndentation < contentIndentation : lineIndentation < minimumContentIndentation;
+			if (belowContentIndentation && trailingEmptyLines < 0 && peekCharMatch('\t')) {
+				throw new YamlParseException("Tabs must not be used for indentation", getCurrentLine(), getCurrentColumn());
+			}
+			if (trailingEmptyLines >= 0 || belowContentIndentation) {
 				if (peekCharMatch('#')) {
-					// Same as above: a less-indented comment line does not belong to the block
-					// scalar's content and must not be treated as the line ending the scalar;
-					// keep its text as a leading comment for the node that follows. Report any
-					// blank lines collected so far as metadata now, before the comment itself is
-					// added to the pending comments below (see the field comment on
-					// emptyLinesAlreadyReportedAsMetadata for why pendingEmptyLines itself must
-					// not be reset here).
-					addPendingEmptyLines(pendingEmptyLines - emptyLinesAlreadyReportedAsMetadata);
-					emptyLinesAlreadyReportedAsMetadata = pendingEmptyLines;
+					if (trailingEmptyLines < 0) {
+						// First trailing comment line: the content of the scalar has ended
+						trailingEmptyLines = pendingEmptyLines;
+						pendingEmptyLines = 0;
+						if (chompingType != YamlMultilineScalarChompingType.KEEP) {
+							// Empty lines not kept as linebreaks of the scalar precede the comment
+							addPendingEmptyLines(trailingEmptyLines);
+						}
+					}
 					pendingLeadingComments.add(readInlineComment());
-					if (isEOF()) {
-						break;
-					} else {
+					if (isNotEOF()) {
 						readChar();
 					}
 					continue;
+				} else if (trailingEmptyLines >= 0 && !belowContentIndentation) {
+					throw new YamlParseException("Block scalar content after trailing comment lines", getCurrentLine(), getCurrentColumn());
+				} else {
+					// This line belongs to the surrounding block structure again
+					trailingNonScalarLineIndentation = lineIndentation;
+					break;
 				}
-				// Indented less than the block scalar's own content: this line belongs to the
-				// surrounding block structure again, the scalar has ended. Blank lines collected
-				// before this point are still trailing newlines of the scalar's value (per the
-				// chomping rules applied below) and must be flushed, not discarded.
-				for (int i = 0; i < pendingEmptyLines; i++) {
-					raw.append("\n");
-				}
-				if (chompingType != YamlMultilineScalarChompingType.KEEP) {
-					// Unless the chomping indicator explicitly keeps trailing blank lines as
-					// part of the scalar's own value, these were genuinely blank source lines
-					// preceding whatever node follows the block scalar (chomping will strip them
-					// back out of the scalar's text below, in applyChomping). Only the portion not
-					// already reported at an earlier interleaved comment is reported here.
-					addPendingEmptyLines(pendingEmptyLines - emptyLinesAlreadyReportedAsMetadata);
-				}
-				pendingEmptyLines = 0;
-				trailingNonScalarLineIndentation = lineIndentation;
-				break;
 			}
 
-			for (int i = 0; i < pendingEmptyLines; i++) {
-				raw.append("\n");
+			if (contentIndentation < 0) {
+				if (leadingEmptyLinesMaximumSpaces > lineIndentation) {
+					throw new YamlParseException("Leading empty line of block scalar has more spaces than the first content line", getCurrentLine(), getCurrentColumn());
+				}
+				contentIndentation = lineIndentation;
 			}
+
+			appendEmptyLines(raw, pendingEmptyLines);
 			pendingEmptyLines = 0;
-
-			final String restOfLine = readUpToNext(false, null, '\n');
-			if (lineIndentation > contentIndentation) {
-				raw.append(Utilities.repeat(" ", lineIndentation - contentIndentation));
-			}
-			raw.append(restOfLine);
-			raw.append("\n");
-
-			if (isEOF()) {
-				break;
-			} else {
+			raw.append(Utilities.repeat(" ", lineIndentation - contentIndentation));
+			raw.append(readUpToNext(false, null, '\n'));
+			raw.append('\n');
+			if (isNotEOF()) {
 				readChar();
 			}
 		}
 
-		if (trailingNonScalarLineIndentation < 0) {
-			// End of data: empty lines collected last are trailing linebreaks of the scalar (kept by "+" chomping)
-			for (int i = 0; i < pendingEmptyLines; i++) {
-				raw.append("\n");
+		if (trailingEmptyLines < 0) {
+			trailingEmptyLines = pendingEmptyLines;
+			if (trailingNonScalarLineIndentation >= 0 && chompingType != YamlMultilineScalarChompingType.KEEP) {
+				// Empty lines not kept as linebreaks of the scalar precede the following node
+				addPendingEmptyLines(trailingEmptyLines);
 			}
 		}
+		appendEmptyLines(raw, trailingEmptyLines);
 
 		if (trailingNonScalarLineIndentation >= 0) {
 			// Restore the indentation of the trailing, non-scalar line to the shared
@@ -2360,6 +2969,12 @@ public class YamlReader extends BasicReadAheadReader {
 		return scalar;
 	}
 
+	private static void appendEmptyLines(final StringBuilder text, final int count) {
+		for (int i = 0; i < count; i++) {
+			text.append('\n');
+		}
+	}
+
 	@SuppressWarnings("static-method")
 	private String applyChomping(final String text, final YamlMultilineScalarChompingType chompingType) {
 		switch (chompingType) {
@@ -2369,7 +2984,8 @@ public class YamlReader extends BasicReadAheadReader {
 				return text.replaceAll("\\n+$", "");
 			case CLIP:
 			default:
-				return text.replaceAll("\\n+$", "") + "\n";
+				final String content = text.replaceAll("\\n+$", "");
+				return content.isEmpty() ? "" : content + "\n";
 		}
 	}
 
@@ -2503,6 +3119,7 @@ public class YamlReader extends BasicReadAheadReader {
 		// read before, e.g. after the value "1" of "x: 1" followed by the line "&anchor key: 2"
 		final boolean anchorAllowed = flowLevel > 0 || getCurrentColumn() > 1;
 		skipBlanks();
+		checkCommentSeparation();
 
 		final long startLine = getCurrentLine();
 		String pendingAnchor = null;

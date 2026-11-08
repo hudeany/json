@@ -2,6 +2,7 @@ package de.soderer.yaml;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,6 +28,7 @@ import de.soderer.yaml.data.YamlScalar;
 import de.soderer.yaml.data.YamlScalarType;
 import de.soderer.yaml.data.YamlSequence;
 import de.soderer.yaml.data.YamlVersion;
+import de.soderer.yaml.exception.YamlParseException;
 
 /**
  * Tests the resolution of plain scalars by YAML version, the handling of tags and the JSON output of
@@ -162,9 +164,39 @@ public class YamlVersionAndTagTest {
 		}
 	}
 
+	/** Declaration of the named tag handle "!e!", which must precede its use. */
+	private static final String TAG_DIRECTIVE = "%TAG !e! tag:example.com,2026:\n---\n";
+
+	@Test
+	void yaml11CollectionTags() throws Exception {
+		final YamlMapping set = (YamlMapping) readRoot("--- !!set\n? a\n? b\n", null);
+		assertEquals(2, set.size());
+		assertThrows(Exception.class, () -> readRoot("--- !!set\na: 1\n", null));
+		assertThrows(Exception.class, () -> readRoot("--- !!set\n- a\n", null));
+
+		final YamlSequence omap = (YamlSequence) readRoot("--- !!omap\n- a: 1\n- b: 2\n", null);
+		assertEquals(2, omap.size());
+		assertTrue(readRoot("--- !!pairs\n- a: 1\n- a: 2\n", null) instanceof YamlSequence);
+		assertThrows(Exception.class, () -> readRoot("--- !!omap\n- a\n", null));
+		assertThrows(Exception.class, () -> readRoot("--- !!omap\n- a: 1\n  b: 2\n", null));
+		assertThrows(Exception.class, () -> readRoot("--- !!pairs\na: 1\n", null));
+	}
+
+	@Test
+	void undeclaredTagHandleIsRejected() {
+		assertThrows(YamlParseException.class, () -> readRoot("a: !e!point [1, 2]\n", null));
+		// A %TAG directive is valid for its document only
+		assertThrows(YamlParseException.class, () -> {
+			try (YamlReader reader = new YamlReader(toStream(TAG_DIRECTIVE + "a: !e!x 1\n---\nb: !e!x 2\n"))) {
+				assertNotNull(reader.readDocument());
+				reader.readDocument();
+			}
+		});
+	}
+
 	@Test
 	void localTags() throws Exception {
-		final YamlMapping root = (YamlMapping) readRoot("a: !custom foo\nb: !<tag:example.com,2026:p> bar\nc: !e!point [1, 2]\nd: &anchor !custom {k: v}\n", null);
+		final YamlMapping root = (YamlMapping) readRoot(TAG_DIRECTIVE + "a: !custom foo\nb: !<tag:example.com,2026:p> bar\nc: !e!point [1, 2]\nd: &anchor !custom {k: v}\n", null);
 		assertEquals("foo", root.getSimpleValue("a"));
 		assertEquals("!custom", root.get("a").getTag());
 		assertEquals("bar", root.getSimpleValue("b"));
@@ -200,9 +232,14 @@ public class YamlVersionAndTagTest {
 
 	@Test
 	void tagsRoundTrip() throws Exception {
-		final String yaml = "a: !custom foo\nb: !e!point [1, 2]\nc: &anchor !custom {k: v}\nlist:\n  - !item a\n";
-		final YamlNode root = readRoot(yaml, null);
-		final String written = new YamlDocument(root).toString();
+		final String yaml = TAG_DIRECTIVE + "a: !custom foo\nb: !e!point [1, 2]\nc: &anchor !custom {k: v}\nlist:\n  - !item a\n";
+		final YamlDocument document;
+		try (YamlReader reader = new YamlReader(toStream(yaml))) {
+			document = reader.readDocument();
+		}
+		// The %TAG directive is written, too
+		final String written = document.toString();
+		assertTrue(written.contains("%TAG !e! tag:example.com,2026:"), written);
 		assertTrue(written.contains("a: !custom foo"), written);
 		assertTrue(written.contains("- !item a"), written);
 		final YamlMapping reread = (YamlMapping) readRoot(written, null);
@@ -215,7 +252,7 @@ public class YamlVersionAndTagTest {
 
 	@Test
 	void tagsAreIgnoredForJson() throws Exception {
-		final JsonNode json = YamlToJsonConverter.convert(readRoot("a: !custom foo\nb: !e!point [1, 2]\n", null));
+		final JsonNode json = YamlToJsonConverter.convert(readRoot(TAG_DIRECTIVE + "a: !custom foo\nb: !e!point [1, 2]\n", null));
 		assertEquals("{\"a\":\"foo\",\"b\":[1,2]}", toJsonString(json));
 	}
 

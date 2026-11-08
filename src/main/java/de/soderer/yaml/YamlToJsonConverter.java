@@ -376,10 +376,12 @@ public class YamlToJsonConverter {
 	 */
 	private JsonObject convertMapping(final YamlMapping mapping) throws DuplicateKeyException {
 		final Set<String> explicitKeys = new HashSet<>();
-		for (final YamlNode key : mapping.keySet()) {
-			if (!isMergeKey(key)) {
-				explicitKeys.add(convertKey(key));
+		for (final Entry<YamlNode, YamlNode> entry : mapping.entrySet()) {
+			if (!isMergeKey(entry.getKey())) {
+				explicitKeys.add(convertKey(entry.getKey()));
 			}
+			// Anchors of values are registered in document order, so a later key may be an alias of an earlier value
+			registerAnchor(entry.getValue());
 		}
 
 		final JsonObject jsonObject = new JsonObject();

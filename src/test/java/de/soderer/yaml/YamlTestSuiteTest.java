@@ -25,7 +25,9 @@ import de.soderer.yaml.YamlTestSuite.TestResult;
  * <p>
  * Test cases listed in "yaml/yaml-test-suite-known-issues.txt" are skipped while they fail. If one of
  * them passes, the test fails with a hint to remove it from the list, so improvements of the reader
- * are documented there. The console runner {@link YamlTestSuite#main(String[])} prints a summary.
+ * are documented there. Test cases listed in "yaml/yaml-test-suite-intended-deviations.txt" are
+ * handled differently by design: they must fail, so the deviation is checked. The console runner
+ * {@link YamlTestSuite#main(String[])} prints a summary.
  * </p>
  */
 @SuppressWarnings("static-method")
@@ -37,11 +39,17 @@ public class YamlTestSuiteTest {
 	/** The bundled test suite. */
 	private static YamlTestSuite testSuite;
 
+	/** Classpath resource of the intended deviations from the test suite. */
+	private static final String INTENDED_DEVIATIONS_RESOURCE = "yaml/yaml-test-suite-intended-deviations.txt";
+
 	/** Ids of the test cases known to fail. */
 	private static final Set<String> KNOWN_ISSUES = new HashSet<>();
 
+	/** Ids of the test cases, which fail by design. */
+	private static final Set<String> INTENDED_DEVIATIONS = new HashSet<>();
+
 	/**
-	 * Reads the bundled test suite and the known issues.
+	 * Reads the bundled test suite, the known issues and the intended deviations.
 	 *
 	 * @throws Exception
 	 *             if a test resource is missing
@@ -49,13 +57,21 @@ public class YamlTestSuiteTest {
 	@BeforeAll
 	static void loadTestSuite() throws Exception {
 		testSuite = YamlTestSuite.loadBundled();
-		try (InputStream inputStream = YamlTestSuiteTest.class.getClassLoader().getResourceAsStream(KNOWN_ISSUES_RESOURCE);
+		readTestCaseIds(KNOWN_ISSUES_RESOURCE, KNOWN_ISSUES);
+		readTestCaseIds(INTENDED_DEVIATIONS_RESOURCE, INTENDED_DEVIATIONS);
+	}
+
+	/**
+	 * Reads a list of test case ids in the format "&lt;test case id&gt; # &lt;description&gt;".
+	 */
+	private static void readTestCaseIds(final String resource, final Set<String> ids) throws Exception {
+		try (InputStream inputStream = YamlTestSuiteTest.class.getClassLoader().getResourceAsStream(resource);
 				BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
 				final String id = line.contains("#") ? line.substring(0, line.indexOf('#')).trim() : line.trim();
 				if (!id.isEmpty()) {
-					KNOWN_ISSUES.add(id);
+					ids.add(id);
 				}
 			}
 		}
@@ -72,6 +88,10 @@ public class YamlTestSuiteTest {
 
 	private static void executeTestCase(final TestCase testCase) {
 		final TestResult result = YamlTestSuite.execute(testCase);
+		if (INTENDED_DEVIATIONS.contains(testCase.getId())) {
+			Assertions.assertFalse(result.isPassed(), () -> testCase.getId() + " is listed in " + INTENDED_DEVIATIONS_RESOURCE + ", but is handled like the test suite expects now");
+			return;
+		}
 		final boolean knownIssue = KNOWN_ISSUES.contains(testCase.getId());
 		if (result.isPassed()) {
 			Assertions.assertFalse(knownIssue, () -> testCase.getId() + " passes now: please remove it from " + KNOWN_ISSUES_RESOURCE);

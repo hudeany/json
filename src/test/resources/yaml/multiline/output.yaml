@@ -34,9 +34,6 @@
   
   
   
-
-
-
 # This text will keep all three trailing newlines
 "folded not chomped": >+
   My first line of folded not chomped # with comment like text Starting empty lines here
@@ -47,9 +44,6 @@
   
   
   
-
-
-
 # This text will have no trailing newline.
 "literal strip chomped": |-
   My first line of literal strip chomped
