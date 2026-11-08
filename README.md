@@ -15,7 +15,7 @@ A lightweight Java library to read, write, validate and compare **JSON**, **JSON
 - **Conversion** between JSON and YAML, with resolution of YAML aliases and merge keys (`<<`)
 - **JSON Patch and JSON Merge Patch**: apply and create patches as defined by RFC 6902 and RFC 7396
 - **Diff and patch**: compare two data trees, render the differences as text and apply them as a patch
-- **Safe for untrusted data**: limits for the nesting depth and for the expansion of YAML aliases protect against stack overflows and "billion laughs" data
+- **Safe for untrusted data**: limits for the nesting depth, for the expansion of YAML aliases and for the evaluation of regular expressions in JSON schemas protect against stack overflows, "billion laughs" data and ReDoS
 
 ## Contents
 
@@ -214,6 +214,8 @@ new JsonSchema(schemaInputStream, new JsonSchemaConfiguration().withJsonSchemaVe
 
 Supported versions are `draftV3`, `draftV4`, `draftV6`, `draftV7`, `draft2019_09`, `draft2020_12` and `simple`.
 
+A `JsonSchema` can be shared: several threads may validate data with the same instance at the same time.
+
 ### Collect all validation errors
 
 `validate()` stops at the first error, which is the fastest way to check data. To report all errors at once, e.g. for a configuration file, use `validateAll()`:
@@ -277,7 +279,7 @@ try {
 }
 ```
 
-References (`$ref`) are resolved by URI as defined by the standard: `$id` may change the base URI in any sub schema, and plain name anchors (`$anchor`, `$dynamicAnchor`) and JSON pointers (`#/$defs/point`) are supported. Additional schemas are passed as `JsonSchemaDependency`, registered by their URI. The meta schemas of all supported drafts are included, so references to them need no download. Downloads of other referenced schemas are disabled by default and can be enabled by `JsonSchemaConfiguration.withDownloadReferencedSchemas(true)`.
+References (`$ref`) are resolved by URI as defined by the standard: `$id` may change the base URI in any sub schema, and plain name anchors (`$anchor`, `$dynamicAnchor`) and JSON pointers (`#/$defs/point`) are supported. Additional schemas are passed as `JsonSchemaDependency`, registered by their URI. A referenced schema declaring another draft by `$schema` is evaluated by the rules of its own draft, e.g. a draft 7 schema referenced by a draft 2020-12 schema. The meta schemas of all supported drafts are included, so references to them need no download. Downloads of other referenced schemas are disabled by default and can be enabled by `JsonSchemaConfiguration.withDownloadReferencedSchemas(true)`.
 
 Since draft 2019-09, `format` is only an annotation by default, as defined by the standard. To validate formats like `email`, `date-time`, `ipv4`, `uri` or `uuid` anyway:
 
@@ -505,14 +507,15 @@ Data from untrusted sources can be read safely, because the following limits pre
 | Nesting depth of YAML mappings and sequences | 500 | `YamlReader.setMaximumNestingDepth(int)` |
 | Nodes created by YAML aliases and merge keys ("billion laughs") | 100,000 | `YamlToJsonConverter.convert(document, int)` |
 | Errors reported by `JsonSchema.validateAll()` | 100 | `JsonSchemaConfiguration.withMaximumValidationErrors(int)` |
+| Steps of the regex engine for `pattern` and `patternProperties` of a JSON schema (ReDoS) | 10,000,000 plus 1,000 per character of the data | `JsonSchemaConfiguration.withRegexStepLimit(long)`, 0 for no limit |
 
-Exceeding a limit throws a `MaximumNestingDepthExceededException`, `YamlParseException` or `YamlAliasExpansionLimitException` instead of a `StackOverflowError` or `OutOfMemoryError`. Downloads of schemas referenced by URL are disabled by default.
+Exceeding a limit throws a `MaximumNestingDepthExceededException`, `YamlParseException` or `YamlAliasExpansionLimitException` instead of a `StackOverflowError` or `OutOfMemoryError`. Data for which a regular expression exceeds its limit is reported as invalid by the JSON schema validation, so a schema from an untrusted source cannot block the validation by a pattern with catastrophic backtracking. Very long data that exceeds the recursion depth of the Java regex engine is also reported as invalid, for `pattern` as well as for the built-in formats like `email` or `json-pointer`. Downloads of schemas referenced by URL are disabled by default.
 
 ## Tests
 
 The implementations are tested against the official test suites, which run as unit tests:
 
-- **JSON Schema**: the [JSON-Schema-Test-Suite](https://github.com/json-schema-org/JSON-Schema-Test-Suite) for all supported drafts, both with `validate()` and `validateAll()` ([JsonSchemaTestSuiteTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/json/schema/JsonSchemaTestSuiteTest.java)). All required tests pass. Of the optional tests, only references between schemas of different drafts (`cross-draft`) are not supported.
+- **JSON Schema**: the [JSON-Schema-Test-Suite](https://github.com/json-schema-org/JSON-Schema-Test-Suite) for all supported drafts, both with `validate()` and `validateAll()` ([JsonSchemaTestSuiteTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/json/schema/JsonSchemaTestSuiteTest.java)). All required and all optional tests pass.
 - **JSON Patch**: the [json-patch-tests](https://github.com/json-patch/json-patch-tests) and the examples of RFC 7396 ([JsonPatchTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/json/patch/JsonPatchTest.java)). All tests pass.
 - **YAML**: the [yaml-test-suite](https://github.com/yaml/yaml-test-suite) ([YamlTestSuiteTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/yaml/YamlTestSuiteTest.java)). Currently 200 of 308 valid inputs are read as expected and 32 of 94 invalid inputs are rejected. The known deviations, mostly rare syntax variants and the rejection of invalid input, are listed in [yaml-test-suite-known-issues.txt](https://github.com/hudeany/json/blob/master/src/test/resources/yaml/yaml-test-suite-known-issues.txt).
 
