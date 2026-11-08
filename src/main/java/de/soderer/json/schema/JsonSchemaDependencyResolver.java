@@ -43,6 +43,14 @@ import de.soderer.json.utilities.Utilities;
  * classpath resources. If a reference cannot be resolved this way, the former lookup rules of this
  * library are used as fallback (e.g. plain definition names like "$ref": "address").
  * </p>
+ * <p>
+ * Thread safety: one resolver may be used by several threads validating data concurrently. All
+ * access to the schema documents and the resource index is synchronized on the resolver, the
+ * runtime state of a validation is kept per thread. Downloads of external schemas also happen
+ * while holding the lock, so other threads wait for them. Settings (e.g.
+ * {@link #setFormatAssertion(Boolean)}, {@link #setRegexStepLimit(long)}) are configuration and
+ * must not be changed while other threads are validating.
+ * </p>
  */
 public class JsonSchemaDependencyResolver {
 	/**
@@ -552,7 +560,7 @@ public class JsonSchemaDependencyResolver {
 	 * @throws JsonSchemaDefinitionError
 	 *             if the reference is null or found in no schema
 	 */
-	public String getSchemaContainingReference(final String reference, final JsonSchemaPath jsonSchemaPath) throws JsonSchemaDefinitionError {
+	public synchronized String getSchemaContainingReference(final String reference, final JsonSchemaPath jsonSchemaPath) throws JsonSchemaDefinitionError {
 		if (reference != null) {
 			if (!reference.contains("#")) {
 				// Dereference simple reference without '#'
@@ -1253,7 +1261,7 @@ public class JsonSchemaDependencyResolver {
 		}
 
 		@Override
-		public String getSchemaContainingReference(final String reference, final JsonSchemaPath jsonSchemaPath) throws JsonSchemaDefinitionError {
+		public synchronized String getSchemaContainingReference(final String reference, final JsonSchemaPath jsonSchemaPath) throws JsonSchemaDefinitionError {
 			return main.getSchemaContainingReference(reference, jsonSchemaPath);
 		}
 

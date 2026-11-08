@@ -13,7 +13,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -114,6 +121,46 @@ class JsonSchemaDependencyResolverTest {
 		assertThrows(JsonSchemaDefinitionError.class, () -> resolver.getSchemaContainingReference("invalidOther", new JsonSchemaPath()));
 		assertThrows(JsonSchemaDefinitionError.class, () -> resolver.getSchemaContainingReference("unknown", new JsonSchemaPath()));
 		assertThrows(JsonSchemaDefinitionError.class, () -> resolver.getSchemaContainingReference(null, new JsonSchemaPath()));
+	}
+
+	@Test
+	void concurrentLookupAndAddingOfSchemas() throws Exception {
+		final JsonSchemaDependency dependency = new JsonSchemaDependency("other", object("{\"definitions\": {\"fromOther\": {\"type\": \"integer\"}}}"));
+		final JsonSchemaDependencyResolver resolver = new JsonSchemaDependencyResolver(object("{\"definitions\": {\"local\": {\"type\": \"string\"}}}"), dependency);
+		final int readerCount = 4;
+		final int schemaCount = 500;
+		final ExecutorService executor = Executors.newFixedThreadPool(readerCount + 1);
+		try {
+			// Every thread does a fixed amount of work, so no thread can starve the others on the resolver lock
+			final CountDownLatch start = new CountDownLatch(1);
+			final List<Future<?>> futures = new ArrayList<>();
+			for (int i = 0; i < readerCount; i++) {
+				futures.add(executor.submit(() -> {
+					start.await();
+					for (int j = 0; j < schemaCount; j++) {
+						// Iterates over all additional schemas, while the writer adds new ones
+						assertEquals("other", resolver.getSchemaContainingReference("fromOther", new JsonSchemaPath()));
+						assertThrows(JsonSchemaDefinitionError.class, () -> resolver.getSchemaContainingReference("unknown", new JsonSchemaPath()));
+					}
+					return null;
+				}));
+			}
+			futures.add(executor.submit(() -> {
+				start.await();
+				for (int i = 0; i < schemaCount; i++) {
+					resolver.addJsonSchemaDefinition("added" + i, object("{\"definitions\": {\"added" + i + "\": {\"type\": \"boolean\"}}}"));
+				}
+				return null;
+			}));
+			start.countDown();
+			for (final Future<?> future : futures) {
+				// Rethrows any ConcurrentModificationException or assertion error of the threads
+				future.get(60, TimeUnit.SECONDS);
+			}
+			assertEquals("added" + (schemaCount - 1), resolver.getSchemaContainingReference("added" + (schemaCount - 1), new JsonSchemaPath()));
+		} finally {
+			executor.shutdownNow();
+		}
 	}
 
 	@Test
