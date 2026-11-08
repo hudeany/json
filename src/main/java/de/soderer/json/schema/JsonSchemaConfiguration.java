@@ -32,6 +32,11 @@ public class JsonSchemaConfiguration {
 	 * Maximum number of errors reported by {@link JsonSchema#validateAll(de.soderer.json.JsonNode)}.
 	 */
 	private int maximumValidationErrors = DEFAULT_MAXIMUM_VALIDATION_ERRORS;
+	/**
+	 * Base step limit for the evaluation of regular expressions of the schema against data, see
+	 * {@link #setRegexStepLimit(long)}.
+	 */
+	private long regexStepLimit = JsonSchemaRegexUtilities.DEFAULT_REGEX_STEP_LIMIT;
 
 	/**
 	 * Creates a configuration with UTF-8 encoding, version detection from "$schema" and without
@@ -227,6 +232,48 @@ public class JsonSchemaConfiguration {
 	 */
 	public JsonSchemaConfiguration withMaximumValidationErrors(final int newMaximumValidationErrors) {
 		setMaximumValidationErrors(newMaximumValidationErrors);
+		return this;
+	}
+
+	/**
+	 * Returns the base step limit for the evaluation of regular expressions ("pattern",
+	 * "patternProperties") against data.
+	 *
+	 * @return the base step limit, 0 or less for no limit
+	 */
+	public long getRegexStepLimit() {
+		return regexStepLimit;
+	}
+
+	/**
+	 * Sets the base step limit for the evaluation of regular expressions ("pattern",
+	 * "patternProperties") against data. It protects against patterns with catastrophic
+	 * backtracking (ReDoS) in schemas from untrusted sources. A step is a character access of the
+	 * regex engine; the effective limit is this value plus
+	 * {@link JsonSchemaRegexUtilities#REGEX_STEPS_PER_INPUT_CHARACTER} per character of the data
+	 * string. Data exceeding the limit is reported as invalid. Default is
+	 * {@link JsonSchemaRegexUtilities#DEFAULT_REGEX_STEP_LIMIT}.<br />
+	 * <br />
+	 * Independent of this limit, input which exceeds the recursion depth of the Java regex engine is
+	 * always reported as invalid instead of causing a StackOverflowError.
+	 *
+	 * @param regexStepLimit
+	 *            the base step limit, 0 or less for no limit
+	 */
+	public void setRegexStepLimit(final long regexStepLimit) {
+		this.regexStepLimit = regexStepLimit;
+	}
+
+	/**
+	 * Sets the base step limit for the evaluation of regular expressions, see
+	 * {@link #setRegexStepLimit(long)}.
+	 *
+	 * @param newRegexStepLimit
+	 *            the base step limit, 0 or less for no limit
+	 * @return this configuration for chaining
+	 */
+	public JsonSchemaConfiguration withRegexStepLimit(final long newRegexStepLimit) {
+		setRegexStepLimit(newRegexStepLimit);
 		return this;
 	}
 }

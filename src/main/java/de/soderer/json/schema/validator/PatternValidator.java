@@ -20,10 +20,10 @@ import de.soderer.json.schema.JsonSchemaRegexUtilities;
  * by their text representation, other data types are rejected; otherwise data that is not a
  * string is ignored.<br />
  * <br />
- * Security note: The regex pattern is taken directly from the JSON schema and compiled/executed via
- * {@link java.util.regex.Pattern}, without any complexity or timeout guard. A schema from an untrusted source could
- * contain a pattern causing catastrophic backtracking (ReDoS) against crafted input data. Only use JSON schemas from
- * trusted sources, or validate/sanitize patterns before using this library with schemas of unknown origin.
+ * Security note: The regex pattern is taken directly from the JSON schema. To protect against patterns with
+ * catastrophic backtracking (ReDoS) the evaluation is limited by
+ * {@link de.soderer.json.schema.JsonSchemaConfiguration#setRegexStepLimit(long)}; data exceeding the limit is
+ * reported as invalid.
  */
 public class PatternValidator extends BaseJsonSchemaValidator {
 	/** The regex pattern, compiled once from the schema. */
@@ -59,24 +59,24 @@ public class PatternValidator extends BaseJsonSchemaValidator {
 	public void validate(final JsonNode jsonNode, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
 		if (jsonNode.isInteger()) {
 			if (jsonSchemaDependencyResolver.isSimpleMode()) {
-				if (!pattern.matcher(((JsonValueInteger) jsonNode).getValue().toString()).find()) {
+				if (!findRegex(pattern, ((JsonValueString) validatorData).getValue(), ((JsonValueInteger) jsonNode).getValue().toString(), jsonPath)) {
 					throw new JsonSchemaDataValidationError("RegEx pattern '" + ((JsonValueString) validatorData).getValue() + "' is not matched by data number '" + ((JsonValueInteger) jsonNode).getValue().toString() + "'", jsonPath);
 				}
 			}
 		} else if (jsonNode.isNumber()) {
 			if (jsonSchemaDependencyResolver.isSimpleMode()) {
-				if (!pattern.matcher(((JsonValueNumber) jsonNode).getValue().toString()).find()) {
+				if (!findRegex(pattern, ((JsonValueString) validatorData).getValue(), ((JsonValueNumber) jsonNode).getValue().toString(), jsonPath)) {
 					throw new JsonSchemaDataValidationError("RegEx pattern '" + ((JsonValueString) validatorData).getValue() + "' is not matched by data number '" + ((JsonValueNumber) jsonNode).getValue().toString() + "'", jsonPath);
 				}
 			}
 		} else if (jsonNode.isBoolean()) {
 			if (jsonSchemaDependencyResolver.isSimpleMode()) {
-				if (!pattern.matcher((((JsonValueBoolean) jsonNode).getValue()).toString()).find()) {
+				if (!findRegex(pattern, ((JsonValueString) validatorData).getValue(), ((JsonValueBoolean) jsonNode).getValue().toString(), jsonPath)) {
 					throw new JsonSchemaDataValidationError("RegEx pattern '" + ((JsonValueString) validatorData).getValue() + "' is not matched by data boolean '" + ((JsonValueBoolean) jsonNode).getValue().toString() + "'", jsonPath);
 				}
 			}
 		} else if (jsonNode.isString()) {
-			if (!pattern.matcher(((JsonValueString) jsonNode).getValue()).find()) {
+			if (!findRegex(pattern, ((JsonValueString) validatorData).getValue(), ((JsonValueString) jsonNode).getValue(), jsonPath)) {
 				throw new JsonSchemaDataValidationError("RegEx pattern '" + ((JsonValueString) validatorData).getValue() + "' is not matched by data string '" + ((JsonValueString) jsonNode).getValue() + "'", jsonPath);
 			}
 		} else {

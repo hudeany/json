@@ -1,6 +1,7 @@
 package de.soderer.json.schema.validator;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 import de.soderer.json.JsonArray;
 import de.soderer.json.JsonNode;
@@ -14,7 +15,9 @@ import de.soderer.json.schema.JsonSchemaDataValidationError;
 import de.soderer.json.schema.JsonSchemaDefinitionError;
 import de.soderer.json.schema.JsonSchemaDependencyResolver;
 import de.soderer.json.schema.JsonSchemaPath;
+import de.soderer.json.schema.JsonSchemaRegexUtilities;
 import de.soderer.json.schema.JsonSchemaValidationCollector;
+import de.soderer.json.schema.RegexEvaluationLimitException;
 import de.soderer.json.utilities.NumberUtilities;
 
 /**
@@ -102,6 +105,30 @@ public abstract class BaseJsonSchemaValidator {
 			return null;
 		} finally {
 			JsonSchemaValidationCollector.resume();
+		}
+	}
+
+	/**
+	 * Searches for a match of a regex pattern of the schema within a data text, with the step limit
+	 * of the configuration to protect against catastrophic backtracking (ReDoS).
+	 *
+	 * @param pattern
+	 *            the compiled pattern
+	 * @param patternText
+	 *            the pattern as written in the schema, used in error messages
+	 * @param input
+	 *            the data text
+	 * @param jsonPath
+	 *            the path of the JSON data node, used in error messages
+	 * @return true, if the text contains a match
+	 * @throws JsonSchemaDataValidationError
+	 *             if the evaluation exceeds its limits; the data is then regarded as invalid
+	 */
+	protected boolean findRegex(final Pattern pattern, final String patternText, final String input, final JsonPath jsonPath) throws JsonSchemaDataValidationError {
+		try {
+			return JsonSchemaRegexUtilities.find(pattern, input, jsonSchemaDependencyResolver == null ? JsonSchemaRegexUtilities.DEFAULT_REGEX_STEP_LIMIT : jsonSchemaDependencyResolver.getRegexStepLimit());
+		} catch (final RegexEvaluationLimitException e) {
+			throw new JsonSchemaDataValidationError("RegEx pattern '" + patternText + "' could not be evaluated for the data: " + e.getMessage(), jsonPath, e);
 		}
 	}
 

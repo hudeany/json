@@ -2,6 +2,7 @@ package de.soderer.json.schema;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -23,9 +24,26 @@ import java.util.regex.PatternSyntaxException;
  * </ul>
  * {@link #isValidEcmaScriptRegex(String)} additionally rejects constructs which are valid in Java,
  * but not in ECMA-262 (e.g. "\a", "\Q", global inline flags "(?i)", possessive quantifiers, atomic
- * groups).
+ * groups).<br />
+ * <br />
+ * Regular expressions from JSON schemas are untrusted code: a pattern with catastrophic
+ * backtracking (ReDoS) may take practically forever on crafted data. {@link #find(Pattern, String, long)}
+ * and {@link #matches(Pattern, String, long)} therefore limit the number of character accesses of
+ * the regex engine and abort deep recursion of the engine on long input (StackOverflowError).
  */
 public final class JsonSchemaRegexUtilities {
+	/**
+	 * Default base step limit of a regex evaluation, see {@link #getStepLimit(long, int)}. A step is a
+	 * character access of the regex engine. 10 million steps take about 30 to 100 milliseconds.
+	 */
+	public static final long DEFAULT_REGEX_STEP_LIMIT = 10_000_000L;
+
+	/**
+	 * Additional steps allowed per character of the input, so that long input data with ordinary
+	 * patterns is never affected by the limit.
+	 */
+	public static final long REGEX_STEPS_PER_INPUT_CHARACTER = 1_000L;
+
 	/** ECMA-262 white space and line terminator characters for use within a character class. */
 	private static final String ECMA_WHITE_SPACE = "\\t\\n\\x0B\\f\\r\\x20\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000\\uFEFF";
 
@@ -65,7 +83,165 @@ public final class JsonSchemaRegexUtilities {
 	 */
 	public static Pattern compile(final String ecmaScriptRegex) throws PatternSyntaxException {
 		final String javaRegex = translate(ecmaScriptRegex, false);
-		return Pattern.compile(javaRegex);
+		try {
+			return Pattern.compile(javaRegex);
+		} catch (@SuppressWarnings("unused") final StackOverflowError e) {
+			// Deeply nested groups exceed the recursion depth of the Java regex compiler
+			throw new PatternSyntaxException("Regular expression is nested too deeply", ecmaScriptRegex, -1);
+		}
+	}
+
+	/**
+	 * Searches for a match of a pattern within the input (like {@link Matcher#find()}) with limited
+	 * evaluation effort.
+	 *
+	 * @param pattern
+	 *            the pattern
+	 * @param input
+	 *            the input text
+	 * @param stepLimit
+	 *            base step limit (see {@link #getStepLimit(long, int)}), 0 or less for no limit
+	 * @return true, if the input contains a match
+	 * @throws RegexEvaluationLimitException
+	 *             if the step limit or the recursion depth of the regex engine is exceeded
+	 */
+	public static boolean find(final Pattern pattern, final String input, final long stepLimit) throws RegexEvaluationLimitException {
+		return evaluate(pattern, input, stepLimit, false);
+	}
+
+	/**
+	 * Checks whether the whole input matches a pattern (like {@link Matcher#matches()}) with limited
+	 * evaluation effort.
+	 *
+	 * @param pattern
+	 *            the pattern
+	 * @param input
+	 *            the input text
+	 * @param stepLimit
+	 *            base step limit (see {@link #getStepLimit(long, int)}), 0 or less for no limit
+	 * @return true, if the whole input matches
+	 * @throws RegexEvaluationLimitException
+	 *             if the step limit or the recursion depth of the regex engine is exceeded
+	 */
+	public static boolean matches(final Pattern pattern, final String input, final long stepLimit) throws RegexEvaluationLimitException {
+		return evaluate(pattern, input, stepLimit, true);
+	}
+
+	/**
+	 * Returns the effective step limit for an input: the base limit plus
+	 * {@link #REGEX_STEPS_PER_INPUT_CHARACTER} per input character.
+	 *
+	 * @param stepLimit
+	 *            the base step limit, 0 or less for no limit
+	 * @param inputLength
+	 *            the length of the input
+	 * @return the effective step limit, or {@link Long#MAX_VALUE} for no limit
+	 */
+	public static long getStepLimit(final long stepLimit, final int inputLength) {
+		if (stepLimit <= 0) {
+			return Long.MAX_VALUE;
+		}
+		final long inputSteps = REGEX_STEPS_PER_INPUT_CHARACTER * inputLength;
+		return stepLimit > Long.MAX_VALUE - inputSteps ? Long.MAX_VALUE : stepLimit + inputSteps;
+	}
+
+	/**
+	 * Evaluates a pattern with limited effort.
+	 *
+	 * @param pattern
+	 *            the pattern
+	 * @param input
+	 *            the input text
+	 * @param stepLimit
+	 *            base step limit, 0 or less for no limit
+	 * @param wholeInput
+	 *            true for {@link Matcher#matches()}, false for {@link Matcher#find()}
+	 * @return the result of the evaluation
+	 * @throws RegexEvaluationLimitException
+	 *             if the step limit or the recursion depth of the regex engine is exceeded
+	 */
+	private static boolean evaluate(final Pattern pattern, final String input, final long stepLimit, final boolean wholeInput) throws RegexEvaluationLimitException {
+		final long effectiveStepLimit = getStepLimit(stepLimit, input.length());
+		final CharSequence limitedInput = effectiveStepLimit == Long.MAX_VALUE ? input : new StepLimitedCharSequence(input, effectiveStepLimit);
+		try {
+			final Matcher matcher = pattern.matcher(limitedInput);
+			return wholeInput ? matcher.matches() : matcher.find();
+		} catch (@SuppressWarnings("unused") final StepLimitExceededException e) {
+			throw new RegexEvaluationLimitException("Evaluation exceeded the limit of " + effectiveStepLimit + " steps for input of length " + input.length());
+		} catch (@SuppressWarnings("unused") final StackOverflowError e) {
+			// The Java regex engine recurses for each repetition of a group, which overflows the stack for long input
+			throw new RegexEvaluationLimitException("Evaluation exceeded the recursion depth of the regex engine for input of length " + input.length());
+		}
+	}
+
+	/**
+	 * Input wrapper counting the character accesses of the regex engine. Backtracking is only
+	 * possible by reading characters again, so the count bounds the evaluation effort.
+	 */
+	private static final class StepLimitedCharSequence implements CharSequence {
+		/** The wrapped input. */
+		private final String input;
+
+		/** Maximum number of character accesses. */
+		private final long stepLimit;
+
+		/** Number of character accesses so far. */
+		private long steps = 0;
+
+		/**
+		 * Creates the wrapper.
+		 *
+		 * @param input
+		 *            the input text
+		 * @param stepLimit
+		 *            maximum number of character accesses
+		 */
+		private StepLimitedCharSequence(final String input, final long stepLimit) {
+			this.input = input;
+			this.stepLimit = stepLimit;
+		}
+
+		@Override
+		public char charAt(final int index) {
+			if (++steps > stepLimit) {
+				throw StepLimitExceededException.INSTANCE;
+			}
+			return input.charAt(index);
+		}
+
+		@Override
+		public int length() {
+			return input.length();
+		}
+
+		@Override
+		public CharSequence subSequence(final int start, final int end) {
+			// Only used for group values, which are not evaluated by the limited methods
+			return input.subSequence(start, end);
+		}
+
+		@Override
+		public String toString() {
+			return input;
+		}
+	}
+
+	/**
+	 * Internal signal of an exceeded step limit. It is thrown from within the regex engine, so it
+	 * must be unchecked. A shared instance without stack trace keeps aborting cheap.
+	 */
+	private static final class StepLimitExceededException extends RuntimeException {
+		private static final long serialVersionUID = -2416069733154049071L;
+
+		/** Shared instance. */
+		private static final StepLimitExceededException INSTANCE = new StepLimitExceededException();
+
+		/**
+		 * Creates the shared instance without stack trace.
+		 */
+		private StepLimitExceededException() {
+			super("Regex step limit exceeded", null, false, false);
+		}
 	}
 
 	/**
@@ -84,6 +260,9 @@ public final class JsonSchemaRegexUtilities {
 			Pattern.compile(javaRegex);
 			return true;
 		} catch (@SuppressWarnings("unused") final PatternSyntaxException e) {
+			return false;
+		} catch (@SuppressWarnings("unused") final StackOverflowError e) {
+			// Deeply nested groups exceed the recursion depth of the Java regex compiler
 			return false;
 		}
 	}

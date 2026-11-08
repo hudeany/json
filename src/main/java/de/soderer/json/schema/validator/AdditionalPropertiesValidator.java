@@ -26,7 +26,7 @@ import de.soderer.json.utilities.Utilities;
  * Basically the value defines whether or not additional properties are allowed that are not included by the other definitions of properties like "properties" and "patternProperties".
  * Alternatively it is allowed to define a value that consists of a subschema that defines the structure of any additional property that is not included by the other definitions.<br />
  * <br />
- * Security note: see {@link PatternValidator} regarding ReDoS risk from untrusted regex patterns in the schema (applies to "patternProperties" patterns evaluated here).
+ * Security note: "patternProperties" patterns evaluated here are limited against ReDoS like in {@link PatternValidator}.
  */
 public class AdditionalPropertiesValidator extends ExtendedBaseJsonSchemaValidator {
 	/** Property names defined by the "properties" keyword of the parent schema. */
@@ -121,7 +121,7 @@ public class AdditionalPropertiesValidator extends ExtendedBaseJsonSchemaValidat
 				if (!parentPropertyItemNames.contains(checkPropertyKey)) {
 					boolean isAdditionalPropertyKey = true;
 					for (final Pattern parentPropertyItemPattern : parentPropertyItemPatterns) {
-						if (parentPropertyItemPattern.matcher(checkPropertyKey).find()) {
+						if (findRegex(parentPropertyItemPattern, parentPropertyItemPattern.pattern(), checkPropertyKey, new JsonPath(jsonPath).addPropertyKey(checkPropertyKey))) {
 							isAdditionalPropertyKey = false;
 							break;
 						}

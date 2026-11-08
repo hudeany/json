@@ -21,7 +21,7 @@ import de.soderer.json.schema.JsonSchemaRegexUtilities;
 /**
  * A JSON schema object with regex patterns as keys and subschemas which must match if the key pattern matches with a JSON data object property name<br />
  * <br />
- * Security note: see {@link PatternValidator} regarding ReDoS risk from untrusted regex patterns in the schema.
+ * Security note: the patterns are evaluated with limited effort against ReDoS like in {@link PatternValidator}.
  */
 public class PatternPropertiesValidator extends BaseJsonSchemaValidator {
 	/** Validators by the property name pattern they apply to. */
@@ -88,7 +88,7 @@ public class PatternPropertiesValidator extends BaseJsonSchemaValidator {
 			boolean valid = true;
 			for (final Entry<Pattern, List<BaseJsonSchemaValidator>> propertiesDefinitionsEntry : propertiesDefinitionsByPattern.entrySet()) {
 				for (final Entry<String, JsonNode> propertyEntry : ((JsonObject) jsonNode).entrySet()) {
-					if (propertiesDefinitionsEntry.getKey().matcher(propertyEntry.getKey()).find()) {
+					if (findRegex(propertiesDefinitionsEntry.getKey(), propertiesDefinitionsEntry.getKey().pattern(), propertyEntry.getKey(), new JsonPath(jsonPath).addPropertyKey(propertyEntry.getKey()))) {
 						JsonNode newJsonNode;
 						try {
 							newJsonNode = propertyEntry.getValue().withRootNode(false);

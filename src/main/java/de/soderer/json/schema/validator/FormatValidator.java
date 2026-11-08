@@ -31,9 +31,8 @@ import de.soderer.json.utilities.TextUtilities;
  * zones like "+01" are accepted) and unknown format names are a definition error. In all JSON
  * schema drafts unknown format names are ignored.<br />
  * <br />
- * Security note: see {@link PatternValidator} regarding ReDoS risk — the "regex" format only checks that a data
- * value compiles as a pattern, but "pattern"/"patternProperties"/"propertyNames" elsewhere in a schema execute
- * regex patterns from the schema against data without any complexity or timeout guard.
+ * Security note: the "regex" format only checks that a data value compiles as a pattern, it is never executed. The
+ * built-in format checks regard data exceeding the recursion depth of the Java regex engine as invalid.
  */
 public class FormatValidator extends BaseJsonSchemaValidator {
 	/** All supported format names in lower case. */

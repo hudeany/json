@@ -120,7 +120,7 @@ public final class JsonSchemaFormats {
 	 */
 	public static boolean isValidDate(final String value) {
 		final java.util.regex.Matcher matcher = DATE_PATTERN.matcher(value);
-		if (!matcher.matches()) {
+		if (!matchesSafely(matcher)) {
 			return false;
 		}
 		final int year = Integer.parseInt(matcher.group(1));
@@ -139,7 +139,7 @@ public final class JsonSchemaFormats {
 	 */
 	public static boolean isValidTime(final String value) {
 		final java.util.regex.Matcher matcher = TIME_PATTERN.matcher(value);
-		if (!matcher.matches()) {
+		if (!matchesSafely(matcher)) {
 			return false;
 		}
 		final int hour = Integer.parseInt(matcher.group(1));
@@ -185,7 +185,7 @@ public final class JsonSchemaFormats {
 	 * @return true, if valid
 	 */
 	public static boolean isValidDuration(final String value) {
-		return DURATION_PATTERN.matcher(value).matches();
+		return matchesSafely(DURATION_PATTERN.matcher(value));
 	}
 
 	/**
@@ -261,9 +261,9 @@ public final class JsonSchemaFormats {
 		}
 		final boolean validLocalPart;
 		if (internationalized) {
-			validLocalPart = IDN_EMAIL_DOT_STRING_PATTERN.matcher(localPart).matches() || IDN_EMAIL_QUOTED_STRING_PATTERN.matcher(localPart).matches();
+			validLocalPart = matchesSafely(IDN_EMAIL_DOT_STRING_PATTERN.matcher(localPart)) || matchesSafely(IDN_EMAIL_QUOTED_STRING_PATTERN.matcher(localPart));
 		} else {
-			validLocalPart = EMAIL_DOT_STRING_PATTERN.matcher(localPart).matches() || EMAIL_QUOTED_STRING_PATTERN.matcher(localPart).matches();
+			validLocalPart = matchesSafely(EMAIL_DOT_STRING_PATTERN.matcher(localPart)) || matchesSafely(EMAIL_QUOTED_STRING_PATTERN.matcher(localPart));
 		}
 		if (!validLocalPart) {
 			return false;
@@ -298,7 +298,7 @@ public final class JsonSchemaFormats {
 	 * @return true, if valid
 	 */
 	public static boolean isValidIpv4(final String value) {
-		return IPV4_PATTERN.matcher(value).matches();
+		return matchesSafely(IPV4_PATTERN.matcher(value));
 	}
 
 	/**
@@ -413,7 +413,7 @@ public final class JsonSchemaFormats {
 		final String[] labels = value.split("\\.", -1);
 		final List<String> uLabels = new ArrayList<>();
 		for (final String label : labels) {
-			if (!HOSTNAME_LABEL_PATTERN.matcher(label).matches()) {
+			if (!matchesSafely(HOSTNAME_LABEL_PATTERN.matcher(label))) {
 				return false;
 			} else if (checkReservedLabels && label.length() >= 4 && label.charAt(2) == '-' && label.charAt(3) == '-') {
 				if (!label.regionMatches(true, 0, "xn", 0, 2)) {
@@ -1138,7 +1138,7 @@ public final class JsonSchemaFormats {
 	 */
 	private static boolean matchesUri(final Pattern pattern, final String value) {
 		final java.util.regex.Matcher matcher = pattern.matcher(value);
-		if (!matcher.matches()) {
+		if (!matchesSafely(matcher)) {
 			return false;
 		}
 		String host = matcher.group("host");
@@ -1147,7 +1147,7 @@ public final class JsonSchemaFormats {
 		}
 		if (host != null && host.startsWith("[")) {
 			final java.util.regex.Matcher literalMatcher = IP_LITERAL_PATTERN.matcher(host);
-			if (!literalMatcher.matches()) {
+			if (!matchesSafely(literalMatcher)) {
 				return false;
 			}
 			return literalMatcher.group(1) == null || isValidIpv6(literalMatcher.group(1));
@@ -1223,7 +1223,7 @@ public final class JsonSchemaFormats {
 					expression = expression.substring(1);
 				}
 				for (final String varspec : expression.split(",", -1)) {
-					if (!URI_TEMPLATE_VARSPEC_PATTERN.matcher(varspec).matches()) {
+					if (!matchesSafely(URI_TEMPLATE_VARSPEC_PATTERN.matcher(varspec))) {
 						return false;
 					}
 				}
@@ -1255,7 +1255,7 @@ public final class JsonSchemaFormats {
 	 * @return true, if valid
 	 */
 	public static boolean isValidJsonPointer(final String value) {
-		return JSON_POINTER_PATTERN.matcher(value).matches();
+		return matchesSafely(JSON_POINTER_PATTERN.matcher(value));
 	}
 
 	/**
@@ -1266,7 +1266,7 @@ public final class JsonSchemaFormats {
 	 * @return true, if valid
 	 */
 	public static boolean isValidRelativeJsonPointer(final String value) {
-		return RELATIVE_JSON_POINTER_PATTERN.matcher(value).matches();
+		return matchesSafely(RELATIVE_JSON_POINTER_PATTERN.matcher(value));
 	}
 
 	/**
@@ -1277,6 +1277,23 @@ public final class JsonSchemaFormats {
 	 * @return true, if valid
 	 */
 	public static boolean isValidUuid(final String value) {
-		return UUID_PATTERN.matcher(value).matches();
+		return matchesSafely(UUID_PATTERN.matcher(value));
+	}
+
+	/**
+	 * Checks whether a matcher matches its whole input. The Java regex engine recurses for each
+	 * repetition of a group, so very long data (e.g. a JSON pointer with many segments) would cause a
+	 * StackOverflowError. Such data is regarded as not matching.
+	 *
+	 * @param matcher
+	 *            the matcher
+	 * @return true, if the whole input matches
+	 */
+	private static boolean matchesSafely(final java.util.regex.Matcher matcher) {
+		try {
+			return matcher.matches();
+		} catch (@SuppressWarnings("unused") final StackOverflowError e) {
+			return false;
+		}
 	}
 }

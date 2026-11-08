@@ -385,6 +385,7 @@ public class JsonSchema {
 
 		jsonSchemaDependencyResolver = new JsonSchemaDependencyResolver(jsonSchemaDefinitionObject, dependencies);
 		jsonSchemaDependencyResolver.setFormatAssertion(jsonSchemaConfiguration.getFormatAssertion());
+		jsonSchemaDependencyResolver.setRegexStepLimit(jsonSchemaConfiguration.getRegexStepLimit());
 		if (schemaVersionUrl != null) {
 			// Detects the version of custom meta schemas and the vocabularies they declare
 			final JsonSchemaVersion metaSchemaVersion = jsonSchemaDependencyResolver.applyMetaSchema(schemaVersionUrl);

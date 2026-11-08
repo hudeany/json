@@ -222,6 +222,10 @@ public class JsonSchemaDependencyResolver {
 	 * Whether a missing external schema is only reported when it is actually used.
 	 */
 	private boolean lazyFailOnMissingExternalSchemas = true;
+	/**
+	 * Base step limit for the evaluation of regular expressions against data.
+	 */
+	private long regexStepLimit = JsonSchemaRegexUtilities.DEFAULT_REGEX_STEP_LIMIT;
 
 	/**
 	 * Creates a resolver for a schema.
@@ -254,7 +258,7 @@ public class JsonSchemaDependencyResolver {
 	 */
 	private JsonSchemaDependencyResolver(final JsonSchemaDependencyResolver mainResolver, final JsonSchemaVersion jsonSchemaVersion) {
 		this.mainResolver = mainResolver;
-		this.schemaDocumentNode = mainResolver.schemaDocumentNode;
+		schemaDocumentNode = mainResolver.schemaDocumentNode;
 		this.jsonSchemaVersion = jsonSchemaVersion;
 	}
 
@@ -1158,6 +1162,39 @@ public class JsonSchemaDependencyResolver {
 	}
 
 	/**
+	 * Returns the base step limit for the evaluation of regular expressions against data, see
+	 * {@link JsonSchemaConfiguration#setRegexStepLimit(long)}.
+	 *
+	 * @return the base step limit, 0 or less for no limit
+	 */
+	public long getRegexStepLimit() {
+		return regexStepLimit;
+	}
+
+	/**
+	 * Sets the base step limit for the evaluation of regular expressions against data, see
+	 * {@link JsonSchemaConfiguration#setRegexStepLimit(long)}.
+	 *
+	 * @param regexStepLimit
+	 *            the base step limit, 0 or less for no limit
+	 */
+	public void setRegexStepLimit(final long regexStepLimit) {
+		this.regexStepLimit = regexStepLimit;
+	}
+
+	/**
+	 * Sets the base step limit for the evaluation of regular expressions against data.
+	 *
+	 * @param newRegexStepLimit
+	 *            the base step limit, 0 or less for no limit
+	 * @return this resolver for chaining
+	 */
+	public JsonSchemaDependencyResolver withRegexStepLimit(final long newRegexStepLimit) {
+		setRegexStepLimit(newRegexStepLimit);
+		return this;
+	}
+
+	/**
 	 * View of a main resolver with another JSON schema version, used for schema documents declaring
 	 * another version by "$schema" than the main schema (see
 	 * {@link JsonSchemaDependencyResolver#getResolverForSchemaNode(JsonNode)}).<br />
@@ -1211,7 +1248,7 @@ public class JsonSchemaDependencyResolver {
 		}
 
 		@Override
-		public JsonObject getDependencyByLegacyReference(final String reference, final JsonSchemaPath jsonSchemaPath) throws Exception {
+		public synchronized JsonObject getDependencyByLegacyReference(final String reference, final JsonSchemaPath jsonSchemaPath) throws Exception {
 			return main.getDependencyByLegacyReference(reference, jsonSchemaPath);
 		}
 
@@ -1221,7 +1258,7 @@ public class JsonSchemaDependencyResolver {
 		}
 
 		@Override
-		public String getBaseUri(final JsonNode schemaObject) {
+		public synchronized String getBaseUri(final JsonNode schemaObject) {
 			return main.getBaseUri(schemaObject);
 		}
 
@@ -1231,12 +1268,12 @@ public class JsonSchemaDependencyResolver {
 		}
 
 		@Override
-		public JsonNode getSchemaNodeByUri(final String absoluteUri, final boolean allowDownload) throws JsonSchemaDefinitionError {
+		public synchronized JsonNode getSchemaNodeByUri(final String absoluteUri, final boolean allowDownload) throws JsonSchemaDefinitionError {
 			return main.getSchemaNodeByUri(absoluteUri, allowDownload);
 		}
 
 		@Override
-		public boolean isKnownSchemaDocument(final String uri) {
+		public synchronized boolean isKnownSchemaDocument(final String uri) {
 			return main.isKnownSchemaDocument(uri);
 		}
 
@@ -1256,12 +1293,12 @@ public class JsonSchemaDependencyResolver {
 		}
 
 		@Override
-		public boolean hasDynamicAnchor(final String resourceUri, final String anchorName) {
+		public synchronized boolean hasDynamicAnchor(final String resourceUri, final String anchorName) {
 			return main.hasDynamicAnchor(resourceUri, anchorName);
 		}
 
 		@Override
-		public boolean hasRecursiveAnchor(final String resourceUri) {
+		public synchronized boolean hasRecursiveAnchor(final String resourceUri) {
 			return main.hasRecursiveAnchor(resourceUri);
 		}
 
@@ -1303,12 +1340,12 @@ public class JsonSchemaDependencyResolver {
 		}
 
 		@Override
-		public void addJsonSchemaDefinition(final String jsonSchemaReferenceName, final InputStream jsonSchemaInputStream) throws JsonSchemaDefinitionError {
+		public synchronized void addJsonSchemaDefinition(final String jsonSchemaReferenceName, final InputStream jsonSchemaInputStream) throws JsonSchemaDefinitionError {
 			main.addJsonSchemaDefinition(jsonSchemaReferenceName, jsonSchemaInputStream);
 		}
 
 		@Override
-		public void addJsonSchemaDefinition(final String jsonSchemaReferenceName, final JsonObject jsonSchemaReferenceObject) throws Exception {
+		public synchronized void addJsonSchemaDefinition(final String jsonSchemaReferenceName, final JsonObject jsonSchemaReferenceObject) throws Exception {
 			main.addJsonSchemaDefinition(jsonSchemaReferenceName, jsonSchemaReferenceObject);
 		}
 
@@ -1341,6 +1378,22 @@ public class JsonSchemaDependencyResolver {
 		@Override
 		public JsonSchemaDependencyResolver withLazyFailOnMissingExternalSchemas(final boolean newLazyFailOnMissingExternalSchemas) {
 			main.setLazyFailOnMissingExternalSchemas(newLazyFailOnMissingExternalSchemas);
+			return this;
+		}
+
+		@Override
+		public long getRegexStepLimit() {
+			return main.getRegexStepLimit();
+		}
+
+		@Override
+		public void setRegexStepLimit(final long regexStepLimit) {
+			main.setRegexStepLimit(regexStepLimit);
+		}
+
+		@Override
+		public JsonSchemaDependencyResolver withRegexStepLimit(final long newRegexStepLimit) {
+			main.setRegexStepLimit(newRegexStepLimit);
 			return this;
 		}
 	}
