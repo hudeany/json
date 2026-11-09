@@ -7,12 +7,7 @@
 
 	<!-- Runtime libraries of this project go to "lib/" (may stay empty) -->
 	<target name="download_dependencies">
-		<mkdir dir="lib/" />
-		<delete includeEmptyDirs="true">
-			<fileset dir="lib/">
-				<include name="*" />
-			</fileset>
-		</delete>
+		<!-- nothing to do here -->
 	</target>
 
 	<!-- ===== Common part: identical in all library build files, do not change per project ===== -->
