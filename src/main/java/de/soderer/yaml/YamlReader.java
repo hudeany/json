@@ -1359,14 +1359,14 @@ public class YamlReader extends BasicReadAheadReader {
 				throw new Exception("Invalid data '" + yamlNode.getClass().getSimpleName() + "' for YAML datatype: '" + datatype + "'");
 			}
 		} else if ("set".equals(datatype)) {
-			// YAML 1.1 type: a mapping with null values only
+			// YAML 1.1 type (only applied in YAML 1.1 mode): a mapping with null values only
 			if (yamlNode instanceof final YamlMapping mapping && mapping.values().stream().allMatch(YamlReader::isNullValue)) {
 				return yamlNode;
 			} else {
 				throw new Exception("Invalid data for YAML datatype: '" + datatype + "', expected a mapping with null values");
 			}
 		} else if ("omap".equals(datatype) || "pairs".equals(datatype)) {
-			// YAML 1.1 types: a sequence of mappings with a single entry each
+			// YAML 1.1 types (only applied in YAML 1.1 mode): a sequence of mappings with a single entry each
 			if (yamlNode instanceof final YamlSequence sequence && sequence.items().stream().allMatch(item -> item instanceof final YamlMapping pair && pair.size() == 1)) {
 				return yamlNode;
 			} else {
@@ -1375,6 +1375,18 @@ public class YamlReader extends BasicReadAheadReader {
 		} else {
 			throw new Exception("Unknown YAML datatype: '" + datatype + "'");
 		}
+	}
+
+	/**
+	 * Checks whether a datatype is a type of YAML 1.1 only, which is no part of the YAML 1.2 core
+	 * schema.
+	 *
+	 * @param datatype
+	 *            the tag name without "!!"
+	 * @return true for "set", "omap" and "pairs"
+	 */
+	private static boolean isYaml11OnlyDatatype(final String datatype) {
+		return "set".equals(datatype) || "omap".equals(datatype) || "pairs".equals(datatype);
 	}
 
 	/**
@@ -1398,7 +1410,13 @@ public class YamlReader extends BasicReadAheadReader {
 	 */
 	private YamlNode applyTag(final String tag, final YamlNode yamlNode) throws Exception {
 		checkTag(tag);
-		if (tag.startsWith("!!") && !secondaryTagHandleRedefined) {
+		if (tag.startsWith("!!") && !secondaryTagHandleRedefined && isYaml11OnlyDatatype(tag.substring(2))) {
+			// "!!set", "!!omap" and "!!pairs" are types of YAML 1.1, which are no part of the YAML 1.2
+			// core schema: in YAML 1.2 they are kept as tags without any check, like other tags
+			final YamlNode taggedNode = currentYamlVersion == YamlVersion.V1_1 ? applyDatatype(tag.substring(2), yamlNode) : yamlNode;
+			taggedNode.setTag(tag);
+			return taggedNode;
+		} else if (tag.startsWith("!!") && !secondaryTagHandleRedefined) {
 			return applyDatatype(tag.substring(2), yamlNode);
 		} else {
 			if (yamlNode instanceof final YamlScalar scalar && "!".equals(tag) && scalar.getType() != YamlScalarType.STRING && scalar.getType() != YamlScalarType.MULTILINE) {

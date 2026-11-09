@@ -169,17 +169,43 @@ public class YamlVersionAndTagTest {
 
 	@Test
 	void yaml11CollectionTags() throws Exception {
-		final YamlMapping set = (YamlMapping) readRoot("--- !!set\n? a\n? b\n", null);
+		final YamlVersion v11 = YamlVersion.V1_1;
+		final YamlMapping set = (YamlMapping) readRoot("--- !!set\n? a\n? b\n", v11);
 		assertEquals(2, set.size());
-		assertThrows(Exception.class, () -> readRoot("--- !!set\na: 1\n", null));
-		assertThrows(Exception.class, () -> readRoot("--- !!set\n- a\n", null));
+		assertEquals("!!set", set.getTag());
+		assertThrows(Exception.class, () -> readRoot("--- !!set\na: 1\n", v11));
+		assertThrows(Exception.class, () -> readRoot("--- !!set\n- a\n", v11));
 
-		final YamlSequence omap = (YamlSequence) readRoot("--- !!omap\n- a: 1\n- b: 2\n", null);
+		final YamlSequence omap = (YamlSequence) readRoot("--- !!omap\n- a: 1\n- b: 2\n", v11);
 		assertEquals(2, omap.size());
-		assertTrue(readRoot("--- !!pairs\n- a: 1\n- a: 2\n", null) instanceof YamlSequence);
-		assertThrows(Exception.class, () -> readRoot("--- !!omap\n- a\n", null));
-		assertThrows(Exception.class, () -> readRoot("--- !!omap\n- a: 1\n  b: 2\n", null));
-		assertThrows(Exception.class, () -> readRoot("--- !!pairs\na: 1\n", null));
+		assertEquals("!!omap", omap.getTag());
+		assertTrue(readRoot("--- !!pairs\n- a: 1\n- a: 2\n", v11) instanceof YamlSequence);
+		assertThrows(Exception.class, () -> readRoot("--- !!omap\n- a\n", v11));
+		assertThrows(Exception.class, () -> readRoot("--- !!omap\n- a: 1\n  b: 2\n", v11));
+		assertThrows(Exception.class, () -> readRoot("--- !!pairs\na: 1\n", v11));
+
+		// The %YAML 1.1 directive enables the check as well
+		assertThrows(Exception.class, () -> readRoot("%YAML 1.1\n--- !!set\na: 1\n", null));
+	}
+
+	@Test
+	void yaml11CollectionTagsAreNoDatatypesInYaml12() throws Exception {
+		// "!!set", "!!omap" and "!!pairs" are no part of the YAML 1.2 core schema: kept as tags, not checked
+		final YamlNode set = readRoot("--- !!set\na: 1\n", null);
+		assertTrue(set instanceof YamlMapping);
+		assertEquals("!!set", set.getTag());
+
+		final YamlNode omap = readRoot("--- !!omap\n- a\n- b: 1\n  c: 2\n", null);
+		assertTrue(omap instanceof YamlSequence);
+		assertEquals("!!omap", omap.getTag());
+
+		final YamlNode pairs = readRoot("--- !!pairs\na: 1\n", YamlVersion.V1_2);
+		assertTrue(pairs instanceof YamlMapping);
+		assertEquals("!!pairs", pairs.getTag());
+
+		// The tag is written again
+		final String written = YamlWriter.toString(new YamlDocument(set));
+		assertEquals("!!set", readRoot(written, null).getTag(), written);
 	}
 
 	@Test

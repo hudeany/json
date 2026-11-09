@@ -353,6 +353,8 @@ try (YamlReader reader = new YamlReader(inputStream)) {
 
 The writer quotes all strings that are booleans or numbers in either version, so its output is read the same way by YAML 1.1 and YAML 1.2 readers.
 
+The collection types of YAML 1.1 (`!!set`, `!!omap` and `!!pairs`) are checked in YAML 1.1 mode only, e.g. that a `!!set` is a mapping with null values. They are no part of the YAML 1.2 core schema, so in YAML 1.2 mode they are kept as tags without any check. In both modes the tag is written again.
+
 ### Write YAML
 
 ```java
