@@ -4,7 +4,8 @@ import java.util.Objects;
 
 /**
  * Alias ("*name") referring to the node with the anchor of the same name. Aliases are kept as
- * they are when reading; {@link de.soderer.yaml.YamlToJsonConverter} resolves them.
+ * they are when reading; {@link YamlDocument#resolveAlias(YamlAlias)} finds the referenced node and
+ * {@link de.soderer.yaml.YamlToJsonConverter} resolves them.
  */
 public class YamlAlias extends YamlNode {
 	/**

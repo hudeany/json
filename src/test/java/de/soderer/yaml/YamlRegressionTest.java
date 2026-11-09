@@ -12,6 +12,7 @@ import de.soderer.json.JsonArray;
 import de.soderer.json.JsonDataType;
 import de.soderer.json.JsonNode;
 import de.soderer.json.JsonObject;
+import de.soderer.yaml.data.YamlAlias;
 import de.soderer.yaml.data.YamlComparator;
 import de.soderer.yaml.data.YamlDiffPatcher;
 import de.soderer.yaml.data.YamlDocument;
@@ -23,6 +24,7 @@ import de.soderer.yaml.data.YamlScalar;
 import de.soderer.yaml.data.YamlScalarType;
 import de.soderer.yaml.data.YamlSequence;
 import de.soderer.yaml.data.YamlStringQuoteType;
+import de.soderer.yaml.exception.YamlParseException;
 
 /**
  * Regression tests for bugs found during the Javadoc and bug review of the YAML package.
@@ -151,7 +153,9 @@ public class YamlRegressionTest {
 		Assertions.assertEquals(JsonDataType.INTEGER, ((JsonObject) jsonObject.get("base")).get("a").getJsonDataType());
 		Assertions.assertEquals(JsonDataType.INTEGER, jsonObject.get("big").getJsonDataType());
 		Assertions.assertEquals(2, ((JsonObject) ((JsonArray) jsonObject.get("list")).get(0)).size());
-		Assertions.assertThrows(RuntimeException.class, () -> YamlToJsonConverter.convert(read("a: *unknown\n")));
+		// Unknown aliases are rejected by the reader already, the converter checks data created in code
+		Assertions.assertThrows(YamlParseException.class, () -> read("a: *unknown\n"));
+		Assertions.assertThrows(RuntimeException.class, () -> YamlToJsonConverter.convert(new YamlMapping().add("a", new YamlAlias("unknown"))));
 	}
 
 	@Test

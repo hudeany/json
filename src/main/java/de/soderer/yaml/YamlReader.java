@@ -35,7 +35,6 @@ import de.soderer.yaml.data.YamlScalar;
 import de.soderer.yaml.data.YamlScalarType;
 import de.soderer.yaml.data.YamlSequence;
 import de.soderer.yaml.data.YamlStringQuoteType;
-import de.soderer.yaml.data.YamlToken;
 import de.soderer.yaml.data.YamlVersion;
 import de.soderer.yaml.data.directive.YamlDirective;
 import de.soderer.yaml.data.directive.YamlTagDirective;
@@ -1846,9 +1845,12 @@ public class YamlReader extends BasicReadAheadReader {
 		final int sequenceIndentation = (int) getCurrentColumn() - 1;
 
 		final YamlSequence sequence = new YamlSequence();
-		updatePath(YamlToken.YamlSequence_Start, null);
+		final int sequencePathSize = currentPath.size();
+		currentPath.add(new JsonPathArrayElement());
 
+		int itemIndex = 0;
 		while (isNotEOF() && peekCharMatch('-') && (int) getCurrentColumn() - 1 == sequenceIndentation && !isDocumentMarkerAtLineStart()) {
+			setPathArrayIndex(sequencePathSize, itemIndex++);
 			final YamlNode nextItemNode = readNextSequenceItem();
 			if (nextItemNode != null) {
 				sequence.add(nextItemNode);
@@ -1857,7 +1859,7 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 		}
 
-		updatePath(YamlToken.YamlSequence_End, null);
+		truncatePath(sequencePathSize);
 
 		return sequence;
 	}
@@ -2150,15 +2152,15 @@ public class YamlReader extends BasicReadAheadReader {
 			}
 			firstKeyPropertiesUsed[0] = true;
 			final YamlMapping mapping = new YamlMapping();
-			updatePath(YamlToken.YamlMapping_Start, null);
-			updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
-
+			// Each entry restores the path after its value, whatever the value is (also an empty value)
+			final int mappingPathSize = currentPath.size();
+			addPathKey(keyOrScalarNode);
 			mapping.add(keyOrScalarNode, readBlockMappingValue(mappingIndentation, colonFollows, valueAnchor));
+			truncatePath(mappingPathSize);
 
 			while (isNotEOF() && getNumberOfIndentationChars() == mappingIndentation) {
 				if (isDocumentMarkerAtLineStart()) {
 					// End of the document, the marker is read by parseDocument()
-					updatePath(YamlToken.YamlMapping_End, null);
 					return mapping;
 				}
 
@@ -2172,11 +2174,11 @@ public class YamlReader extends BasicReadAheadReader {
 						checkImplicitKey(keyOrScalarNode);
 					}
 					final String entryValueAnchor = readBlockMappingValueIndicator(keyOrScalarNode, keyIsExplicit);
-					updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
+					addPathKey(keyOrScalarNode);
 					mapping.add(keyOrScalarNode, readBlockMappingValue(mappingIndentation, true, entryValueAnchor));
+					truncatePath(mappingPathSize);
 				} else if (keyIsExplicit && getNumberOfIndentationChars() == mappingIndentation) {
 					// Explicit key without value
-					updatePath(YamlToken.YamlMapping_PropertyKey, keyOrScalarNode);
 					mapping.add(keyOrScalarNode, new YamlScalar("", YamlScalarType.NULL_VALUE));
 				} else {
 					throw new YamlParseException("Invalid YAML data when expecting mapping key found", getCurrentLine(), getCurrentColumn());
@@ -2185,7 +2187,6 @@ public class YamlReader extends BasicReadAheadReader {
 
 			final String mappingAnchor = readUpToNextContent(null);
 
-			updatePath(YamlToken.YamlMapping_End, null);
 
 			if (mappingAnchor != null) {
 				assignAnchor(mapping, mappingAnchor);
@@ -2198,7 +2199,6 @@ public class YamlReader extends BasicReadAheadReader {
 				assignAnchor(keyOrScalarNode, pendingAnchor);
 			}
 
-			updatePath(YamlToken.YamlScalar, null);
 			return keyOrScalarNode;
 		}
 	}
@@ -2210,8 +2210,11 @@ public class YamlReader extends BasicReadAheadReader {
 		// Lines within flow collections do not change the block indentation, see closeFlowCollection()
 		flowIndentationSnapshots.push(new ArrayList<>(indentations));
 		final int snapshotCount = flowIndentationSnapshots.size();
+		final int pathSize = currentPath.size();
 		try {
-			return parseFlowMappingInternal();
+			final YamlNode collection = parseFlowMappingInternal();
+			truncatePath(pathSize);
+			return collection;
 		} finally {
 			// The closing bracket may already have decreased the flow level and restored the indentations
 			flowLevel = outerFlowLevel;
@@ -2230,7 +2233,6 @@ public class YamlReader extends BasicReadAheadReader {
 		readChar();
 
 		final YamlMapping mapping = new YamlMapping(true);
-		updatePath(YamlToken.YamlMapping_Start, null);
 
 		// An anchor directly after '{' belongs to the first key, an anchor of the mapping itself precedes the '{'
 		String pendingAnchor = readUpToNextContent(mapping);
@@ -2259,7 +2261,6 @@ public class YamlReader extends BasicReadAheadReader {
 				readChar();
 				closeFlowCollection();
 				readUpToNextContent(mapping);
-				updatePath(YamlToken.YamlMapping_End, null);
 				return mapping;
 			}
 			final YamlNode keyNode = parseFlowNode();
@@ -2291,7 +2292,6 @@ public class YamlReader extends BasicReadAheadReader {
 					pendingAnchor = null;
 				}
 
-				updatePath(YamlToken.YamlMapping_End, null);
 				return mapping;
 			} else if (peekCharMatch(',')) {
 				readChar();
@@ -2319,7 +2319,6 @@ public class YamlReader extends BasicReadAheadReader {
 					// An anchor after ',' belongs to the next key
 					pendingAnchor = readUpToNextContent(keyNode);
 
-					updatePath(YamlToken.YamlMapping_PropertyKey, keyNode);
 
 					mapping.add(keyNode, valueNode);
 					continue;
@@ -2332,7 +2331,10 @@ public class YamlReader extends BasicReadAheadReader {
 						pendingAnchor = valueAnchor;
 					}
 
+					final int entryPathSize = currentPath.size();
+					addPathKey(keyNode);
 					final YamlNode valueNode = parseFlowNode();
+					truncatePath(entryPathSize);
 
 					if (pendingAnchor != null) {
 						assignAnchor(valueNode, pendingAnchor);
@@ -2372,7 +2374,6 @@ public class YamlReader extends BasicReadAheadReader {
 								pendingAnchor = null;
 							}
 
-							updatePath(YamlToken.YamlMapping_End, null);
 							return mapping;
 						}
 					} else {
@@ -2394,8 +2395,11 @@ public class YamlReader extends BasicReadAheadReader {
 		// Lines within flow collections do not change the block indentation, see closeFlowCollection()
 		flowIndentationSnapshots.push(new ArrayList<>(indentations));
 		final int snapshotCount = flowIndentationSnapshots.size();
+		final int pathSize = currentPath.size();
 		try {
-			return parseFlowSequenceInternal();
+			final YamlNode collection = parseFlowSequenceInternal();
+			truncatePath(pathSize);
+			return collection;
 		} finally {
 			// The closing bracket may already have decreased the flow level and restored the indentations
 			flowLevel = outerFlowLevel;
@@ -2414,7 +2418,9 @@ public class YamlReader extends BasicReadAheadReader {
 		readChar();
 
 		final YamlSequence sequence = new YamlSequence(true);
-		updatePath(YamlToken.YamlSequence_Start, null);
+		final int sequencePathSize = currentPath.size();
+		currentPath.add(new JsonPathArrayElement());
+		int itemIndex = 0;
 
 		// An anchor directly after '[' belongs to the first item, an anchor of the sequence itself precedes the '['
 		String pendingAnchor = readUpToNextContent(sequence);
@@ -2446,9 +2452,9 @@ public class YamlReader extends BasicReadAheadReader {
 
 				readUpToNextContent(sequence);
 
-				updatePath(YamlToken.YamlSequence_End, null);
 				return sequence;
 			} else {
+				setPathArrayIndex(sequencePathSize, itemIndex++);
 				itemNode = parseFlowNode();
 			}
 			final boolean itemIsExplicitKey = lastFlowNodeWasExplicitKey;
@@ -2480,7 +2486,6 @@ public class YamlReader extends BasicReadAheadReader {
 					pendingAnchor = null;
 				}
 
-				updatePath(YamlToken.YamlSequence_End, null);
 				return sequence;
 			} else if (peekCharMatch(',')) {
 				sequence.add(itemNode);
@@ -2526,7 +2531,6 @@ public class YamlReader extends BasicReadAheadReader {
 						pendingAnchor = null;
 					}
 
-					updatePath(YamlToken.YamlSequence_End, null);
 					return sequence;
 				} else if (peekCharMatch(',')) {
 					readChar();
@@ -3151,65 +3155,48 @@ public class YamlReader extends BasicReadAheadReader {
 		return indentations.stream().reduce(0, Integer::sum);
 	}
 
-	private void updatePath(final YamlToken jsonToken, final YamlNode key) throws Exception {
-		if (jsonToken == null) {
-			throw new Exception("Invalid YamlToken: null");
+	/**
+	 * Adds a mapping key to the current path and checks whether the searched path was found.
+	 * Collection keys are represented by "&lt;ComplexYamlKey&gt;".
+	 *
+	 * @throws FoundPathEvent
+	 *             if the path searched by {@link #readUpToPath(String)} was reached
+	 */
+	private void addPathKey(final YamlNode key) throws FoundPathEvent {
+		if (key instanceof final YamlScalar scalarKey) {
+			currentPath.add(new JsonPathPropertyElement(scalarKey.getValueString()));
+		} else {
+			currentPath.add(new JsonPathPropertyElement("<ComplexYamlKey>"));
 		}
+		checkSearchPathFound();
+	}
 
-		switch (jsonToken) {
-			case YamlSequence_Start:
-				if (currentPath.size() > 0 && currentPath.getLastPathPart() instanceof JsonPathArrayElement) {
-					riseArrayIndex();
-				}
-				currentPath.add(new JsonPathArrayElement());
-				break;
-			case YamlSequence_End:
-				if (currentPath.size() > 0 && currentPath.getLastPathPart() instanceof JsonPathArrayElement) {
-					currentPath.removeLastElement();
-				}
-				if (currentPath.size() > 0 && currentPath.getLastPathPart() instanceof JsonPathPropertyElement) {
-					currentPath.removeLastElement();
-				}
-				break;
-			case YamlMapping_Start:
-				if (currentPath.size() > 0 && currentPath.getLastPathPart() instanceof JsonPathArrayElement) {
-					riseArrayIndex();
-				}
-				break;
-			case YamlMapping_PropertyKey:
-				if (key instanceof YamlScalar) {
-					currentPath.add(new JsonPathPropertyElement(((YamlScalar) key).getValueString()));
-				} else {
-					currentPath.add(new JsonPathPropertyElement("<ComplexYamlKey>"));
-				}
-				break;
-			case YamlScalar:
-				if (currentPath.size() > 0) {
-					if (currentPath.getLastPathPart() instanceof JsonPathArrayElement) {
-						riseArrayIndex();
-					} else if (currentPath.getLastPathPart() instanceof JsonPathPropertyElement) {
-						currentPath.removeLastElement();
-					}
-				}
-				break;
-			case YamlMapping_End:
-				if (currentPath.size() > 0 && currentPath.getLastPathPart() instanceof JsonPathPropertyElement) {
-					currentPath.removeLastElement();
-				}
-				break;
-			default:
-				throw new Exception("Invalid jsonToken");
-		}
+	/**
+	 * Sets the index of the sequence item read next. The array element of the sequence is the
+	 * element after the given path size.
+	 *
+	 * @throws FoundPathEvent
+	 *             if the path searched by {@link #readUpToPath(String)} was reached
+	 */
+	private void setPathArrayIndex(final int sequencePathSize, final int index) throws FoundPathEvent {
+		truncatePath(sequencePathSize);
+		currentPath.add(new JsonPathArrayElement(index));
+		checkSearchPathFound();
+	}
 
-		if (searchPath != null && getCurrentPath().equals(searchPath)) {
-			throw new FoundPathEvent("Path '" + searchPath + "' was found");
+	/**
+	 * Removes path elements added by nested nodes, so the path has the given size again.
+	 */
+	private void truncatePath(final int size) {
+		while (currentPath.size() > size) {
+			currentPath.removeLastElement();
 		}
 	}
 
-	private void riseArrayIndex() {
-		final JsonPathArrayElement currentJsonPathArrayElement = (JsonPathArrayElement) currentPath.getLastPathPart();
-		currentPath.removeLastElement();
-		currentPath.add(new JsonPathArrayElement(currentJsonPathArrayElement.getIndex() + 1));
+	private void checkSearchPathFound() throws FoundPathEvent {
+		if (searchPath != null && currentPath.equals(searchPath)) {
+			throw new FoundPathEvent("Path '" + searchPath + "' was found");
+		}
 	}
 
 	/**
