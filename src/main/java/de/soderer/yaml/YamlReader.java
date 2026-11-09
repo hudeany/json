@@ -9,9 +9,11 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,8 +43,6 @@ import de.soderer.yaml.data.directive.YamlVersionDirective;
 import de.soderer.yaml.exception.FoundPathEvent;
 import de.soderer.yaml.exception.YamlParseException;
 
-// TODO: Check alias references after document read
-// TODO: Check cyclic dependencies in aliases
 /**
  * Reader for YAML data from an input stream.
  * <p>
@@ -55,6 +55,15 @@ import de.soderer.yaml.exception.YamlParseException;
  * that {@link YamlWriter} can write the data in a similar form again. Aliases are kept as
  * {@link de.soderer.yaml.data.YamlAlias} nodes. Linebreaks are normalized to LF.
  * </p>
+ * <p>
+ * After a document (or an item read by {@link #readNextYamlNode()}) is read, all its aliases are
+ * checked: each alias must refer to an anchor defined before it, and it must not refer to a node
+ * containing the alias itself (cyclic reference).
+ * </p>
+ * <p>
+ * Comments after the last document, also in data without any document, are available by
+ * {@link #getTrailingComments()} once the end of the data was reached.
+ * </p>
  */
 public class YamlReader extends BasicReadAheadReader {
 	private final Stack<Integer> indentations = new Stack<>();
@@ -62,6 +71,15 @@ public class YamlReader extends BasicReadAheadReader {
 	private List<String> pendingLeadingComments = new ArrayList<>();
 	private int pendingLeadingEmptyLines = 0;
 	private int pendingTrailingEmptyLinesAfterComments = 0;
+	/**
+	 * Comment lines after the last document, which belong to no document.
+	 */
+	private final List<String> trailingComments = new ArrayList<>();
+	/**
+	 * Positions (line, column) of the aliases read for the current document or item, used for
+	 * error messages of the alias check.
+	 */
+	private final Map<YamlAlias, long[]> aliasPositions = new IdentityHashMap<>();
 	/**
 	 * True if a document was read, which was not ended by a document end marker "..." yet. Only a
 	 * document start marker "---" may follow then.
@@ -356,6 +374,28 @@ public class YamlReader extends BasicReadAheadReader {
 		return anchorTable.get(anchorName);
 	}
 
+	/**
+	 * Returns the comment lines after the last document, which belong to no document. This also
+	 * covers data consisting of comments only, for which {@link #readDocument()} returns null.
+	 * <p>
+	 * The list is complete once the end of the data was reached, which is sure after
+	 * {@link #readDocument()} returned null. Before that, comments which may still belong to a
+	 * following document are not part of it.
+	 * </p>
+	 *
+	 * @return the comment lines without "#", empty list if there are none
+	 * @throws Exception
+	 *             if reading fails
+	 */
+	public List<String> getTrailingComments() throws Exception {
+		if (searchPath == null && searchPathWasFoundAtLevel < 0 && isEOF() && !pendingLeadingComments.isEmpty()) {
+			// The data ended directly after the last document, so the pending comments follow no document
+			trailingComments.addAll(pendingLeadingComments);
+			pendingLeadingComments = new ArrayList<>();
+		}
+		return new ArrayList<>(trailingComments);
+	}
+
 	private YamlDocument parseDocument() throws Exception {
 		try {
 			final YamlDocument document = new YamlDocument();
@@ -393,7 +433,13 @@ public class YamlReader extends BasicReadAheadReader {
 					if (directivesRead) {
 						throw new YamlParseException("Directives without following document", getCurrentLine(), getCurrentColumn());
 					}
-					// No further document: data of only blanks and comments contains no document at all
+					// No further document: data of only blanks and comments contains no document at all.
+					// Comments read so far follow the last document and belong to no document.
+					if (document.getLeadingComments() != null) {
+						trailingComments.addAll(document.getLeadingComments());
+					}
+					trailingComments.addAll(pendingLeadingComments);
+					pendingLeadingComments = new ArrayList<>();
 					documentOpen = false;
 					return null;
 				} else if (peekCharMatch('%') && getCurrentColumn() == 1) {
@@ -461,6 +507,7 @@ public class YamlReader extends BasicReadAheadReader {
 						blockCollectionForbiddenLine = markerLine;
 					}
 					document.setRoot(parseYamlNode());
+					checkAliases(document.getRoot(), new HashMap<>());
 					return document;
 				} else {
 					// Bare document without document start marker
@@ -475,6 +522,7 @@ public class YamlReader extends BasicReadAheadReader {
 					}
 					addRootIndentation();
 					document.setRoot(parseYamlNode());
+					checkAliases(document.getRoot(), new HashMap<>());
 					return document;
 				}
 			}
@@ -622,7 +670,10 @@ public class YamlReader extends BasicReadAheadReader {
 			if (isEOF()) {
 				return null;
 			} else if (searchPathWasFoundAtLevel >= 0 && getNumberOfIndentationChars() == searchPathWasFoundAtLevel) {
+				// Aliases of the item may refer to anchors read before it
+				final Map<String, YamlNode> anchorsReadBefore = new HashMap<>(anchorTable);
 				final YamlNode nextSequenceItem = readNextSequenceItem();
+				checkAliases(nextSequenceItem, anchorsReadBefore);
 				return nextSequenceItem;
 			} else {
 				return null;
@@ -1743,6 +1794,8 @@ public class YamlReader extends BasicReadAheadReader {
 			throw new YamlParseException("Expected alias start not found", getCurrentLine(), getCurrentColumn());
 		}
 
+		final long aliasLine = getCurrentLine();
+		final long aliasColumn = getCurrentColumn();
 		readChar();
 
 		final String anchorName = readUpToNext(false, null, '\n', ' ', '\t');
@@ -1750,6 +1803,7 @@ public class YamlReader extends BasicReadAheadReader {
 			throw new YamlParseException("Missing alias name", getCurrentLine(), getCurrentColumn());
 		}
 		final YamlAlias alias = new YamlAlias(anchorName);
+		aliasPositions.put(alias, new long[] { aliasLine, aliasColumn });
 
 		skipBlanks();
 		return alias;
@@ -2216,7 +2270,8 @@ public class YamlReader extends BasicReadAheadReader {
 
 			applyAndClearPendingLeadingState(keyNode);
 
-			pendingAnchor = readUpToNextContent(null);
+			// A comment on the line of the key is its inline comment, also after a quoted key
+			pendingAnchor = readUpToNextContent(keyNode);
 			if (pendingAnchor != null) {
 				assignAnchor(keyNode, pendingAnchor);
 				pendingAnchor = null;
@@ -2405,7 +2460,8 @@ public class YamlReader extends BasicReadAheadReader {
 
 			applyAndClearPendingLeadingState(itemNode);
 
-			pendingAnchor = readUpToNextContent(null);
+			// A comment on the line of the item is its inline comment, also after a quoted item
+			pendingAnchor = readUpToNextContent(itemNode);
 			if (pendingAnchor != null) {
 				assignAnchor(itemNode, pendingAnchor);
 				pendingAnchor = null;
@@ -2736,13 +2792,71 @@ public class YamlReader extends BasicReadAheadReader {
 	 *             if reading fails
 	 */
 	private YamlNode readFlowAlias() throws Exception {
+		final long aliasLine = getCurrentLine();
+		final long aliasColumn = getCurrentColumn();
 		readChar();
 		final String anchorName = readUpToNext(false, null, ' ', '\t', '\n', ',', '[', ']', '{', '}');
 		if (anchorName.isEmpty()) {
 			throw new YamlParseException("Missing alias name", getCurrentLine(), getCurrentColumn());
 		}
 		skipBlanks();
-		return new YamlAlias(anchorName);
+		final YamlAlias alias = new YamlAlias(anchorName);
+		aliasPositions.put(alias, new long[] { aliasLine, aliasColumn });
+		return alias;
+	}
+
+	/**
+	 * Checks the aliases of a node read completely: each alias must refer to an anchor defined
+	 * before it in document order, and it must not refer to a node containing the alias (cyclic
+	 * reference). An anchor defined again replaces the former definition for the following aliases.
+	 *
+	 * @param node
+	 *            the node read, may be null
+	 * @param anchors
+	 *            anchors defined before the node, extended by the anchors of the node
+	 * @throws YamlParseException
+	 *             if an alias refers to an unknown anchor or creates a cyclic reference
+	 */
+	private void checkAliases(final YamlNode node, final Map<String, YamlNode> anchors) throws YamlParseException {
+		try {
+			checkAliases(node, anchors, Collections.newSetFromMap(new IdentityHashMap<>()));
+		} finally {
+			aliasPositions.clear();
+		}
+	}
+
+	private void checkAliases(final YamlNode node, final Map<String, YamlNode> anchors, final Set<YamlNode> enclosingNodes) throws YamlParseException {
+		if (node == null) {
+			return;
+		} else if (node instanceof final YamlAlias alias) {
+			final YamlNode target = anchors.get(alias.getTargetAnchorName());
+			final long[] position = aliasPositions.getOrDefault(alias, new long[] { getCurrentLine(), getCurrentColumn() });
+			if (target == null) {
+				throw new YamlParseException("Alias refers to unknown anchor: '*" + alias.getTargetAnchorName() + "'", position[0], position[1]);
+			} else if (enclosingNodes.contains(target)) {
+				throw new YamlParseException("Cyclic alias reference: '*" + alias.getTargetAnchorName() + "' is part of the node it refers to", position[0], position[1]);
+			}
+			return;
+		}
+
+		// The anchor precedes the content of its node, so it is defined for the aliases within
+		if (node.getAnchorName() != null) {
+			anchors.put(node.getAnchorName(), node);
+		}
+		if (node instanceof final YamlMapping mapping) {
+			enclosingNodes.add(mapping);
+			for (final YamlNode key : mapping.keySet()) {
+				checkAliases(key, anchors, enclosingNodes);
+				checkAliases(mapping.get(key), anchors, enclosingNodes);
+			}
+			enclosingNodes.remove(mapping);
+		} else if (node instanceof final YamlSequence sequence) {
+			enclosingNodes.add(sequence);
+			for (final YamlNode item : sequence.items()) {
+				checkAliases(item, anchors, enclosingNodes);
+			}
+			enclosingNodes.remove(sequence);
+		}
 	}
 
 	/**

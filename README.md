@@ -326,6 +326,18 @@ System.out.print(document);
 
 To read from a file or stream, use `new YamlReader(inputStream).readDocument()`. Documents separated by `---` are returned one by one by repeated calls.
 
+Comments after the last document belong to no document. They are returned by `getTrailingComments()` once the end of the data is reached, also for files containing nothing but comments, and can be written again by `YamlWriter.writeTrailingComments(List)`:
+
+```java
+try (YamlReader reader = new YamlReader(inputStream); YamlWriter writer = new YamlWriter(outputStream)) {
+	YamlDocument document;
+	while ((document = reader.readDocument()) != null) {
+		writer.writeDocument(document);
+	}
+	writer.writeTrailingComments(reader.getTrailingComments());
+}
+```
+
 ### YAML 1.2 and YAML 1.1
 
 Plain (unquoted) values are resolved by the core schema of YAML 1.2 by default: only `true` and `false` are booleans, `017` is the decimal number 17 and octal numbers need the prefix `0o`. Values like `yes`, `on`, `y` or `1_000` are strings. This avoids surprises like the country code `NO` of Norway being read as `false`.
@@ -397,7 +409,18 @@ for (final YamlNode key : root.keySet()) {
 // backup null null
 ```
 
-An anchor may be defined again: aliases refer to its latest definition before them. Datatype tags like `!!str` or `!!int` are applied to the value instead of being stored. `!!binary` marks a base64 text as binary data:
+An anchor may be defined again: aliases refer to its latest definition before them. Aliases are checked while reading: an alias referring to an unknown anchor (also an anchor of a previous document) or to a node containing the alias itself (cyclic reference) is rejected by a `YamlParseException` with the position of the alias.
+
+`YamlDocument` finds anchored nodes: `getNodeByAnchor(name)` returns the last definition of an anchor, `resolveAlias(alias)` the node a specific alias refers to and `getAnchoredNodes()` all anchored nodes in document order:
+
+```java
+final YamlDocument document = YamlReader.readDocument("a: &x 1\nb: *x\nc: &x 2\n");
+final YamlAlias alias = (YamlAlias) ((YamlMapping) document.getRoot()).get("b");
+System.out.println(document.resolveAlias(alias));   // 1
+System.out.println(document.getNodeByAnchor("x")); // 2
+```
+
+Datatype tags like `!!str` or `!!int` are applied to the value instead of being stored. `!!binary` marks a base64 text as binary data:
 
 ```java
 final YamlScalar data = YamlScalar.fromBinaryValue(new byte[] { 1, 2, 3 }); // written as: !!binary AQID
@@ -518,6 +541,7 @@ The implementations are tested against the official test suites, which run as un
 - **JSON Schema**: the [JSON-Schema-Test-Suite](https://github.com/json-schema-org/JSON-Schema-Test-Suite) for all supported drafts, both with `validate()` and `validateAll()` ([JsonSchemaTestSuiteTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/json/schema/JsonSchemaTestSuiteTest.java)). All required and all optional tests pass.
 - **JSON Patch**: the [json-patch-tests](https://github.com/json-patch/json-patch-tests) and the examples of RFC 7396 ([JsonPatchTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/json/patch/JsonPatchTest.java)). All tests pass.
 - **YAML**: the [yaml-test-suite](https://github.com/yaml/yaml-test-suite) ([YamlTestSuiteTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/yaml/YamlTestSuiteTest.java)). 307 of 308 valid inputs are read as expected and all 94 invalid inputs are rejected. The one deviation is intended: duplicate mapping keys are rejected, also two empty keys (test case 2JQS), see [yaml-test-suite-intended-deviations.txt](https://github.com/hudeany/json/blob/master/src/test/resources/yaml/yaml-test-suite-intended-deviations.txt).
+- **YAML writer**: a roundtrip with all valid inputs of the yaml-test-suite: read, write, read again and compare the data as JSON, with several output formats ([YamlWriterRoundtripTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/yaml/YamlWriterRoundtripTest.java)). Writing data read back again must result in the same text. All inputs representable as JSON pass.
 
 ## More examples
 
@@ -528,3 +552,4 @@ The unit tests show many more use cases:
 - [JsonSchemaNewDraftsTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/json/schema/JsonSchemaNewDraftsTest.java) for the JSON Schema drafts 2019-09 and 2020-12
 - [JsonSchemaValidateAllTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/json/schema/JsonSchemaValidateAllTest.java) for collecting all validation errors
 - [YamlVersionAndTagTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/yaml/YamlVersionAndTagTest.java) and [YamlAnchorTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/yaml/YamlAnchorTest.java) for YAML versions, tags and anchors
+- [YamlAliasCheckTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/yaml/YamlAliasCheckTest.java) and [YamlTrailingCommentsTest.java](https://github.com/hudeany/json/blob/master/src/test/java/de/soderer/yaml/YamlTrailingCommentsTest.java) for the alias check, the anchor search and comments after the last document

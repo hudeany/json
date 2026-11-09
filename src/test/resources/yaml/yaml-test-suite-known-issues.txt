@@ -1,5 +1,0 @@
-# Test cases of the official YAML test suite (yaml/yaml-test-suite.zip), which YamlReader does not
-# handle as expected yet, grouped by cause. YamlTestSuiteTest skips these cases and fails, if one of
-# them passes, so this list is kept up to date when the reader is improved.
-# Deviations by design are listed in yaml-test-suite-intended-deviations.txt instead.
-# Format: <test case id> # <description>
