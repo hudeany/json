@@ -1,23 +1,29 @@
 package de.soderer.json.path;
 
-import java.util.Objects;
+import java.util.List;
+
+import de.soderer.json.JsonNode;
+import de.soderer.json.path.JsonPathFilterExpression.Comparison;
+import de.soderer.json.path.JsonPathFilterExpression.Literal;
+import de.soderer.json.path.JsonPathFilterExpression.PathOperand;
 
 /**
- * A JSONPath filter expression such as {@code [?(@.version=='26.1.72')]}, applied to every
- * candidate produced by the previous path step (every value of a {@link de.soderer.json.JsonObject},
- * or every item of a {@link de.soderer.json.JsonArray}): a candidate matches if it is itself a
- * JSON object, has the given property, and that property's simple value compares as specified
- * against the literal.
- *
- * Only the single-level form "@.propertyName" is supported (no nested "@.a.b" paths). Only
+ * A JSON path filter such as {@code [?(@.version=='26.1.72')]} or
+ * {@code [?(@.price < 10 && @.category == 'fiction')]}, which keeps the candidates matching its
+ * {@link JsonPathFilterExpression}.
+ * <p>
+ * The candidates are the property values of an object or the items of an array at this position.
+ * After a wildcard or another filter, an object candidate is tested itself, while an array is
+ * replaced by its items (see {@link de.soderer.json.JsonNode#getDataListByJsonPath}). Only
  * meaningful with {@link de.soderer.json.JsonNode#getDataListByJsonPath}, which can return several
  * matches - {@link de.soderer.json.JsonNode#getDataByJsonPath} (single result) rejects any path
  * containing a filter.
+ * </p>
  */
 public class JsonPathFilterElement implements JsonPathElement {
 	/**
-	 * Comparison operators of filter expressions. Only EQUALS and NOT_EQUALS apply to
-	 * non-numeric values.
+	 * Comparison operators of filter expressions. The ordering operators apply to two numbers or two
+	 * strings, see {@link JsonPathFilterExpression}.
 	 */
 	public enum FilterOperator {
 		/**
@@ -87,32 +93,24 @@ public class JsonPathFilterElement implements JsonPathElement {
 			throw new IllegalArgumentException("Unsupported JSON path filter operator: '" + symbol + "'");
 		}
 	}
+	/**
+	 * The filter expression.
+	 */
+	private final JsonPathFilterExpression expression;
 
 	/**
-	 * Property checked on each candidate.
-	 */
-	private final String propertyName;
-	/**
-	 * The comparison operator.
-	 */
-	private final FilterOperator operator;
-	/**
-	 * The value compared against.
-	 */
-	private final Object literalValue;
-
-	/**
-	 * Creates a filter element.
+	 * Creates a simple filter comparing a property of each candidate with a literal, e.g.
+	 * {@code [?(@.price < 10)]}.
 	 *
 	 * @param propertyName
-	 *            property name checked on each candidate (the "x" in "@.x")
+	 *            the property checked on each candidate
 	 * @param operator
-	 *            comparison operator
+	 *            the comparison operator
 	 * @param literalValue
-	 *            value compared against, already parsed to its Java type (String, Long, Double,
-	 *            Boolean, or null)
+	 *            the value to compare with: String, Number (e.g. Long or Double), Boolean or null
 	 * @throws IllegalArgumentException
-	 *             if the property name is empty or the operator is null
+	 *             if the property name is empty, the operator is null or the literal has an
+	 *             unsupported type
 	 */
 	public JsonPathFilterElement(final String propertyName, final FilterOperator operator, final Object literalValue) {
 		if (propertyName == null || propertyName.isEmpty()) {
@@ -121,72 +119,109 @@ public class JsonPathFilterElement implements JsonPathElement {
 		if (operator == null) {
 			throw new IllegalArgumentException("JSON path filter needs an operator");
 		}
-		this.propertyName = propertyName;
-		this.operator = operator;
-		this.literalValue = literalValue;
+		expression = new Comparison(PathOperand.ofProperty(propertyName), operator, new Literal(literalValue));
 	}
 
 	/**
-	 * Returns the property checked on each candidate.
+	 * Creates a filter with any filter expression.
 	 *
-	 * @return the property name
+	 * @param expression
+	 *            the filter expression
+	 * @throws IllegalArgumentException
+	 *             if the expression is null
+	 */
+	public JsonPathFilterElement(final JsonPathFilterExpression expression) {
+		if (expression == null) {
+			throw new IllegalArgumentException("JSON path filter needs an expression");
+		}
+		this.expression = expression;
+	}
+
+	/**
+	 * Returns the filter expression.
+	 *
+	 * @return the filter expression
+	 */
+	public JsonPathFilterExpression getExpression() {
+		return expression;
+	}
+
+	/**
+	 * Checks whether this filter is a simple comparison of a single property of the candidate with
+	 * a literal, like {@code [?(@.price < 10)]}, so {@link #getPropertyName()},
+	 * {@link #getOperator()} and {@link #getLiteralValue()} describe it completely.
+	 *
+	 * @return true for a simple property comparison
+	 */
+	public boolean isSimpleComparison() {
+		if (expression instanceof Comparison) {
+			final Comparison comparison = (Comparison) expression;
+			if (comparison.getLeft() instanceof PathOperand && comparison.getRight() instanceof Literal) {
+				final PathOperand path = (PathOperand) comparison.getLeft();
+				return !path.isAbsolute() && path.getElements().size() == 1 && path.getElements().get(0) instanceof JsonPathPropertyElement;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Returns the compared property of a simple comparison (see {@link #isSimpleComparison()}).
+	 *
+	 * @return the property name, or null if this filter is no simple comparison
 	 */
 	public String getPropertyName() {
-		return propertyName;
+		if (isSimpleComparison()) {
+			final List<JsonPathElement> elements = ((PathOperand) ((Comparison) expression).getLeft()).getElements();
+			return ((JsonPathPropertyElement) elements.get(0)).getPropertyKey();
+		} else {
+			return null;
+		}
 	}
 
 	/**
-	 * Returns the comparison operator.
+	 * Returns the operator of a simple comparison (see {@link #isSimpleComparison()}).
 	 *
-	 * @return the operator
+	 * @return the operator, or null if this filter is no simple comparison
 	 */
 	public FilterOperator getOperator() {
-		return operator;
+		return isSimpleComparison() ? ((Comparison) expression).getOperator() : null;
 	}
 
 	/**
-	 * Returns the value compared against.
+	 * Returns the literal of a simple comparison (see {@link #isSimpleComparison()}).
 	 *
-	 * @return the value: String, Long, Double, Boolean or null
+	 * @return the literal value (String, Number, Boolean or null), or null if this filter is no
+	 *         simple comparison
 	 */
 	public Object getLiteralValue() {
-		return literalValue;
+		return isSimpleComparison() ? ((Literal) ((Comparison) expression).getRight()).getLiteralValue() : null;
 	}
 
 	/**
-	 * Returns the literal in filter syntax, strings single quoted.
+	 * Checks whether a candidate matches this filter.
 	 *
-	 * @return the literal text
+	 * @param candidate
+	 *            the node to test, referenced by "@"
+	 * @param rootNode
+	 *            the root node, referenced by "$"
+	 * @return true, if the candidate matches
 	 */
-	private String literalValueToString() {
-		if (literalValue == null) {
-			return "null";
-		} else if (literalValue instanceof String) {
-			return "'" + ((String) literalValue).replace("'", "\\'") + "'";
-		} else {
-			return literalValue.toString();
-		}
+	public boolean matches(final JsonNode candidate, final JsonNode rootNode) {
+		return expression.test(candidate, rootNode);
 	}
 
 	@Override
 	public String toString() {
-		return "[?(@." + propertyName + " " + operator.getSymbol() + " " + literalValueToString() + ")]";
+		return "[?(" + expression + ")]";
 	}
 
 	@Override
 	public boolean equals(final Object otherObject) {
-		if (this == otherObject) {
-			return true;
-		} else if (!(otherObject instanceof JsonPathFilterElement)) {
-			return false;
-		} else {
-			final JsonPathFilterElement other = (JsonPathFilterElement) otherObject;
-			return propertyName.equals(other.propertyName) && operator == other.operator && Objects.equals(literalValue, other.literalValue);
-		}
+		return otherObject instanceof JsonPathFilterElement && toString().equals(otherObject.toString());
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(propertyName, operator, literalValue);
+		return toString().hashCode();
 	}
 }
